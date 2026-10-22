@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/workspace_colors.dart';
+import "../../../../shared/workspace_colors.dart";
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge(this.status, {super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/workspace_colors.dart';
+import "../../../../shared/workspace_colors.dart";
 
 class DetailLine extends StatelessWidget {
   const DetailLine(

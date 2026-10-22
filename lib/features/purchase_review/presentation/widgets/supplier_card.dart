@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/workspace_colors.dart';
-import '../../../shared/widgets/outline_panel.dart';
-import '../../../shared/widgets/note_line.dart';
+import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/widgets/outline_panel.dart";
+import "../../../../shared/widgets/note_line.dart";
 
-import '../purchase_review_preview_data.dart';
+import "../../domain/purchase_review.dart";
+import "../../../../shared/formatters.dart";
 import 'detail_line.dart';
 
 class SupplierCard extends StatelessWidget {
-  const SupplierCard(this.data, {super.key});
-  final SupplierPreviewData data;
+  const SupplierCard(this.data, {super.key, required this.review});
+  final PurchaseReview review;
+  final SupplierQuote data;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +81,7 @@ class SupplierCard extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: data.price,
+                  text: formatNumber(data.unitPrice),
                   style: const TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
@@ -95,25 +97,27 @@ class SupplierCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            data.existing ? '기존 단가 5,000원/kg' : '보유 DB 견적 기준',
+            data.existing
+                ? "기존 단가 ${formatNumber(review.existingUnitPrice)}원/kg"
+                : '보유 DB 견적 기준',
             style: const TextStyle(fontSize: 10, color: muted),
           ),
           const SizedBox(height: 16),
           const Divider(color: line),
           const SizedBox(height: 12),
-          const DetailLine('규격', '냉동 · 무가당\n10kg/박스'),
+          DetailLine("규격", data.specification),
           DetailLine('최소 주문 수량', data.minimum),
           DetailLine('공급 소요기간', data.leadTime, mutedValue: data.existing),
-          const DetailLine('재고', '미확인', mutedValue: true),
+          DetailLine("재고", data.stock, mutedValue: true),
           DetailLine(
             '운송비',
-            data.shipping,
+            formatMonthlyCost(data.shippingMonthlyCost),
             caption: data.existing ? '단가 미포함 · 회사 별도 부담' : '비용·부담 조건 확인 필요',
             mutedValue: !data.existing,
           ),
           DetailLine(
             '기타 물류비',
-            data.logistics,
+            formatMonthlyCost(data.logisticsMonthlyCost),
             caption: data.existing ? '단가 미포함 · 회사 별도 부담' : '비용·부담 조건 확인 필요',
             mutedValue: !data.existing,
           ),
@@ -125,8 +129,8 @@ class SupplierCard extends StatelessWidget {
               children: [
                 Text(
                   data.existing
-                      ? '변경 검토 600kg · 구매금액'
-                      : '변경 검토 600kg · 단가 비교용 구매금액',
+                      ? "변경 검토 ${formatNumber(review.reviewQuantity)}kg · 구매금액"
+                      : "변경 검토 ${formatNumber(review.reviewQuantity)}kg · 단가 비교용 구매금액",
                   style: const TextStyle(fontSize: 10, color: muted),
                 ),
                 const SizedBox(height: 10),
@@ -134,7 +138,7 @@ class SupplierCard extends StatelessWidget {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: data.purchaseAmount,
+                        text: formatNumber(data.purchaseAmount),
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
@@ -161,7 +165,9 @@ class SupplierCard extends StatelessWidget {
                       style: TextStyle(fontSize: 10, color: muted),
                     ),
                     Text(
-                      data.existing ? '5,450,000원' : '확정 불가',
+                      data.monthlyTotalCost == null
+                          ? "확정 불가"
+                          : "${formatNumber(data.monthlyTotalCost!)}원",
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -171,9 +177,7 @@ class SupplierCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  data.existing
-                      ? '월 1,000kg 기준 · 고정단가 400kg 포함\n운송비·기타 물류비 전후 동일'
-                      : '미확인 부대비용과 계약 적용 조건으로\n월 전체 총비용을 확정할 수 없습니다.',
+                  data.monthlyCostNote,
                   style: const TextStyle(
                     fontSize: 9,
                     color: muted,

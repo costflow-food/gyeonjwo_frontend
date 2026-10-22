@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/workspace_colors.dart';
+import "../../../../shared/workspace_colors.dart";
 
 class QueueSummary extends StatelessWidget {
-  const QueueSummary({super.key});
+  const QueueSummary({super.key, required this.waitingCount});
+
+  final int waitingCount;
 
   @override
   Widget build(BuildContext context) {
@@ -41,16 +43,19 @@ class QueueSummary extends StatelessWidget {
               ),
             ],
           );
-          const count = Column(
+          final count = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('검토를 기다리는 요청', style: TextStyle(fontSize: 11, color: muted)),
-              SizedBox(height: 8),
+              const Text(
+                '검토를 기다리는 요청',
+                style: TextStyle(fontSize: 11, color: muted),
+              ),
+              const SizedBox(height: 8),
               Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: '02',
+                      text: waitingCount.toString().padLeft(2, "0"),
                       style: TextStyle(
                         fontSize: 34,
                         fontWeight: FontWeight.w800,
@@ -68,7 +73,7 @@ class QueueSummary extends StatelessWidget {
             ],
           );
           if (compact) {
-            return const Column(
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(Icons.inbox_outlined, color: accent, size: 28),
@@ -99,7 +104,7 @@ class QueueSummary extends StatelessWidget {
               const SizedBox(width: 20),
               const Expanded(flex: 4, child: introduction),
               const SizedBox(width: 24),
-              const Expanded(child: count),
+              Expanded(child: count),
             ],
           );
         },

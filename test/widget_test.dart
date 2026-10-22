@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
+import "package:flutter_test/flutter_test.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import 'package:gyeonjwo_frontend/app/app_router.dart';
 import 'package:gyeonjwo_frontend/main.dart';
 
@@ -9,7 +10,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const ProviderScope(child: MyApp()));
     appRouter.go('/');
     await tester.pumpAndSettle();
   }

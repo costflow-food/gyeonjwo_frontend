@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/workspace_colors.dart';
-import '../../../shared/widgets/responsive_columns.dart';
-import '../../../shared/widgets/outline_panel.dart';
+import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/widgets/responsive_columns.dart";
+import "../../../../shared/widgets/outline_panel.dart";
 
-import 'summary_metric.dart';
+import "summary_metric.dart";
+import "../../domain/purchase_review.dart";
+import "../../../../shared/formatters.dart";
 
 class RequestSummary extends StatelessWidget {
-  const RequestSummary({super.key});
+  const RequestSummary({super.key, required this.review});
+
+  final PurchaseReview review;
 
   @override
   Widget build(BuildContext context) {
@@ -36,12 +40,12 @@ class RequestSummary extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '냉동 딸기 단가 인상 요청',
+                          review.title,
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
@@ -49,7 +53,7 @@ class RequestSummary extends StatelessWidget {
                         ),
                         SizedBox(height: 6),
                         Text(
-                          'A사 · 냉동 · 무가당 · 10kg/박스',
+                          "${review.supplierName} · ${review.specification}",
                           style: TextStyle(fontSize: 11, color: muted),
                         ),
                       ],
@@ -57,13 +61,13 @@ class RequestSummary extends StatelessWidget {
                   ),
                 ],
               );
-              const date = Column(
+              final date = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('적용 요청일', style: TextStyle(fontSize: 10, color: muted)),
                   SizedBox(height: 6),
                   Text(
-                    '11월 1일',
+                    review.effectiveDate,
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ],
@@ -88,15 +92,30 @@ class RequestSummary extends StatelessWidget {
           ResponsiveColumns(
             minItemWidth: 210 * textScale,
             maxColumns: 4,
-            children: const [
-              SummaryMetric('기존 단가', '5,000', '원/kg', '현재 계약 기준'),
-              SummaryMetric('요청 단가', '5,500', '원/kg', '단가 인상 요청 +10%'),
-              SummaryMetric('변경 검토 물량', '600', 'kg', '11월 전체 물량 중 변경 대상'),
+            children: [
+              SummaryMetric(
+                "기존 단가",
+                formatNumber(review.existingUnitPrice),
+                "원/kg",
+                "현재 계약 기준",
+              ),
+              SummaryMetric(
+                "요청 단가",
+                formatNumber(review.requestedUnitPrice),
+                "원/kg",
+                "거래처 요청 기준",
+              ),
+              SummaryMetric(
+                "변경 검토 물량",
+                formatNumber(review.reviewQuantity),
+                "kg",
+                "${review.periodLabel} 전체 물량 중 변경 대상",
+              ),
               SummaryMetric(
                 '현재 요청의 월 비용 영향',
-                '+300,000',
+                "${review.monthlyCostImpact > 0 ? "+" : ""}${formatNumber(review.monthlyCostImpact)}",
                 '원',
-                '기존 조건 대비 · 부대비용 전후 동일',
+                review.impactNote,
                 highlight: true,
               ),
             ],
@@ -109,15 +128,15 @@ class RequestSummary extends StatelessWidget {
             runSpacing: 12,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const Text.rich(
+              Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: '11월 전체 구매계획  ',
+                      text: "${review.periodLabel} 전체 구매계획  ",
                       style: TextStyle(fontSize: 11, color: muted),
                     ),
                     TextSpan(
-                      text: '1,000kg',
+                      text: "${formatNumber(review.plannedQuantity)}kg",
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -130,17 +149,21 @@ class RequestSummary extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 160),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Expanded(
-                        flex: 4,
+                        flex: review.fixedQuantity > 0
+                            ? review.fixedQuantity
+                            : 1,
                         child: SizedBox(
                           height: 6,
                           child: ColoredBox(color: Color(0xFF444548)),
                         ),
                       ),
                       Expanded(
-                        flex: 6,
+                        flex: review.reviewQuantity > 0
+                            ? review.reviewQuantity
+                            : 1,
                         child: SizedBox(
                           height: 6,
                           child: ColoredBox(color: Color(0xFFF4A2AA)),
@@ -150,12 +173,12 @@ class RequestSummary extends StatelessWidget {
                   ),
                 ),
               ),
-              const Text(
-                '▪ 고정단가 400kg',
+              Text(
+                "▪ 고정단가 ${formatNumber(review.fixedQuantity)}kg",
                 style: TextStyle(fontSize: 10, color: muted),
               ),
-              const Text(
-                '▪ 변경 검토 600kg',
+              Text(
+                "▪ 변경 검토 ${formatNumber(review.reviewQuantity)}kg",
                 style: TextStyle(fontSize: 10, color: muted),
               ),
             ],

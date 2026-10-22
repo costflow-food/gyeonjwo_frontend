@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../shared/workspace_colors.dart';
-import '../../../shared/widgets/preview_button.dart';
+import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/widgets/preview_button.dart";
 
-import '../work_queue_preview_data.dart';
+import "../../domain/request_item.dart";
 import 'status_badge.dart';
 
 class RequestRow extends StatelessWidget {
   const RequestRow(this.data, {super.key, required this.table});
-  final RequestPreviewData data;
+  final RequestItem data;
   final bool table;
 
   @override
@@ -79,7 +79,12 @@ class RequestRow extends StatelessWidget {
             icon: data.action == '실행' ? Icons.play_arrow_outlined : null,
             filled: data.action == '실행',
             onPressed: data.action == '실행' || data.action == '결과 보기'
-                ? () => context.go('/review')
+                ? () => context.go(
+                    Uri(
+                      path: "/review",
+                      queryParameters: {"requestId": data.id},
+                    ).toString(),
+                  )
                 : null,
           );
     return Container(
