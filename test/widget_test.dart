@@ -45,6 +45,42 @@ void main() {
     expect(find.text('흩어진 요청을, 한눈에 검토하세요.'), findsOneWidget);
   });
 
+  testWidgets('Supplier evidence dialog opens from a card and closes', (
+    tester,
+  ) async {
+    await showApp(tester, const Size(1440, 900));
+    appRouter.go('/review');
+    await tester.pumpAndSettle();
+    final button = find.text('A사 상세 근거 보기');
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    expect(find.text('A사 상세 근거'), findsOneWidget);
+    expect(find.text('월 비용 영향 +300,000원'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.text('5,450,000원'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('차액 교차 확인'), findsOneWidget);
+    expect(find.text('직접 비교에서 제외한 자료'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('3개 카드로 돌아가기'));
+    await tester.pumpAndSettle();
+    expect(find.text('A사 상세 근거'), findsNothing);
+
+    final candidate = find.text('B사 상세 근거 보기');
+    await tester.ensureVisible(candidate);
+    await tester.tap(candidate);
+    await tester.pumpAndSettle();
+    expect(find.text('월 비용 영향 확정 불가'), findsOneWidget);
+    await tester.tap(find.byTooltip('닫기'));
+    await tester.pumpAndSettle();
+    expect(find.text('B사 상세 근거'), findsNothing);
+  });
+
   testWidgets(
     'Manual sidebar choice survives resizing when enough space is available',
     (tester) async {
@@ -177,6 +213,12 @@ void main() {
               .where((scroll) => scroll.scrollDirection == Axis.horizontal);
           expect(horizontalScrolls, isEmpty);
         }
+        final evidence = find.text('A사 상세 근거 보기');
+        await tester.ensureVisible(evidence);
+        await tester.tap(evidence);
+        await tester.pumpAndSettle();
+        expect(find.text('A사 상세 근거'), findsOneWidget);
+        expect(tester.takeException(), isNull);
       });
     }
   }
