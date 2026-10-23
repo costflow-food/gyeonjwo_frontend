@@ -6,6 +6,7 @@ import "../../../../shared/widgets/note_line.dart";
 
 import "../../domain/purchase_review.dart";
 import "../../../../shared/formatters.dart";
+import "../../../supplier_evidence/presentation/supplier_evidence_view.dart";
 import 'detail_line.dart';
 
 class SupplierCard extends StatelessWidget {
@@ -197,7 +198,12 @@ class SupplierCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () => showSupplierEvidence(
+                context,
+                requestId: review.requestId,
+                supplierLetter: data.letter,
+                supplierCount: review.suppliers.length,
+              ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ink,
                 side: const BorderSide(color: Color(0xFFB4B7BD)),
