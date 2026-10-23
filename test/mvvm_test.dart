@@ -5,7 +5,9 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:gyeonjwo_frontend/app/app_router.dart";
 import "package:gyeonjwo_frontend/features/purchase_review/data/purchase_review_data_source.dart";
+import "package:gyeonjwo_frontend/features/purchase_review/data/review_progress_data_source.dart";
 import "package:gyeonjwo_frontend/features/purchase_review/presentation/purchase_review_view_model.dart";
+import "package:gyeonjwo_frontend/features/purchase_review/presentation/widgets/review_progress_dialog.dart";
 import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_data_source.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
 import "package:gyeonjwo_frontend/main.dart";
@@ -54,7 +56,80 @@ class AlternateReviewDataSource implements PurchaseReviewDataSource {
   }
 }
 
+class FailingProgressDataSource implements ReviewProgressDataSource {
+  @override
+  Stream<Map<String, dynamic>> watchProgress(String requestId) async* {
+    yield {"completedSteps": 1, "totalSteps": 4, "synthetic": true};
+    throw StateError("진행 상태 조회 실패");
+  }
+}
+
+Finder inDialog(String text) => find.descendant(
+  of: find.byType(ReviewProgressDialog),
+  matching: find.text(text),
+);
+
 void main() {
+  Future<void> showQueue(
+    WidgetTester tester, {
+    List overrides = const [],
+  }) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(overrides: [...overrides], child: const MyApp()),
+    );
+    appRouter.go("/");
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets("Run keeps progressing after the dialog is closed", (
+    tester,
+  ) async {
+    await showQueue(tester);
+    await tester.tap(find.widgetWithText(OutlinedButton, "실행").first);
+    await tester.pumpAndSettle();
+    expect(inDialog("시연 중"), findsOneWidget);
+    expect(inDialog("대기"), findsNWidgets(3));
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(inDialog("완료"), findsOneWidget);
+    expect(inDialog("대기"), findsNWidgets(2));
+
+    await tester.tap(find.widgetWithText(OutlinedButton, "업무 큐"));
+    await tester.pumpAndSettle();
+    expect(find.text("검토 진행"), findsNothing);
+    await tester.pump(const Duration(seconds: 7));
+    await tester.pumpAndSettle();
+    // 닫은 뒤 끝난 실행은 화면을 옮기지 않고, 다시 누르면 같은 결과를 엽니다.
+    expect(find.text("총 6건 · 최신 수신순"), findsOneWidget);
+    await tester.tap(find.widgetWithText(OutlinedButton, "실행").first);
+    await tester.pumpAndSettle();
+    expect(find.text("REQ-2026-1019-003 · 합성 시연 사례"), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets("A progress failure is shown without moving or retrying", (
+    tester,
+  ) async {
+    await showQueue(
+      tester,
+      overrides: [
+        reviewProgressDataSourceProvider.overrideWithValue(
+          FailingProgressDataSource(),
+        ),
+      ],
+    );
+    await tester.tap(find.widgetWithText(OutlinedButton, "실행").first);
+    await tester.pumpAndSettle();
+    expect(find.text("진행 상태를 확인하지 못했습니다."), findsOneWidget);
+    expect(inDialog("완료"), findsOneWidget);
+    expect(find.text("다시 시도"), findsNothing);
+    expect(find.text("검토 진행"), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test("Queue exposes loading until the response arrives", () async {
     final source = ControlledQueueDataSource()
       ..pending = Completer<Map<String, dynamic>>();
@@ -206,6 +281,9 @@ void main() {
     appRouter.go("/");
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(OutlinedButton, "실행").at(1));
+    await tester.pumpAndSettle();
+    expect(find.text("디자인 시연 · D사 요청"), findsOneWidget);
+    await tester.pump(const Duration(seconds: 7));
     await tester.pumpAndSettle();
     expect(find.text("REQ-2026-1019-002 · 합성 시연 사례"), findsOneWidget);
     expect(find.text("D사"), findsOneWidget);

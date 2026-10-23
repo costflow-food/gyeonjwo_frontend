@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import 'package:go_router/go_router.dart';
 
 import "../../../../shared/workspace_colors.dart";
 import "../../../../shared/widgets/preview_button.dart";
 
 import "../../domain/request_item.dart";
+import "../../../purchase_review/presentation/review_progress_view.dart";
 import 'status_badge.dart';
 
-class RequestRow extends StatelessWidget {
+class RequestRow extends ConsumerWidget {
   const RequestRow(this.data, {super.key, required this.table});
   final RequestItem data;
   final bool table;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final document = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -78,7 +80,14 @@ class RequestRow extends StatelessWidget {
             data.action,
             icon: data.action == '실행' ? Icons.play_arrow_outlined : null,
             filled: data.action == '실행',
-            onPressed: data.action == '실행' || data.action == '결과 보기'
+            onPressed: data.action == '실행'
+                ? () => showReviewProgress(
+                    context,
+                    ref,
+                    requestId: data.id,
+                    supplier: data.supplier,
+                  )
+                : data.action == '결과 보기'
                 ? () => context.go(
                     Uri(
                       path: "/review",

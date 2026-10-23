@@ -34,6 +34,9 @@ void main() {
     await showApp(tester, const Size(1440, 900));
     await tester.tap(find.widgetWithText(OutlinedButton, '실행').first);
     await tester.pumpAndSettle();
+    expect(find.text('검토 진행'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 7));
+    await tester.pumpAndSettle();
     expect(find.text('냉동 딸기 단가 인상 요청'), findsOneWidget);
     expect(find.text('A사'), findsOneWidget);
     expect(find.text('B사'), findsOneWidget);
