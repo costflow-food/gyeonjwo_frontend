@@ -1,12 +1,15 @@
 import "dart:convert";
 
-import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "purchase_review_preview_data.dart";
 
-final purchaseReviewDataSourceProvider = Provider<PurchaseReviewDataSource>(
-  (ref) => const PreviewPurchaseReviewDataSource(),
-);
+part 'purchase_review_data_source.g.dart';
+
+@Riverpod(keepAlive: true)
+PurchaseReviewDataSource purchaseReviewDataSource(Ref ref) {
+  return const PreviewPurchaseReviewDataSource();
+}
 
 abstract interface class PurchaseReviewDataSource {
   Future<Map<String, dynamic>> fetchReview(String requestId);

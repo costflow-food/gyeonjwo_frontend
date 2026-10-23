@@ -1,12 +1,15 @@
-import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../domain/request_item.dart";
 import "../domain/work_queue_repository.dart";
 import "work_queue_data_source.dart";
 
-final workQueueRepositoryProvider = Provider<WorkQueueRepository>(
-  (ref) => WorkQueueRepositoryImpl(ref.watch(workQueueDataSourceProvider)),
-);
+part 'work_queue_repository_impl.g.dart';
+
+@Riverpod(keepAlive: true)
+WorkQueueRepository workQueueRepository(Ref ref) {
+  return WorkQueueRepositoryImpl(ref.watch(workQueueDataSourceProvider));
+}
 
 class WorkQueueRepositoryImpl implements WorkQueueRepository {
   const WorkQueueRepositoryImpl(this._dataSource);

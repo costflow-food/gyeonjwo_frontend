@@ -27,10 +27,12 @@ class ControlledQueueDataSource implements WorkQueueDataSource {
 
 class CountingReviewDataSource implements PurchaseReviewDataSource {
   final calls = <String, int>{};
+  bool fail = false;
 
   @override
   Future<Map<String, dynamic>> fetchReview(String requestId) {
     calls.update(requestId, (count) => count + 1, ifAbsent: () => 1);
+    if (fail) return Future.error(StateError("상세 조회 실패"));
     return const PreviewPurchaseReviewDataSource(latency: Duration.zero)
         .fetchReview(requestId);
   }
@@ -70,6 +72,10 @@ void main() {
     final container = ProviderContainer.test(
       overrides: [workQueueDataSourceProvider.overrideWithValue(source)],
     );
+    final subscription = container.listen(
+      workQueueViewModelProvider,
+      (_, _) {},
+    );
     final initial = await container.read(workQueueViewModelProvider.future);
     expect(initial.requests, hasLength(6));
     expect(initial.countFor("검토 대기"), 2);
@@ -82,6 +88,11 @@ void main() {
     viewModel.search("없는 거래처");
     state = container.read(workQueueViewModelProvider).requireValue;
     expect(state.visibleRequests, isEmpty);
+    subscription.close();
+    await container.pump();
+    final retained = container.read(workQueueViewModelProvider).requireValue;
+    expect(retained.selectedStatus, "검토 대기");
+    expect(retained.query, "없는 거래처");
     expect(source.calls, 1);
   });
 
@@ -151,11 +162,36 @@ void main() {
     appRouter.go("/");
     await tester.pumpAndSettle();
     expect(find.text("다시 시도"), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+    expect(source.calls, 1);
     source.fail = false;
     await tester.tap(find.text("다시 시도"));
     await tester.pumpAndSettle();
     expect(find.text("총 6건 · 최신 수신순"), findsOneWidget);
     expect(source.calls, 2);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets("Review retries manually and keeps the selected request ID", (
+    tester,
+  ) async {
+    final source = CountingReviewDataSource()..fail = true;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [purchaseReviewDataSourceProvider.overrideWithValue(source)],
+        child: const MyApp(),
+      ),
+    );
+    appRouter.go("/review?requestId=REQ-2026-1019-002");
+    await tester.pumpAndSettle();
+    expect(find.text("다시 시도"), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+    expect(source.calls["REQ-2026-1019-002"], 1);
+    source.fail = false;
+    await tester.tap(find.text("다시 시도"));
+    await tester.pumpAndSettle();
+    expect(find.text("REQ-2026-1019-002 · 합성 시연 사례"), findsOneWidget);
+    expect(source.calls["REQ-2026-1019-002"], 2);
     expect(tester.takeException(), isNull);
   });
 
@@ -193,9 +229,9 @@ void main() {
       appRouter.go("/review?requestId=REQ-2026-1019-003");
       await tester.pumpAndSettle();
       expect(find.text("API 응답으로 받은 요청 제목"), findsOneWidget);
-      expect(find.text("5,600"), findsOneWidget);
-      expect(find.text("700"), findsOneWidget);
-      expect(find.text("+420,000"), findsOneWidget);
+      expect(find.text("5,600 원/kg", findRichText: true), findsOneWidget);
+      expect(find.text("700 kg", findRichText: true), findsOneWidget);
+      expect(find.text("+420,000 원", findRichText: true), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

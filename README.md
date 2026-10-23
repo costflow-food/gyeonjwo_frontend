@@ -39,6 +39,26 @@ View → ViewModel → Repository → DataSource 순서로 요청하고, 응답�
 
 상태 관리와 화면은 DataSource 구현을 직접 참조하지 않으므로, 앱 모델이 유지되는 한 수정할 필요가 없습니다. DB 접근 방식과 인증은 서버 계약 확정 후 연결합니다.
 
+## Provider 코드 생성
+
+Provider는 `@Riverpod` 어노테이션으로 선언합니다. 함수는 의존성을 제공하고,
+ViewModel 클래스는 `_$WorkQueueViewModel` 같은 생성 클래스를 상속합니다.
+기존 Provider 이름과 `ref.watch` / `ref.read` 사용법은 유지합니다.
+
+`@Riverpod(keepAlive: true)`는 화면을 나가도 상태가 유지되도록 하는 설정입니다.
+기본 `@riverpod`는 자동 폐기되므로 기존 수명을 보존하려고 이 설정을 사용했습니다.
+상세의 `build(String requestId)` 인자로 요청별 Provider가 생성됩니다.
+ViewModel의 `retry: _noRetry`는 자동 재시도를 끄며, 버튼의 수동 재조회는 유지합니다.
+
+선언이나 `build` 인자를 바꾼 뒤 앱 폴더에서 다시 생성하세요.
+
+```sh
+dart run build_runner build
+```
+
+`part '*.g.dart'`로 연결된 생성 파일은 직접 수정하지 않습니다.
+저장소 방침에 따라 생성 파일도 소스와 함께 버전 관리합니다.
+
 ## 실행 및 검증
 
 ```sh

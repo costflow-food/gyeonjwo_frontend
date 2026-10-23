@@ -1,13 +1,17 @@
-import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../domain/purchase_review.dart";
 import "../domain/purchase_review_repository.dart";
 import "purchase_review_data_source.dart";
 
-final purchaseReviewRepositoryProvider = Provider<PurchaseReviewRepository>(
-  (ref) =>
-      PurchaseReviewRepositoryImpl(ref.watch(purchaseReviewDataSourceProvider)),
-);
+part 'purchase_review_repository_impl.g.dart';
+
+@Riverpod(keepAlive: true)
+PurchaseReviewRepository purchaseReviewRepository(Ref ref) {
+  return PurchaseReviewRepositoryImpl(
+    ref.watch(purchaseReviewDataSourceProvider),
+  );
+}
 
 class PurchaseReviewRepositoryImpl implements PurchaseReviewRepository {
   const PurchaseReviewRepositoryImpl(this._dataSource);

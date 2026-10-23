@@ -1,12 +1,15 @@
 import "dart:convert";
 
-import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "work_queue_preview_data.dart";
 
-final workQueueDataSourceProvider = Provider<WorkQueueDataSource>(
-  (ref) => const PreviewWorkQueueDataSource(),
-);
+part 'work_queue_data_source.g.dart';
+
+@Riverpod(keepAlive: true)
+WorkQueueDataSource workQueueDataSource(Ref ref) {
+  return const PreviewWorkQueueDataSource();
+}
 
 abstract interface class WorkQueueDataSource {
   Future<Map<String, dynamic>> fetchRequests();
