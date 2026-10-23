@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import "../../../../shared/workspace_colors.dart";
 import "../../../../shared/widgets/preview_button.dart";
+import "../../../analysis_stop/presentation/analysis_stop_dialog.dart";
 
 import "../../domain/request_item.dart";
 import 'status_badge.dart';
@@ -78,14 +79,16 @@ class RequestRow extends StatelessWidget {
             data.action,
             icon: data.action == '실행' ? Icons.play_arrow_outlined : null,
             filled: data.action == '실행',
-            onPressed: data.action == '실행' || data.action == '결과 보기'
-                ? () => context.go(
-                    Uri(
-                      path: "/review",
-                      queryParameters: {"requestId": data.id},
-                    ).toString(),
-                  )
-                : null,
+            onPressed: switch (data.action) {
+              '실행' || '결과 보기' => () => context.go(
+                Uri(
+                  path: "/review",
+                  queryParameters: {"requestId": data.id},
+                ).toString(),
+              ),
+              '사유 보기' => () => showAnalysisStopDialog(context),
+              _ => null,
+            },
           );
     return Container(
       padding: EdgeInsets.symmetric(horizontal: table ? 12 : 0, vertical: 22),
