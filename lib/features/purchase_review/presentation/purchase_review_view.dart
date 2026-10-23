@@ -12,6 +12,7 @@ import "../domain/purchase_review.dart";
 import "purchase_review_view_model.dart";
 import "../../../shared/formatters.dart";
 import "../../../shared/widgets/async_content.dart";
+import '../../source_document/presentation/source_document_dialog.dart';
 import 'widgets/request_summary.dart';
 import 'widgets/supplier_card.dart';
 
@@ -88,8 +89,10 @@ class _PurchaseReviewContent extends StatelessWidget {
                 ),
               ],
             );
-            const button = PreviewButton(
+            final button = PreviewButton(
               '요청 원문 보기',
+              onPressed: () =>
+                  showSourceDocument(context, requestId: review.requestId),
               icon: Icons.description_outlined,
             );
             if (constraints.maxWidth < 600 * textScale) {
