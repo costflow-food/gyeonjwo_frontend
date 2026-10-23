@@ -45,14 +45,14 @@ void main() {
     expect(find.text('흩어진 요청을, 한눈에 검토하세요.'), findsOneWidget);
   });
 
-  testWidgets('사유 보기는 SCR-006을 열고 업무 큐로 돌아온다', (tester) async {
+  testWidgets('사유 보기는 SCR-006을 열고 닫으면 업무 큐가 남는다', (tester) async {
     await showApp(tester, const Size(1440, 900));
     await tester.tap(find.widgetWithText(OutlinedButton, '사유 보기'));
     await tester.pumpAndSettle();
     expect(find.text('분석을 중단했습니다'), findsOneWidget);
     expect(find.text('비교 가능한 품목 규격'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, '업무 큐'));
+    await tester.tap(find.byTooltip('닫기'));
     await tester.pumpAndSettle();
     expect(find.text('분석을 중단했습니다'), findsNothing);
     expect(find.text('흩어진 요청을, 한눈에 검토하세요.'), findsOneWidget);

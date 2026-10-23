@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/preview_button.dart';
 import '../../../shared/workspace_colors.dart';
@@ -12,20 +11,11 @@ Future<void> showAnalysisStopDialog(
   BuildContext context, {
   AnalysisStopReason reason = AnalysisStopReason.packagingSpec,
   VoidCallback? onOpenSource,
-  VoidCallback? onGoToQueue,
 }) {
   return showDialog<void>(
     context: context,
-    builder: (dialogContext) => AnalysisStopDialog(
-      reason: reason,
-      onOpenSource: onOpenSource,
-      onGoToQueue:
-          onGoToQueue ??
-          () {
-            Navigator.of(dialogContext).pop();
-            context.go('/');
-          },
-    ),
+    builder: (_) =>
+        AnalysisStopDialog(reason: reason, onOpenSource: onOpenSource),
   );
 }
 
@@ -33,13 +23,11 @@ class AnalysisStopDialog extends StatelessWidget {
   const AnalysisStopDialog({
     super.key,
     required this.reason,
-    required this.onGoToQueue,
     this.onOpenSource,
   });
 
   final AnalysisStopReason reason;
   final VoidCallback? onOpenSource;
-  final VoidCallback onGoToQueue;
 
   @override
   Widget build(BuildContext context) {
@@ -81,14 +69,9 @@ class AnalysisStopDialog extends StatelessWidget {
               const Divider(height: 1, color: line),
               Padding(
                 padding: const EdgeInsets.all(18),
-                child: Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  spacing: 12,
-                  runSpacing: 10,
-                  children: [
-                    PreviewButton('원문 확인', onPressed: onOpenSource),
-                    PreviewButton('업무 큐', filled: true, onPressed: onGoToQueue),
-                  ],
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: PreviewButton('원문 확인', onPressed: onOpenSource),
                 ),
               ),
             ],

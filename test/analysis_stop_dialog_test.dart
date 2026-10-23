@@ -3,20 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gyeonjwo_frontend/features/analysis_stop/presentation/analysis_stop_dialog.dart';
 
 void main() {
-  Future<void> open(
-    WidgetTester tester, {
-    VoidCallback? onOpenSource,
-    VoidCallback? onGoToQueue,
-  }) async {
+  Future<void> open(WidgetTester tester, {VoidCallback? onOpenSource}) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
           builder: (context) => TextButton(
-            onPressed: () => showAnalysisStopDialog(
-              context,
-              onOpenSource: onOpenSource,
-              onGoToQueue: onGoToQueue ?? () => Navigator.of(context).pop(),
-            ),
+            onPressed: () =>
+                showAnalysisStopDialog(context, onOpenSource: onOpenSource),
             child: const Text('open'),
           ),
         ),
@@ -26,14 +19,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('중단 사유와 두 버튼만 표시한다', (tester) async {
+  testWidgets('중단 사유와 원문 확인 버튼만 표시한다', (tester) async {
     await open(tester);
 
     expect(find.text('분석을 중단했습니다'), findsOneWidget);
     expect(find.text('비교 가능한 품목 규격'), findsOneWidget);
     expect(find.text('원문 확인'), findsOneWidget);
-    expect(find.text('업무 큐'), findsOneWidget);
-    expect(find.byType(OutlinedButton), findsNWidgets(2));
+    expect(find.text('업무 큐'), findsNothing);
+    expect(find.byType(OutlinedButton), findsOneWidget);
   });
 
   testWidgets('원문 확인은 콜백을 호출하고 대화상자를 유지한다', (tester) async {
@@ -45,21 +38,6 @@ void main() {
 
     expect(opened, isTrue);
     expect(find.text('분석을 중단했습니다'), findsOneWidget);
-  });
-
-  testWidgets('업무 큐 버튼은 이동 콜백을 호출한다', (tester) async {
-    var moved = false;
-    await open(
-      tester,
-      onGoToQueue: () {
-        moved = true;
-      },
-    );
-
-    await tester.tap(find.text('업무 큐'));
-    await tester.pumpAndSettle();
-
-    expect(moved, isTrue);
   });
 
   testWidgets('X 버튼과 배경 클릭으로 닫힌다', (tester) async {
@@ -86,7 +64,7 @@ void main() {
 
         await open(tester);
 
-        expect(find.text('업무 큐'), findsOneWidget);
+        expect(find.text('원문 확인'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     }
