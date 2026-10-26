@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import "../../../../shared/workspace_colors.dart";
 import "../../../../shared/widgets/preview_button.dart";
-import "../../../analysis_stop/presentation/analysis_stop_dialog.dart";
 
+import "../../../analysis_stop/presentation/analysis_stop_dialog.dart";
 import "../../domain/request_item.dart";
 import 'status_badge.dart';
 
@@ -86,7 +86,9 @@ class RequestRow extends StatelessWidget {
                   queryParameters: {"requestId": data.id},
                 ).toString(),
               ),
-              '사유 보기' => () => showAnalysisStopDialog(context),
+              '사유 보기' => () {
+                showAnalysisStopDialog(context, requestId: data.id);
+              },
               _ => null,
             },
           );
