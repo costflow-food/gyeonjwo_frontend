@@ -78,10 +78,15 @@ class RequestRow extends StatelessWidget {
             data.action,
             icon: data.action == '실행' ? Icons.play_arrow_outlined : null,
             filled: data.action == '실행',
-            onPressed: data.action == '실행' || data.action == '결과 보기'
+            onPressed:
+                data.action == '실행' ||
+                    data.action == '결과 보기' ||
+                    data.action == '진행 보기'
                 ? () => context.go(
                     Uri(
-                      path: "/review",
+                      path: data.action != '결과 보기'
+                          ? '/review-progress'
+                          : '/review',
                       queryParameters: {"requestId": data.id},
                     ).toString(),
                   )
