@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import "../../../../shared/workspace_colors.dart";
 import "../../../../shared/widgets/preview_button.dart";
 
+import "../../../analysis_stop/presentation/analysis_stop_dialog.dart";
 import "../../domain/request_item.dart";
 import 'status_badge.dart';
 import '../../../source_document/presentation/source_document_dialog.dart';
@@ -79,19 +80,27 @@ class RequestRow extends StatelessWidget {
             data.action,
             icon: data.action == '실행' ? Icons.play_arrow_outlined : null,
             filled: data.action == '실행',
-            onPressed:
-                data.action == '실행' ||
-                    data.action == '결과 보기' ||
-                    data.action == '진행 보기'
-                ? () => context.go(
-                    Uri(
-                      path: data.action != '결과 보기'
-                          ? '/review-progress'
-                          : '/review',
-                      queryParameters: {"requestId": data.id},
-                    ).toString(),
-                  )
-                : null,
+            onPressed: switch (data.action) {
+              '실행' || '진행 보기' => () => context.go(
+                Uri(
+                  path: '/review-progress',
+                  queryParameters: {'requestId': data.id},
+                ).toString(),
+              ),
+              '결과 보기' => () => context.go(
+                Uri(
+                  path: '/review',
+                  queryParameters: {'requestId': data.id},
+                ).toString(),
+              ),
+              '사유 보기' => () => showAnalysisStopDialog(
+                context,
+                requestId: data.id,
+                onOpenSource: () =>
+                    showSourceDocument(context, requestId: data.id),
+              ),
+              _ => null,
+            },
           );
     return Container(
       padding: EdgeInsets.symmetric(horizontal: table ? 12 : 0, vertical: 22),
