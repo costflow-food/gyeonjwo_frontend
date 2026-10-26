@@ -12,13 +12,36 @@ import 'widgets/queue_toolbar.dart';
 import 'widgets/request_row.dart';
 import "work_queue_view_model.dart";
 import "../../../shared/widgets/async_content.dart";
+import '../../review_progress/presentation/review_progress_view_model.dart';
 
 class WorkQueueView extends ConsumerWidget {
   const WorkQueueView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final value = ref.watch(workQueueViewModelProvider);
+    final progress = ref.watch(reviewProgressProvider);
+    final value = ref
+        .watch(workQueueViewModelProvider)
+        .whenData(
+          (data) => WorkQueueState(
+            selectedStatus: data.selectedStatus,
+            query: data.query,
+            requests: [
+              for (final request in data.requests)
+                if (progress.containsKey(request.id))
+                  request.copyWith(
+                    status: progress[request.id]! >= reviewSteps.length
+                        ? '완료'
+                        : '검토 중',
+                    action: progress[request.id]! >= reviewSteps.length
+                        ? '결과 보기'
+                        : '진행 보기',
+                  )
+                else
+                  request,
+            ],
+          ),
+        );
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
     return WorkspaceShell(
       child: AsyncContent<WorkQueueState>(
