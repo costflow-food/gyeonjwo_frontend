@@ -38,8 +38,10 @@ class _ScrollMoreHintState extends State<ScrollMoreHint> {
   void _scrollDown() {
     final position = _controller.position;
     _controller.animateTo(
-      (position.pixels + position.viewportDimension * 0.8)
-          .clamp(0.0, position.maxScrollExtent),
+      (position.pixels + position.viewportDimension * 0.8).clamp(
+        0.0,
+        position.maxScrollExtent,
+      ),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
     );
@@ -82,14 +84,11 @@ class _ScrollMoreHintState extends State<ScrollMoreHint> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withValues(alpha: 0),
-                      Colors.white,
-                    ],
+                    colors: [canvas.withValues(alpha: 0), canvas],
                   ),
                 ),
                 child: Material(
-                  color: Colors.white,
+                  color: canvas,
                   shape: const CircleBorder(side: BorderSide(color: line)),
                   elevation: 1,
                   child: InkWell(

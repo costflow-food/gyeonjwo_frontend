@@ -38,7 +38,10 @@ class EvidenceBlock extends StatelessWidget {
               border: Border.all(color: line),
               borderRadius: BorderRadius.circular(3),
             ),
-            child: Text(tag!, style: const TextStyle(fontSize: 9, color: muted)),
+            child: Text(
+              tag!,
+              style: const TextStyle(fontSize: 9, color: muted),
+            ),
           ),
         ],
       ],

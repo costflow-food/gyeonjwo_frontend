@@ -29,13 +29,12 @@ View → ViewModel → Repository → DataSource 순서로 요청하고, 응답�
 - 실행·결과 보기 버튼은 선택한 요청 ID를 `/review?requestId=...`로 전달합니다.
 - 상세 ViewModel은 요청 ID별로 분리되고 앱 실행 중 유지됩니다. 화면을 오가도 같은 요청의 결과를 재사용하며, 앱을 종료하거나 브라우저를 새로고침하면 사라집니다.
 - 검토 예시는 공통 합성 수치를 사용합니다. 알 수 없는 요청 ID는 다른 요청의 결과로 대체하지 않고 오류로 처리합니다.
-- 거래처 카드의 상세 근거 보기는 요청 ID·거래처별 상세 근거 모달(SCR-005)을 엽니다.
-- 원문 보기·사유 보기 등 나머지 시연 버튼의 후속 기능은 아직 구현하지 않았습니다.
+- 원문 보기·사유 보기·거래처 상세 근거 등 기존 시연 버튼의 후속 기능은 아직 구현하지 않았습니다.
 
 ## 실제 API 연결
 
 1. 각 기능의 DataSource 인터페이스를 구현하는 실제 API 클래스를 추가합니다.
-2. `workQueueDataSourceProvider`, `purchaseReviewDataSourceProvider`, `supplierEvidenceDataSourceProvider`가 실제 API 구현을 반환하도록 바꿉니다.
+2. `workQueueDataSourceProvider`, `purchaseReviewDataSourceProvider`가 실제 API 구현을 반환하도록 바꿉니다.
 3. 응답 형식이 달라지면 Repository의 변환 코드와 필요한 앱 모델을 수정합니다.
 
 상태 관리와 화면은 DataSource 구현을 직접 참조하지 않으므로, 앱 모델이 유지되는 한 수정할 필요가 없습니다. DB 접근 방식과 인증은 서버 계약 확정 후 연결합니다.

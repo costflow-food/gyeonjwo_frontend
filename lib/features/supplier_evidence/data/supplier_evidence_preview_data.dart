@@ -19,7 +19,8 @@ const _existingSupplierEvidence = {
     "(5,500 − 5,000) × 600 = 300,000원",
     "5,450,000 − 5,150,000 = 300,000원",
   ],
-  "crossCheckNote": "부대비용은 변경 전후 동일한 합성 조건입니다. 월 전체 부대비용을 변경 물량 600kg에 임의 배분하지 않았습니다.",
+  "crossCheckNote":
+      "부대비용은 변경 전후 동일한 합성 조건입니다. 월 전체 부대비용을 변경 물량 600kg에 임의 배분하지 않았습니다.",
   "disclaimer": "문서의 합성 계산 정답을 표시한 시안입니다. 실제 계산 에이전트의 독립 회차 검증이나 API 분석이 수행된 것은 아닙니다. 세금 조건은 미제공입니다.",
   "sections": [
     {
@@ -39,10 +40,7 @@ const _existingSupplierEvidence = {
 };
 
 const _candidateSections = [
-  {
-    "title": "과거 구매와 거래 경험",
-    "body": "거래 이력이 없어 구매이력과 회사 평가 코멘트가 없습니다.",
-  },
+  {"title": "과거 구매와 거래 경험", "body": "거래 이력이 없어 구매이력과 회사 평가 코멘트가 없습니다."},
   {
     "title": "직접 비교에서 제외한 자료",
     "body": "생딸기 견적은 가공 상태가 달라 이번 냉동 딸기 단가와 직접 비교하지 않았습니다.",
@@ -50,7 +48,8 @@ const _candidateSections = [
 ];
 
 const _candidateImpactNote = "미확인 부대비용과 계약 적용 조건으로 월 전체 총비용을 확정할 수 없습니다.";
-const _candidateCrossCheckNote = "단가 비교용 차액입니다. 운송비·기타 물류비가 확인되지 않아 실제 절감액으로 보지 않습니다.";
+const _candidateCrossCheckNote =
+    "단가 비교용 차액입니다. 운송비·기타 물류비가 확인되지 않아 실제 절감액으로 보지 않습니다.";
 const _candidateDisclaimer = "문서의 합성 계산 정답을 표시한 시안입니다. 견적 유효기간과 세금 조건은 미제공입니다.";
 
 const _supplierBEvidence = {
@@ -63,8 +62,8 @@ const _supplierBEvidence = {
     {"label": "요청 단가 기준 구매금액", "value": "600kg × 5,500원 = 3,300,000원"},
     {"label": "최소 주문 수량", "value": "500kg"},
     {"label": "공급 소요기간", "value": "자료상 7일"},
-    {"label": "월 운송비", "value": "미확인 · 비용·부담 조건 확인 필요"},
-    {"label": "월 기타 물류비", "value": "미확인 · 비용·부담 조건 확인 필요"},
+    {"label": "월 운송비", "value": "미확인 · 비용·부담 조건 확인 필요", "unconfirmed": true},
+    {"label": "월 기타 물류비", "value": "미확인 · 비용·부담 조건 확인 필요", "unconfirmed": true},
     {"label": "월 전체 총구매비용", "value": "확정 불가", "emphasized": true},
   ],
   "crossCheckFormulas": [
@@ -76,7 +75,8 @@ const _supplierBEvidence = {
   "sections": [
     {
       "title": "견적 근거",
-      "body": "보유 DB에 등록된 합성 견적입니다. 동일 규격(냉동 · 무가당 · 10kg/박스) 기준이며 재고·인증은 미확인입니다.",
+      "body":
+          "보유 DB에 등록된 합성 견적입니다. 동일 규격(냉동 · 무가당 · 10kg/박스) 기준이며 재고·인증은 미확인입니다.",
       "tag": "보유 DB 견적 / UX 보완 합성값",
     },
     ..._candidateSections,
@@ -93,8 +93,8 @@ const _supplierCEvidence = {
     {"label": "요청 단가 기준 구매금액", "value": "600kg × 5,500원 = 3,300,000원"},
     {"label": "최소 주문 수량", "value": "400kg"},
     {"label": "공급 소요기간", "value": "자료상 10일"},
-    {"label": "월 운송비", "value": "미확인 · 비용·부담 조건 확인 필요"},
-    {"label": "월 기타 물류비", "value": "미확인 · 비용·부담 조건 확인 필요"},
+    {"label": "월 운송비", "value": "미확인 · 비용·부담 조건 확인 필요", "unconfirmed": true},
+    {"label": "월 기타 물류비", "value": "미확인 · 비용·부담 조건 확인 필요", "unconfirmed": true},
     {"label": "월 전체 총구매비용", "value": "확정 불가", "emphasized": true},
   ],
   "crossCheckFormulas": [
@@ -106,7 +106,8 @@ const _supplierCEvidence = {
   "sections": [
     {
       "title": "견적 근거",
-      "body": "보유 DB에 등록된 합성 견적입니다. 동일 규격(냉동 · 무가당 · 10kg/박스) 기준이며 재고·인증은 미확인입니다.",
+      "body":
+          "보유 DB에 등록된 합성 견적입니다. 동일 규격(냉동 · 무가당 · 10kg/박스) 기준이며 재고·인증은 미확인입니다.",
       "tag": "보유 DB 견적 / UX 보완 합성값",
     },
     ..._candidateSections,

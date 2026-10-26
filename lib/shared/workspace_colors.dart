@@ -6,3 +6,4 @@ const line = Color(0xFFEAEBEF);
 const accent = Color(0xFFED2635);
 const canvas = Color(0xFFFCFCFD);
 const blush = Color(0xFFFCE9EC);
+const positive = Color(0xFF16794C);

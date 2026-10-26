@@ -57,6 +57,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('A사 상세 근거'), findsOneWidget);
     expect(find.text('월 비용 영향 +300,000원'), findsOneWidget);
+    expect(find.text('비용 증가'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.textContaining('확인 필요'),
+      ),
+      findsNothing,
+    );
     expect(
       find.descendant(
         of: find.byType(Dialog),
@@ -67,7 +75,7 @@ void main() {
     expect(find.text('차액 교차 확인'), findsOneWidget);
     expect(find.text('직접 비교에서 제외한 자료'), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await tester.tap(find.text('3개 카드로 돌아가기'));
+    await tester.tap(find.byTooltip('닫기'));
     await tester.pumpAndSettle();
     expect(find.text('A사 상세 근거'), findsNothing);
 
@@ -76,6 +84,8 @@ void main() {
     await tester.tap(candidate);
     await tester.pumpAndSettle();
     expect(find.text('월 비용 영향 확정 불가'), findsOneWidget);
+    expect(find.text('비용 증가'), findsNothing);
+    expect(find.text('확인 필요 2건 · 월 운송비, 월 기타 물류비'), findsOneWidget);
     await tester.tap(find.byTooltip('닫기'));
     await tester.pumpAndSettle();
     expect(find.text('B사 상세 근거'), findsNothing);

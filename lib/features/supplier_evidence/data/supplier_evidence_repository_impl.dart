@@ -38,6 +38,7 @@ class SupplierEvidenceRepositoryImpl implements SupplierEvidenceRepository {
               label: line["label"] as String,
               value: line["value"] as String,
               emphasized: line["emphasized"] as bool? ?? false,
+              unconfirmed: line["unconfirmed"] as bool? ?? false,
             );
           })
           .toList(growable: false),

@@ -11,9 +11,11 @@ class CostLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unconfirmed = data.unconfirmed;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
       decoration: BoxDecoration(
+        color: unconfirmed ? blush : null,
         border: divider ? const Border(bottom: BorderSide(color: line)) : null,
       ),
       child: Row(
@@ -21,9 +23,30 @@ class CostLine extends StatelessWidget {
         children: [
           Expanded(
             flex: 4,
-            child: Text(
-              data.label,
-              style: const TextStyle(fontSize: 11, color: muted),
+            child: Row(
+              children: [
+                if (unconfirmed) ...[
+                  const Icon(
+                    Icons.error_outline,
+                    size: 14,
+                    color: accent,
+                    semanticLabel: '확인 필요',
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    data.label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: unconfirmed ? accent : muted,
+                      fontWeight: unconfirmed
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 12),
@@ -35,7 +58,8 @@ class CostLine extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 height: 1.7,
-                fontWeight: data.emphasized
+                color: unconfirmed ? accent : null,
+                fontWeight: data.emphasized || unconfirmed
                     ? FontWeight.w700
                     : FontWeight.normal,
               ),

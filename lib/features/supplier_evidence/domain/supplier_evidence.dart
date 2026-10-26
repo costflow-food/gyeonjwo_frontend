@@ -35,10 +35,13 @@ class EvidenceLine {
     required this.label,
     required this.value,
     this.emphasized = false,
+    this.unconfirmed = false,
   });
 
   final String label, value;
   final bool emphasized;
+  // 자료로 확인되지 않아 총비용을 확정하지 못하게 만드는 항목입니다.
+  final bool unconfirmed;
 }
 
 class EvidenceSection {

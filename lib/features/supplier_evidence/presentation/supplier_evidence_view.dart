@@ -91,24 +91,15 @@ class SupplierEvidenceView extends ConsumerWidget {
     );
     final footer = Padding(
       padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 18),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        spacing: 12,
-        runSpacing: 10,
-        children: [
-          const PreviewButton('원문·자료 보기', icon: Icons.description_outlined),
-          PreviewButton(
-            '$supplierCount개 카드로 돌아가기',
-            filled: true,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
+      child: const Align(
+        alignment: Alignment.centerLeft,
+        child: PreviewButton('원문·자료 보기', icon: Icons.description_outlined),
       ),
     );
     const divider = Divider(height: 1, color: line);
 
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: canvas,
       surfaceTintColor: Colors.transparent,
       insetPadding: EdgeInsets.symmetric(
         horizontal: compact ? 12 : 40,
