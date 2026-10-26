@@ -207,6 +207,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(OutlinedButton, "실행").at(1));
     await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 8));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('검토 결과 보기'));
+    await tester.pumpAndSettle();
     expect(find.text("REQ-2026-1019-002 · 합성 시연 사례"), findsOneWidget);
     expect(find.text("D사"), findsOneWidget);
     expect(find.text("D사 · 냉동 · 무가당 · 10kg/박스"), findsOneWidget);
