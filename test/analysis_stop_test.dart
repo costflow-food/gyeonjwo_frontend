@@ -105,15 +105,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets("원문 확인 stays disabled until SCR-004 is connected", (
+  testWidgets("원문 확인 opens SCR-004 for the same stopped request", (
     tester,
   ) async {
     await showQueue(tester);
     await openReason(tester);
-    final source = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, "원문 확인"),
-    );
-    expect(source.onPressed, isNull);
+    final sourceButton = find.widgetWithText(OutlinedButton, "원문 확인");
+    expect(tester.widget<OutlinedButton>(sourceButton).onPressed, isNotNull);
+    await tester.tap(sourceButton);
+    await tester.pumpAndSettle();
+    expect(find.text("분석을 중단했습니다"), findsNothing);
+    expect(find.text("원문·근거 보기"), findsOneWidget);
+    // This request has no source fixture; never substitute another request.
+    expect(find.text("이 요청의 합성 원문이 준비되지 않았습니다."), findsOneWidget);
+    expect(find.text("A사 영업담당 (합성)"), findsNothing);
+    await tester.tap(find.byTooltip("닫기"));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsNothing);
+    expect(find.text("흩어진 요청을, 한눈에 검토하세요."), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets("SCR-006 shows an error and reloads on retry", (tester) async {
