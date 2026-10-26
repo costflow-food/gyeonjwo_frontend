@@ -6,6 +6,7 @@ import "../../../../shared/widgets/preview_button.dart";
 
 import "../../domain/request_item.dart";
 import 'status_badge.dart';
+import '../../../source_document/presentation/source_document_dialog.dart';
 
 class RequestRow extends StatelessWidget {
   const RequestRow(this.data, {super.key, required this.table});
@@ -68,7 +69,7 @@ class RequestRow extends StatelessWidget {
     );
     final action = data.action == '원문 보기'
         ? TextButton(
-            onPressed: () {},
+            onPressed: () => showSourceDocument(context, requestId: data.id),
             child: const Text(
               '원문 보기',
               style: TextStyle(color: ink, fontSize: 12),
@@ -104,7 +105,11 @@ class RequestRow extends StatelessWidget {
                   flex: 6,
                   child: Padding(
                     padding: const EdgeInsets.only(right: 14),
-                    child: document,
+                    child: InkWell(
+                      onTap: () =>
+                          showSourceDocument(context, requestId: data.id),
+                      child: document,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -134,7 +139,10 @@ class RequestRow extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                document,
+                InkWell(
+                  onTap: () => showSourceDocument(context, requestId: data.id),
+                  child: document,
+                ),
                 const SizedBox(height: 16),
                 Wrap(
                   alignment: WrapAlignment.spaceBetween,
