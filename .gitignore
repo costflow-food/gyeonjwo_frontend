@@ -39,6 +39,13 @@ app.*.map.json
 /android/app/profile/
 /android/app/release/
 
+# Build outputs and dependencies from the archived React comparison.
+/react/node_modules/
+/react/dist/
+/react/test-results/
+/react/playwright-report/
+/react/coverage/
+
 # Local environment files; commit example files with placeholders only.
 .env
 .env.*

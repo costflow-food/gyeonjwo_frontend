@@ -2,6 +2,12 @@
 
 현재 서버 대신 비동기 프리뷰 응답을 사용하는 MVVM 구조입니다.
 
+## 개발 대상
+
+Chrome에서 실행하는 Flutter Web을 기준으로 개발·검증합니다. 실행은 `flutter run -d chrome`, 배포용 빌드는 `flutter build web --release`를 사용합니다.
+
+사용하지 않는 `macos/`, `windows/` 네이티브 프로젝트를 정리했습니다. `web/`과 테스트 소스인 `test/`는 유지합니다. React 비교 구현은 `feature/react-frontend` 브랜치에 보관하며, 로컬에 남는 React 의존성과 빌드·테스트 생성물은 공용 `.gitignore`로 제외합니다.
+
 ## 데이터 흐름
 
 View → ViewModel → Repository → DataSource 순서로 요청하고, 응답은 반대 방향으로 전달합니다.
