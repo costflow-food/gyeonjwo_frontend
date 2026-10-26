@@ -15,6 +15,7 @@ class StatusBadge extends StatelessWidget {
         Icons.schedule,
       ),
       '완료' => (const Color(0xFF4B9138), const Color(0xFFE7F5E1), Icons.check),
+      '검토 중' => (ink, const Color(0xFFF0F1F4), Icons.hourglass_top),
       '검토 필요' => (
         const Color(0xFFBC793C),
         const Color(0xFFFFF2E2),
