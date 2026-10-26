@@ -12,7 +12,7 @@
 | [원문·근거 보기 팝업](https://github.com/costflow-food/gyeonjwo_frontend/pull/6) | SCR-004 | `30f6299` |
 | [분석 중단 사유 대화상자](https://github.com/costflow-food/gyeonjwo_frontend/pull/7) | SCR-006 | `1b637b5` |
 
-원본 PR의 커밋을 merge commit으로 보존했습니다. 원격 대상 브랜치와 원본 PR에는 변경을 적용하지 않았습니다.
+원본 PR의 커밋을 merge commit으로 보존했습니다. 원본 작업 브랜치를 덮어쓰지 않고 통합 브랜치에서 충돌을 해결했습니다. 통합 PR은 같은 대상인 `Presentaion_widgets`에 merge 방식으로 병합해 원본 커밋의 이력을 유지합니다.
 
 ## 충돌 해결
 
