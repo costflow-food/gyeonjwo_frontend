@@ -6,7 +6,7 @@
 
 Chrome에서 실행하는 Flutter Web을 기준으로 개발·검증합니다. 실행은 `flutter run -d chrome`, 배포용 빌드는 `flutter build web --release`를 사용합니다.
 
-사용하지 않는 `macos/`, `windows/` 네이티브 프로젝트를 정리했습니다. `web/`과 테스트 소스인 `test/`는 유지합니다. React 비교 구현은 `feature/react-frontend` 브랜치에 보관하며, 로컬에 남는 React 의존성과 빌드·테스트 생성물은 공용 `.gitignore`로 제외합니다.
+사용하지 않는 `android/`, `ios/`, `macos/`, `windows/` 네이티브 프로젝트를 정리했습니다. `web/`과 테스트 소스인 `test/`는 유지합니다. React 비교 구현은 `feature/react-frontend` 브랜치에 보관하며, 로컬에 남는 React 의존성과 빌드·테스트 생성물은 공용 `.gitignore`로 제외합니다.
 
 ## 데이터 흐름
 
