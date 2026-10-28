@@ -30,6 +30,9 @@ migrate_working_dir/
 **/ios/Flutter/.last_build_id
 .widget_preview/
 
+# Local test files
+/test/
+
 # Release symbols and obfuscation maps
 app.*.symbols
 app.*.map.json
