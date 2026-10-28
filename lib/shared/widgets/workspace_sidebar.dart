@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../app_font_sizes.dart';
 import '../workspace_colors.dart';
 import 'brand_logo.dart';
 
@@ -10,6 +11,7 @@ class WorkspaceSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isAccount = GoRouterState.of(context).uri.path == '/account';
     return Material(
       color: canvas,
       child: SafeArea(
@@ -91,7 +93,7 @@ class WorkspaceSidebar extends StatelessWidget {
                               horizontal: 10,
                             ),
                             minLeadingWidth: 18,
-                            selected: true,
+                            selected: !isAccount,
                             selectedColor: accent,
                             selectedTileColor: blush,
                             shape: RoundedRectangleBorder(
@@ -176,41 +178,68 @@ class WorkspaceSidebar extends StatelessWidget {
                           const SizedBox(height: 14),
                           const Divider(color: line),
                           const SizedBox(height: 16),
-                          const Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundColor: canvas,
-                                foregroundColor: muted,
-                                child: Text(
-                                  '구매',
-                                  style: TextStyle(fontSize: 11),
-                                ),
+                          InkWell(
+                            onTap: () => context.go('/account'),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 4,
                               ),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '구매담당자',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    SizedBox(height: 5),
-                                    Text(
-                                      '구매 검토 워크스페이스',
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        color: muted,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              decoration: BoxDecoration(
+                                color: isAccount ? blush : null,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ],
+                              child: const Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: canvas,
+                                    foregroundColor: muted,
+                                    child: Icon(Icons.person_outline, size: 20),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '구매담당자',
+                                          style: TextStyle(
+                                            fontSize: AppFontSizes.body,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        SizedBox(height: 5),
+                                        Text(
+                                          '계정 설정',
+                                          style: TextStyle(
+                                            fontSize: AppFontSizes.secondary,
+                                            color: muted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Icon(
+                                    Icons.settings_outlined,
+                                    size: 16,
+                                    color: muted,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => context.go('/login'),
+                            icon: const Icon(Icons.logout, size: 16),
+                            label: const Text(
+                              '로그아웃',
+                              style: TextStyle(fontSize: AppFontSizes.button),
+                            ),
+                            style: TextButton.styleFrom(foregroundColor: muted),
                           ),
                         ],
                       ),

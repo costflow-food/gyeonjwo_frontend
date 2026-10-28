@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../workspace_colors.dart';
 import 'workspace_sidebar.dart';
@@ -47,20 +48,33 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
                 else if (showCollapsedSidebar)
                   SizedBox(
                     width: _collapsedSidebarWidth,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: IconButton(
-                          tooltip: canExpandSidebar
-                              ? '사이드바 펼치기'
-                              : '창을 넓히면 사이드바를 펼칠 수 있습니다',
-                          onPressed: canExpandSidebar
-                              ? () => setState(() => _sidebarOpen = true)
-                              : null,
-                          icon: const Icon(Icons.menu),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: IconButton(
+                            tooltip: canExpandSidebar
+                                ? '사이드바 펼치기'
+                                : '창을 넓히면 사이드바를 펼칠 수 있습니다',
+                            onPressed: canExpandSidebar
+                                ? () => setState(() => _sidebarOpen = true)
+                                : null,
+                            icon: const Icon(Icons.menu),
+                          ),
                         ),
-                      ),
+                        const Spacer(),
+                        IconButton(
+                          tooltip: '계정 설정',
+                          onPressed: () => context.go('/account'),
+                          icon: const Icon(Icons.person_outline),
+                        ),
+                        IconButton(
+                          tooltip: '로그아웃',
+                          onPressed: () => context.go('/login'),
+                          icon: const Icon(Icons.logout),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                     ),
                   ),
                 if (showSidebar || showCollapsedSidebar)
