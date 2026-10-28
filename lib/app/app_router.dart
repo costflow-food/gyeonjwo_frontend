@@ -1,5 +1,9 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/auth/domain/auth_route_policy.dart';
+import '../features/auth/domain/gmail_connection.dart';
+import '../features/auth/presentation/auth_session_view_model.dart';
 import '../features/auth/presentation/login_view.dart';
 import '../features/auth/presentation/account_view.dart';
 import '../features/auth/presentation/auth_permissions_view.dart';
@@ -10,6 +14,14 @@ import "../features/work_queue/presentation/work_queue_view.dart";
 
 final appRouter = GoRouter(
   initialLocation: '/login',
+  // Screen flow only; MyApp calls refresh() when the session changes.
+  redirect: (context, state) {
+    final session = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(authSessionViewModelProvider).asData?.value;
+    return authRedirect(session?.status, state.uri.path);
+  },
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginView()),
     GoRoute(
@@ -19,11 +31,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/login/connection',
       builder: (context, state) {
-        final preview = AuthConnectionPreview.values.firstWhere(
-          (value) => value.name == state.uri.queryParameters['state'],
-          orElse: () => AuthConnectionPreview.connecting,
-        );
-        return AuthConnectionView(preview: preview);
+        final previewName = state.uri.queryParameters['state'];
+        final previewPhase = GmailConnectionPhase.values
+            .where((value) => value.name == previewName)
+            .firstOrNull;
+        return AuthConnectionView(previewPhase: previewPhase);
       },
     ),
     GoRoute(path: '/account', builder: (context, state) => const AccountView()),

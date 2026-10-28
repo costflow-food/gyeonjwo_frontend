@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/widgets/sign_out_action.dart';
 import '../workspace_colors.dart';
 import 'workspace_sidebar.dart';
 
@@ -68,10 +70,12 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
                           onPressed: () => context.go('/account'),
                           icon: const Icon(Icons.person_outline),
                         ),
-                        IconButton(
-                          tooltip: '로그아웃',
-                          onPressed: () => context.go('/login'),
-                          icon: const Icon(Icons.logout),
+                        Consumer(
+                          builder: (context, ref, _) => IconButton(
+                            tooltip: '로그아웃',
+                            onPressed: () => signOutAndLeave(context, ref),
+                            icon: const Icon(Icons.logout),
+                          ),
                         ),
                         const SizedBox(height: 12),
                       ],

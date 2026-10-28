@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app_font_sizes.dart';
+import '../../features/auth/presentation/widgets/sign_out_action.dart';
 import '../workspace_colors.dart';
 import 'brand_logo.dart';
 
@@ -232,14 +234,18 @@ class WorkspaceSidebar extends StatelessWidget {
                               ),
                             ),
                           ),
-                          TextButton.icon(
-                            onPressed: () => context.go('/login'),
-                            icon: const Icon(Icons.logout, size: 16),
-                            label: const Text(
-                              '로그아웃',
-                              style: TextStyle(fontSize: AppFontSizes.button),
+                          Consumer(
+                            builder: (context, ref, _) => TextButton.icon(
+                              onPressed: () => signOutAndLeave(context, ref),
+                              icon: const Icon(Icons.logout, size: 16),
+                              label: const Text(
+                                '로그아웃',
+                                style: TextStyle(fontSize: AppFontSizes.button),
+                              ),
+                              style: TextButton.styleFrom(
+                                foregroundColor: muted,
+                              ),
                             ),
-                            style: TextButton.styleFrom(foregroundColor: muted),
                           ),
                         ],
                       ),

@@ -7,6 +7,8 @@ import "../../../shared/widgets/outline_panel.dart";
 import "../../../shared/widgets/preview_button.dart";
 import "../../../shared/widgets/note_line.dart";
 
+import '../../auth/presentation/gmail_connection_view_model.dart';
+import 'widgets/gmail_read_notice.dart';
 import 'widgets/queue_summary.dart';
 import 'widgets/queue_toolbar.dart';
 import 'widgets/request_row.dart';
@@ -21,21 +23,31 @@ class WorkQueueView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(workQueueViewModelProvider);
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
+    final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
     return WorkspaceShell(
       child: AsyncContent<WorkQueueState>(
         value: value,
         onRetry: viewModel.refresh,
-        builder: (data) => _WorkQueueContent(data: data, viewModel: viewModel),
+        builder: (data) => _WorkQueueContent(
+          data: data,
+          viewModel: viewModel,
+          readDenied: readDenied,
+        ),
       ),
     );
   }
 }
 
 class _WorkQueueContent extends StatelessWidget {
-  const _WorkQueueContent({required this.data, required this.viewModel});
+  const _WorkQueueContent({
+    required this.data,
+    required this.viewModel,
+    required this.readDenied,
+  });
 
   final WorkQueueState data;
   final WorkQueueViewModel viewModel;
+  final bool readDenied;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +64,7 @@ class _WorkQueueContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
+        if (readDenied) ...[const GmailReadNotice(), const SizedBox(height: 16)],
         QueueSummary(waitingCount: data.countFor("검토 대기")),
         const SizedBox(height: 28),
         OutlinePanel(

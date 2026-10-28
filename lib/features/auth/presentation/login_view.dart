@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/workspace_colors.dart';
 import 'auth_layout.dart';
+import 'auth_session_view_model.dart';
+import 'widgets/auth_failure_message.dart';
 import 'widgets/google_sign_in_button.dart';
 
-class LoginView extends StatelessWidget {
+class LoginView extends ConsumerWidget {
   const LoginView({super.key});
 
   @override
-  Widget build(BuildContext context) => AuthLayout(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isConfigured =
+        ref.watch(authSessionViewModelProvider).asData?.value.isConfigured ??
+        false;
+    final redirectFailure = ref.watch(authRedirectFailureProvider);
+    return AuthLayout(
     child: LayoutBuilder(
       builder: (context, constraints) {
         const introduction = Column(
@@ -68,6 +76,11 @@ class LoginView extends StatelessWidget {
                 description:
                     'Google 계정 하나로 가입하고 로그인하세요.\n처음 오셨다면 계정이 함께 만들어집니다.',
               ),
+              if (redirectFailure != null) ...[
+                AuthNotice(text: redirectFailure.message),
+                const SizedBox(height: 16),
+              ],
+              // Consent guidance comes first; Google opens from that screen.
               GoogleSignInButton(
                 onPressed: () => context.go('/login/permissions'),
               ),
@@ -75,15 +88,17 @@ class LoginView extends StatelessWidget {
               const AuthNotice(
                 text: '다음 화면에서 Gmail 읽기·발송 권한과 데이터 처리 목적을 먼저 안내해 드려요. 권한 선택은 Google 동의 화면에서 직접 진행합니다.',
               ),
-              const SizedBox(height: 20),
-              const Text(
-                '현재는 화면 미리보기입니다. 버튼을 눌러도 Google 로그인이나 메일 접근은 실행되지 않습니다.',
-                style: TextStyle(
-                  fontSize: AppFontSizes.secondary,
-                  color: muted,
-                  height: 1.8,
+              if (!isConfigured) ...[
+                const SizedBox(height: 20),
+                const Text(
+                  'Supabase 설정 없이 실행한 화면 미리보기입니다. 버튼을 눌러도 Google 로그인이나 메일 접근은 실행되지 않습니다.',
+                  style: TextStyle(
+                    fontSize: AppFontSizes.secondary,
+                    color: muted,
+                    height: 1.8,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         );
@@ -110,4 +125,5 @@ class LoginView extends StatelessWidget {
       },
     ),
   );
+  }
 }

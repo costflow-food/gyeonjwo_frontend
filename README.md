@@ -52,6 +52,10 @@ View → ViewModel → Repository → DataSource 순서로 요청하고, 응답�
 - Notifier는 조회와 상태 갱신을 조정하고, 검색·필터·요청 상태 조합 규칙은 domain에서 처리합니다.
 - 현재 진행 창은 합성 상세 응답의 조회 완료를 표시합니다. 실제 서버의 단계별 분석 진행·분석 중단 이벤트는 해당 API가 정해진 뒤 연결합니다.
 
+## 인증·Gmail 연결
+
+인증·Gmail 연결은 **KAN-19 프론트 작업 완료, 서버 연동 대기** 상태입니다. Supabase Auth Google 로그인과 Gmail 연결 코드는 `features/auth/`에 있습니다. 실행 설정, 흐름, 서버 연결 계약은 `docs/auth-ui.md`를 참고하세요. Supabase 설정 없이 실행하면 기존 화면 미리보기 모드로 동작합니다.
+
 ## 실제 API 연결
 
 1. 각 기능의 DataSource 인터페이스를 구현하는 실제 API 클래스를 추가합니다.
