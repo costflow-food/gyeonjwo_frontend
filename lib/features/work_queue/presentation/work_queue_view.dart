@@ -12,36 +12,14 @@ import 'widgets/queue_toolbar.dart';
 import 'widgets/request_row.dart';
 import "work_queue_view_model.dart";
 import "../../../shared/widgets/async_content.dart";
-import '../../review_progress/presentation/review_progress_view_model.dart';
+import "../domain/work_queue_state.dart";
 
 class WorkQueueView extends ConsumerWidget {
   const WorkQueueView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final progress = ref.watch(reviewProgressProvider);
-    final value = ref
-        .watch(workQueueViewModelProvider)
-        .whenData(
-          (data) => WorkQueueState(
-            selectedStatus: data.selectedStatus,
-            query: data.query,
-            requests: [
-              for (final request in data.requests)
-                if (progress.containsKey(request.id))
-                  request.copyWith(
-                    status: progress[request.id]! >= reviewSteps.length
-                        ? '완료'
-                        : '검토 중',
-                    action: progress[request.id]! >= reviewSteps.length
-                        ? '결과 보기'
-                        : '진행 보기',
-                  )
-                else
-                  request,
-            ],
-          ),
-        );
+    final value = ref.watch(workQueueViewModelProvider);
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
     return WorkspaceShell(
       child: AsyncContent<WorkQueueState>(
@@ -61,6 +39,7 @@ class _WorkQueueContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasRequests = data.visibleRequests.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -154,31 +133,52 @@ class _WorkQueueContent extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.chevron_left,
-                            size: 18,
-                            color: Color(0xFFBCC0C6),
-                          ),
-                          const SizedBox(width: 16),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 11,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: blush,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: const Text(
-                              '1',
-                              style: TextStyle(fontSize: 12, color: accent),
+                          Semantics(
+                            label: '이전 페이지',
+                            button: true,
+                            enabled: false,
+                            child: Icon(
+                              Icons.chevron_left,
+                              size: 18,
+                              color: hasRequests
+                                  ? const Color(0xFFBCC0C6)
+                                  : const Color(0xFFDADCE2),
                             ),
                           ),
                           const SizedBox(width: 16),
-                          const Icon(
-                            Icons.chevron_right,
-                            size: 18,
-                            color: Color(0xFFBCC0C6),
+                          Semantics(
+                            label: hasRequests ? '현재 페이지 1' : '페이지 없음',
+                            excludeSemantics: true,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 11,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: hasRequests ? blush : line,
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Text(
+                                hasRequests ? '1' : '—',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: hasRequests ? accent : muted,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Semantics(
+                            label: '다음 페이지',
+                            button: true,
+                            enabled: false,
+                            child: Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: hasRequests
+                                  ? const Color(0xFFBCC0C6)
+                                  : const Color(0xFFDADCE2),
+                            ),
                           ),
                         ],
                       ),

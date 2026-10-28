@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/workspace_colors.dart';
+import "../../../../shared/workspace_colors.dart";
 
 /// Completion message and result navigation. No queue or rerun button.
 class ReviewProgressFooter extends StatelessWidget {
@@ -24,7 +24,7 @@ class ReviewProgressFooter extends StatelessWidget {
         runSpacing: 12,
         children: [
           Text(
-            complete ? '시연이 완료되었습니다.' : '창을 닫아도 시연은 계속됩니다.',
+            complete ? "검토 결과 조회가 완료되었습니다." : "창을 닫아도 조회는 계속됩니다.",
             style: const TextStyle(fontSize: 11, color: muted),
           ),
           if (complete)

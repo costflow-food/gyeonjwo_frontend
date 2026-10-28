@@ -1,7 +1,7 @@
 {
   "folders": [
-    { "name": "01 수정한 화면 코드 · SR003", "path": "lib/widgets/sr003" },
-    { "name": "02 검토 진행 · 상태 연결", "path": "lib/features/review_progress/presentation" },
+    { "name": "01 검토 진행", "path": "lib/features/review_progress" },
+    { "name": "02 구매 검토", "path": "lib/features/purchase_review" },
     { "name": "03 전체 프로젝트 · 실행용", "path": "." }
   ]
 }

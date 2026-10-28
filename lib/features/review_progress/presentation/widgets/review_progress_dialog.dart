@@ -1,21 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import "package:flutter/material.dart";
 
-import '../../../shared/workspace_colors.dart';
-import '../../../features/review_progress/presentation/review_progress_view_model.dart';
-import 'review_progress_header.dart';
-import 'review_progress_body.dart';
-import 'review_progress_footer.dart';
+import "../../../../shared/workspace_colors.dart";
+import "review_progress_header.dart";
+import "review_progress_footer.dart";
 
 class ReviewProgressDialog extends StatelessWidget {
   const ReviewProgressDialog({
     super.key,
-    required this.requestId,
     required this.supplier,
-    required this.step,
+    required this.complete,
+    required this.body,
+    required this.onClose,
+    required this.onViewResult,
   });
-  final String requestId, supplier;
-  final int step;
+
+  final String supplier;
+  final bool complete;
+  final Widget body;
+  final VoidCallback onClose, onViewResult;
+
   @override
   Widget build(BuildContext context) => Dialog(
     backgroundColor: Colors.white,
@@ -31,27 +34,19 @@ class ReviewProgressDialog extends StatelessWidget {
         scopesRoute: true,
         explicitChildNodes: true,
         namesRoute: true,
-        label: '검토 진행',
+        label: "검토 진행",
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ReviewProgressHeader(
-                supplier: supplier,
-                onClose: () => context.go('/'),
-              ),
+              ReviewProgressHeader(supplier: supplier, onClose: onClose),
               const Divider(height: 1, color: line),
-              ReviewProgressBody(step: step),
+              body,
               const Divider(height: 1, color: line),
               ReviewProgressFooter(
-                complete: step >= reviewSteps.length,
-                onViewResult: () => context.go(
-                  Uri(
-                    path: '/review',
-                    queryParameters: {'requestId': requestId},
-                  ).toString(),
-                ),
+                complete: complete,
+                onViewResult: onViewResult,
               ),
             ],
           ),

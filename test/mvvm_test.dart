@@ -195,6 +195,56 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    "Zero matches show no page and clearing search restores page one",
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final semantics = tester.ensureSemantics();
+      try {
+        final source = ControlledQueueDataSource();
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [workQueueDataSourceProvider.overrideWithValue(source)],
+            child: const MyApp(),
+          ),
+        );
+        appRouter.go("/");
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextFormField), "없는 검색 결과");
+        await tester.pumpAndSettle();
+        expect(find.text("총 0건 · 최신 수신순"), findsOneWidget);
+        expect(find.text("—"), findsOneWidget);
+        expect(find.bySemanticsLabel("페이지 없음"), findsOneWidget);
+        expect(find.bySemanticsLabel("현재 페이지 1"), findsNothing);
+        for (final label in ["이전 페이지", "다음 페이지"]) {
+          expect(
+            tester.getSemantics(find.bySemanticsLabel(label)),
+            matchesSemantics(
+              label: label,
+              isButton: true,
+              hasEnabledState: true,
+              isEnabled: false,
+              hasTapAction: false,
+            ),
+          );
+        }
+        await tester.enterText(find.byType(TextFormField), "");
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text("총 6건 · 최신 수신순"));
+        await tester.pumpAndSettle();
+        expect(find.text("—"), findsNothing);
+        expect(find.bySemanticsLabel("현재 페이지 1"), findsOneWidget);
+        expect(source.calls, 1);
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
   testWidgets("Selecting a queue request loads that request's review", (
     tester,
   ) async {
@@ -206,8 +256,6 @@ void main() {
     appRouter.go("/");
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(OutlinedButton, "실행").at(1));
-    await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 8));
     await tester.pumpAndSettle();
     await tester.tap(find.text('검토 결과 보기'));
     await tester.pumpAndSettle();

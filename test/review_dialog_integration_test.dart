@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gyeonjwo_frontend/app/app_router.dart';
-import 'package:gyeonjwo_frontend/main.dart';
+import "package:gyeonjwo_frontend/main.dart";
+import "package:gyeonjwo_frontend/features/purchase_review/data/purchase_review_data_source.dart";
+
+import "support/controlled_review_data_source.dart";
 
 void main() {
   testWidgets(
@@ -13,11 +16,20 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       appRouter.go('/');
-      await tester.pumpWidget(const ProviderScope(child: MyApp()));
+      final source = ControlledReviewDataSource();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            purchaseReviewDataSourceProvider.overrideWithValue(source),
+          ],
+          child: const MyApp(),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(OutlinedButton, '실행').first);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('디자인 시연 · A사 요청'), findsOneWidget);
       await tester.tap(find.byTooltip('검토 진행 닫기'));
       await tester.pumpAndSettle();
@@ -27,7 +39,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('원문·근거 보기'), findsOneWidget);
       expect(find.text('A사 영업담당 (합성)'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 8));
+      source.succeed("REQ-2026-1019-003");
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('닫기'));
       await tester.pumpAndSettle();

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/workspace_colors.dart';
-import '../../../shared/widgets/responsive_columns.dart';
-import '../../../shared/widgets/outline_panel.dart';
-import '../../../shared/widgets/preview_button.dart';
-import '../../../shared/formatters.dart';
-import '../../../features/purchase_review/domain/purchase_review.dart';
-import '../../../features/source_document/presentation/source_document_dialog.dart';
-import '../../../features/purchase_review/presentation/widgets/request_summary.dart';
-import '../../../features/purchase_review/presentation/widgets/supplier_card.dart';
+import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/widgets/responsive_columns.dart";
+import "../../../../shared/widgets/outline_panel.dart";
+import "../../../../shared/widgets/preview_button.dart";
+import "../../../../shared/formatters.dart";
+import "../../domain/purchase_review.dart";
+import "../../../source_document/presentation/source_document_dialog.dart";
+import "request_summary.dart";
+import "supplier_card.dart";
 
 class PurchaseReviewContent extends StatelessWidget {
   const PurchaseReviewContent({super.key, required this.review});

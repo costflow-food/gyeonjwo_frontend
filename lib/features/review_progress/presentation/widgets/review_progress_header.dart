@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/workspace_colors.dart';
+import "../../../../shared/workspace_colors.dart";
 
 /// Title, request label, and close button.
 class ReviewProgressHeader extends StatelessWidget {
