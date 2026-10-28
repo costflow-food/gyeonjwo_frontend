@@ -5,7 +5,7 @@ import '../../../shared/widgets/workspace_shell.dart';
 import '../../../shared/widgets/async_content.dart';
 import '../domain/purchase_review.dart';
 import 'purchase_review_view_model.dart';
-import '../../../widgets/sr003/purchase_review/purchase_review_content.dart';
+import "widgets/purchase_review_content.dart";
 
 class PurchaseReviewView extends ConsumerWidget {
   const PurchaseReviewView({super.key, required this.requestId});

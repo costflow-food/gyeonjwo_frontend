@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import "../../../../shared/workspace_colors.dart";
 
 import "queue_tab.dart";
-import "../work_queue_view_model.dart";
+import "../../domain/work_queue_state.dart";
 
 class QueueToolbar extends StatelessWidget {
   const QueueToolbar({

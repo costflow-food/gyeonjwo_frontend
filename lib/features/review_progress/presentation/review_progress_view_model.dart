@@ -1,48 +1,31 @@
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import "package:riverpod_annotation/riverpod_annotation.dart";
 
-const reviewSteps = [
-  '요청 정보와 필수 조건 확인',
-  '구매 근거와 DB 후보 비교',
-  '계약 조건과 비용 영향 정리',
-  '검토카드 준비',
-];
+import "../domain/review_phase.dart";
+import "../../purchase_review/presentation/purchase_review_view_model.dart";
 
-final reviewProgressProvider =
-    NotifierProvider<ReviewProgressViewModel, Map<String, int>>(
-      ReviewProgressViewModel.new,
-    );
+part "review_progress_view_model.g.dart";
 
-/// Local preview only. Keep progress outside the dialog so closing it does
-/// not cancel a request. Replace the timer with server progress later.
-class ReviewProgressViewModel extends Notifier<Map<String, int>> {
-  final _timers = <String, Timer>{};
+Duration? _noRetry(int retryCount, Object error) => null;
 
+// One retained state per request. Closing a dialog does not cancel its Future.
+@Riverpod(keepAlive: true, retry: _noRetry)
+class ReviewProgressViewModel extends _$ReviewProgressViewModel {
   @override
-  Map<String, int> build() {
-    ref.onDispose(() {
-      for (final timer in _timers.values) {
-        timer.cancel();
-      }
-    });
-    return {};
-  }
+  FutureOr<ReviewPhase> build(String requestId) => ReviewPhase.idle;
 
-  void start(String requestId) {
-    if (state.containsKey(requestId)) return;
-    _run(requestId);
-  }
-
-  void _run(String requestId) {
-    state = {...state, requestId: 0};
-    _timers[requestId] = Timer.periodic(const Duration(seconds: 2), (timer) {
-      final next = state[requestId]! + 1;
-      state = {...state, requestId: next};
-      if (next >= reviewSteps.length) {
-        timer.cancel();
-        _timers.remove(requestId);
-      }
-    });
+  Future<void> start() async {
+    if (state.isLoading || state.asData?.value == ReviewPhase.completed) return;
+    state = const AsyncLoading();
+    final resultProvider = purchaseReviewViewModelProvider(requestId);
+    try {
+      if (ref.read(resultProvider).hasError) ref.invalidate(resultProvider);
+      // Use the existing DataSource -> Repository -> ViewModel request and cache.
+      await ref.read(resultProvider.future);
+      if (ref.mounted) state = const AsyncData(ReviewPhase.completed);
+    } catch (error, stackTrace) {
+      if (ref.mounted) state = AsyncError(error, stackTrace);
+    }
   }
 }

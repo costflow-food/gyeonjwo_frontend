@@ -7,7 +7,8 @@ import "../../../../shared/widgets/preview_button.dart";
 import "../../../analysis_stop/presentation/analysis_stop_dialog.dart";
 import "../../domain/request_item.dart";
 import 'status_badge.dart';
-import '../../../source_document/presentation/source_document_dialog.dart';
+import "../../../source_document/presentation/source_document_dialog.dart";
+import "../../../review_progress/presentation/review_progress_view.dart";
 
 class RequestRow extends StatelessWidget {
   const RequestRow(this.data, {super.key, required this.table});
@@ -69,23 +70,19 @@ class RequestRow extends StatelessWidget {
       ],
     );
     final action = data.action == '원문 보기'
-        ? TextButton(
+        ? PreviewButton(
+            '원문 보기',
             onPressed: () => showSourceDocument(context, requestId: data.id),
-            child: const Text(
-              '원문 보기',
-              style: TextStyle(color: ink, fontSize: 12),
-            ),
           )
         : PreviewButton(
             data.action,
             icon: data.action == '실행' ? Icons.play_arrow_outlined : null,
             filled: data.action == '실행',
             onPressed: switch (data.action) {
-              '실행' || '진행 보기' => () => context.go(
-                Uri(
-                  path: '/review-progress',
-                  queryParameters: {'requestId': data.id},
-                ).toString(),
+              "실행" || "진행 보기" || "다시 시도" => () => showReviewProgressDialog(
+                context,
+                requestId: data.id,
+                supplier: "${data.supplier} 요청",
               ),
               '결과 보기' => () => context.go(
                 Uri(
