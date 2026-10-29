@@ -27,7 +27,6 @@ migrate_working_dir/
 /build/
 /coverage/
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .widget_preview/
 
 # Local test files
@@ -37,10 +36,12 @@ migrate_working_dir/
 app.*.symbols
 app.*.map.json
 
-# Android Studio build output
-/android/app/debug/
-/android/app/profile/
-/android/app/release/
+# Unused Flutter platforms; Chrome uses the tracked web/ directory.
+/android/
+/ios/
+/macos/
+/windows/
+/linux/
 
 # Build outputs and dependencies from the archived React comparison.
 /react/node_modules/
@@ -59,4 +60,3 @@ app.*.map.json
 /config/*.local.json
 
 # Keep lib/, pubspec.lock, .metadata, and generated Dart source files tracked.
-# Platform-specific caches are excluded by each platform's .gitignore.
