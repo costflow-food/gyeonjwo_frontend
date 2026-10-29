@@ -101,11 +101,13 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<GmailConnection> _connectGmail(GoogleProviderGrant grant) async {
     final key = _pendingIdempotencyKey ??= _newIdempotencyKey();
     try {
-      final response = await _connection.connectGoogle(
-        accessToken: _requireAccessToken(),
-        providerAccessToken: grant.accessToken,
-        providerRefreshToken: grant.refreshToken,
-        idempotencyKey: key,
+      final response = await _withSession(
+        (accessToken) => _connection.connectGoogle(
+          accessToken: accessToken,
+          providerAccessToken: grant.accessToken,
+          providerRefreshToken: grant.refreshToken,
+          idempotencyKey: key,
+        ),
       );
       _pendingIdempotencyKey = null;
       final connection = _toConnection(response);
@@ -122,15 +124,29 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<GmailConnection> fetchGmailConnection() async {
-    if (!currentSession().isSignedIn) return const GmailConnection.notConnected();
-    final response = await _connection.fetchGoogleConnection(
-      accessToken: _requireAccessToken(),
+    if (!currentSession().isSignedIn) {
+      return const GmailConnection.notConnected();
+    }
+    final response = await _withSession(
+      (accessToken) =>
+          _connection.fetchGoogleConnection(accessToken: accessToken),
     );
     return _toConnection(response);
   }
 
-  String _requireAccessToken() {
-    final token = _session.currentSession()?["access_token"] as String?;
+  /// Calls the API with a fresh Supabase token. A stored session can be
+  /// expired when the app reopens, so a 401 gets one refresh and retry.
+  Future<T> _withSession<T>(Future<T> Function(String accessToken) call) async {
+    try {
+      return await call(await _accessToken());
+    } on AuthFailure catch (failure) {
+      if (failure.code != AuthFailureCode.sessionExpired) rethrow;
+      return call(await _accessToken(forceRefresh: true));
+    }
+  }
+
+  Future<String> _accessToken({bool forceRefresh = false}) async {
+    final token = await _session.freshAccessToken(forceRefresh: forceRefresh);
     if (token == null) throw const AuthFailure(AuthFailureCode.sessionExpired);
     return token;
   }
@@ -160,8 +176,10 @@ class AuthRepositoryImpl implements AuthRepository {
         _ => GmailConnectionStatus.failed,
       },
       email: data["email"] as String?,
-      canRead: capabilities is Map<String, dynamic> && capabilities["read"] == true,
-      canSend: capabilities is Map<String, dynamic> && capabilities["send"] == true,
+      canRead:
+          capabilities is Map<String, dynamic> && capabilities["read"] == true,
+      canSend:
+          capabilities is Map<String, dynamic> && capabilities["send"] == true,
       watchStarted: watch is Map<String, dynamic> && watch["started"] == true,
     );
   }

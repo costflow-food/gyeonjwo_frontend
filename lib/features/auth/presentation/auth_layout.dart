@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_config.dart';
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/widgets/brand_logo.dart';
 import '../../../shared/workspace_colors.dart';
@@ -35,22 +36,24 @@ class AuthLayout extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Wrap(
+                        Wrap(
                           alignment: WrapAlignment.spaceBetween,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           spacing: 16,
                           runSpacing: 16,
                           children: [
-                            SizedBox(width: 132, child: BrandLogo()),
-                            Chip(
-                              avatar: Icon(
-                                Icons.design_services_outlined,
-                                size: 16,
+                            const SizedBox(width: 132, child: BrandLogo()),
+                            // Shown only when running without Supabase settings.
+                            if (!AppConfig.isAuthConfigured)
+                              const Chip(
+                                avatar: Icon(
+                                  Icons.design_services_outlined,
+                                  size: 16,
+                                ),
+                                label: Text('UI 미리보기 · 실제 계정 연결 전'),
+                                backgroundColor: Colors.white,
+                                side: BorderSide(color: line),
                               ),
-                              label: Text('UI 미리보기 · 실제 계정 연결 전'),
-                              backgroundColor: Colors.white,
-                              side: BorderSide(color: line),
-                            ),
                           ],
                         ),
                         SizedBox(height: compact ? 12 : 32),
