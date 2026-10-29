@@ -46,6 +46,9 @@ app.*.map.json
 /react/playwright-report/
 /react/coverage/
 
+# Local test files
+/test/
+
 # Local environment files; commit example files with placeholders only.
 .env
 .env.*
