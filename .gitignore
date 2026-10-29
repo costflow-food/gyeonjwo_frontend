@@ -30,6 +30,9 @@ migrate_working_dir/
 **/ios/Flutter/.last_build_id
 .widget_preview/
 
+# Local test files
+/test/
+
 # Release symbols and obfuscation maps
 app.*.symbols
 app.*.map.json
@@ -45,9 +48,6 @@ app.*.map.json
 /react/test-results/
 /react/playwright-report/
 /react/coverage/
-
-# Local test files
-/test/
 
 # Local environment files; commit example files with placeholders only.
 .env
