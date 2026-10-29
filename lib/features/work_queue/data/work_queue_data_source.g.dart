@@ -55,4 +55,4 @@ final class WorkQueueDataSourceProvider
 }
 
 String _$workQueueDataSourceHash() =>
-    r'88cef85f78e45683183799e60388698c53ac607e';
+    r'bce22c5ffc65ba397f26678fd75fbeb866f62deb';

@@ -7,11 +7,16 @@ import "../../../shared/widgets/outline_panel.dart";
 import "../../../shared/widgets/preview_button.dart";
 import "../../../shared/widgets/note_line.dart";
 
+import '../../auth/presentation/gmail_connection_view_model.dart';
+import '../../mail_intake/presentation/widgets/intake_entry_button.dart';
+import '../../send_settings/presentation/send_settings_dialog.dart';
+import 'widgets/gmail_read_notice.dart';
 import 'widgets/queue_summary.dart';
 import 'widgets/queue_toolbar.dart';
 import 'widgets/request_row.dart';
 import "work_queue_view_model.dart";
 import "../../../shared/widgets/async_content.dart";
+import "../domain/work_queue_state.dart";
 
 class WorkQueueView extends ConsumerWidget {
   const WorkQueueView({super.key});
@@ -20,36 +25,63 @@ class WorkQueueView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(workQueueViewModelProvider);
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
+    final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
     return WorkspaceShell(
       child: AsyncContent<WorkQueueState>(
         value: value,
         onRetry: viewModel.refresh,
-        builder: (data) => _WorkQueueContent(data: data, viewModel: viewModel),
+        builder: (data) => _WorkQueueContent(
+          data: data,
+          viewModel: viewModel,
+          readDenied: readDenied,
+        ),
       ),
     );
   }
 }
 
 class _WorkQueueContent extends StatelessWidget {
-  const _WorkQueueContent({required this.data, required this.viewModel});
+  const _WorkQueueContent({
+    required this.data,
+    required this.viewModel,
+    required this.readDenied,
+  });
 
   final WorkQueueState data;
   final WorkQueueViewModel viewModel;
+  final bool readDenied;
 
   @override
   Widget build(BuildContext context) {
+    final hasRequests = data.visibleRequests.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Align(
           alignment: Alignment.centerRight,
-          child: PreviewButton(
-            "목록 새로고침",
-            icon: Icons.refresh,
-            onPressed: viewModel.refresh,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // SCR-009 entry; hidden when no mail needs an intake decision.
+              const IntakeEntryButton(),
+              // SCR-008 for the mailbox default.
+              PreviewButton(
+                "발송 설정",
+                icon: Icons.tune,
+                onPressed: () => showSendSettingsDialog(context),
+              ),
+              PreviewButton(
+                "목록 새로고침",
+                icon: Icons.refresh,
+                onPressed: viewModel.refresh,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 24),
+        if (readDenied) ...[const GmailReadNotice(), const SizedBox(height: 16)],
         QueueSummary(waitingCount: data.countFor("검토 대기")),
         const SizedBox(height: 28),
         OutlinePanel(
@@ -131,31 +163,52 @@ class _WorkQueueContent extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.chevron_left,
-                            size: 18,
-                            color: Color(0xFFBCC0C6),
-                          ),
-                          const SizedBox(width: 16),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 11,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: blush,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: const Text(
-                              '1',
-                              style: TextStyle(fontSize: 12, color: accent),
+                          Semantics(
+                            label: '이전 페이지',
+                            button: true,
+                            enabled: false,
+                            child: Icon(
+                              Icons.chevron_left,
+                              size: 18,
+                              color: hasRequests
+                                  ? const Color(0xFFBCC0C6)
+                                  : const Color(0xFFDADCE2),
                             ),
                           ),
                           const SizedBox(width: 16),
-                          const Icon(
-                            Icons.chevron_right,
-                            size: 18,
-                            color: Color(0xFFBCC0C6),
+                          Semantics(
+                            label: hasRequests ? '현재 페이지 1' : '페이지 없음',
+                            excludeSemantics: true,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 11,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: hasRequests ? blush : line,
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Text(
+                                hasRequests ? '1' : '—',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: hasRequests ? accent : muted,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Semantics(
+                            label: '다음 페이지',
+                            button: true,
+                            enabled: false,
+                            child: Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: hasRequests
+                                  ? const Color(0xFFBCC0C6)
+                                  : const Color(0xFFDADCE2),
+                            ),
                           ),
                         ],
                       ),

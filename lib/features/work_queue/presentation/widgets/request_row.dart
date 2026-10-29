@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 import "../../../../shared/workspace_colors.dart";
 import "../../../../shared/widgets/preview_button.dart";
 
+import "../../../analysis_stop/presentation/analysis_stop_dialog.dart";
 import "../../domain/request_item.dart";
 import 'status_badge.dart';
+import "../../../source_document/presentation/source_document_dialog.dart";
+import "../../../review_progress/presentation/review_progress_view.dart";
 
 class RequestRow extends StatelessWidget {
   const RequestRow(this.data, {super.key, required this.table});
@@ -67,25 +70,34 @@ class RequestRow extends StatelessWidget {
       ],
     );
     final action = data.action == '원문 보기'
-        ? TextButton(
-            onPressed: () {},
-            child: const Text(
-              '원문 보기',
-              style: TextStyle(color: ink, fontSize: 12),
-            ),
+        ? PreviewButton(
+            '원문 보기',
+            onPressed: () => showSourceDocument(context, requestId: data.id),
           )
         : PreviewButton(
             data.action,
             icon: data.action == '실행' ? Icons.play_arrow_outlined : null,
             filled: data.action == '실행',
-            onPressed: data.action == '실행' || data.action == '결과 보기'
-                ? () => context.go(
-                    Uri(
-                      path: "/review",
-                      queryParameters: {"requestId": data.id},
-                    ).toString(),
-                  )
-                : null,
+            onPressed: switch (data.action) {
+              "실행" || "진행 보기" || "다시 시도" => () => showReviewProgressDialog(
+                context,
+                requestId: data.id,
+                supplier: "${data.supplier} 요청",
+              ),
+              '결과 보기' => () => context.go(
+                Uri(
+                  path: '/review',
+                  queryParameters: {'requestId': data.id},
+                ).toString(),
+              ),
+              '사유 보기' => () => showAnalysisStopDialog(
+                context,
+                requestId: data.id,
+                onOpenSource: () =>
+                    showSourceDocument(context, requestId: data.id),
+              ),
+              _ => null,
+            },
           );
     return Container(
       padding: EdgeInsets.symmetric(horizontal: table ? 12 : 0, vertical: 22),
@@ -99,7 +111,11 @@ class RequestRow extends StatelessWidget {
                   flex: 6,
                   child: Padding(
                     padding: const EdgeInsets.only(right: 14),
-                    child: document,
+                    child: InkWell(
+                      onTap: () =>
+                          showSourceDocument(context, requestId: data.id),
+                      child: document,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -129,7 +145,10 @@ class RequestRow extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                document,
+                InkWell(
+                  onTap: () => showSourceDocument(context, requestId: data.id),
+                  child: document,
+                ),
                 const SizedBox(height: 16),
                 Wrap(
                   alignment: WrapAlignment.spaceBetween,

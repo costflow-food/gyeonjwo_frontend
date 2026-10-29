@@ -27,17 +27,28 @@ migrate_working_dir/
 /build/
 /coverage/
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .widget_preview/
+
+# Local test files
+/test/
 
 # Release symbols and obfuscation maps
 app.*.symbols
 app.*.map.json
 
-# Android Studio build output
-/android/app/debug/
-/android/app/profile/
-/android/app/release/
+# Unused Flutter platforms; Chrome uses the tracked web/ directory.
+/android/
+/ios/
+/macos/
+/windows/
+/linux/
+
+# Build outputs and dependencies from the archived React comparison.
+/react/node_modules/
+/react/dist/
+/react/test-results/
+/react/playwright-report/
+/react/coverage/
 
 # Local environment files; commit example files with placeholders only.
 .env
@@ -45,6 +56,7 @@ app.*.map.json
 !.env.example
 !.env.*.example
 .envrc
+# Local dart-define files; commit config/dart_defines.example.json only.
+/config/*.local.json
 
 # Keep lib/, pubspec.lock, .metadata, and generated Dart source files tracked.
-# Platform-specific caches are excluded by each platform's .gitignore.
