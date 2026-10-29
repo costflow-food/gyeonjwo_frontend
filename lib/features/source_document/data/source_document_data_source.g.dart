@@ -55,4 +55,4 @@ final class SourceDocumentDataSourceProvider
 }
 
 String _$sourceDocumentDataSourceHash() =>
-    r'7be546371b361acd774558ef3fa6f07a9a266f7e';
+    r'639dcb33ceb14d2983935968947f8816c55f8497';

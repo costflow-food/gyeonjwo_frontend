@@ -7,6 +7,7 @@ import "../../../../shared/widgets/preview_button.dart";
 import "../../../../shared/formatters.dart";
 import "../../domain/purchase_review.dart";
 import "../../../source_document/presentation/source_document_dialog.dart";
+import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "request_summary.dart";
 import "supplier_card.dart";
 
@@ -51,11 +52,24 @@ class PurchaseReviewContent extends StatelessWidget {
                 ),
               ],
             );
-            final button = PreviewButton(
-              '요청 원문 보기',
-              onPressed: () =>
-                  showSourceDocument(context, requestId: review.requestId),
-              icon: Icons.description_outlined,
+            final button = Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                PreviewButton(
+                  '요청 원문 보기',
+                  onPressed: () =>
+                      showSourceDocument(context, requestId: review.requestId),
+                  icon: Icons.description_outlined,
+                ),
+                // SCR-007 drafts for this case.
+                PreviewButton(
+                  '메일 초안',
+                  onPressed: () =>
+                      showMailDraftDialog(context, caseId: review.requestId),
+                  icon: Icons.drafts_outlined,
+                ),
+              ],
             );
             if (constraints.maxWidth < 600 * textScale) {
               return Column(

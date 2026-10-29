@@ -13,7 +13,10 @@ class WorkspaceSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isAccount = GoRouterState.of(context).uri.path == '/account';
+    final path = GoRouterState.of(context).uri.path;
+    final isAccount = path == '/account';
+    final isSuppliers = path == '/suppliers';
+    final isLogs = path == '/logs';
     return Material(
       color: canvas,
       child: SafeArea(
@@ -95,7 +98,7 @@ class WorkspaceSidebar extends StatelessWidget {
                               horizontal: 10,
                             ),
                             minLeadingWidth: 18,
-                            selected: !isAccount,
+                            selected: !isAccount && !isSuppliers && !isLogs,
                             selectedColor: accent,
                             selectedTileColor: blush,
                             shape: RoundedRectangleBorder(
@@ -130,6 +133,56 @@ class WorkspaceSidebar extends StatelessWidget {
                             onTap: () {
                               context.go('/');
                             },
+                          ),
+                          const SizedBox(height: 4),
+                          ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                            ),
+                            minLeadingWidth: 18,
+                            selected: isLogs,
+                            selectedColor: accent,
+                            selectedTileColor: blush,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            leading: const Icon(
+                              Icons.receipt_long_outlined,
+                              size: 19,
+                            ),
+                            title: const Text(
+                              '실행 로그',
+                              style: TextStyle(
+                                fontSize: AppFontSizes.navigation,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            onTap: () => context.go('/logs'),
+                          ),
+                          const SizedBox(height: 4),
+                          ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                            ),
+                            minLeadingWidth: 18,
+                            selected: isSuppliers,
+                            selectedColor: accent,
+                            selectedTileColor: blush,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            leading: const Icon(
+                              Icons.storefront_outlined,
+                              size: 19,
+                            ),
+                            title: const Text(
+                              '거래처',
+                              style: TextStyle(
+                                fontSize: AppFontSizes.navigation,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            onTap: () => context.go('/suppliers'),
                           ),
                           const SizedBox(height: 32),
                         ],

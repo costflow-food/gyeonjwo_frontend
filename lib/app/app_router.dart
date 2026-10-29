@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,12 +11,16 @@ import '../features/auth/presentation/auth_permissions_view.dart';
 import '../features/auth/presentation/auth_connection_view.dart';
 
 import "../features/purchase_review/presentation/purchase_review_view.dart";
+import "../features/supplier/presentation/supplier_view.dart";
+import "../features/workflow_log/presentation/workflow_log_view.dart";
 import "../features/work_queue/presentation/work_queue_view.dart";
+import 'ui_preview.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
   // Screen flow only; MyApp calls refresh() when the session changes.
   redirect: (context, state) {
+    if (kDebugMode && state.uri.path == '/ui-preview') return null;
     final session = ProviderScope.containerOf(
       context,
       listen: false,
@@ -23,6 +28,12 @@ final appRouter = GoRouter(
     return authRedirect(session?.status, state.uri.path);
   },
   routes: [
+    if (kDebugMode)
+      GoRoute(
+        path: '/ui-preview',
+        builder: (context, state) =>
+            UiPreviewApp(parameters: state.uri.queryParameters),
+      ),
     GoRoute(path: '/login', builder: (context, state) => const LoginView()),
     GoRoute(
       path: '/login/permissions',
@@ -40,6 +51,16 @@ final appRouter = GoRouter(
     ),
     GoRoute(path: '/account', builder: (context, state) => const AccountView()),
     GoRoute(path: '/', builder: (context, state) => const WorkQueueView()),
+    // SCR-010 실행 로그
+    GoRoute(
+      path: '/logs',
+      builder: (context, state) => const WorkflowLogView(),
+    ),
+    // SCR-011 거래처 조회
+    GoRoute(
+      path: '/suppliers',
+      builder: (context, state) => const SupplierView(),
+    ),
     GoRoute(
       path: '/review',
       builder: (context, state) => PurchaseReviewView(

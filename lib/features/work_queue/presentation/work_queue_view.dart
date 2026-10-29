@@ -8,6 +8,8 @@ import "../../../shared/widgets/preview_button.dart";
 import "../../../shared/widgets/note_line.dart";
 
 import '../../auth/presentation/gmail_connection_view_model.dart';
+import '../../mail_intake/presentation/widgets/intake_entry_button.dart';
+import '../../send_settings/presentation/send_settings_dialog.dart';
 import 'widgets/gmail_read_notice.dart';
 import 'widgets/queue_summary.dart';
 import 'widgets/queue_toolbar.dart';
@@ -57,10 +59,25 @@ class _WorkQueueContent extends StatelessWidget {
       children: [
         Align(
           alignment: Alignment.centerRight,
-          child: PreviewButton(
-            "목록 새로고침",
-            icon: Icons.refresh,
-            onPressed: viewModel.refresh,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // SCR-009 entry; hidden when no mail needs an intake decision.
+              const IntakeEntryButton(),
+              // SCR-008 for the mailbox default.
+              PreviewButton(
+                "발송 설정",
+                icon: Icons.tune,
+                onPressed: () => showSendSettingsDialog(context),
+              ),
+              PreviewButton(
+                "목록 새로고침",
+                icon: Icons.refresh,
+                onPressed: viewModel.refresh,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 24),
