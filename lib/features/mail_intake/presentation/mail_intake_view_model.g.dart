@@ -37,7 +37,7 @@ final class MailIntakeViewModelProvider
 }
 
 String _$mailIntakeViewModelHash() =>
-    r'eab18634e584fbf61f1edc8198ec8a0b73f86c24';
+    r'5b148f3cc0fb1ed07f04ace1f26bf0c8a5ae32bc';
 
 /// SCR-009 pending intake mails. The work queue reads totalPending from here.
 

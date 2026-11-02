@@ -68,8 +68,6 @@ class GmailCapabilities {
     this.isKnown = true,
   });
 
-  /// UI preview without Supabase settings keeps existing screens usable.
-  static const preview = GmailCapabilities(canRead: true, canSend: true);
   static const none = GmailCapabilities(canRead: false, canSend: false);
 
   /// Server result not loaded yet; features stay off without a warning.

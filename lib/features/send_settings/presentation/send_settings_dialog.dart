@@ -35,8 +35,11 @@ Future<bool?> showSendSettingsDialog(BuildContext context, {String? caseId}) {
 }
 
 class SendSettingsDialog extends ConsumerStatefulWidget {
-  const SendSettingsDialog({super.key, this.caseId});
+  const SendSettingsDialog({super.key, this.caseId, this.embedded = false});
   final String? caseId;
+
+  /// 설정 페이지 탭 안에 바로 표시: 팝업 틀·닫기 없이, 저장해도 화면에 남습니다.
+  final bool embedded;
 
   @override
   ConsumerState<SendSettingsDialog> createState() => _SendSettingsDialogState();
@@ -110,6 +113,17 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           .read(sendSettingsViewModelProvider(_scope).notifier)
           .save(update);
       if (!mounted) return;
+      if (widget.embedded) {
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했어요.")));
+        // Re-seed from the saved version on the next build.
+        setState(() {
+          _saving = false;
+          _loadedVersion = null;
+        });
+        return;
+      }
       Navigator.of(context).pop(true);
     } on SendSettingsFailure catch (failure) {
       if (!mounted) return;
@@ -130,6 +144,12 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       });
     }
   }
+
+  /// Embedded: drop unsaved edits and show the saved values again.
+  void _discard() => setState(() {
+    _loadedVersion = null;
+    _error = null;
+  });
 
   Future<void> _close() async {
     if (_saving) return;
@@ -169,6 +189,33 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     if (settings != null && !value.isLoading && _loadedVersion == null) {
       _seed(settings);
     }
+    final content = AsyncContent<SendSettings>(
+      value: value,
+      onRetry: ref.read(provider.notifier).refresh,
+      builder: (settings) =>
+          AbsorbPointer(absorbing: _saving, child: _body(settings)),
+    );
+    final footer = SendSettingsFooter(
+      error: _error,
+      saving: _saving,
+      onCancel: widget.embedded ? _discard : _close,
+      onSave: settings == null ? null : _save,
+    );
+    if (widget.embedded) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Same inset as the footer.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: content,
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: line),
+          footer,
+        ],
+      );
+    }
     return PopScope(
       canPop: !_dirty && !_saving,
       onPopInvokedWithResult: (didPop, _) {
@@ -195,23 +242,11 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(28),
-                  child: AsyncContent<SendSettings>(
-                    value: value,
-                    onRetry: ref.read(provider.notifier).refresh,
-                    builder: (settings) => AbsorbPointer(
-                      absorbing: _saving,
-                      child: _body(settings),
-                    ),
-                  ),
+                  child: content,
                 ),
               ),
               const Divider(height: 1, color: line),
-              SendSettingsFooter(
-                error: _error,
-                saving: _saving,
-                onCancel: _close,
-                onSave: settings == null ? null : _save,
-              ),
+              footer,
             ],
           ),
         ),
@@ -244,7 +279,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           "목적별 승인",
           settings.isCaseScope
               ? "이 업무에 적용할 값을 고르거나 메일함 기본값을 따릅니다."
-              : "승인 ON은 담당자가 승인한 초안만, OFF는 허용 범위 안에서 자동 발송합니다.",
+              : "승인 ON은 담당자가 승인한 초안만, OFF는 업무마다 선택한 업체에 자동 발송합니다.",
         ),
         const SizedBox(height: 14),
         for (final approval in settings.approvals)
@@ -256,7 +291,11 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
                 _edit(() => _approval[approval.purpose] = next),
           ),
         const SizedBox(height: 12),
-        if (automatic) ...[
+        // Which suppliers get a request depends on the item, so the mailbox
+        // default does not pick them; each case chooses its own recipients.
+        if (!settings.isCaseScope)
+          const SizedBox.shrink()
+        else if (automatic) ...[
           SettingsSectionTitle(
             '자동 발송 허용 업체 · ${_allowed.length}곳',
             '선택한 업체의 등록된 수신자에게만 자동 발송합니다.',

@@ -3,7 +3,6 @@ import "dart:async";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 
-import "../../../app/app_config.dart";
 
 part "auth_session_data_source.g.dart";
 
@@ -49,21 +48,16 @@ abstract final class OAuthRedirectGrant {
 }
 
 @Riverpod(keepAlive: true)
-AuthSessionDataSource authSessionDataSource(Ref ref) {
-  // main() initializes Supabase before runApp whenever the settings exist.
-  if (!AppConfig.isAuthConfigured) {
-    return const UnconfiguredAuthSessionDataSource();
-  }
-  return SupabaseAuthSessionDataSource(Supabase.instance.client.auth);
-}
+AuthSessionDataSource authSessionDataSource(Ref ref) =>
+    // main() initializes Supabase before runApp and refuses to start without
+    // its settings, so there is no unconfigured mode.
+    SupabaseAuthSessionDataSource(Supabase.instance.client.auth);
 
 /// Session values as a JSON-like map, mirroring the other DataSources.
 ///
 /// Keys: `email`, `access_token`, `provider_token`, `provider_refresh_token`.
 /// Never log these maps.
 abstract interface class AuthSessionDataSource {
-  bool get isConfigured;
-
   Map<String, dynamic>? currentSession();
 
   /// Access token for API calls. Refreshes first when the stored session has
@@ -84,9 +78,6 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
   const SupabaseAuthSessionDataSource(this._auth);
 
   final GoTrueClient _auth;
-
-  @override
-  bool get isConfigured => true;
 
   @override
   Map<String, dynamic>? currentSession() => _toJson(_auth.currentSession);
@@ -175,30 +166,4 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
       "provider_refresh_token": providerRefreshToken,
     };
   }
-}
-
-/// Used when Supabase settings are absent (UI preview and widget tests).
-class UnconfiguredAuthSessionDataSource implements AuthSessionDataSource {
-  const UnconfiguredAuthSessionDataSource();
-
-  @override
-  bool get isConfigured => false;
-
-  @override
-  Map<String, dynamic>? currentSession() => null;
-
-  @override
-  Future<String?> freshAccessToken({bool forceRefresh = false}) async => null;
-
-  @override
-  Stream<Map<String, dynamic>?> watchSession() => const Stream.empty();
-
-  @override
-  Map<String, String> redirectError() => const {};
-
-  @override
-  Future<void> signInWithGoogle() async {}
-
-  @override
-  Future<void> signOut() async {}
 }

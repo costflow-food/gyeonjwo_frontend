@@ -1,251 +1,99 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/workspace_colors.dart";
-import "../../../shared/widgets/workspace_shell.dart";
+import "../../../shared/app_font_sizes.dart";
 import "../../../shared/widgets/outline_panel.dart";
-import "../../../shared/widgets/preview_button.dart";
-import "../../../shared/widgets/note_line.dart";
-
-import '../../auth/presentation/gmail_connection_view_model.dart';
-import '../../mail_intake/presentation/widgets/intake_entry_button.dart';
-import '../../send_settings/presentation/send_settings_dialog.dart';
-import 'widgets/gmail_read_notice.dart';
-import 'widgets/queue_summary.dart';
-import 'widgets/queue_toolbar.dart';
-import 'widgets/request_row.dart';
+import "../../../shared/widgets/workspace_shell.dart";
+import "../../../shared/workspace_colors.dart";
+import "../../auth/presentation/gmail_connection_view_model.dart";
+import "widgets/gmail_read_notice.dart";
+import "widgets/queue_group_list.dart";
+import "widgets/queue_summary.dart";
+import "widgets/work_case_panel.dart";
 import "work_queue_view_model.dart";
-import "../../../shared/widgets/async_content.dart";
-import "../domain/work_queue_state.dart";
 
+/// 메인 화면. 사이드바의 품목별 업무 큐에서 고른 업무의 원문과 처리 선택을 보여 줍니다.
 class WorkQueueView extends ConsumerWidget {
   const WorkQueueView({super.key});
+
+  /// 이보다 좁으면 사이드바가 펼쳐지지 않으니 메인에 업무 큐를 직접 보여 줍니다.
+  static const _inlineQueueWidth = 480.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(workQueueViewModelProvider);
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
     final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
+    final data = value.hasValue ? value.requireValue : null;
+    final selected = data?.selected;
     return WorkspaceShell(
-      child: AsyncContent<WorkQueueState>(
-        value: value,
-        onRetry: viewModel.refresh,
-        builder: (data) => _WorkQueueContent(
-          data: data,
-          viewModel: viewModel,
-          readDenied: readDenied,
+      child: LayoutBuilder(
+        builder: (context, constraints) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Outside the list state so it shows even when loading fails.
+            if (readDenied) ...[
+              const GmailReadNotice(),
+              const SizedBox(height: 16),
+            ],
+            if (selected != null)
+              WorkCasePanel(key: ValueKey(selected.id), workCase: selected)
+            else ...[
+              QueueSummary(waitingCount: data?.counts.waiting ?? 0),
+              const SizedBox(height: 24),
+              if (constraints.maxWidth < _inlineQueueWidth)
+                const OutlinePanel(
+                  padding: EdgeInsets.all(12),
+                  child: QueueGroupList(shrinkWrap: true),
+                )
+              else
+                _Guidance(
+                  failed: value.hasError && data == null,
+                  onRetry: viewModel.refresh,
+                ),
+            ],
+          ],
         ),
       ),
     );
   }
 }
 
-class _WorkQueueContent extends StatelessWidget {
-  const _WorkQueueContent({
-    required this.data,
-    required this.viewModel,
-    required this.readDenied,
-  });
+class _Guidance extends StatelessWidget {
+  const _Guidance({required this.failed, required this.onRetry});
 
-  final WorkQueueState data;
-  final WorkQueueViewModel viewModel;
-  final bool readDenied;
+  final bool failed;
+  final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context) {
-    final hasRequests = data.visibleRequests.isNotEmpty;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              // SCR-009 entry; hidden when no mail needs an intake decision.
-              const IntakeEntryButton(),
-              // SCR-008 for the mailbox default.
-              PreviewButton(
-                "발송 설정",
-                icon: Icons.tune,
-                onPressed: () => showSendSettingsDialog(context),
-              ),
-              PreviewButton(
-                "목록 새로고침",
-                icon: Icons.refresh,
-                onPressed: viewModel.refresh,
-              ),
-            ],
+  Widget build(BuildContext context) => OutlinePanel(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          Icon(
+            failed ? Icons.error_outline : Icons.mark_email_read_outlined,
+            size: 32,
+            color: muted,
           ),
-        ),
-        const SizedBox(height: 24),
-        if (readDenied) ...[
-          const GmailReadNotice(),
-          const SizedBox(height: 16),
-        ],
-        QueueSummary(waitingCount: data.countFor("검토 대기")),
-        const SizedBox(height: 28),
-        OutlinePanel(
-          padding: const EdgeInsets.all(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final table =
-                  constraints.maxWidth >= 680 &&
-                  MediaQuery.textScalerOf(context).scale(12) <= 18;
-              return Column(
-                children: [
-                  QueueToolbar(
-                    data: data,
-                    onStatusChanged: viewModel.selectStatus,
-                    onSearchChanged: viewModel.search,
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1, color: Color(0xFF64666B)),
-                  if (table)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 6,
-                            child: Text(
-                              '요청 문서',
-                              style: TextStyle(fontSize: 12, color: muted),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '상태',
-                              style: TextStyle(fontSize: 12, color: muted),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '수신 일시',
-                              style: TextStyle(fontSize: 12, color: muted),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 100,
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                '작업',
-                                style: TextStyle(fontSize: 12, color: muted),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  for (final row in data.visibleRequests)
-                    RequestRow(row, table: table),
-                  if (data.visibleRequests.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text("표시할 요청이 없습니다."),
-                    ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 16,
-                    runSpacing: 12,
-                    children: [
-                      Text(
-                        "총 ${data.visibleRequests.length}건 · 최신 수신순",
-                        style: TextStyle(fontSize: 11, color: muted),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Semantics(
-                            label: '이전 페이지',
-                            button: true,
-                            enabled: false,
-                            child: Icon(
-                              Icons.chevron_left,
-                              size: 18,
-                              color: hasRequests
-                                  ? const Color(0xFFBCC0C6)
-                                  : const Color(0xFFDADCE2),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Semantics(
-                            label: hasRequests ? '현재 페이지 1' : '페이지 없음',
-                            excludeSemantics: true,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 11,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                color: hasRequests ? blush : line,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Text(
-                                hasRequests ? '1' : '—',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: hasRequests ? accent : muted,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Semantics(
-                            label: '다음 페이지',
-                            button: true,
-                            enabled: false,
-                            child: Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                              color: hasRequests
-                                  ? const Color(0xFFBCC0C6)
-                                  : const Color(0xFFDADCE2),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(4, 20, 4, 32),
-          child: NoteLine(
-            '실행 전에는 요청 문서의 제목과 원문을 확인합니다. 상세 분석은 실행한 요청에 한해 시작되며, 원문 메일은 변경하지 않습니다.',
-          ),
-        ),
-        const Divider(color: line),
-        const SizedBox(height: 12),
-        const Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          spacing: 16,
-          runSpacing: 8,
-          children: [
-            Text(
-              '견줘 · 근거를 모아, 더 선명한 구매 검토.',
-              style: TextStyle(fontSize: 10, color: muted),
+          const SizedBox(height: 12),
+          Text(
+            failed
+                ? "업무 큐를 불러오지 못했어요."
+                : "왼쪽 업무 큐에서 품목별 업무를 선택하면\n메일 원문과 첨부파일을 볼 수 있어요.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: AppFontSizes.bodyLarge,
+              color: muted,
+              height: 1.7,
             ),
-            Text(
-              'HTML DESIGN PROTOTYPE · 2026',
-              style: TextStyle(fontSize: 9, color: muted),
-            ),
+          ),
+          if (failed) ...[
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onRetry, child: const Text("다시 시도")),
           ],
-        ),
-      ],
-    );
-  }
+        ],
+      ),
+    ),
+  );
 }

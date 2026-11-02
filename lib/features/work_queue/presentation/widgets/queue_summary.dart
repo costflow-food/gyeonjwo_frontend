@@ -38,7 +38,7 @@ class QueueSummary extends StatelessWidget {
               ),
               SizedBox(height: 10),
               Text(
-                '요청을 실행하면 계약·구매 근거와 거래처 대안을 함께 확인할 수 있어요.',
+                '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수긍하거나 다른 대안을 찾을 수 있어요.',
                 style: TextStyle(fontSize: 12, color: muted),
               ),
             ],
