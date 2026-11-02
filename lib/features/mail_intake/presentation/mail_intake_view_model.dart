@@ -24,7 +24,6 @@ class MailIntakeViewModel extends _$MailIntakeViewModel {
     IntakeResolution resolution, {
     String? targetCaseId,
     String? reason,
-    required String idempotencyKey,
   }) async {
     try {
       await ref
@@ -34,7 +33,6 @@ class MailIntakeViewModel extends _$MailIntakeViewModel {
             resolution,
             targetCaseId: targetCaseId,
             reason: reason,
-            idempotencyKey: idempotencyKey,
           );
       if (ref.mounted) ref.invalidate(workQueueRequestsProvider);
     } finally {

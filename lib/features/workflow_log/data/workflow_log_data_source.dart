@@ -44,16 +44,15 @@ class PreviewWorkflowLogDataSource implements WorkflowLogDataSource {
     final start = cursor == null ? 0 : int.parse(cursor);
     final end = (start + limit).clamp(0, matches.length);
     return jsonDecode(
-          jsonEncode({
-            "data": {
-              "items": matches.sublist(start, end),
-              "next_cursor": end < matches.length ? "$end" : null,
-              "counts": {"total": matches.length},
-            },
-            "meta": {"request_id": "req-preview-workflow-logs"},
-          }),
-        )
-        as Map<String, dynamic>;
+      jsonEncode({
+        "data": {
+          "items": matches.sublist(start, end),
+          "next_cursor": end < matches.length ? "$end" : null,
+          "counts": {"total": matches.length},
+        },
+        "meta": {"request_id": "req-preview-workflow-logs"},
+      }),
+    ) as Map<String, dynamic>;
   }
 
   static bool _matches(

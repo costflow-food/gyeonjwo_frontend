@@ -136,6 +136,9 @@ class MailDraftFailure implements Exception {
   final String code;
   final String message;
 
+  /// The draft changed on the server; reload before deciding again.
+  bool get draftChanged => code == "DRAFT_CHANGED";
+
   @override
   String toString() => "MailDraftFailure($code)";
 }

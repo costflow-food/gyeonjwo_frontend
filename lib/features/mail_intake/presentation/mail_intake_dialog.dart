@@ -1,10 +1,8 @@
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/idempotency_key.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/workspace_colors.dart";
 import "../domain/intake_mail.dart";
@@ -56,7 +54,6 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
   String? _selectedCaseId;
   bool _busy = false;
   String? _error;
-  (String, String)? _pendingKey;
 
   @override
   void dispose() {
@@ -77,8 +74,6 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
         ? _selectedCaseId
         : null;
     final reason = _reason.text.trim().isEmpty ? null : _reason.text.trim();
-    final body = jsonEncode([mail.mailId, resolution.code, target, reason]);
-    if (_pendingKey?.$2 != body) _pendingKey = (newIdempotencyKey(), body);
     setState(() {
       _busy = true;
       _error = null;
@@ -86,15 +81,8 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
     try {
       await ref
           .read(mailIntakeViewModelProvider.notifier)
-          .resolve(
-            mail,
-            resolution,
-            targetCaseId: target,
-            reason: reason,
-            idempotencyKey: _pendingKey!.$1,
-          );
+          .resolve(mail, resolution, targetCaseId: target, reason: reason);
       if (!mounted) return;
-      _pendingKey = null;
       final message = switch (resolution) {
         IntakeResolution.nonBusiness => "비업무로 확인했습니다.",
         IntakeResolution.createCase => "새 업무로 접수했습니다. 업무 큐에서 대기 상태로 확인할 수 있어요.",
@@ -110,7 +98,6 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
       });
     } on IntakeFailure catch (failure) {
       if (!mounted) return;
-      _pendingKey = null;
       setState(() {
         _busy = false;
         _error = failure.message;

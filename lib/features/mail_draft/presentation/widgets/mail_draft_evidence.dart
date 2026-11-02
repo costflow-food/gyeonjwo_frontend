@@ -34,7 +34,11 @@ class MailDraftEvidence extends StatelessWidget {
               children: [
                 const Padding(
                   padding: EdgeInsets.only(top: 2),
-                  child: Icon(Icons.subdirectory_arrow_right, size: 14, color: muted),
+                  child: Icon(
+                    Icons.subdirectory_arrow_right,
+                    size: 14,
+                    color: muted,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Expanded(

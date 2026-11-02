@@ -29,36 +29,26 @@ class MailDraftViewModel extends _$MailDraftViewModel {
 
   void refresh() => ref.invalidateSelf();
 
-  Future<MailDraft> revise(
-    MailDraft draft,
-    DraftRevisionInput input, {
-    required String idempotencyKey,
-  }) async {
+  Future<MailDraft> revise(MailDraft draft, DraftRevisionInput input) async {
     final revised = await ref
         .read(mailDraftRepositoryProvider)
-        .createRevision(draft, input, idempotencyKey: idempotencyKey);
+        .createRevision(draft, input);
     _replace(draft.id, revised);
     return revised;
   }
 
-  Future<MailDraft> approve(
-    MailDraft draft, {
-    required String idempotencyKey,
-  }) async {
+  Future<MailDraft> approve(MailDraft draft) async {
     final sending = await ref
         .read(mailDraftRepositoryProvider)
-        .approveAndSend(draft, idempotencyKey: idempotencyKey);
+        .approveAndSend(draft);
     _replace(draft.id, sending);
     return sending;
   }
 
-  Future<MailDraft> reconcile(
-    MailDraft draft, {
-    required String idempotencyKey,
-  }) async {
+  Future<MailDraft> reconcile(MailDraft draft) async {
     final checked = await ref
         .read(mailDraftRepositoryProvider)
-        .reconcile(draft, idempotencyKey: idempotencyKey);
+        .reconcile(draft);
     _replace(draft.id, checked);
     return checked;
   }

@@ -1,5 +1,11 @@
 /// Connection result decided by the server after checking the Google token.
-enum GmailConnectionStatus { connected, partial, needsReconnect, failed, notConnected }
+enum GmailConnectionStatus {
+  connected,
+  partial,
+  needsReconnect,
+  failed,
+  notConnected,
+}
 
 /// What the connection screen shows. Derived here, not in the View.
 enum GmailConnectionPhase {

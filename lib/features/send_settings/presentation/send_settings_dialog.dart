@@ -1,10 +1,8 @@
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/idempotency_key.dart";
 import "../../../shared/app_font_sizes.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/workspace_colors.dart";
@@ -58,7 +56,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
 
   bool _saving = false;
   String? _error;
-  (String, String)? _pendingKey;
 
   String get _scope => sendSettingsScope(widget.caseId);
 
@@ -104,16 +101,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           ? List.unmodifiable(_draftIds)
           : const [],
     );
-    final body = jsonEncode([
-      version,
-      {for (final entry in _approval.entries) entry.key.code: entry.value},
-      _allowed.toList()..sort(),
-      _tone.code,
-      update.signature,
-      _applyTo.name,
-      update.draftIds,
-    ]);
-    if (_pendingKey?.$2 != body) _pendingKey = (newIdempotencyKey(), body);
     setState(() {
       _saving = true;
       _error = null;
@@ -121,13 +108,12 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     try {
       await ref
           .read(sendSettingsViewModelProvider(_scope).notifier)
-          .save(update, idempotencyKey: _pendingKey!.$1);
+          .save(update);
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on SendSettingsFailure catch (failure) {
       if (!mounted) return;
-      _pendingKey = null;
-      if (failure.code == "SETTINGS_CHANGED") {
+      if (failure.settingsChanged) {
         // Show the newer version; the user decides again from there.
         _loadedVersion = null;
         ref.read(sendSettingsViewModelProvider(_scope).notifier).refresh();

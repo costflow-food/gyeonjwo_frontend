@@ -7,7 +7,8 @@ enum AuthSessionStatus { unconfigured, signedOut, signedIn }
 class AuthSession {
   const AuthSession({required this.status, this.email});
 
-  const AuthSession.unconfigured() : this(status: AuthSessionStatus.unconfigured);
+  const AuthSession.unconfigured()
+    : this(status: AuthSessionStatus.unconfigured);
   const AuthSession.signedOut() : this(status: AuthSessionStatus.signedOut);
 
   final AuthSessionStatus status;

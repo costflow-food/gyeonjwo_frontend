@@ -24,13 +24,10 @@ class SendSettingsViewModel extends _$SendSettingsViewModel {
 
   void refresh() => ref.invalidateSelf();
 
-  Future<SendSettings> save(
-    SendSettingsUpdate update, {
-    required String idempotencyKey,
-  }) async {
+  Future<SendSettings> save(SendSettingsUpdate update) async {
     final saved = await ref
         .read(sendSettingsRepositoryProvider)
-        .saveSettings(update, caseId: _caseId, idempotencyKey: idempotencyKey);
+        .saveSettings(update, caseId: _caseId);
     if (ref.mounted) state = AsyncData(saved);
     if (ref.mounted &&
         _caseId != null &&

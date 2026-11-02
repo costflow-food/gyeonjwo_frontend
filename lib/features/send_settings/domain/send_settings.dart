@@ -139,6 +139,9 @@ class SendSettingsFailure implements Exception {
   final String code;
   final String message;
 
+  /// Someone saved a newer version; reload before deciding again.
+  bool get settingsChanged => code == "SETTINGS_CHANGED";
+
   @override
   String toString() => "SendSettingsFailure($code)";
 }

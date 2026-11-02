@@ -1,10 +1,8 @@
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/idempotency_key.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/workspace_colors.dart";
 import "../../../shared/widgets/workspace_button_styles.dart";
@@ -60,9 +58,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
   bool _busy = false;
   String? _error;
 
-  // Key per action and body, so a retry after a timeout cannot send twice.
-  final Map<String, (String, String)> _pendingKeys = {};
-
   @override
   void dispose() {
     _recipient.dispose();
@@ -75,15 +70,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
   MailDraft? _selected(List<MailDraft> drafts) =>
       drafts.where((draft) => draft.id == _selectedId).firstOrNull ??
       drafts.firstOrNull;
-
-  String _keyFor(String action, Object body) {
-    final hash = jsonEncode(body);
-    final previous = _pendingKeys[action];
-    if (previous != null && previous.$2 == hash) return previous.$1;
-    final key = newIdempotencyKey();
-    _pendingKeys[action] = (key, hash);
-    return key;
-  }
 
   bool get _dirty =>
       _editing &&
@@ -110,19 +96,14 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _error = null;
   });
 
-  Future<void> _run(
-    String action,
-    Object body,
-    Future<MailDraft> Function(String key) request,
-  ) async {
+  Future<void> _run(Future<MailDraft> Function() request) async {
     if (_busy) return;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      final result = await request(_keyFor(action, body));
-      _pendingKeys.remove(action);
+      final result = await request();
       if (!mounted) return;
       setState(() {
         _busy = false;
@@ -131,8 +112,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       });
     } on MailDraftFailure catch (failure) {
       if (!mounted) return;
-      if (failure.code != "REQUEST_IN_PROGRESS") _pendingKeys.remove(action);
-      if (failure.code == "DRAFT_CHANGED") {
+      if (failure.draftChanged) {
         ref.read(mailDraftViewModelProvider(widget.caseId).notifier).refresh();
       }
       setState(() {
@@ -141,7 +121,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       });
     } catch (_) {
       if (!mounted) return;
-      // Unknown outcome: keep the key and let the user check with a retry.
+      // Unknown outcome: the repository keeps the key, so a retry only checks.
       setState(() {
         _busy = false;
         _error = "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다.";
@@ -162,30 +142,21 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     final viewModel = ref.read(
       mailDraftViewModelProvider(widget.caseId).notifier,
     );
-    _run("revise:${draft.id}", [
-      input.recipient,
-      input.subject,
-      input.body,
-      input.editReason,
-    ], (key) => viewModel.revise(draft, input, idempotencyKey: key));
+    _run(() => viewModel.revise(draft, input));
   }
 
   void _approve(MailDraft draft) {
     final viewModel = ref.read(
       mailDraftViewModelProvider(widget.caseId).notifier,
     );
-    _run("approve:${draft.id}", [
-      draft.snapshotHash,
-    ], (key) => viewModel.approve(draft, idempotencyKey: key));
+    _run(() => viewModel.approve(draft));
   }
 
   void _reconcile(MailDraft draft) {
     final viewModel = ref.read(
       mailDraftViewModelProvider(widget.caseId).notifier,
     );
-    _run("reconcile:${draft.id}", [
-      draft.id,
-    ], (key) => viewModel.reconcile(draft, idempotencyKey: key));
+    _run(() => viewModel.reconcile(draft));
   }
 
   Future<void> _close() async {

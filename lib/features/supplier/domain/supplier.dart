@@ -211,17 +211,6 @@ class SupplierItemDraft {
   final String? origin;
   final List<String> certifications;
   final String? notes;
-
-  Map<String, Object?> toJson() => {
-    "item_name": itemName,
-    "specification": specification,
-    "unit": unit,
-    "units_per_box": unitsPerBox,
-    "weight_per_box": weightPerBox,
-    "origin": origin,
-    "certifications": certifications,
-    "notes": notes,
-  };
 }
 
 /// Register request. The server records source_type as REGISTERED.
@@ -245,16 +234,6 @@ class SupplierDraft {
   final String? location;
   final String? evidenceMemo;
   final List<SupplierItemDraft> items;
-
-  Map<String, Object?> toJson() => {
-    "name": name,
-    "business_registration_no": businessRegistrationNo,
-    "contact_email": contactEmail,
-    "contact": {"name": contactName, "phone": contactPhone},
-    "location": location,
-    "evidence": {"memo": evidenceMemo},
-    "items": [for (final item in items) item.toJson()],
-  };
 }
 
 /// One API-31 row. Quotes and purchases live in separate lists.

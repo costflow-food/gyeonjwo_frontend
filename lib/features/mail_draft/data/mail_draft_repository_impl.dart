@@ -1,5 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/idempotency_key.dart";
+
 import "../domain/mail_draft.dart";
 import "../domain/mail_draft_repository.dart";
 import "mail_draft_data_source.dart";
@@ -12,9 +14,10 @@ MailDraftRepository mailDraftRepository(Ref ref) {
 }
 
 class MailDraftRepositoryImpl implements MailDraftRepository {
-  const MailDraftRepositoryImpl(this._dataSource);
+  MailDraftRepositoryImpl(this._dataSource);
 
   final MailDraftDataSource _dataSource;
+  final _keys = IdempotencyKeys();
 
   @override
   Future<List<MailDraft>> getDrafts(String caseId) => _guard(() async {
@@ -27,46 +30,62 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
   });
 
   @override
-  Future<MailDraft> createRevision(
-    MailDraft draft,
-    DraftRevisionInput input, {
-    required String idempotencyKey,
-  }) => _guard(() async {
-    final response = await _dataSource.createRevision(draft.id, {
+  Future<MailDraft> createRevision(MailDraft draft, DraftRevisionInput input) {
+    final body = <String, Object?>{
       "expected_revision": draft.inputRevision,
       "expected_snapshot_hash": draft.snapshotHash,
       "recipient": input.recipient,
       "subject": input.subject,
       "body_text": input.body,
       "edit_reason": input.editReason,
-    }, idempotencyKey: idempotencyKey);
-    return _draft(response["data"] as Map<String, dynamic>);
-  });
+    };
+    return _send("revise:${draft.id}", body, (key) async {
+      final response = await _dataSource.createRevision(
+        draft.id,
+        body,
+        idempotencyKey: key,
+      );
+      return _draft(response["data"] as Map<String, dynamic>);
+    });
+  }
 
   @override
-  Future<MailDraft> approveAndSend(
-    MailDraft draft, {
-    required String idempotencyKey,
-  }) => _guard(() async {
-    final response = await _dataSource.approveAndSend(draft.id, {
+  Future<MailDraft> approveAndSend(MailDraft draft) {
+    final body = <String, Object?>{
       "expected_revision": draft.inputRevision,
       "snapshot_hash": draft.snapshotHash,
       "expected_settings_version": draft.settingsVersion,
-    }, idempotencyKey: idempotencyKey);
-    return _draft(response["data"] as Map<String, dynamic>);
-  });
+    };
+    return _send("approve:${draft.id}", body, (key) async {
+      final response = await _dataSource.approveAndSend(
+        draft.id,
+        body,
+        idempotencyKey: key,
+      );
+      return _draft(response["data"] as Map<String, dynamic>);
+    });
+  }
 
   @override
-  Future<MailDraft> reconcile(
-    MailDraft draft, {
-    required String idempotencyKey,
-  }) => _guard(() async {
-    final response = await _dataSource.reconcile(
-      draft.id,
-      idempotencyKey: idempotencyKey,
-    );
-    return _draft(response["data"] as Map<String, dynamic>);
-  });
+  Future<MailDraft> reconcile(MailDraft draft) =>
+      _send("reconcile:${draft.id}", null, (key) async {
+        final response = await _dataSource.reconcile(
+          draft.id,
+          idempotencyKey: key,
+        );
+        return _draft(response["data"] as Map<String, dynamic>);
+      });
+
+  Future<MailDraft> _send(
+    String action,
+    Object? body,
+    Future<MailDraft> Function(String key) request,
+  ) => _keys.run(
+    action,
+    body,
+    (key) => _guard(() => request(key)),
+    serverCode: (error) => error is MailDraftFailure ? error.code : null,
+  );
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
