@@ -162,6 +162,10 @@ class MailAttachment {
   final String filename;
   final String mimeType;
   final int sizeBytes;
+
+  bool get isPdf =>
+      mimeType == "application/pdf" ||
+      filename.toLowerCase().endsWith(".pdf");
 }
 
 /// API-25 원문. 추출·OCR 결과가 아닌 저장된 메일 그대로입니다.

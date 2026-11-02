@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:typed_data";
 
 import "package:dio/dio.dart";
 import "package:riverpod_annotation/riverpod_annotation.dart";
@@ -6,6 +7,7 @@ import "package:riverpod_annotation/riverpod_annotation.dart";
 import "../../../shared/network/api_client.dart";
 import "../../../shared/preview_workspace.dart";
 import "../../auth/data/auth_session_data_source.dart";
+import "work_queue_preview_data.dart";
 
 part "work_queue_data_source.g.dart";
 
@@ -20,7 +22,8 @@ WorkQueueDataSource workQueueDataSource(Ref ref) => ApiWorkQueueDataSource(
 /// API-04 `POST /work-cases/{case_id}/start`,
 /// API-05 `POST /work-cases/{case_id}/accept-increase`,
 /// API-11 `GET /work-cases/{case_id}/candidates`,
-/// API-12 `PUT /work-cases/{case_id}/candidate-selection`.
+/// API-12 `PUT /work-cases/{case_id}/candidate-selection`,
+/// API-26 `GET /mail-messages/{mail_id}/attachments/{attachment_id}/content`.
 abstract interface class WorkQueueDataSource {
   Future<Map<String, dynamic>> fetchCases({
     String? status,
@@ -29,6 +32,9 @@ abstract interface class WorkQueueDataSource {
   });
 
   Future<Map<String, dynamic>> fetchOriginalMail(String mailId);
+
+  /// 첨부 원본 바이트. 서버는 Gmail에서 받아 그대로 넘겨주고 저장하지 않습니다.
+  Future<Uint8List> fetchAttachmentContent(String mailId, String attachmentId);
 
   Future<Map<String, dynamic>> acceptIncrease(
     String caseId,
@@ -104,6 +110,20 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
   );
 
   @override
+  Future<Uint8List> fetchAttachmentContent(
+    String mailId,
+    String attachmentId,
+  ) async {
+    final bytes = await _send(
+      (headers) => _dio.get<List<int>>(
+        "$_mails/$mailId/attachments/$attachmentId/content",
+        options: Options(headers: headers, responseType: ResponseType.bytes),
+      ),
+    );
+    return bytes is Uint8List ? bytes : Uint8List.fromList(bytes);
+  }
+
+  @override
   Future<Map<String, dynamic>> acceptIncrease(
     String caseId,
     Map<String, Object?> body, {
@@ -154,9 +174,8 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
   );
 
   /// 만료된 세션은 한 번 갱신해 같은 요청(같은 멱등 키)으로 다시 보냅니다.
-  Future<Map<String, dynamic>> _send(
-    Future<Response<Map<String, dynamic>>> Function(Map<String, String> headers)
-    request, {
+  Future<T> _send<T>(
+    Future<Response<T>> Function(Map<String, String> headers) request, {
     String? idempotencyKey,
   }) async {
     for (final forceRefresh in const [false, true]) {
@@ -197,7 +216,7 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
         unknownOutcome: true,
       );
     }
-    final body = response.data;
+    final body = _errorBody(response.data);
     final detail = body is Map<String, dynamic> ? body["error"] : null;
     final status = response.statusCode ?? 0;
     return WorkQueueApiException(
@@ -209,6 +228,16 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
           ? detail["message"] as String? ?? "요청을 처리하지 못했어요."
           : "요청을 처리하지 못했어요.",
     );
+  }
+
+  /// 첨부 요청은 바이트로 받으므로 오류 본문도 바이트로 옵니다.
+  static Object? _errorBody(Object? data) {
+    if (data is! List<int>) return data;
+    try {
+      return jsonDecode(utf8.decode(data));
+    } on FormatException {
+      return null;
+    }
   }
 }
 
@@ -274,6 +303,29 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
       "data": mail,
       "meta": {"request_id": "req-preview-mail"},
     });
+  }
+
+  @override
+  Future<Uint8List> fetchAttachmentContent(
+    String mailId,
+    String attachmentId,
+  ) async {
+    await Future<void>.delayed(latency);
+    final attachments =
+        _workspace.mails[mailId]?["attachments"] as List? ?? const [];
+    final attachment = attachments
+        .cast<Map<String, dynamic>>()
+        .where((entry) => entry["attachment_id"] == attachmentId)
+        .firstOrNull;
+    if (attachment == null) {
+      throw const WorkQueueApiException(
+        404,
+        "RESOURCE_NOT_FOUND",
+        "첨부파일을 찾을 수 없어요.",
+      );
+    }
+    // 어떤 PDF 첨부든 같은 합성 문서를 돌려줍니다.
+    return base64Decode(workQueuePreviewPdfBase64);
   }
 
   @override

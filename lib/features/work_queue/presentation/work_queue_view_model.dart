@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:typed_data";
 
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
@@ -126,6 +127,16 @@ Future<CandidateSet> caseCandidates(Ref ref, String caseId) =>
 @Riverpod(retry: _noRetry)
 Future<OriginalMail> originalMail(Ref ref, String mailId) =>
     ref.watch(workQueueRepositoryProvider).getOriginalMail(mailId);
+
+/// API-26 첨부 원본. 뷰어를 닫으면 메모리에서 내려갑니다.
+@Riverpod(retry: _noRetry)
+Future<Uint8List> attachmentContent(
+  Ref ref,
+  String mailId,
+  String attachmentId,
+) => ref
+    .watch(workQueueRepositoryProvider)
+    .getAttachmentContent(mailId, attachmentId);
 
 /// Realtime change signal while signed in; nothing when signed out.
 @Riverpod(keepAlive: true)
