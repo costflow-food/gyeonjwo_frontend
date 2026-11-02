@@ -67,9 +67,7 @@ class SupplierListViewModel extends _$SupplierListViewModel {
       return;
     }
     final serial = _requestSerial;
-    state = AsyncData(
-      current.copyWith(isLoadingMore: true, loadFailed: false),
-    );
+    state = AsyncData(current.copyWith(isLoadingMore: true, loadFailed: false));
     try {
       final page = await ref
           .read(supplierRepositoryProvider)
@@ -95,13 +93,10 @@ class SupplierListViewModel extends _$SupplierListViewModel {
 
   /// Clears the search and selects the new supplier. Returns the created
   /// supplier even if reloading the list fails.
-  Future<SupplierDetail> register(
-    SupplierDraft draft, {
-    required String idempotencyKey,
-  }) async {
+  Future<SupplierDetail> register(SupplierDraft draft) async {
     final created = await ref
         .read(supplierRepositoryProvider)
-        .registerSupplier(draft, idempotencyKey: idempotencyKey);
+        .registerSupplier(draft);
     if (!ref.mounted) return created;
     _searchTimer?.cancel();
     if (state.asData == null) {

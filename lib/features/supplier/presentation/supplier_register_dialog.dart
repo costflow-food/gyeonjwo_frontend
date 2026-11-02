@@ -1,6 +1,3 @@
-import "dart:convert";
-import "dart:math";
-
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -37,17 +34,12 @@ class SupplierRegisterDialog extends ConsumerStatefulWidget {
 class _SupplierRegisterDialogState
     extends ConsumerState<SupplierRegisterDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _random = Random.secure();
   final _basic = SupplierBasicFields();
   final List<SupplierItemFields> _items = [SupplierItemFields()];
 
   bool _dirty = false;
   bool _submitting = false;
   String? _error;
-
-  // Same body retries with the same key; a changed body gets a new key.
-  String? _pendingKey;
-  String? _pendingBody;
 
   @override
   void dispose() {
@@ -62,42 +54,28 @@ class _SupplierRegisterDialogState
     if (!_dirty) setState(() => _dirty = true);
   }
 
-  String _newKey() {
-    final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
-    return bytes.map((byte) => byte.toRadixString(16).padLeft(2, "0")).join();
-  }
-
   Future<void> _submit() async {
     if (_submitting) return;
     setState(() => _error = null);
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final draft = _basic.toDraft([for (final item in _items) item.toDraft()]);
-    final body = jsonEncode(draft.toJson());
-    if (_pendingBody != body) {
-      _pendingKey = _newKey();
-      _pendingBody = body;
-    }
     setState(() => _submitting = true);
     try {
       final created = await ref
           .read(supplierListViewModelProvider.notifier)
-          .register(draft, idempotencyKey: _pendingKey!);
+          .register(draft);
       if (!mounted) return;
       Navigator.of(context).pop(created);
     } on SupplierFailure catch (failure) {
       if (!mounted) return;
-      // A request still in progress may only be checked with the same key.
-      if (failure.code != "REQUEST_IN_PROGRESS") {
-        _pendingKey = null;
-        _pendingBody = null;
-      }
       setState(() {
         _submitting = false;
         _error = failure.message;
       });
     } catch (_) {
       if (!mounted) return;
-      // Unknown outcome: keep the key so a retry cannot create a duplicate.
+      // Unknown outcome: the repository keeps the key, so a retry cannot
+      // create a duplicate.
       setState(() {
         _submitting = false;
         _error = "등록 결과를 확인하지 못했습니다. 다시 등록을 누르면 같은 요청으로 확인합니다.";

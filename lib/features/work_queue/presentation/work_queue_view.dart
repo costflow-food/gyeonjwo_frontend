@@ -81,7 +81,10 @@ class _WorkQueueContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        if (readDenied) ...[const GmailReadNotice(), const SizedBox(height: 16)],
+        if (readDenied) ...[
+          const GmailReadNotice(),
+          const SizedBox(height: 16),
+        ],
         QueueSummary(waitingCount: data.countFor("검토 대기")),
         const SizedBox(height: 28),
         OutlinePanel(

@@ -1,5 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/idempotency_key.dart";
+
 import "../domain/supplier.dart";
 import "../domain/supplier_repository.dart";
 import "supplier_data_source.dart";
@@ -12,9 +14,10 @@ SupplierRepository supplierRepository(Ref ref) {
 }
 
 class SupplierRepositoryImpl implements SupplierRepository {
-  const SupplierRepositoryImpl(this._dataSource);
+  SupplierRepositoryImpl(this._dataSource);
 
   final SupplierDataSource _dataSource;
+  final _keys = IdempotencyKeys();
 
   @override
   Future<SupplierPage> getSuppliers({String query = "", String? cursor}) =>
@@ -62,16 +65,43 @@ class SupplierRepositoryImpl implements SupplierRepository {
       });
 
   @override
-  Future<SupplierDetail> registerSupplier(
-    SupplierDraft draft, {
-    required String idempotencyKey,
-  }) => _guard(() async {
-    final response = await _dataSource.createSupplier(
-      draft.toJson(),
-      idempotencyKey: idempotencyKey,
+  Future<SupplierDetail> registerSupplier(SupplierDraft draft) {
+    final body = _draftJson(draft);
+    return _keys.run(
+      "register",
+      body,
+      (key) => _guard(() async {
+        final response = await _dataSource.createSupplier(
+          body,
+          idempotencyKey: key,
+        );
+        return _detail(response["data"] as Map<String, dynamic>);
+      }),
+      serverCode: (error) => error is SupplierFailure ? error.code : null,
     );
-    return _detail(response["data"] as Map<String, dynamic>);
-  });
+  }
+
+  static Map<String, Object?> _draftJson(SupplierDraft draft) => {
+    "name": draft.name,
+    "business_registration_no": draft.businessRegistrationNo,
+    "contact_email": draft.contactEmail,
+    "contact": {"name": draft.contactName, "phone": draft.contactPhone},
+    "location": draft.location,
+    "evidence": {"memo": draft.evidenceMemo},
+    "items": [
+      for (final item in draft.items)
+        {
+          "item_name": item.itemName,
+          "specification": item.specification,
+          "unit": item.unit,
+          "units_per_box": item.unitsPerBox,
+          "weight_per_box": item.weightPerBox,
+          "origin": item.origin,
+          "certifications": item.certifications,
+          "notes": item.notes,
+        },
+    ],
+  };
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
@@ -89,9 +119,7 @@ class SupplierRepositoryImpl implements SupplierRepository {
     id: json["supplier_id"] as String,
     name: json["name"] as String,
     sourceType: SupplierSourceType.fromCode(json["source_type"] as String),
-    itemNames: List.unmodifiable(
-      (json["item_names"] as List).cast<String>(),
-    ),
+    itemNames: List.unmodifiable((json["item_names"] as List).cast<String>()),
     contactEmail: json["contact_email"] as String?,
     location: json["location"] as String?,
   );

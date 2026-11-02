@@ -61,7 +61,10 @@ class WorkflowLogFilter {
     return {
       if (caseQuery.isNotEmpty) "q": caseQuery,
       if (window != null)
-        "from": (now ?? DateTime.now()).toUtc().subtract(window).toIso8601String(),
+        "from": (now ?? DateTime.now())
+            .toUtc()
+            .subtract(window)
+            .toIso8601String(),
       if (actor != null) "agent_role": actor!.code,
       if (eventType != null) "event_type": eventType!.code,
       if (outcome != null) "outcome": outcome!.code,

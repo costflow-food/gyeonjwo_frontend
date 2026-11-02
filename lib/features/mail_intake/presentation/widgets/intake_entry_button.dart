@@ -12,7 +12,11 @@ class IntakeEntryButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final total = ref.watch(mailIntakeViewModelProvider).asData?.value.totalPending;
+    final total = ref
+        .watch(mailIntakeViewModelProvider)
+        .asData
+        ?.value
+        .totalPending;
     if (total == null || total == 0) return const SizedBox.shrink();
     return PreviewButton(
       "접수 확인 $total건",

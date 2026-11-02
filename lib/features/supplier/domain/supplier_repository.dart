@@ -10,10 +10,7 @@ abstract interface class SupplierRepository {
   /// API-31. Quotes and purchases come back separately.
   Future<PriceHistory> getPriceHistory(String supplierItemId);
 
-  /// Pre-registers reference data. Retries of one user action reuse
-  /// [idempotencyKey].
-  Future<SupplierDetail> registerSupplier(
-    SupplierDraft draft, {
-    required String idempotencyKey,
-  });
+  /// Pre-registers reference data. Retrying the same draft reuses one
+  /// idempotency key.
+  Future<SupplierDetail> registerSupplier(SupplierDraft draft);
 }

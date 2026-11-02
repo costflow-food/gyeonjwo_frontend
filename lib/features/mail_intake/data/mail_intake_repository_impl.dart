@@ -1,5 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/idempotency_key.dart";
+
 import "../domain/intake_mail.dart";
 import "../domain/mail_intake_repository.dart";
 import "mail_intake_data_source.dart";
@@ -12,9 +14,10 @@ MailIntakeRepository mailIntakeRepository(Ref ref) {
 }
 
 class MailIntakeRepositoryImpl implements MailIntakeRepository {
-  const MailIntakeRepositoryImpl(this._dataSource);
+  MailIntakeRepositoryImpl(this._dataSource);
 
   final MailIntakeDataSource _dataSource;
+  final _keys = IdempotencyKeys();
 
   @override
   Future<IntakePage> getPending({String? cursor}) => _guard(() async {
@@ -36,15 +39,22 @@ class MailIntakeRepositoryImpl implements MailIntakeRepository {
     IntakeResolution resolution, {
     String? targetCaseId,
     String? reason,
-    required String idempotencyKey,
-  }) => _guard(() async {
-    await _dataSource.resolve(mail.mailId, {
+  }) {
+    final body = <String, Object?>{
       "resolution": resolution.code,
       "target_case_id": targetCaseId,
       "expected_revision": mail.revision,
       "reason": reason,
-    }, idempotencyKey: idempotencyKey);
-  });
+    };
+    return _keys.run(
+      "resolve:${mail.mailId}",
+      body,
+      (key) => _guard(
+        () => _dataSource.resolve(mail.mailId, body, idempotencyKey: key),
+      ),
+      serverCode: (error) => error is IntakeFailure ? error.code : null,
+    );
+  }
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
@@ -62,7 +72,9 @@ class MailIntakeRepositoryImpl implements MailIntakeRepository {
     bodyText: json["body_text"] as String,
     reason: IntakeReason.fromCode(json["mail_classification"] as String),
     reasonDetail: json["reason_detail"] as String,
-    attachments: List.unmodifiable((json["attachments"] as List).cast<String>()),
+    attachments: List.unmodifiable(
+      (json["attachments"] as List).cast<String>(),
+    ),
     revision: json["revision"] as int,
     candidates: List.unmodifiable([
       for (final entry in json["candidates"] as List)

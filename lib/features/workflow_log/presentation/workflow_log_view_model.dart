@@ -85,9 +85,7 @@ class WorkflowLogViewModel extends _$WorkflowLogViewModel {
       return;
     }
     final serial = _requestSerial;
-    state = AsyncData(
-      current.copyWith(isLoadingMore: true, loadFailed: false),
-    );
+    state = AsyncData(current.copyWith(isLoadingMore: true, loadFailed: false));
     try {
       final page = await ref
           .read(workflowLogRepositoryProvider)

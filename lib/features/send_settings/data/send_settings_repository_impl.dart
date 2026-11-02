@@ -1,5 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/idempotency_key.dart";
+
 import "../../mail_draft/domain/mail_draft.dart";
 import "../domain/send_settings.dart";
 import "../domain/send_settings_repository.dart";
@@ -13,9 +15,10 @@ SendSettingsRepository sendSettingsRepository(Ref ref) {
 }
 
 class SendSettingsRepositoryImpl implements SendSettingsRepository {
-  const SendSettingsRepositoryImpl(this._dataSource);
+  SendSettingsRepositoryImpl(this._dataSource);
 
   final SendSettingsDataSource _dataSource;
+  final _keys = IdempotencyKeys();
 
   @override
   Future<SendSettings> getSettings({String? caseId}) => _guard(() async {
@@ -27,9 +30,8 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
   Future<SendSettings> saveSettings(
     SendSettingsUpdate update, {
     String? caseId,
-    required String idempotencyKey,
-  }) => _guard(() async {
-    final response = await _dataSource.saveSettings({
+  }) {
+    final body = <String, Object?>{
       "mailbox_ref": "demo-purchase-mailbox",
       "case_id": caseId,
       "expected_settings_version": update.expectedSettingsVersion,
@@ -44,9 +46,20 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
         ApplyTo.specifiedDrafts => "SPECIFIED_DRAFTS",
       },
       "draft_ids": update.draftIds,
-    }, idempotencyKey: idempotencyKey);
-    return _settings(response["data"] as Map<String, dynamic>);
-  });
+    };
+    return _keys.run(
+      "save:${caseId ?? "mailbox"}",
+      body,
+      (key) => _guard(() async {
+        final response = await _dataSource.saveSettings(
+          body,
+          idempotencyKey: key,
+        );
+        return _settings(response["data"] as Map<String, dynamic>);
+      }),
+      serverCode: (error) => error is SendSettingsFailure ? error.code : null,
+    );
+  }
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {

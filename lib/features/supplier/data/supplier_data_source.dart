@@ -44,12 +44,11 @@ class SupplierApiException implements Exception {
 /// In-memory responses until the API is ready. Registered suppliers last
 /// until the browser reloads.
 class PreviewSupplierDataSource implements SupplierDataSource {
-  PreviewSupplierDataSource({
-    this.latency = const Duration(milliseconds: 250),
-  }) : _details = [
-         for (final detail in supplierPreviewDetails)
-           _copy(detail) as Map<String, dynamic>,
-       ];
+  PreviewSupplierDataSource({this.latency = const Duration(milliseconds: 250)})
+    : _details = [
+        for (final detail in supplierPreviewDetails)
+          _copy(detail) as Map<String, dynamic>,
+      ];
 
   final Duration latency;
   final List<Map<String, dynamic>> _details;
@@ -71,7 +70,9 @@ class PreviewSupplierDataSource implements SupplierDataSource {
     final end = (start + limit).clamp(0, matches.length);
     return {
       "data": {
-        "items": [for (final detail in matches.sublist(start, end)) _summary(detail)],
+        "items": [
+          for (final detail in matches.sublist(start, end)) _summary(detail),
+        ],
         "next_cursor": end < matches.length ? "$end" : null,
         "counts": {"total": matches.length},
       },
@@ -87,10 +88,7 @@ class PreviewSupplierDataSource implements SupplierDataSource {
         .firstOrNull;
     if (detail == null) {
       throw const SupplierApiException(404, {
-        "error": {
-          "code": "RESOURCE_NOT_FOUND",
-          "message": "거래처를 찾을 수 없습니다.",
-        },
+        "error": {"code": "RESOURCE_NOT_FOUND", "message": "거래처를 찾을 수 없습니다."},
       });
     }
     return {
@@ -109,10 +107,7 @@ class PreviewSupplierDataSource implements SupplierDataSource {
     );
     if (!known) {
       throw const SupplierApiException(404, {
-        "error": {
-          "code": "RESOURCE_NOT_FOUND",
-          "message": "품목을 찾을 수 없습니다.",
-        },
+        "error": {"code": "RESOURCE_NOT_FOUND", "message": "품목을 찾을 수 없습니다."},
       });
     }
     final history =

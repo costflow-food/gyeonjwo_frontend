@@ -38,8 +38,7 @@ const mailIntakePreviewItems = [
     "subject": "11월 단가표 송부",
     "sender": "info@e-farm.example.com",
     "received_at": "2026-10-18T23:40:00Z",
-    "body_text":
-        "안녕하세요. E농장입니다.\n\n11월 단가표를 첨부드립니다. 거래 관련 문의는 회신 부탁드립니다.",
+    "body_text": "안녕하세요. E농장입니다.\n\n11월 단가표를 첨부드립니다. 거래 관련 문의는 회신 부탁드립니다.",
     "mail_classification": "UNCERTAIN",
     "reason_detail": "등록되지 않은 발신자이며 단가표가 첨부됐지만 요청 내용이 확인되지 않습니다.",
     "attachments": ["E농장_11월_단가표.xlsx"],
