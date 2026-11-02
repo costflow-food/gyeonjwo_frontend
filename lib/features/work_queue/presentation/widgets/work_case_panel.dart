@@ -8,10 +8,12 @@ import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
+import "attachment_viewer.dart";
 import "candidate_selection.dart";
 import "status_badge.dart";
 
 /// 선택한 업무의 원문(제목·본문·첨부)과, 아직 실행하지 않은 업무의 두 가지 선택.
+/// PDF 첨부가 있으면 본문 옆(좁으면 아래)에 뷰어를 띄웁니다.
 class WorkCasePanel extends ConsumerStatefulWidget {
   const WorkCasePanel({super.key, required this.workCase});
 
@@ -22,8 +24,29 @@ class WorkCasePanel extends ConsumerStatefulWidget {
 }
 
 class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
+  /// 이보다 넓으면 원문과 첨부를 나란히 둡니다.
+  static const _sideBySideWidth = 960.0;
+
   bool _busy = false;
   String? _error;
+
+  /// 사용자가 고른 첨부. 고르기 전에는 첫 PDF를 자동으로 엽니다.
+  String? _openAttachmentId;
+  bool _viewerClosed = false;
+
+  MailAttachment? _openAttachment(OriginalMail? mail) {
+    if (mail == null || _viewerClosed) return null;
+    final pdfs = mail.attachments.where((attachment) => attachment.isPdf);
+    return pdfs.where((a) => a.id == _openAttachmentId).firstOrNull ??
+        pdfs.firstOrNull;
+  }
+
+  void _openViewer(MailAttachment attachment) => setState(() {
+    _openAttachmentId = attachment.id;
+    _viewerClosed = false;
+  });
+
+  void _closeViewer() => setState(() => _viewerClosed = true);
 
   WorkQueueViewModel get _viewModel =>
       ref.read(workQueueViewModelProvider.notifier);
@@ -106,7 +129,9 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
   Widget build(BuildContext context) {
     final workCase = widget.workCase;
     final mail = ref.watch(originalMailProvider(workCase.initialMailId));
-    return OutlinePanel(
+    final loadedMail = mail.asData?.value;
+    final openAttachment = _openAttachment(loadedMail);
+    final panel = OutlinePanel(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -147,7 +172,11 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               onRetry: () =>
                   ref.invalidate(originalMailProvider(workCase.initialMailId)),
             ),
-            data: (mail) => _MailContent(mail: mail),
+            data: (mail) => _MailContent(
+              mail: mail,
+              openAttachmentId: openAttachment?.id,
+              onOpen: _openViewer,
+            ),
           ),
           const SizedBox(height: 24),
           const Divider(height: 1, color: line),
@@ -176,13 +205,51 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
         ],
       ),
     );
+    if (loadedMail == null || openAttachment == null) return panel;
+
+    AttachmentViewer viewer(double height) => AttachmentViewer(
+      key: ValueKey(openAttachment.id),
+      mailId: loadedMail.id,
+      attachment: openAttachment,
+      height: height,
+      onClose: _closeViewer,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < _sideBySideWidth) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [panel, const SizedBox(height: 16), viewer(720)],
+          );
+        }
+        // 화면 높이에 맞춰 원문을 스크롤하지 않아도 PDF 한 페이지가 보이게 합니다.
+        final height = (MediaQuery.sizeOf(context).height - 80).clamp(
+          480.0,
+          1600.0,
+        );
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 5, child: panel),
+            const SizedBox(width: 16),
+            Expanded(flex: 6, child: viewer(height)),
+          ],
+        );
+      },
+    );
   }
 }
 
 class _MailContent extends StatelessWidget {
-  const _MailContent({required this.mail});
+  const _MailContent({
+    required this.mail,
+    required this.openAttachmentId,
+    required this.onOpen,
+  });
 
   final OriginalMail mail;
+  final String? openAttachmentId;
+  final ValueChanged<MailAttachment> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +299,11 @@ class _MailContent extends StatelessWidget {
             runSpacing: 8,
             children: [
               for (final attachment in mail.attachments)
-                _AttachmentTile(attachment: attachment),
+                _AttachmentTile(
+                  attachment: attachment,
+                  selected: attachment.id == openAttachmentId,
+                  onTap: attachment.isPdf ? () => onOpen(attachment) : null,
+                ),
             ],
           ),
       ],
@@ -271,31 +342,39 @@ class _MetaRow extends StatelessWidget {
 }
 
 class _AttachmentTile extends StatelessWidget {
-  const _AttachmentTile({required this.attachment});
+  const _AttachmentTile({
+    required this.attachment,
+    required this.selected,
+    required this.onTap,
+  });
 
   final MailAttachment attachment;
+  final bool selected;
+
+  /// PDF만 열 수 있습니다. 다른 형식은 null.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final extension = attachment.filename.contains(".")
         ? attachment.filename.split(".").last.toUpperCase()
         : "파일";
-    return Container(
+    final tile = Container(
       constraints: const BoxConstraints(maxWidth: 280),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        border: Border.all(color: line),
+        border: Border.all(color: selected ? accent : line),
         borderRadius: BorderRadius.circular(7),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            attachment.mimeType == "application/pdf"
+            attachment.isPdf
                 ? Icons.picture_as_pdf_outlined
                 : Icons.insert_drive_file_outlined,
             size: 20,
-            color: muted,
+            color: selected ? accent : muted,
           ),
           const SizedBox(width: 10),
           Flexible(
@@ -323,6 +402,18 @@ class _AttachmentTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+    if (onTap == null) {
+      return Tooltip(message: "PDF만 미리 볼 수 있어요.", child: tile);
+    }
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: "${attachment.filename} 열기",
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(onTap: onTap, child: tile),
       ),
     );
   }

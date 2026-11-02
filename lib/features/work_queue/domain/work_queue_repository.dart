@@ -1,3 +1,5 @@
+import "dart:typed_data";
+
 import "candidate.dart";
 import "work_case.dart";
 
@@ -11,6 +13,9 @@ abstract interface class WorkQueueRepository {
 
   /// API-25. 읽기 전용이며 추출을 시작하지 않습니다.
   Future<OriginalMail> getOriginalMail(String mailId);
+
+  /// API-26. 첨부 원본 바이트(읽기 전용).
+  Future<Uint8List> getAttachmentContent(String mailId, String attachmentId);
 
   /// API-05. 되돌릴 수 없습니다: 업무와 연결 메일이 삭제됩니다.
   Future<void> acceptIncrease(WorkCase workCase);

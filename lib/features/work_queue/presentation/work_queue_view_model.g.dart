@@ -235,6 +235,89 @@ final class OriginalMailFamily extends $Family
   String toString() => r'originalMailProvider';
 }
 
+/// API-26 첨부 원본. 뷰어를 닫으면 메모리에서 내려갑니다.
+
+@ProviderFor(attachmentContent)
+final attachmentContentProvider = AttachmentContentFamily._();
+
+/// API-26 첨부 원본. 뷰어를 닫으면 메모리에서 내려갑니다.
+
+final class AttachmentContentProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Uint8List>,
+          Uint8List,
+          FutureOr<Uint8List>
+        >
+    with $FutureModifier<Uint8List>, $FutureProvider<Uint8List> {
+  /// API-26 첨부 원본. 뷰어를 닫으면 메모리에서 내려갑니다.
+  AttachmentContentProvider._({
+    required AttachmentContentFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: _noRetry,
+         name: r'attachmentContentProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$attachmentContentHash();
+
+  @override
+  String toString() {
+    return r'attachmentContentProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<Uint8List> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Uint8List> create(Ref ref) {
+    final argument = this.argument as (String, String);
+    return attachmentContent(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is AttachmentContentProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$attachmentContentHash() => r'8b8f685036f176e9eb87c5c4405b8fe491fafdcc';
+
+/// API-26 첨부 원본. 뷰어를 닫으면 메모리에서 내려갑니다.
+
+final class AttachmentContentFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<Uint8List>, (String, String)> {
+  AttachmentContentFamily._()
+    : super(
+        retry: _noRetry,
+        name: r'attachmentContentProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// API-26 첨부 원본. 뷰어를 닫으면 메모리에서 내려갑니다.
+
+  AttachmentContentProvider call(String mailId, String attachmentId) =>
+      AttachmentContentProvider._(argument: (mailId, attachmentId), from: this);
+
+  @override
+  String toString() => r'attachmentContentProvider';
+}
+
 /// Realtime change signal while signed in; nothing when signed out.
 
 @ProviderFor(workCaseChanges)

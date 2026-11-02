@@ -1,3 +1,5 @@
+import "dart:typed_data";
+
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/idempotency_key.dart";
@@ -74,6 +76,10 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       ]),
     );
   });
+
+  @override
+  Future<Uint8List> getAttachmentContent(String mailId, String attachmentId) =>
+      _guard(() => _dataSource.fetchAttachmentContent(mailId, attachmentId));
 
   @override
   Future<void> acceptIncrease(WorkCase workCase) {
