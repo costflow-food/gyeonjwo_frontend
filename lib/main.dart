@@ -9,25 +9,49 @@ import 'app/ui_preview.dart';
 import "features/auth/data/auth_session_data_source.dart";
 import "features/auth/data/provider_token_free_local_storage.dart";
 import "features/auth/presentation/auth_session_view_model.dart";
+import "features/auth/presentation/gmail_connection_view_model.dart";
+
+final appTheme = ThemeData(
+  colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFED2635)),
+  scaffoldBackgroundColor: const Color(0xFFFCFCFD),
+  useMaterial3: true,
+  textTheme: ThemeData.light().textTheme.apply(
+    bodyColor: const Color(0xFF191A1B),
+    displayColor: const Color(0xFF191A1B),
+  ),
+);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (AppConfig.isAuthConfigured) {
-    await Supabase.initialize(
-      url: AppConfig.supabaseUrl,
-      publishableKey: AppConfig.supabasePublishableKey,
-      // Supabase debug logs can include auth state details.
-      debug: false,
-      authOptions: FlutterAuthClientOptions(
-        localStorage: ProviderTokenFreeLocalStorage.forSupabaseUrl(
-          AppConfig.supabaseUrl,
-        ),
-      ),
+  if (!AppConfig.isConfigured) {
+    // The design preview page needs no server, so it still opens in debug.
+    final route = _hashRoute(Uri.base);
+    runApp(
+      kDebugMode && route.path == '/ui-preview'
+          ? UiPreviewApp(parameters: route.queryParameters, theme: appTheme)
+          : MissingConfigApp(missingKeys: AppConfig.missingKeys),
     );
-    await OAuthRedirectGrant.captureFrom(Supabase.instance.client.auth);
+    return;
   }
+  await Supabase.initialize(
+    url: AppConfig.supabaseUrl,
+    publishableKey: AppConfig.supabasePublishableKey,
+    // Supabase debug logs can include auth state details.
+    debug: false,
+    authOptions: FlutterAuthClientOptions(
+      localStorage: ProviderTokenFreeLocalStorage.forSupabaseUrl(
+        AppConfig.supabaseUrl,
+      ),
+    ),
+  );
+  await OAuthRedirectGrant.captureFrom(Supabase.instance.client.auth);
   runApp(const ProviderScope(child: MyApp()));
 }
+
+/// `/#/ui-preview?screen=queue` → `/ui-preview` with its query.
+Uri _hashRoute(Uri base) =>
+    Uri.tryParse(base.fragment.isEmpty ? base.path : base.fragment) ??
+    Uri(path: '/');
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -36,14 +60,10 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Re-run route guards whenever sign-in state changes.
     ref.listen(authSessionViewModelProvider, (_, _) => appRouter.refresh());
-    final theme = ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFED2635)),
-      scaffoldBackgroundColor: const Color(0xFFFCFCFD),
-      useMaterial3: true,
-      textTheme: ThemeData.light().textTheme.apply(
-        bodyColor: const Color(0xFF191A1B),
-        displayColor: const Color(0xFF191A1B),
-      ),
+    // Leave the connection screen as soon as the server confirms Gmail.
+    ref.listen(
+      gmailConnectionViewModelProvider.select((value) => value.connectionPhase),
+      (_, _) => appRouter.refresh(),
     );
     return ListenableBuilder(
       listenable: appRouter.routeInformationProvider,
@@ -51,15 +71,67 @@ class MyApp extends ConsumerWidget {
         final uri = appRouter.routeInformationProvider.value.uri;
         // Preview owns the root Navigator so dialogs use its isolated scope.
         if (kDebugMode && uri.path == '/ui-preview') {
-          return UiPreviewApp(parameters: uri.queryParameters, theme: theme);
+          return UiPreviewApp(parameters: uri.queryParameters, theme: appTheme);
         }
         return MaterialApp.router(
           title: '견줘',
           debugShowCheckedModeBanner: false,
-          theme: theme,
+          theme: appTheme,
           routerConfig: appRouter,
         );
       },
     );
   }
+}
+
+/// Shown instead of a preview mode when the run settings are missing.
+class MissingConfigApp extends StatelessWidget {
+  const MissingConfigApp({super.key, required this.missingKeys});
+
+  final List<String> missingKeys;
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    title: '견줘',
+    debugShowCheckedModeBanner: false,
+    theme: appTheme,
+    home: Scaffold(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '실행 설정이 필요해요',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '다음 값이 비어 있어요: ${missingKeys.join(", ")}',
+                  style: const TextStyle(fontSize: 13, height: 1.7),
+                ),
+                const SizedBox(height: 16),
+                const SelectableText(
+                  'flutter run -d chrome --web-port 3000 '
+                  '--dart-define-from-file=config/dart_defines.local.json',
+                  style: TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                ),
+                if (kDebugMode) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    '서버 없이 화면만 보려면 /#/ui-preview 를 여세요.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF7C7F85)),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

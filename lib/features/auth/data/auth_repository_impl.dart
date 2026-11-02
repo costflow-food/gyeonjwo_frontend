@@ -44,9 +44,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    if (!_session.isConfigured) {
-      throw const AuthFailure(AuthFailureCode.notConfigured);
-    }
     await _session.signInWithGoogle();
   }
 
@@ -152,7 +149,6 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   AuthSession _toSession(Map<String, dynamic>? json) {
-    if (!_session.isConfigured) return const AuthSession.unconfigured();
     if (json == null) return const AuthSession.signedOut();
     return AuthSession(
       status: AuthSessionStatus.signedIn,

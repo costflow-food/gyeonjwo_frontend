@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/workspace_colors.dart';
@@ -39,9 +38,6 @@ class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
 
   @override
   Widget build(BuildContext context) {
-    final isConfigured =
-        ref.watch(authSessionViewModelProvider).asData?.value.isConfigured ??
-        false;
     return AuthLayout(
       backPath: '/login',
       maxWidth: 1280,
@@ -84,9 +80,7 @@ class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
           LayoutBuilder(
             builder: (context, constraints) {
               final notice = Text(
-                isConfigured
-                    ? '계속하면 Google 계정 선택·권한 동의 화면으로 이동해요.\n읽기·발송 권한은 Google 화면에서 각각 선택할 수 있어요.'
-                    : '지금은 실제 동의를 받거나 권한을 요청하지 않습니다.\nSupabase 설정 없이 실행한 미리보기입니다.',
+                '계속하면 Google 계정 선택·권한 동의 화면으로 이동해요.\n읽기·발송 권한은 Google 화면에서 각각 선택할 수 있어요.',
                 style: const TextStyle(
                   fontSize: AppFontSizes.secondary,
                   color: muted,
@@ -94,16 +88,8 @@ class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
                 ),
               );
               final next = AuthButton(
-                label: !isConfigured
-                    ? '연결 상태 미리보기'
-                    : _starting
-                    ? 'Google로 이동 중…'
-                    : 'Google로 계속하기',
-                onPressed: !isConfigured
-                    ? () => context.go('/login/connection')
-                    : _starting
-                    ? () {}
-                    : _continueWithGoogle,
+                label: _starting ? 'Google로 이동 중…' : 'Google로 계속하기',
+                onPressed: _starting ? () {} : _continueWithGoogle,
               );
               if (constraints.maxWidth >= 800) {
                 return Row(

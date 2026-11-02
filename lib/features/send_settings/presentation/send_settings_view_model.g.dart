@@ -54,7 +54,7 @@ final class SendSettingsViewModelProvider
 }
 
 String _$sendSettingsViewModelHash() =>
-    r'a5133615f8528ccc9db2fbba6b681178fe81763e';
+    r'1f242eab31c0e4bcd03f3f249523d8aaf06bf314';
 
 /// SCR-008 effective settings for the mailbox or one case.
 

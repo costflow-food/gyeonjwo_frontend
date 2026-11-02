@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/analysis_stop/presentation/analysis_stop_dialog.dart';
 import '../features/analysis_stop/data/analysis_stop_data_source.dart';
+import '../features/auth/data/account_connection_data_source.dart';
 import '../features/auth/data/auth_session_data_source.dart';
 import '../features/auth/domain/gmail_connection.dart';
 import '../features/auth/presentation/account_view.dart';
@@ -27,6 +30,7 @@ import '../features/supplier/data/supplier_repository_impl.dart';
 import '../features/supplier/data/supplier_data_source.dart';
 import '../features/supplier/presentation/supplier_evidence_dialog.dart';
 import '../features/supplier/presentation/supplier_view.dart';
+import '../features/work_queue/data/work_case_change_source.dart';
 import '../features/work_queue/data/work_queue_data_source.dart';
 import '../features/work_queue/presentation/work_queue_view.dart';
 import '../features/workflow_log/presentation/workflow_log_view.dart';
@@ -65,10 +69,22 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
     final store = PreviewWorkspace();
     _container = ProviderContainer(
       overrides: [
+        // Real screens with a fake signed-in session; nothing reaches Supabase.
         authSessionDataSourceProvider.overrideWithValue(
-          const UnconfiguredAuthSessionDataSource(),
+          const _PreviewAuthSession(),
+        ),
+        accountConnectionDataSourceProvider.overrideWithValue(
+          _PreviewConnectionSource(
+            GmailConnectionPhase.values
+                    .where((phase) => phase.name == parameters['state'])
+                    .firstOrNull ??
+                GmailConnectionPhase.connected,
+          ),
         ),
         previewWorkspaceProvider.overrideWith((ref) => store),
+        workCaseChangeSourceProvider.overrideWithValue(
+          const NoWorkCaseChanges(),
+        ),
         workQueueDataSourceProvider.overrideWith(
           (ref) => PreviewWorkQueueDataSource(
             workspace: store,
@@ -203,18 +219,10 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
               path: '/login/permissions',
               builder: (context, state) => const AuthPermissionsView(),
             ),
+            // The phase comes from ?state= when the preview starts.
             GoRoute(
               path: '/login/connection',
-              builder: (context, state) => AuthConnectionView(
-                previewPhase:
-                    GmailConnectionPhase.values
-                        .where(
-                          (phase) =>
-                              phase.name == state.uri.queryParameters['state'],
-                        )
-                        .firstOrNull ??
-                    GmailConnectionPhase.connected,
-              ),
+              builder: (context, state) => const AuthConnectionView(),
             ),
           ],
         ),
@@ -470,4 +478,79 @@ class _PreviewCatalogState extends ConsumerState<_PreviewCatalog> {
       ),
     ),
   );
+}
+
+/// Signed-in session for the preview page. Never talks to Supabase.
+class _PreviewAuthSession implements AuthSessionDataSource {
+  const _PreviewAuthSession();
+
+  static const Map<String, dynamic> _session = {
+    "email": "buyer@preview.example",
+    "access_token": "preview-access-token",
+    "provider_token": null,
+    "provider_refresh_token": null,
+  };
+
+  @override
+  Map<String, dynamic>? currentSession() => _session;
+
+  @override
+  Future<String?> freshAccessToken({bool forceRefresh = false}) async =>
+      _session["access_token"] as String;
+
+  @override
+  Stream<Map<String, dynamic>?> watchSession() => const Stream.empty();
+
+  @override
+  Map<String, String> redirectError() => const {};
+
+  @override
+  Future<void> signInWithGoogle() async {}
+
+  @override
+  Future<void> signOut() async {}
+}
+
+/// Server answer for one Gmail connection phase, so the real connection
+/// screen can be checked in every state.
+class _PreviewConnectionSource implements AccountConnectionDataSource {
+  const _PreviewConnectionSource(this.phase);
+
+  final GmailConnectionPhase phase;
+
+  @override
+  Future<Map<String, dynamic>> connectGoogle({
+    required String accessToken,
+    required String providerAccessToken,
+    required String? providerRefreshToken,
+    required String idempotencyKey,
+  }) => fetchGoogleConnection(accessToken: accessToken);
+
+  @override
+  Future<Map<String, dynamic>> fetchGoogleConnection({
+    required String accessToken,
+  }) {
+    // Waiting for the server: never answers.
+    if (phase == GmailConnectionPhase.connecting) {
+      return Completer<Map<String, dynamic>>().future;
+    }
+    final (status, read, send) = switch (phase) {
+      GmailConnectionPhase.readDenied => ("PARTIAL", false, true),
+      GmailConnectionPhase.sendDenied => ("PARTIAL", true, false),
+      GmailConnectionPhase.bothDenied => ("PARTIAL", false, false),
+      GmailConnectionPhase.failed => ("FAILED", false, false),
+      GmailConnectionPhase.reconnect => ("NEEDS_RECONNECT", false, false),
+      GmailConnectionPhase.connected ||
+      GmailConnectionPhase.connecting => ("CONNECTED", true, true),
+    };
+    return Future.value({
+      "data": {
+        "status": status,
+        "email": "buyer@preview.example",
+        "capabilities": {"read": read, "send": send},
+        "watch": {"started": read},
+      },
+      "meta": {"request_id": "req-preview-connection"},
+    });
+  }
 }

@@ -16,19 +16,22 @@ import "widgets/mail_intake_header.dart";
 ///
 /// Advertising and other non-business mail never reaches the queue; only
 /// mails the classifier could not settle appear here.
-Future<void> showMailIntakeDialog(BuildContext context) {
+Future<void> showMailIntakeDialog(BuildContext context, {String? mailId}) {
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: const MailIntakeDialog(),
+      child: MailIntakeDialog(initialMailId: mailId),
     ),
   );
 }
 
 class MailIntakeDialog extends ConsumerStatefulWidget {
-  const MailIntakeDialog({super.key});
+  const MailIntakeDialog({super.key, this.initialMailId});
+
+  /// The mail picked in the sidebar; opens with it selected.
+  final String? initialMailId;
 
   @override
   ConsumerState<MailIntakeDialog> createState() => _MailIntakeDialogState();
@@ -50,7 +53,7 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
   }
 
   final _reason = TextEditingController();
-  String? _selectedMailId;
+  late String? _selectedMailId = widget.initialMailId;
   String? _selectedCaseId;
   bool _busy = false;
   String? _error;

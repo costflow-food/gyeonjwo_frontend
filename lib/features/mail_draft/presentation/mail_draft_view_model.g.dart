@@ -54,7 +54,7 @@ final class MailDraftViewModelProvider
 }
 
 String _$mailDraftViewModelHash() =>
-    r'f38983d8e01a1af768aa8f590678a0528e9324ca';
+    r'a69936e1d31dcc8b63a6dc54324413d78c573754';
 
 /// SCR-007 drafts of one case. Polls while a send is in progress.
 

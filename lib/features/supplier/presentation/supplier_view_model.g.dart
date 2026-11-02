@@ -37,7 +37,7 @@ final class SupplierListViewModelProvider
 }
 
 String _$supplierListViewModelHash() =>
-    r'd2f277c6c0902032e39942888cc5ba8148062cc2';
+    r'9b33d19ebfbbe3f48fd096b943900756d331e65d';
 
 /// SCR-011 list, search, selection, and registration.
 

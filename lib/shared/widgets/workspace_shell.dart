@@ -26,7 +26,8 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final sidebarWidth = (constraints.maxWidth * .16).clamp(180.0, 216.0);
+        // Wide enough for item groups and mail titles in the queue list.
+        final sidebarWidth = (constraints.maxWidth * .2).clamp(220.0, 300.0);
         final canExpandSidebar =
             constraints.maxWidth >=
             sidebarWidth + _sidebarDividerWidth + _minimumBodyWidth;

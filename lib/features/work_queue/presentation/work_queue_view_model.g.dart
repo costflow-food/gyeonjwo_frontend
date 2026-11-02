@@ -8,53 +8,21 @@ part of 'work_queue_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-
-@ProviderFor(workQueueRequests)
-final workQueueRequestsProvider = WorkQueueRequestsProvider._();
-
-final class WorkQueueRequestsProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<RequestItem>>,
-          List<RequestItem>,
-          FutureOr<List<RequestItem>>
-        >
-    with
-        $FutureModifier<List<RequestItem>>,
-        $FutureProvider<List<RequestItem>> {
-  WorkQueueRequestsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: _noRetry,
-        name: r'workQueueRequestsProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$workQueueRequestsHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<List<RequestItem>> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<RequestItem>> create(Ref ref) {
-    return workQueueRequests(ref);
-  }
-}
-
-String _$workQueueRequestsHash() => r'b764982f4d5f1e7872c575e5f59abbbc6ae9872d';
+/// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
+///
+/// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
 
 @ProviderFor(WorkQueueViewModel)
 final workQueueViewModelProvider = WorkQueueViewModelProvider._();
 
+/// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
+///
+/// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
 final class WorkQueueViewModelProvider
     extends $AsyncNotifierProvider<WorkQueueViewModel, WorkQueueState> {
+  /// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
+  ///
+  /// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
   WorkQueueViewModelProvider._()
     : super(
         from: null,
@@ -75,7 +43,11 @@ final class WorkQueueViewModelProvider
 }
 
 String _$workQueueViewModelHash() =>
-    r'783024f8fbda6c09fa5f4b01acc19c675c42187e';
+    r'fcd812055ed67b6c03062e2d1fd5fad119115372';
+
+/// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
+///
+/// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
 
 abstract class _$WorkQueueViewModel extends $AsyncNotifier<WorkQueueState> {
   FutureOr<WorkQueueState> build();
@@ -94,3 +66,209 @@ abstract class _$WorkQueueViewModel extends $AsyncNotifier<WorkQueueState> {
     return element.handleCreate(ref, build);
   }
 }
+
+/// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
+
+@ProviderFor(caseCandidates)
+final caseCandidatesProvider = CaseCandidatesFamily._();
+
+/// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
+
+final class CaseCandidatesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CandidateSet>,
+          CandidateSet,
+          FutureOr<CandidateSet>
+        >
+    with $FutureModifier<CandidateSet>, $FutureProvider<CandidateSet> {
+  /// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
+  CaseCandidatesProvider._({
+    required CaseCandidatesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: _noRetry,
+         name: r'caseCandidatesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$caseCandidatesHash();
+
+  @override
+  String toString() {
+    return r'caseCandidatesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<CandidateSet> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CandidateSet> create(Ref ref) {
+    final argument = this.argument as String;
+    return caseCandidates(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CaseCandidatesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$caseCandidatesHash() => r'43e899956f93d5ed5cc6aee631ea950e99277e4e';
+
+/// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
+
+final class CaseCandidatesFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<CandidateSet>, String> {
+  CaseCandidatesFamily._()
+    : super(
+        retry: _noRetry,
+        name: r'caseCandidatesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
+
+  CaseCandidatesProvider call(String caseId) =>
+      CaseCandidatesProvider._(argument: caseId, from: this);
+
+  @override
+  String toString() => r'caseCandidatesProvider';
+}
+
+/// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
+
+@ProviderFor(originalMail)
+final originalMailProvider = OriginalMailFamily._();
+
+/// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
+
+final class OriginalMailProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<OriginalMail>,
+          OriginalMail,
+          FutureOr<OriginalMail>
+        >
+    with $FutureModifier<OriginalMail>, $FutureProvider<OriginalMail> {
+  /// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
+  OriginalMailProvider._({
+    required OriginalMailFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: _noRetry,
+         name: r'originalMailProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$originalMailHash();
+
+  @override
+  String toString() {
+    return r'originalMailProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<OriginalMail> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<OriginalMail> create(Ref ref) {
+    final argument = this.argument as String;
+    return originalMail(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is OriginalMailProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$originalMailHash() => r'164617511233085b0b882ee4caddaa0d4a269ca2';
+
+/// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
+
+final class OriginalMailFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<OriginalMail>, String> {
+  OriginalMailFamily._()
+    : super(
+        retry: _noRetry,
+        name: r'originalMailProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
+
+  OriginalMailProvider call(String mailId) =>
+      OriginalMailProvider._(argument: mailId, from: this);
+
+  @override
+  String toString() => r'originalMailProvider';
+}
+
+/// Realtime change signal while signed in; nothing when signed out.
+
+@ProviderFor(workCaseChanges)
+final workCaseChangesProvider = WorkCaseChangesProvider._();
+
+/// Realtime change signal while signed in; nothing when signed out.
+
+final class WorkCaseChangesProvider
+    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
+    with $FutureModifier<int>, $StreamProvider<int> {
+  /// Realtime change signal while signed in; nothing when signed out.
+  WorkCaseChangesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'workCaseChangesProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$workCaseChangesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<int> create(Ref ref) {
+    return workCaseChanges(ref);
+  }
+}
+
+String _$workCaseChangesHash() => r'9afbb535abd426346abafefb48aad72d939039c0';

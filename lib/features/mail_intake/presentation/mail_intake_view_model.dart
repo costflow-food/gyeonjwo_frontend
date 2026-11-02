@@ -34,7 +34,7 @@ class MailIntakeViewModel extends _$MailIntakeViewModel {
             targetCaseId: targetCaseId,
             reason: reason,
           );
-      if (ref.mounted) ref.invalidate(workQueueRequestsProvider);
+      if (ref.mounted) ref.invalidate(workQueueViewModelProvider);
     } finally {
       if (ref.mounted) ref.invalidateSelf();
     }

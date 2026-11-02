@@ -42,9 +42,7 @@ class GmailConnectionViewModel extends _$GmailConnectionViewModel {
 @Riverpod(keepAlive: true)
 GmailCapabilities gmailCapabilities(Ref ref) {
   final session = ref.watch(authSessionViewModelProvider).asData?.value;
-  if (session == null || !session.isConfigured) {
-    return GmailCapabilities.preview;
-  }
+  if (session == null) return GmailCapabilities.unknown;
   final value = ref.watch(gmailConnectionViewModelProvider);
   final connection = value.asData?.value;
   if (value.isLoading || connection == null) return GmailCapabilities.unknown;

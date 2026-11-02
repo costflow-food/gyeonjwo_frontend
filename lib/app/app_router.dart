@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/domain/auth_route_policy.dart';
 import '../features/auth/domain/gmail_connection.dart';
 import '../features/auth/presentation/auth_session_view_model.dart';
+import '../features/auth/presentation/gmail_connection_view_model.dart';
 import '../features/auth/presentation/login_view.dart';
 import '../features/auth/presentation/account_view.dart';
 import '../features/auth/presentation/auth_permissions_view.dart';
@@ -18,14 +19,21 @@ import 'ui_preview.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
-  // Screen flow only; MyApp calls refresh() when the session changes.
+  // Screen flow only; MyApp calls refresh() when the session or the Gmail
+  // connection phase changes.
   redirect: (context, state) {
     if (kDebugMode && state.uri.path == '/ui-preview') return null;
-    final session = ProviderScope.containerOf(
-      context,
-      listen: false,
-    ).read(authSessionViewModelProvider).asData?.value;
-    return authRedirect(session?.status, state.uri.path);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final session = container.read(authSessionViewModelProvider).asData?.value;
+    final path = state.uri.path;
+    // Read the Gmail connection only on the connection screen, where it is
+    // being established anyway.
+    final gmailReady =
+        session?.isSignedIn == true &&
+        path == '/login/connection' &&
+        container.read(gmailConnectionViewModelProvider).connectionPhase ==
+            GmailConnectionPhase.connected;
+    return authRedirect(session?.status, path, gmailReady: gmailReady);
   },
   routes: [
     if (kDebugMode)
@@ -41,13 +49,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/login/connection',
-      builder: (context, state) {
-        final previewName = state.uri.queryParameters['state'];
-        final previewPhase = GmailConnectionPhase.values
-            .where((value) => value.name == previewName)
-            .firstOrNull;
-        return AuthConnectionView(previewPhase: previewPhase);
-      },
+      builder: (context, state) => const AuthConnectionView(),
     ),
     GoRoute(path: '/account', builder: (context, state) => const AccountView()),
     GoRoute(path: '/', builder: (context, state) => const WorkQueueView()),

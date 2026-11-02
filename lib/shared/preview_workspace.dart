@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../features/mail_draft/data/mail_draft_preview_data.dart';
 import '../features/send_settings/data/send_settings_preview_data.dart';
-import 'formatters.dart';
+import '../features/work_queue/data/work_queue_preview_data.dart';
 
 part 'preview_workspace.g.dart';
 
@@ -24,7 +24,19 @@ class PreviewWorkspace {
       ],
   };
   final sendingSince = <String, DateTime>{};
-  final requests = <Map<String, dynamic>>[];
+
+  /// API-01 rows and API-25 mails for the preview work queue.
+  final List<Map<String, dynamic>> queueCases = [
+    for (final item in workQueuePreviewCases) _copy(item),
+  ];
+  final Map<String, Map<String, dynamic>> mails = {
+    for (final entry in workQueuePreviewMails.entries)
+      entry.key: _copy(entry.value),
+  };
+  final Map<String, Map<String, dynamic>> candidateSets = {
+    for (final entry in workQueuePreviewCandidateSets.entries)
+      entry.key: _copy(entry.value),
+  };
   final documents = <String, Map<String, dynamic>>{};
   int draftSequence = 0;
 
@@ -77,29 +89,44 @@ class PreviewWorkspace {
     draft['settings_version'] = settingsVersion(caseId);
   }
 
+  /// SCR-009 "새 업무로 접수": a Waiting case that has not been extracted yet.
   String createRequest(Map<String, dynamic> mail) {
-    final id = 'REQ-PREVIEW-${mail['mail_id']}';
-    if (requests.any((request) => request['id'] == id)) return id;
-    final received = formatSeoulDateTime(mail['received_at'] as String);
-    requests.insert(0, {
-      'id': id,
-      'title': mail['subject'],
-      'supplier': mail['sender'],
-      'attachments': (mail['attachments'] as List).length,
-      'status': '검토 대기',
-      'date': received.split(' ').first,
-      'time': received.split(' ').last,
-      'action': '실행',
-    });
-    documents[id] = {
+    final mailId = mail['mail_id'] as String;
+    final id = 'case-preview-$mailId';
+    if (queueCases.any((item) => item['case_id'] == id)) return id;
+    final attachments = [
+      for (final (index, name) in (mail['attachments'] as List).indexed)
+        {
+          'attachment_id': '$mailId-attachment-$index',
+          'filename': name,
+          'mime_type': 'application/octet-stream',
+          'size_bytes': 0,
+        },
+    ];
+    queueCases.insert(0, {
+      'case_id': id,
+      'initial_mail_id': mailId,
+      'item_name': null,
       'title': mail['subject'],
       'sender': mail['sender'],
-      'recipient': '구매담당자 (합성)',
-      'receivedAt': received,
-      'documentType': '접수 확인 메일',
-      'paragraphs': [mail['body_text']],
-      'highlights': <String>[],
-      'attachments': mail['attachments'],
+      'sender_name': null,
+      'received_at': mail['received_at'],
+      'status': 'Waiting',
+      'processing_step': 'PENDING_START',
+      'step_detail': {'code': 'PENDING_START', 'message': '원문 확인 후 검토 시작'},
+      'input_revision': 1,
+      'attachment_count': attachments.length,
+      'allowed_actions': ['VIEW_ORIGINAL', 'START', 'ACCEPT_INCREASE'],
+      'disabled_actions': [],
+    });
+    mails[mailId] = {
+      'mail_id': mailId,
+      'subject': mail['subject'],
+      'sender': mail['sender'],
+      'recipients': ['buyer@costflow.example'],
+      'received_at': mail['received_at'],
+      'body_text': mail['body_text'],
+      'attachments': attachments,
     };
     return id;
   }
