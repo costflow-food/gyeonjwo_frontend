@@ -41,6 +41,14 @@ abstract final class ProcessingStep {
   static const needsInfo = "NEEDS_INFO";
   static const selectingCandidates = "SELECTING_CANDIDATES";
   static const candidates = "CANDIDATES";
+
+  /// 견적 요청 초안이 만들어진 뒤의 단계. 메일 초안 화면을 열 수 있습니다.
+  static const withDrafts = {
+    "WAITING_APPROVAL",
+    "AWAITING_APPROVAL",
+    "WAITING_REPLY",
+    "SEND_UNKNOWN",
+  };
 }
 
 /// API-01·03 hold. 문구는 서버가 정한 그대로 보여 줍니다.

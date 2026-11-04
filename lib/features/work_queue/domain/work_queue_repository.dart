@@ -32,8 +32,8 @@ abstract interface class WorkQueueRepository {
   /// API-11. 에이전트가 고른 견적 요청 후보.
   Future<CandidateSet> getCandidates(String caseId);
 
-  /// API-12. 고른 업체로 견적 요청 초안을 만듭니다(승인 ON이면 승인 대기).
-  Future<void> selectCandidates(
+  /// API-12. 고른 업체로 견적 요청 초안을 만들고 업체별 발송 상태를 돌려줍니다.
+  Future<List<SelectedDraft>> selectCandidates(
     WorkCase workCase,
     CandidateSet candidates,
     List<String> supplierIds,

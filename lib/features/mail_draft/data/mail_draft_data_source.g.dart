@@ -8,9 +8,12 @@ part of 'mail_draft_data_source.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 앱은 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 @ProviderFor(mailDraftDataSource)
 final mailDraftDataSourceProvider = MailDraftDataSourceProvider._();
+
+/// 앱은 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 final class MailDraftDataSourceProvider
     extends
@@ -20,6 +23,7 @@ final class MailDraftDataSourceProvider
           MailDraftDataSource
         >
     with $Provider<MailDraftDataSource> {
+  /// 앱은 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
   MailDraftDataSourceProvider._()
     : super(
         from: null,
@@ -55,4 +59,4 @@ final class MailDraftDataSourceProvider
 }
 
 String _$mailDraftDataSourceHash() =>
-    r'8ec6c9545dfd8f8f094e6273d8bbfd1e7b85c669';
+    r'e10b237253f4b078dc4c8ad619c138aa875b113a';

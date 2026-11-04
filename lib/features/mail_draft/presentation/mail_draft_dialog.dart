@@ -6,11 +6,9 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/workspace_colors.dart";
 import "../../../shared/widgets/workspace_button_styles.dart";
-import "../../send_settings/presentation/send_settings_dialog.dart";
 import "../domain/mail_draft.dart";
 import "mail_draft_view_model.dart";
 import "widgets/mail_draft_body.dart";
-import "widgets/mail_draft_evidence.dart";
 import "widgets/mail_draft_footer.dart";
 import "widgets/mail_draft_header.dart";
 import "widgets/mail_draft_tabs.dart";
@@ -20,10 +18,12 @@ import "widgets/send_policy_banner.dart";
 ///
 /// Opening or closing never sends. With approval OFF the server sends on its
 /// own, so this dialog only shows the scope and the result.
+/// [dispatchStates] are the API-12 results right after a candidate selection.
 Future<void> showMailDraftDialog(
   BuildContext context, {
   required String caseId,
   String? draftId,
+  Map<String, DraftDispatchState> dispatchStates = const {},
 }) {
   return showDialog<void>(
     context: context,
@@ -31,16 +31,28 @@ Future<void> showMailDraftDialog(
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: MailDraftDialog(caseId: caseId, initialDraftId: draftId),
+      child: MailDraftDialog(
+        caseId: caseId,
+        initialDraftId: draftId,
+        dispatchStates: dispatchStates,
+      ),
     ),
   );
 }
 
 class MailDraftDialog extends ConsumerStatefulWidget {
-  const MailDraftDialog({super.key, required this.caseId, this.initialDraftId});
+  const MailDraftDialog({
+    super.key,
+    required this.caseId,
+    this.initialDraftId,
+    this.dispatchStates = const {},
+  });
 
   final String caseId;
   final String? initialDraftId;
+
+  /// draft_id → API-12 dispatch_state.
+  final Map<String, DraftDispatchState> dispatchStates;
 
   @override
   ConsumerState<MailDraftDialog> createState() => _MailDraftDialogState();
@@ -117,7 +129,9 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       }
       setState(() {
         _busy = false;
-        _error = failure.message;
+        _error = failure.unknownOutcome
+            ? "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."
+            : failure.message;
       });
     } catch (_) {
       if (!mounted) return;
@@ -187,13 +201,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     if (discard == true && mounted) Navigator.of(context).pop();
   }
 
-  Future<void> _openSettings() async {
-    await showSendSettingsDialog(context, caseId: widget.caseId);
-    if (mounted) {
-      ref.read(mailDraftViewModelProvider(widget.caseId).notifier).refresh();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = mailDraftViewModelProvider(widget.caseId);
@@ -226,11 +233,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                MailDraftHeader(
-                  caseId: widget.caseId,
-                  onClose: _close,
-                  onOpenSettings: _editing ? null : _openSettings,
-                ),
+                MailDraftHeader(caseId: widget.caseId, onClose: _close),
                 const Divider(height: 1, color: line),
                 Flexible(
                   child: SingleChildScrollView(
@@ -255,6 +258,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                                     ignoring: _editing,
                                     child: MailDraftTabs(
                                       drafts: drafts,
+                                      dispatchStates: widget.dispatchStates,
                                       selectedId: draft.id,
                                       onSelect: (id) => setState(() {
                                         _selectedId = id;
@@ -266,6 +270,8 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                                   SendPolicyBanner(
                                     draft: draft,
                                     editing: _editing,
+                                    dispatchState:
+                                        widget.dispatchStates[draft.id],
                                   ),
                                   const SizedBox(height: 16),
                                   MailDraftBody(
@@ -276,8 +282,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                                     body: _body,
                                     editReason: _editReason,
                                   ),
-                                  const SizedBox(height: 20),
-                                  MailDraftEvidence(evidence: draft.evidence),
                                 ],
                               ),
                             ),

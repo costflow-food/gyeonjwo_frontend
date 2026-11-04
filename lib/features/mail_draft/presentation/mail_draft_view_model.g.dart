@@ -8,22 +8,25 @@ part of 'mail_draft_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// SCR-007 drafts of one case. Polls while a send is in progress.
+/// SCR-007 drafts of one case. While a draft is sending, or an accepted
+/// approval or reconcile has no visible result yet, re-reads it with API-17.
 
 @ProviderFor(MailDraftViewModel)
 final mailDraftViewModelProvider = MailDraftViewModelFamily._();
 
-/// SCR-007 drafts of one case. Polls while a send is in progress.
+/// SCR-007 drafts of one case. While a draft is sending, or an accepted
+/// approval or reconcile has no visible result yet, re-reads it with API-17.
 final class MailDraftViewModelProvider
     extends $AsyncNotifierProvider<MailDraftViewModel, List<MailDraft>> {
-  /// SCR-007 drafts of one case. Polls while a send is in progress.
+  /// SCR-007 drafts of one case. While a draft is sending, or an accepted
+  /// approval or reconcile has no visible result yet, re-reads it with API-17.
   MailDraftViewModelProvider._({
     required MailDraftViewModelFamily super.from,
     required String super.argument,
   }) : super(
          retry: _noRetry,
          name: r'mailDraftViewModelProvider',
-         isAutoDispose: false,
+         isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -54,9 +57,10 @@ final class MailDraftViewModelProvider
 }
 
 String _$mailDraftViewModelHash() =>
-    r'a69936e1d31dcc8b63a6dc54324413d78c573754';
+    r'348dd446516227b236eb68bdd7e270beb1abe732';
 
-/// SCR-007 drafts of one case. Polls while a send is in progress.
+/// SCR-007 drafts of one case. While a draft is sending, or an accepted
+/// approval or reconcile has no visible result yet, re-reads it with API-17.
 
 final class MailDraftViewModelFamily extends $Family
     with
@@ -73,10 +77,11 @@ final class MailDraftViewModelFamily extends $Family
         name: r'mailDraftViewModelProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: false,
+        isAutoDispose: true,
       );
 
-  /// SCR-007 drafts of one case. Polls while a send is in progress.
+  /// SCR-007 drafts of one case. While a draft is sending, or an accepted
+  /// approval or reconcile has no visible result yet, re-reads it with API-17.
 
   MailDraftViewModelProvider call(String caseId) =>
       MailDraftViewModelProvider._(argument: caseId, from: this);
@@ -85,7 +90,8 @@ final class MailDraftViewModelFamily extends $Family
   String toString() => r'mailDraftViewModelProvider';
 }
 
-/// SCR-007 drafts of one case. Polls while a send is in progress.
+/// SCR-007 drafts of one case. While a draft is sending, or an accepted
+/// approval or reconcile has no visible result yet, re-reads it with API-17.
 
 abstract class _$MailDraftViewModel extends $AsyncNotifier<List<MailDraft>> {
   late final _$args = ref.$arg as String;

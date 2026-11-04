@@ -4,6 +4,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
+import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
@@ -76,6 +77,10 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         (workCase.atCandidates
             ? workCase.disabledMessage(WorkCaseAction.selectCandidates)
             : null);
+    // Drafts exist once RFQs were prepared, including a send-setting stop.
+    final hasDrafts =
+        ProcessingStep.withDrafts.contains(workCase.processingStep) ||
+        progress?.errorCode == "SEND_POLICY_REQUIRED";
     final canResume = workCase.can(WorkCaseAction.resume);
     final resumeBlocked = workCase.disabledMessage(WorkCaseAction.resume);
     return Column(
@@ -129,6 +134,22 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
             ],
           ),
         ),
+        if (hasDrafts) ...[
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              height: 44,
+              child: OutlinedButton.icon(
+                onPressed: () =>
+                    showMailDraftDialog(context, caseId: workCase.id),
+                style: WorkspaceButtonStyles.outlined,
+                icon: const Icon(Icons.mail_outline, size: 16),
+                label: const Text("메일 초안 보기"),
+              ),
+            ),
+          ),
+        ],
         if (canResume || resumeBlocked != null) ...[
           const SizedBox(height: 14),
           Align(

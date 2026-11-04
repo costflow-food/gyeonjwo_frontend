@@ -4,6 +4,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
+import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../domain/candidate.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
@@ -32,14 +33,35 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
       _error = null;
     });
     final messenger = ScaffoldMessenger.maybeOf(context);
+    // The list reloads after the selection and may remove this widget, so
+    // open the draft screen from the navigator, which stays mounted.
+    final navigatorContext = Navigator.of(context, rootNavigator: true).context;
     try {
-      await ref
+      final drafts = await ref
           .read(workQueueViewModelProvider.notifier)
           .selectCandidates(widget.workCase, set, selected.toList());
       messenger?.showSnackBar(
         SnackBar(content: Text("${selected.length}곳에 보낼 견적 요청 초안을 만들었어요.")),
       );
       if (mounted) setState(() => _busy = false);
+      if (drafts.isNotEmpty && navigatorContext.mounted) {
+        // Open on the supplier that needs the buyer first.
+        final first = ([...drafts]..sort(
+                (a, b) => (a.dispatchState?.priority ?? 9).compareTo(
+                  b.dispatchState?.priority ?? 9,
+                ),
+              ))
+            .first;
+        await showMailDraftDialog(
+          navigatorContext,
+          caseId: widget.workCase.id,
+          draftId: first.draftId,
+          dispatchStates: {
+            for (final draft in drafts)
+              draft.draftId: ?draft.dispatchState,
+          },
+        );
+      }
     } on WorkQueueFailure catch (failure) {
       if (!mounted) return;
       if (failure.caseChanged) {
