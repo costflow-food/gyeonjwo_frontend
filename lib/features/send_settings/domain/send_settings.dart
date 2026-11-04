@@ -116,6 +116,7 @@ class SendSettings {
 /// API-22 body.
 class SendSettingsUpdate {
   const SendSettingsUpdate({
+    required this.mailboxRef,
     required this.expectedSettingsVersion,
     required this.approvalByPurpose,
     required this.allowedSupplierIds,
@@ -125,6 +126,8 @@ class SendSettingsUpdate {
     required this.draftIds,
   });
 
+  /// The mailbox_ref the loaded settings came with.
+  final String mailboxRef;
   final int expectedSettingsVersion;
   final Map<DraftPurpose, bool?> approvalByPurpose;
   final List<String> allowedSupplierIds;
@@ -135,12 +138,22 @@ class SendSettingsUpdate {
 }
 
 class SendSettingsFailure implements Exception {
-  const SendSettingsFailure(this.code, this.message);
+  const SendSettingsFailure(
+    this.code,
+    this.message, {
+    this.unknownOutcome = false,
+  });
   final String code;
   final String message;
 
+  /// No response arrived; the server may or may not have saved.
+  final bool unknownOutcome;
+
   /// Someone saved a newer version; reload before deciding again.
   bool get settingsChanged => code == "SETTINGS_CHANGED";
+
+  /// 422: the send scope is incomplete, e.g. approval OFF with no supplier.
+  bool get scopeRequired => code == "SEND_SCOPE_REQUIRED";
 
   @override
   String toString() => "SendSettingsFailure($code)";

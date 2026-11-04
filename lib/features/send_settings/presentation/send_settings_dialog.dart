@@ -49,6 +49,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
   final _signature = TextEditingController();
 
   // Local edits, seeded from the loaded version.
+  String? _mailboxRef;
   int? _loadedVersion;
   Map<DraftPurpose, bool?> _approval = {};
   Set<String> _allowed = {};
@@ -62,6 +63,34 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
 
   String get _scope => sendSettingsScope(widget.caseId);
 
+  // False only during initState, where a rebuild is already coming.
+  bool _listening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Seed outside build: writing the signature controller during build
+    // would rebuild its TextField mid-frame.
+    ref.listenManual<AsyncValue<SendSettings>>(
+      sendSettingsViewModelProvider(_scope),
+      (_, next) {
+        final settings = next.asData?.value;
+        // Seed only from settled data, never from the stale value shown
+        // while a refresh after SETTINGS_CHANGED is still loading.
+        if (settings == null || next.isLoading || _loadedVersion != null) {
+          return;
+        }
+        if (_listening) {
+          setState(() => _seed(settings));
+        } else {
+          _seed(settings);
+        }
+      },
+      fireImmediately: true,
+    );
+    _listening = true;
+  }
+
   @override
   void dispose() {
     _signature.dispose();
@@ -69,6 +98,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
   }
 
   void _seed(SendSettings settings) {
+    _mailboxRef = settings.mailboxRef;
     _loadedVersion = settings.settingsVersion;
     _approval = {
       for (final approval in settings.approvals)
@@ -90,10 +120,29 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     _dirty = true;
   });
 
+  /// Approval OFF somewhere in the values being saved.
+  bool _automatic(SendSettings settings) => settings.approvals.any(
+    (approval) =>
+        _approval[approval.purpose] == false ||
+        (_approval[approval.purpose] == null &&
+            settings.isCaseScope &&
+            approval.effectiveValue == false),
+  );
+
   Future<void> _save() async {
     final version = _loadedVersion;
-    if (_saving || version == null) return;
+    final mailboxRef = _mailboxRef;
+    final loaded = ref
+        .read(sendSettingsViewModelProvider(_scope))
+        .asData
+        ?.value;
+    if (_saving || version == null || mailboxRef == null || loaded == null) {
+      return;
+    }
+    // Decided before the request, from the values actually sent.
+    final missingSuppliers = _automatic(loaded) && _allowed.isEmpty;
     final update = SendSettingsUpdate(
+      mailboxRef: mailboxRef,
       expectedSettingsVersion: version,
       approvalByPurpose: Map.unmodifiable(_approval),
       allowedSupplierIds: List.unmodifiable(_allowed),
@@ -109,7 +158,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       _error = null;
     });
     try {
-      await ref
+      final saved = await ref
           .read(sendSettingsViewModelProvider(_scope).notifier)
           .save(update);
       if (!mounted) return;
@@ -117,10 +166,10 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
         ScaffoldMessenger.maybeOf(
           context,
         )?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했어요.")));
-        // Re-seed from the saved version on the next build.
+        // Show the saved version right away.
         setState(() {
           _saving = false;
-          _loadedVersion = null;
+          _seed(saved);
         });
         return;
       }
@@ -128,13 +177,24 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     } on SendSettingsFailure catch (failure) {
       if (!mounted) return;
       if (failure.settingsChanged) {
-        // Show the newer version; the user decides again from there.
+        // Show the newer version; the listener re-seeds once it settles.
         _loadedVersion = null;
         ref.read(sendSettingsViewModelProvider(_scope).notifier).refresh();
       }
       setState(() {
         _saving = false;
-        _error = failure.message;
+        _error = switch (failure) {
+          SendSettingsFailure(unknownOutcome: true) =>
+            "저장 결과를 확인하지 못했습니다. 다시 저장하면 같은 요청으로 확인합니다.",
+          SendSettingsFailure(settingsChanged: true) =>
+            "다른 곳에서 설정이 바뀌어 최신 설정을 불러왔습니다. 확인한 뒤 다시 저장해 주세요.",
+          SendSettingsFailure(scopeRequired: true) when missingSuppliers =>
+            widget.caseId == null
+                ? "승인 OFF(자동 발송)는 허용 업체가 있어야 저장됩니다. "
+                      "메일함 기본값은 승인 ON으로 두고, 업무별 설정에서 허용 업체를 고른 뒤 OFF로 바꿔 주세요."
+                : "승인 OFF(자동 발송)로 저장하려면 자동 발송 허용 업체를 한 곳 이상 선택해 주세요.",
+          _ => failure.message,
+        };
       });
     } catch (_) {
       if (!mounted) return;
@@ -146,10 +206,19 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
   }
 
   /// Embedded: drop unsaved edits and show the saved values again.
-  void _discard() => setState(() {
-    _loadedVersion = null;
-    _error = null;
-  });
+  void _discard() {
+    final value = ref.read(sendSettingsViewModelProvider(_scope));
+    final settings = value.asData?.value;
+    setState(() {
+      _error = null;
+      if (settings != null && !value.isLoading) {
+        _seed(settings);
+      } else {
+        // The listener seeds once the reload settles.
+        _loadedVersion = null;
+      }
+    });
+  }
 
   Future<void> _close() async {
     if (_saving) return;
@@ -184,22 +253,20 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     final provider = sendSettingsViewModelProvider(_scope);
     final value = ref.watch(provider);
     final settings = value.asData?.value;
-    // Seed only from settled data, never from the stale value shown while
-    // a refresh after SETTINGS_CHANGED is still loading.
-    if (settings != null && !value.isLoading && _loadedVersion == null) {
-      _seed(settings);
-    }
-    final content = AsyncContent<SendSettings>(
-      value: value,
-      onRetry: ref.read(provider.notifier).refresh,
-      builder: (settings) =>
-          AbsorbPointer(absorbing: _saving, child: _body(settings)),
-    );
+    final failure = value.error;
+    final content = failure is SendSettingsFailure && !value.isLoading
+        ? _loadError(failure, ref.read(provider.notifier).refresh)
+        : AsyncContent<SendSettings>(
+            value: value,
+            onRetry: ref.read(provider.notifier).refresh,
+            builder: (settings) =>
+                AbsorbPointer(absorbing: _saving, child: _body(settings)),
+          );
     final footer = SendSettingsFooter(
       error: _error,
       saving: _saving,
       onCancel: widget.embedded ? _discard : _close,
-      onSave: settings == null ? null : _save,
+      onSave: settings == null || _loadedVersion == null ? null : _save,
     );
     if (widget.embedded) {
       return Column(
@@ -254,14 +321,22 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     );
   }
 
+  /// Shows the server's reason, e.g. no connected mailbox.
+  Widget _loadError(SendSettingsFailure failure, VoidCallback onRetry) =>
+      Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(failure.message, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onRetry, child: const Text("다시 시도")),
+          ],
+        ),
+      );
+
   Widget _body(SendSettings settings) {
-    final automatic = settings.approvals.any(
-      (approval) =>
-          _approval[approval.purpose] == false ||
-          (_approval[approval.purpose] == null &&
-              settings.isCaseScope &&
-              approval.effectiveValue == false),
-    );
+    final automatic = _automatic(settings);
     final suppliers = AllowedSupplierList(
       suppliers: settings.suppliers,
       allowedIds: _allowed,

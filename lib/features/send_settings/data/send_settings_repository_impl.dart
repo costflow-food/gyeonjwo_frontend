@@ -32,7 +32,8 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
     String? caseId,
   }) {
     final body = <String, Object?>{
-      "mailbox_ref": "demo-purchase-mailbox",
+      // Echo the GET response value; the server has no mailbox alias.
+      "mailbox_ref": update.mailboxRef,
       "case_id": caseId,
       "expected_settings_version": update.expectedSettingsVersion,
       "approval_required_by_purpose": {
@@ -57,7 +58,11 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
         );
         return _settings(response["data"] as Map<String, dynamic>);
       }),
-      serverCode: (error) => error is SendSettingsFailure ? error.code : null,
+      // Keep the key when the outcome is unknown so a retry cannot save twice.
+      serverCode: (error) =>
+          error is SendSettingsFailure && !error.unknownOutcome
+          ? error.code
+          : null,
     );
   }
 
@@ -65,7 +70,11 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
     try {
       return await request();
     } on SendSettingsApiException catch (error) {
-      throw SendSettingsFailure(error.code, error.message);
+      throw SendSettingsFailure(
+        error.code,
+        error.message,
+        unknownOutcome: error.unknownOutcome,
+      );
     }
   }
 
