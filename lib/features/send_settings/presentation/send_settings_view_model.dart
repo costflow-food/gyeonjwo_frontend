@@ -29,11 +29,9 @@ class SendSettingsViewModel extends _$SendSettingsViewModel {
         .read(sendSettingsRepositoryProvider)
         .saveSettings(update, caseId: _caseId);
     if (ref.mounted) state = AsyncData(saved);
-    if (ref.mounted &&
-        _caseId != null &&
-        update.applyTo == ApplyTo.specifiedDrafts) {
-      ref.invalidate(mailDraftViewModelProvider(_caseId!));
-    }
+    // Draft send policy follows the settings ("발송 설정 필요" can clear),
+    // and a mailbox save affects every case.
+    if (ref.mounted) ref.invalidate(mailDraftViewModelProvider);
     // Case scopes inherit from the mailbox, so stale copies must reload.
     if (ref.mounted) ref.invalidate(sendSettingsViewModelProvider);
     return saved;
