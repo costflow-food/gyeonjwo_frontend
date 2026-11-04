@@ -111,12 +111,25 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.invalidateSelf();
   }
 
+  /// API-07. 접수(202)되면 서버가 추출 단계로 되돌리므로 목록과 진행 단계를 다시 읽습니다.
+  Future<void> resume(WorkCase workCase) async {
+    await ref.read(workQueueRepositoryProvider).resume(workCase);
+    if (!ref.mounted) return;
+    ref.invalidate(caseProgressProvider(workCase.id));
+    ref.invalidateSelf();
+  }
+
   /// API-04. 접수(202)만 확인하고 목록을 다시 불러 진행 상태를 보여 줍니다.
   Future<void> start(WorkCase workCase) async {
     await ref.read(workQueueRepositoryProvider).start(workCase);
     if (ref.mounted) ref.invalidateSelf();
   }
 }
+
+/// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
+@Riverpod(retry: _noRetry)
+Future<CaseProgress> caseProgress(Ref ref, String caseId) =>
+    ref.watch(workQueueRepositoryProvider).getProgress(caseId);
 
 /// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
 @Riverpod(retry: _noRetry)

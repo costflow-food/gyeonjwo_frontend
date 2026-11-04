@@ -1,6 +1,43 @@
 // API-01·25 형식의 합성 응답. UI 미리보기 페이지와 테스트의 DataSource만 읽습니다.
 const workQueuePreviewCases = [
   {
+    "case_id": "c0a80001-0000-4000-8000-000000000006",
+    "initial_mail_id": "m0a80001-0000-4000-8000-000000000006",
+    "item_name": "깐마늘",
+    "title": "[견적 요청] 깐마늘 공급 단가 문의",
+    "sender": "buy@e-mart.example",
+    "sender_name": "E사 구매담당",
+    "received_at": "2026-10-19T03:05:00Z",
+    "status": "Pending",
+    "processing_step": "ON_HOLD",
+    "step_detail": {"code": "ON_HOLD", "message": "검토 보류"},
+    "hold": {
+      "code": "MISSING_FIELD",
+      "message": "요청 수량이 확인되지 않아 검토를 보류했어요.",
+    },
+    "input_revision": 1,
+    "attachment_count": 0,
+    "allowed_actions": ["VIEW_ORIGINAL", "RESUME"],
+    "disabled_actions": [],
+  },
+  {
+    "case_id": "c0a80001-0000-4000-8000-000000000005",
+    "initial_mail_id": "m0a80001-0000-4000-8000-000000000005",
+    "item_name": "깐마늘",
+    "title": "[단가변경] 깐마늘 1kg 공급 단가 조정",
+    "sender": "sales@f-farm.example",
+    "sender_name": null,
+    "received_at": "2026-10-19T02:40:00Z",
+    "status": "Running",
+    "processing_step": "NEEDS_INFO",
+    "step_detail": {"code": "NEEDS_INFO", "message": "추가 정보 확인 필요"},
+    "error": {"code": "NO_SUITABLE_CANDIDATES"},
+    "input_revision": 1,
+    "attachment_count": 0,
+    "allowed_actions": ["VIEW_ORIGINAL"],
+    "disabled_actions": [],
+  },
+  {
     "case_id": "c0a80001-0000-4000-8000-000000000004",
     "initial_mail_id": "m0a80001-0000-4000-8000-000000000004",
     "item_name": "냉동 딸기",
@@ -83,6 +120,26 @@ const workQueuePreviewCases = [
 ];
 
 const workQueuePreviewMails = {
+  "m0a80001-0000-4000-8000-000000000006": {
+    "mail_id": "m0a80001-0000-4000-8000-000000000006",
+    "subject": "[견적 요청] 깐마늘 공급 단가 문의",
+    "sender": "buy@e-mart.example",
+    "recipients": ["buyer@costflow.example"],
+    "received_at": "2026-10-19T03:05:00Z",
+    "body_text":
+        "안녕하세요, E사 구매담당입니다.\n\n깐마늘 국내산 공급 단가 견적 부탁드립니다.\n납품 일정은 추후 안내드리겠습니다.\n\n감사합니다.",
+    "attachments": [],
+  },
+  "m0a80001-0000-4000-8000-000000000005": {
+    "mail_id": "m0a80001-0000-4000-8000-000000000005",
+    "subject": "[단가변경] 깐마늘 1kg 공급 단가 조정",
+    "sender": "sales@f-farm.example",
+    "recipients": ["buyer@costflow.example"],
+    "received_at": "2026-10-19T02:40:00Z",
+    "body_text":
+        "구매팀 담당자님께,\n\n12월부터 깐마늘 1kg 단가를 9,800원에서 11,200원으로 조정합니다.\n\nF농장 드림",
+    "attachments": [],
+  },
   "m0a80001-0000-4000-8000-000000000004": {
     "mail_id": "m0a80001-0000-4000-8000-000000000004",
     "subject": "[단가인상] 냉동 딸기 IQF 홀 10kg 단가 조정",

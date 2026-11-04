@@ -43,7 +43,7 @@ final class WorkQueueViewModelProvider
 }
 
 String _$workQueueViewModelHash() =>
-    r'fcd812055ed67b6c03062e2d1fd5fad119115372';
+    r'08aaeab684b81386fc0905a75602e6c192635fab';
 
 /// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
 ///
@@ -65,6 +65,90 @@ abstract class _$WorkQueueViewModel extends $AsyncNotifier<WorkQueueState> {
             >;
     return element.handleCreate(ref, build);
   }
+}
+
+/// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
+
+@ProviderFor(caseProgress)
+final caseProgressProvider = CaseProgressFamily._();
+
+/// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
+
+final class CaseProgressProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CaseProgress>,
+          CaseProgress,
+          FutureOr<CaseProgress>
+        >
+    with $FutureModifier<CaseProgress>, $FutureProvider<CaseProgress> {
+  /// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
+  CaseProgressProvider._({
+    required CaseProgressFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: _noRetry,
+         name: r'caseProgressProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$caseProgressHash();
+
+  @override
+  String toString() {
+    return r'caseProgressProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<CaseProgress> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CaseProgress> create(Ref ref) {
+    final argument = this.argument as String;
+    return caseProgress(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CaseProgressProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$caseProgressHash() => r'8061f455eae66e2ccd87ca82d73ba47ac4976bcd';
+
+/// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
+
+final class CaseProgressFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<CaseProgress>, String> {
+  CaseProgressFamily._()
+    : super(
+        retry: _noRetry,
+        name: r'caseProgressProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
+
+  CaseProgressProvider call(String caseId) =>
+      CaseProgressProvider._(argument: caseId, from: this);
+
+  @override
+  String toString() => r'caseProgressProvider';
 }
 
 /// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.

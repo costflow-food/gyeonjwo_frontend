@@ -10,6 +10,7 @@ import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 import "attachment_viewer.dart";
 import "candidate_selection.dart";
+import "case_step_status.dart";
 import "status_badge.dart";
 
 /// 선택한 업무의 원문(제목·본문·첨부)과, 아직 실행하지 않은 업무의 두 가지 선택.
@@ -191,7 +192,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               onStart: _start,
             )
           else
-            _CurrentStep(workCase: workCase),
+            CaseStepStatus(workCase: workCase),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -549,35 +550,5 @@ class _Choice extends StatelessWidget {
         ),
       ),
     ],
-  );
-}
-
-/// 이미 실행한 업무: 버튼 없이 서버가 알려 준 현재 단계만 보여 줍니다.
-class _CurrentStep extends StatelessWidget {
-  const _CurrentStep({required this.workCase});
-
-  final WorkCase workCase;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: const Color(0xFFF7F8FA),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.info_outline, size: 18, color: muted),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            workCase.stepMessage.isEmpty
-                ? "검토가 진행되고 있어요."
-                : workCase.stepMessage,
-            style: const TextStyle(fontSize: AppFontSizes.body),
-          ),
-        ),
-      ],
-    ),
   );
 }

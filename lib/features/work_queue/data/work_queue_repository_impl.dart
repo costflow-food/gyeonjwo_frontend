@@ -109,6 +109,38 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
   }
 
   @override
+  Future<CaseProgress> getProgress(String caseId) => _guard(() async {
+    final response = await _dataSource.fetchProgress(caseId);
+    final json = response["data"] as Map<String, dynamic>;
+    final error = json["error"] as Map<String, dynamic>?;
+    return CaseProgress(
+      caseId: json["case_id"] as String,
+      status: json["status"] as String,
+      processingStep: json["processing_step"] as String,
+      inputRevision: json["input_revision"] as int,
+      hold: _hold(json["hold"]),
+      errorCode: error?["code"] as String?,
+    );
+  });
+
+  @override
+  Future<void> resume(WorkCase workCase) {
+    // This release accepts only RESUME_HOLD; the server rejects other reasons.
+    final body = <String, Object?>{
+      "expected_revision": workCase.inputRevision,
+      "reason": "RESUME_HOLD",
+    };
+    return _keys.run(
+      "resume:${workCase.id}",
+      body,
+      (key) => _guard(
+        () => _dataSource.resume(workCase.id, body, idempotencyKey: key),
+      ),
+      serverCode: _serverCode,
+    );
+  }
+
+  @override
   Future<CandidateSet> getCandidates(String caseId) => _guard(() async {
     final response = await _dataSource.fetchCandidates(caseId);
     final json = response["data"] as Map<String, dynamic>;
@@ -181,6 +213,13 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
     }
   }
 
+  static HoldReason? _hold(Object? json) => json is Map<String, dynamic>
+      ? HoldReason(
+          code: json["code"] as String,
+          message: json["message"] as String,
+        )
+      : null;
+
   static WorkCase _case(Map<String, dynamic> json) {
     final statusCode = json["status"] as String;
     final step = json["step_detail"] as Map<String, dynamic>?;
@@ -198,6 +237,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       stepMessage: step?["message"] as String? ?? "",
       inputRevision: json["input_revision"] as int,
       attachmentCount: json["attachment_count"] as int? ?? 0,
+      hold: _hold(json["hold"]),
       allowedActions: List.unmodifiable(
         (json["allowed_actions"] as List? ?? const []).cast<String>(),
       ),

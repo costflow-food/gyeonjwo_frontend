@@ -30,6 +30,46 @@ abstract final class WorkCaseAction {
   static const start = "START";
   static const acceptIncrease = "ACCEPT_INCREASE";
   static const selectCandidates = "SELECT_CANDIDATES";
+
+  /// API-07 `reason=RESUME_HOLD`: 추출 보류 업무를 추출 단계부터 다시 실행합니다.
+  static const resume = "RESUME";
+}
+
+/// 서버 processing_step 중 화면이 따로 다루는 값.
+abstract final class ProcessingStep {
+  static const onHold = "ON_HOLD";
+  static const needsInfo = "NEEDS_INFO";
+  static const selectingCandidates = "SELECTING_CANDIDATES";
+  static const candidates = "CANDIDATES";
+}
+
+/// API-01·03 hold. 문구는 서버가 정한 그대로 보여 줍니다.
+class HoldReason {
+  const HoldReason({required this.code, required this.message});
+
+  final String code;
+  final String message;
+}
+
+/// API-03 저장된 진행 단계.
+class CaseProgress {
+  const CaseProgress({
+    required this.caseId,
+    required this.status,
+    required this.processingStep,
+    required this.inputRevision,
+    this.hold,
+    this.errorCode,
+  });
+
+  final String caseId;
+  final String status;
+  final String processingStep;
+  final int inputRevision;
+  final HoldReason? hold;
+
+  /// error.code. 서버는 코드만 보내고 문구는 보내지 않습니다.
+  final String? errorCode;
 }
 
 class DisabledWorkCaseAction {
@@ -60,6 +100,7 @@ class WorkCase {
     required this.attachmentCount,
     this.senderName,
     this.itemName,
+    this.hold,
     this.allowedActions = const [],
     this.disabledActions = const [],
   });
@@ -85,11 +126,25 @@ class WorkCase {
   final String stepMessage;
   final int inputRevision;
   final int attachmentCount;
+
+  /// ON_HOLD일 때 서버가 정한 보류 사유.
+  final HoldReason? hold;
   final List<String> allowedActions;
   final List<DisabledWorkCaseAction> disabledActions;
 
   /// 아직 검토를 실행하지 않은 업무. 원문 확인 후 수긍·대안 찾기를 고릅니다.
   bool get notStarted => status == WorkCaseStatus.waiting;
+
+  bool get onHold => processingStep == ProcessingStep.onHold;
+
+  /// 후보 단계(후보 찾기 대기·견적 요청 준비).
+  bool get atCandidates =>
+      processingStep == ProcessingStep.selectingCandidates ||
+      processingStep == ProcessingStep.candidates;
+
+  /// 멈춘 이유를 API-03에서 다시 확인할 단계.
+  bool get stopped =>
+      onHold || processingStep == ProcessingStep.needsInfo;
 
   bool can(String action) => allowedActions.contains(action);
 
