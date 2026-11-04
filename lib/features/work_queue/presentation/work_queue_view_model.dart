@@ -98,17 +98,20 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   }
 
   /// API-12. 고른 업체로 견적 요청 초안을 만들고 목록을 다시 불러옵니다.
-  Future<void> selectCandidates(
+  /// 업체별 발송 상태(drafts[].dispatch_state)를 돌려줍니다.
+  Future<List<SelectedDraft>> selectCandidates(
     WorkCase workCase,
     CandidateSet candidates,
     List<String> supplierIds,
   ) async {
-    await ref
+    final drafts = await ref
         .read(workQueueRepositoryProvider)
         .selectCandidates(workCase, candidates, supplierIds);
-    if (!ref.mounted) return;
-    ref.invalidate(caseCandidatesProvider(workCase.id));
-    ref.invalidateSelf();
+    if (ref.mounted) {
+      ref.invalidate(caseCandidatesProvider(workCase.id));
+      ref.invalidateSelf();
+    }
+    return drafts;
   }
 
   /// API-07. 접수(202)되면 서버가 추출 단계로 되돌리므로 목록과 진행 단계를 다시 읽습니다.

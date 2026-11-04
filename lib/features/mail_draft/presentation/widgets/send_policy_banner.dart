@@ -11,30 +11,52 @@ class SendPolicyBanner extends StatelessWidget {
     super.key,
     required this.draft,
     required this.editing,
+    this.dispatchState,
   });
 
   final MailDraft draft;
   final bool editing;
 
+  /// API-12 result for this draft right after a candidate selection.
+  final DraftDispatchState? dispatchState;
+
   @override
   Widget build(BuildContext context) {
-    final policy = draft.approvalRequired
-        ? "승인 ON · 승인한 초안만 발송됩니다"
-        : "승인 OFF · 설정 범위 안에서 검증 후 자동 발송됩니다";
+    final policy = switch (draft.approvalRequired) {
+      _ when !draft.settingsConfigured => "발송 설정 필요",
+      true => "승인 ON · 승인한 초안만 발송됩니다",
+      false => "승인 OFF · 설정 범위 안에서 검증 후 자동 발송됩니다",
+      null => "발송 설정 확인 중",
+    };
+    final dispatch = dispatchState;
     final (icon, color, message) = switch (draft.status) {
       DraftStatus.draft when !draft.settingsConfigured => (
         Icons.warning_amber_rounded,
         const Color(0xFFBC793C),
-        '발송 설정을 완료해야 발송할 수 있습니다.',
+        '설정 → 메일 발송 설정을 완료해야 발송할 수 있습니다.',
       ),
-      DraftStatus.draft
-          when !draft.approvalRequired && !draft.autoSendAllowed =>
-        (
-          Icons.warning_amber_rounded,
-          const Color(0xFFBC793C),
-          '자동 발송 허용 업체·수신자 범위 밖입니다. 발송 설정을 확인해 주세요.',
-        ),
-      _ when editing && !draft.approvalRequired => (
+      DraftStatus.draft when draft.isStale => (
+        Icons.warning_amber_rounded,
+        const Color(0xFFBC793C),
+        "업무 내용이 바뀌어 이 초안은 발송할 수 없습니다.",
+      ),
+      _ when draft.awaitingResult => (
+        Icons.hourglass_top,
+        const Color(0xFF347BC8),
+        "요청을 접수했습니다. 결과가 나오면 자동으로 표시됩니다.",
+      ),
+      DraftStatus.draft when dispatch != null => (
+        dispatch == DraftDispatchState.blockedPolicy ||
+                dispatch == DraftDispatchState.cautionRequired
+            ? Icons.warning_amber_rounded
+            : Icons.info_outline,
+        dispatch == DraftDispatchState.blockedPolicy ||
+                dispatch == DraftDispatchState.cautionRequired
+            ? const Color(0xFFBC793C)
+            : muted,
+        "${dispatch.label} · ${dispatch.message}",
+      ),
+      _ when editing && draft.approvalRequired == false => (
         Icons.warning_amber_rounded,
         const Color(0xFFBC793C),
         "저장하면 새 초안으로 다시 검증한 뒤 설정에 따라 자동 발송됩니다.",
@@ -47,7 +69,7 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.draft => (
         Icons.info_outline,
         muted,
-        draft.approvalRequired
+        draft.approvalRequired == true
             ? "내용을 확인한 뒤 승인 후 발송을 눌러 주세요."
             : "별도 버튼 없이 서버가 자동 발송합니다.",
       ),
@@ -64,7 +86,7 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.failed => (
         Icons.error_outline,
         accent,
-        draft.failureMessage ?? "발송하지 못했습니다.",
+        "발송하지 못했습니다. 수신자와 발송 설정을 확인해 주세요.",
       ),
       DraftStatus.unknown => (
         Icons.help_outline,

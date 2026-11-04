@@ -36,6 +36,24 @@ class PreviewWorkspace {
   final Map<String, Map<String, dynamic>> candidateSets = {
     for (final entry in workQueuePreviewCandidateSets.entries)
       entry.key: _copy(entry.value),
+    // API-16 has no supplier names; the draft screen reads them from API-11.
+    for (final entry in mailDraftPreviewDrafts.entries)
+      if (!workQueuePreviewCandidateSets.containsKey(entry.key))
+        entry.key: {
+          'candidate_set_id': 'cs-preview-${entry.key}',
+          'revision': 1,
+          'selected_supplier_ids': [
+            for (final draft in entry.value) draft['supplier_id'],
+          ],
+          'items': [
+            for (final draft in entry.value)
+              {
+                'supplier_id': draft['supplier_id'],
+                'name': draft['supplier_name'],
+                'contact_email': draft['recipient'],
+              },
+          ],
+        },
   };
   final documents = <String, Map<String, dynamic>>{};
   int draftSequence = 0;

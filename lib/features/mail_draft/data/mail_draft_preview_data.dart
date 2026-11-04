@@ -1,5 +1,6 @@
-// Mock API-16 drafts by case ID. Suppliers, addresses, and prices are synthetic.
-// allowed_actions are filled in by the preview DataSource, as the server would.
+// Preview drafts by case ID. Suppliers, addresses, and prices are synthetic.
+// The preview DataSource answers in the real API-16·17 shape; supplier_name
+// here only seeds the preview candidate list that supplies names.
 const mailDraftPreviewDrafts = {
   "REQ-2026-1019-003": [
     {

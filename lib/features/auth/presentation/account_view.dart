@@ -185,7 +185,7 @@ class _PermissionsPage extends ConsumerWidget {
   }
 }
 
-/// SCR-008 메일함 기본 발송 설정. 업무별 설정은 메일 초안 창에 그대로 있습니다.
+/// SCR-008 메일함 기본 발송 설정. 발송 설정은 이 페이지에서만 엽니다.
 class _SendSettingsPage extends StatelessWidget {
   const _SendSettingsPage();
 

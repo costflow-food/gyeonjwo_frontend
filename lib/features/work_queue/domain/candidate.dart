@@ -1,3 +1,5 @@
+import "../../mail_draft/domain/mail_draft.dart";
+
 /// API-11 후보 세트. 08의 응답 형식은 아직 서버에 없어서 제안 계약을 따릅니다.
 enum CheckState {
   met("MET", "충족"),
@@ -73,4 +75,19 @@ class CandidateSet {
 
   /// 이미 저장한 선택(다시 열었을 때 체크 상태 복원).
   final List<String> selectedSupplierIds;
+}
+
+/// API-12 drafts[]: the RFQ draft made for one selected supplier.
+class SelectedDraft {
+  const SelectedDraft({
+    required this.draftId,
+    required this.supplierId,
+    required this.dispatchState,
+  });
+
+  final String draftId;
+  final String supplierId;
+
+  /// null for a state this app does not know yet.
+  final DraftDispatchState? dispatchState;
 }

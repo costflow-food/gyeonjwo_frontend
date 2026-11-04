@@ -480,15 +480,69 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
         "현재 상태에서는 견적 요청 대상을 고를 수 없어요.",
       );
     }
-    _workspace.candidateSets[caseId]!["selected_supplier_ids"] =
-        body["selected_supplier_ids"];
-    // Approval ON (the preview default): drafts wait for approval.
+    final set = _workspace.candidateSets[caseId]!;
+    final selected = (body["selected_supplier_ids"] as List).cast<String>();
+    set["selected_supplier_ids"] = selected;
+    // One RFQ draft per supplier, with the effective send policy applied.
+    final drafts = _workspace.drafts.putIfAbsent(caseId, () => []);
+    final results = <Map<String, Object?>>[];
+    for (final supplierId in selected) {
+      final candidate = (set["items"] as List)
+          .cast<Map<String, dynamic>>()
+          .firstWhere((entry) => entry["supplier_id"] == supplierId);
+      final draft = <String, dynamic>{
+        "draft_id": "draft-$caseId-$supplierId",
+        "case_id": caseId,
+        "supplier_id": supplierId,
+        "supplier_name": candidate["name"],
+        "purpose": "RFQ",
+        "recipient": candidate["contact_email"] ?? "unknown@example.invalid",
+        "subject": "[견적 요청] ${item["item_name"] ?? "품목"}",
+        "body_text":
+            "안녕하세요, 구매팀입니다.\n\n${item["item_name"] ?? "요청 품목"} 공급 견적을 요청드립니다. "
+            "단가, 공급 가능 수량, 납기를 알려주시면 감사하겠습니다.\n\n구매팀 드림",
+        "status": "DRAFT",
+        "input_revision": item["input_revision"],
+        "replaces_id": null,
+        "sent_at": null,
+        "provider_message_id": null,
+      };
+      _workspace.applyDraftPolicy(draft);
+      final String state;
+      if (draft["settings_configured"] != true) {
+        state = "BLOCKED_POLICY";
+      } else if (draft["approval_required"] == true) {
+        state = "WAITING_APPROVAL";
+      } else if (draft["auto_send_allowed"] == true) {
+        state = "AUTO_QUEUED";
+        draft["status"] = "SENDING";
+        _workspace.sendingSince[draft["draft_id"] as String] = DateTime.now();
+      } else {
+        state = "BLOCKED_POLICY";
+      }
+      drafts
+        ..removeWhere((entry) => entry["draft_id"] == draft["draft_id"])
+        ..add(draft);
+      results.add({
+        "draft_id": draft["draft_id"],
+        "supplier_id": supplierId,
+        "dispatch_state": state,
+      });
+    }
     item
       ..["processing_step"] = "AWAITING_APPROVAL"
       ..["step_detail"] = {"code": "AWAITING_APPROVAL", "message": "발송 승인 대기"}
       ..["allowed_actions"] = ["VIEW_ORIGINAL"];
     return _copy({
-      "data": {"case_id": caseId, "selected_supplier_ids": body["selected_supplier_ids"]},
+      "data": {
+        "case_id": caseId,
+        "candidate_set_id": set["candidate_set_id"],
+        "revision": set["revision"],
+        "selection_revision": 1,
+        "selected_supplier_ids": selected,
+        "drafts": results,
+        "selection_policy": "PRESERVE_MAILBOX_LIMIT",
+      },
       "meta": {"request_id": "req-preview-candidate-selection"},
     });
   }

@@ -8,12 +8,10 @@ class MailDraftHeader extends StatelessWidget {
     super.key,
     required this.caseId,
     required this.onClose,
-    this.onOpenSettings,
   });
 
   final String caseId;
   final VoidCallback onClose;
-  final VoidCallback? onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -44,16 +42,6 @@ class MailDraftHeader extends StatelessWidget {
               ],
             ),
           ),
-          if (onOpenSettings != null)
-            TextButton.icon(
-              onPressed: onOpenSettings,
-              icon: const Icon(Icons.tune, size: 16),
-              label: const Text(
-                "발송 설정",
-                style: TextStyle(fontSize: AppFontSizes.buttonSmall),
-              ),
-              style: TextButton.styleFrom(foregroundColor: ink),
-            ),
           IconButton(
             tooltip: "닫기",
             onPressed: onClose,

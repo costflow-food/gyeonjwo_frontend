@@ -4,6 +4,7 @@ import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/idempotency_key.dart";
 
+import "../../mail_draft/domain/mail_draft.dart";
 import "../domain/candidate.dart";
 import "../domain/work_case.dart";
 import "../domain/work_queue_repository.dart";
@@ -173,7 +174,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
   });
 
   @override
-  Future<void> selectCandidates(
+  Future<List<SelectedDraft>> selectCandidates(
     WorkCase workCase,
     CandidateSet candidates,
     List<String> supplierIds,
@@ -186,13 +187,24 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
     return _keys.run(
       "select:${workCase.id}",
       body,
-      (key) => _guard(
-        () => _dataSource.selectCandidates(
+      (key) => _guard(() async {
+        final response = await _dataSource.selectCandidates(
           workCase.id,
           body,
           idempotencyKey: key,
-        ),
-      ),
+        );
+        final data = response["data"] as Map<String, dynamic>;
+        return List<SelectedDraft>.unmodifiable([
+          for (final entry in data["drafts"] as List? ?? const [])
+            SelectedDraft(
+              draftId: entry["draft_id"] as String,
+              supplierId: entry["supplier_id"] as String,
+              dispatchState: DraftDispatchState.fromCode(
+                entry["dispatch_state"] as String?,
+              ),
+            ),
+        ]);
+      }),
       serverCode: _serverCode,
     );
   }

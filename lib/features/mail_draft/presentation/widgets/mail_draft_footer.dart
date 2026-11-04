@@ -5,7 +5,8 @@ import "../../../../shared/workspace_colors.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../domain/mail_draft.dart";
 
-/// Buttons follow the server's allowed_actions. Labels match the real effect.
+/// Buttons follow the draft status and send policy the server returns.
+/// Labels match the real effect.
 class MailDraftFooter extends StatelessWidget {
   const MailDraftFooter({
     super.key,
@@ -37,19 +38,18 @@ class MailDraftFooter extends StatelessWidget {
     final current = draft;
     final blocked = current == null
         ? null
-        : current.disabledReason(DraftAction.edit) ??
-              current.disabledReason(DraftAction.approveSend);
+        : current.disabledReason(DraftAction.approveSend) ??
+              current.disabledReason(DraftAction.reconcile);
+    final editable =
+        current != null &&
+        (current.status == DraftStatus.draft ||
+            current.status == DraftStatus.failed);
     final filled = WorkspaceButtonStyles.filled;
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 14, 28, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            '시연 데이터 · 실제 메일은 발송되지 않습니다.',
-            style: TextStyle(fontSize: AppFontSizes.caption, color: muted),
-          ),
-          const SizedBox(height: 8),
           if (error != null || (blocked != null && !editing)) ...[
             Semantics(
               liveRegion: true,
@@ -101,12 +101,20 @@ class MailDraftFooter extends StatelessWidget {
                   onPressed: busy ? null : onClose,
                   child: const Text("닫기"),
                 ),
-                if (current != null && current.can(DraftAction.edit))
-                  OutlinedButton(
-                    style: WorkspaceButtonStyles.outlined,
-                    onPressed: busy ? null : onEdit,
-                    child: Text(
-                      current.status == DraftStatus.failed ? "수정본 만들기" : "수정",
+                // Shown but disabled until the server has API-18.
+                if (current != null && editable)
+                  Tooltip(
+                    message: current.disabledReason(DraftAction.edit) ?? "",
+                    child: OutlinedButton(
+                      style: WorkspaceButtonStyles.outlined,
+                      onPressed: current.can(DraftAction.edit) && !busy
+                          ? onEdit
+                          : null,
+                      child: Text(
+                        current.status == DraftStatus.failed
+                            ? "수정본 만들기"
+                            : "수정",
+                      ),
                     ),
                   ),
                 if (current != null && current.can(DraftAction.reconcile))
