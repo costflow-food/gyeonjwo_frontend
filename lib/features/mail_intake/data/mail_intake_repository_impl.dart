@@ -52,7 +52,9 @@ class MailIntakeRepositoryImpl implements MailIntakeRepository {
       (key) => _guard(
         () => _dataSource.resolve(mail.mailId, body, idempotencyKey: key),
       ),
-      serverCode: (error) => error is IntakeFailure ? error.code : null,
+      // Keep the key when the outcome is unknown so a retry cannot apply twice.
+      serverCode: (error) =>
+          error is IntakeFailure && !error.unknownOutcome ? error.code : null,
     );
   }
 
@@ -60,7 +62,11 @@ class MailIntakeRepositoryImpl implements MailIntakeRepository {
     try {
       return await request();
     } on MailIntakeApiException catch (error) {
-      throw IntakeFailure(error.code, error.message);
+      throw IntakeFailure(
+        error.code,
+        error.message,
+        unknownOutcome: error.unknownOutcome,
+      );
     }
   }
 
