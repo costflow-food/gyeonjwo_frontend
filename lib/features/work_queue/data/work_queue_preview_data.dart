@@ -1,6 +1,28 @@
 // API-01·25 형식의 합성 응답. UI 미리보기 페이지와 테스트의 DataSource만 읽습니다.
 const workQueuePreviewCases = [
   {
+    "case_id": "c0a80001-0000-4000-8000-000000000007",
+    "initial_mail_id": "m0a80001-0000-4000-8000-000000000007",
+    "item_name": "냉동 딸기",
+    "title": "[수량변경] 냉동 딸기 IQF 홀 주문 수량 정정",
+    "sender": "sales@a-supplier.example.com",
+    "sender_name": "A사 영업담당",
+    "received_at": "2026-10-19T02:20:00Z",
+    "status": "Running",
+    "processing_step": "CANDIDATES",
+    "step_detail": {"code": "CANDIDATES", "message": "견적 요청 준비 중"},
+    "input_revision": 2,
+    "attachment_count": 0,
+    "allowed_actions": ["VIEW_ORIGINAL"],
+    "disabled_actions": [
+      {
+        "action": "SELECT_CANDIDATES",
+        "reason_code": "REVISION_CONFLICT",
+        "message": "입력이 바뀌어 후보를 다시 확인해야 합니다.",
+      },
+    ],
+  },
+  {
     "case_id": "c0a80001-0000-4000-8000-000000000006",
     "initial_mail_id": "m0a80001-0000-4000-8000-000000000006",
     "item_name": "깐마늘",
@@ -120,6 +142,16 @@ const workQueuePreviewCases = [
 ];
 
 const workQueuePreviewMails = {
+  "m0a80001-0000-4000-8000-000000000007": {
+    "mail_id": "m0a80001-0000-4000-8000-000000000007",
+    "subject": "[수량변경] 냉동 딸기 IQF 홀 주문 수량 정정",
+    "sender": "sales@a-supplier.example.com",
+    "recipients": ["buyer@costflow.example"],
+    "received_at": "2026-10-19T02:20:00Z",
+    "body_text":
+        "안녕하세요, A사입니다.\n\n앞서 말씀드린 월 1,000kg을 월 1,500kg으로 정정합니다.\n\n감사합니다.",
+    "attachments": [],
+  },
   "m0a80001-0000-4000-8000-000000000006": {
     "mail_id": "m0a80001-0000-4000-8000-000000000006",
     "subject": "[견적 요청] 깐마늘 공급 단가 문의",
@@ -218,16 +250,51 @@ const workQueuePreviewMails = {
 
 /// API-11 형식의 합성 후보 세트(업무 ID별). 필수 조건 불충족 후보는 고를 수 없습니다.
 const workQueuePreviewCandidateSets = {
-  "c0a80001-0000-4000-8000-000000000004": {
-    "candidate_set_id": "cs-preview-0004",
+  "c0a80001-0000-4000-8000-000000000007": {
+    "candidate_set_id": "cs-preview-0007",
     "revision": 1,
     "selected_supplier_ids": [],
+    "is_stale": true,
+    "unknown_fields": ["quantity"],
+    "allowed_actions": [],
+    "disabled_actions": [
+      {
+        "action": "SELECT_CANDIDATES",
+        "reason_code": "REVISION_CONFLICT",
+        "message": "입력이 바뀌어 후보를 다시 확인해야 합니다.",
+      },
+    ],
     "items": [
       {
         "supplier_id": "s-preview-b",
         "name": "B사",
         "contact_email": "order@b-supplier.example.com",
         "handling_evidence": "10월 냉동 딸기 IQF 홀 실거래 2회",
+        "reason": "정정 전 수량(월 1,000kg) 기준으로 고른 후보예요.",
+        "preference_score": 82,
+        "is_web_candidate": false,
+        "checks": [
+          {"label": "IQF 홀(전체)", "status": "MET", "required": true},
+          {"label": "월 1,000kg 공급", "status": "MET", "required": true},
+        ],
+      },
+    ],
+  },
+  "c0a80001-0000-4000-8000-000000000004": {
+    "candidate_set_id": "cs-preview-0004",
+    "revision": 1,
+    "selected_supplier_ids": [],
+    "is_stale": false,
+    "unknown_fields": [],
+    "allowed_actions": ["SELECT_CANDIDATES"],
+    "disabled_actions": [],
+    "items": [
+      {
+        "supplier_id": "s-preview-b",
+        "name": "B사",
+        "contact_email": "order@b-supplier.example.com",
+        "handling_evidence": "10월 냉동 딸기 IQF 홀 실거래 2회",
+        "reason": "최근 같은 규격 실거래가 있고 필수 조건을 모두 충족해요.",
         "preference_score": 82,
         "is_web_candidate": false,
         "checks": [
@@ -242,6 +309,12 @@ const workQueuePreviewCandidateSets = {
         "name": "D사",
         "contact_email": "quote@d-supplier.example.com",
         "handling_evidence": "등록 취급 품목: 냉동 딸기(IQF 홀·슬라이스)",
+        "reason": "등록 품목에 IQF 홀이 있어요.",
+        "caution": {
+          "reason": "HACCP 인증을 확인하지 못했어요",
+          "evidence_refs": ["supplier-item:d"],
+        },
+        "unknown_fields": ["certifications"],
         "preference_score": 74,
         "is_web_candidate": false,
         "checks": [
@@ -255,6 +328,7 @@ const workQueuePreviewCandidateSets = {
         "name": "C사",
         "contact_email": "biz@c-supplier.example.com",
         "handling_evidence": "등록 취급 품목: 냉동 딸기(슬라이스만)",
+        "reason": "냉동 딸기를 취급하지만 IQF 홀은 없어요.",
         "preference_score": 61,
         "is_web_candidate": false,
         "checks": [
@@ -267,6 +341,8 @@ const workQueuePreviewCandidateSets = {
         "name": "그린팜푸드",
         "contact_email": "sales@greenfarm.example.com",
         "handling_evidence": "웹 상품 페이지: 냉동 딸기 10kg (2026-10 확인)",
+        "reason": "웹에서 같은 품목 판매 페이지를 찾았어요.",
+        "unknown_fields": ["unit_price", "certifications"],
         "preference_score": null,
         "is_web_candidate": true,
         "checks": [

@@ -67,7 +67,12 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
       if (failure.caseChanged) {
         ref.read(workQueueViewModelProvider.notifier).refresh();
       }
+      // A 409/422 about the set: re-read API-11 and drop the old picks.
+      if (failure.candidatesChanged) {
+        ref.invalidate(caseCandidatesProvider(widget.workCase.id));
+      }
       setState(() {
+        if (failure.candidatesChanged) _selected = null;
         _busy = false;
         _error = failure.unknownOutcome
             ? "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요."
@@ -98,6 +103,8 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
       data: (set) {
         final selected = _selected ?? set.selectedSupplierIds.toSet();
         final itemName = widget.workCase.itemName;
+        final canSelect = set.canSelect;
+        final blockedReason = set.blockedReason;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -113,12 +120,34 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
               "에이전트가 이 품목을 취급하는 업체를 찾았어요. 견적을 요청할 업체를 골라 주세요.",
               style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
             ),
+            if (set.isStale) ...[
+              const SizedBox(height: 12),
+              _Notice(
+                icon: Icons.history,
+                text: "업무 내용이 바뀌어 아래는 이전 후보예요. 이 후보로는 견적을 요청할 수 없어요.",
+                action: TextButton(
+                  onPressed: () => ref.invalidate(
+                    caseCandidatesProvider(widget.workCase.id),
+                  ),
+                  style: WorkspaceButtonStyles.text,
+                  child: const Text("다시 불러오기"),
+                ),
+              ),
+            ],
+            if (set.unknownFields.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _Notice(
+                icon: Icons.help_outline,
+                text:
+                    "확인 못 한 항목: ${set.unknownFields.map(unknownFieldLabel).join(", ")}",
+              ),
+            ],
             const SizedBox(height: 12),
             for (final candidate in set.candidates)
               _CandidateTile(
                 candidate: candidate,
                 selected: selected.contains(candidate.supplierId),
-                enabled: !_busy && candidate.selectable,
+                enabled: !_busy && canSelect && candidate.selectable,
                 onChanged: (value) => setState(() {
                   final next = {...selected};
                   value
@@ -131,7 +160,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
             Align(
               alignment: Alignment.centerRight,
               child: FilledButton.icon(
-                onPressed: selected.isEmpty || _busy
+                onPressed: selected.isEmpty || _busy || !canSelect
                     ? null
                     : () => _submit(set),
                 style: WorkspaceButtonStyles.filled,
@@ -151,6 +180,33 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 ),
               ),
             ),
+            // Already chosen: the drafts carry on in SCR-007.
+            if (!canSelect && set.selectedSupplierIds.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: OutlinedButton.icon(
+                  onPressed: () => showMailDraftDialog(
+                    context,
+                    caseId: widget.workCase.id,
+                  ),
+                  style: WorkspaceButtonStyles.outlined,
+                  icon: const Icon(Icons.mail_outline, size: 16),
+                  label: const Text("메일 초안 보기"),
+                ),
+              ),
+            ],
+            if (!canSelect && blockedReason != null && _error == null) ...[
+              const SizedBox(height: 8),
+              Text(
+                blockedReason,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.secondary,
+                  color: muted,
+                ),
+              ),
+            ],
             if (_error != null) ...[
               const SizedBox(height: 8),
               Text(
@@ -249,6 +305,16 @@ class _CandidateTile extends StatelessWidget {
                       candidate.handlingEvidence,
                       style: const TextStyle(fontSize: AppFontSizes.body),
                     ),
+                    if (candidate.reason.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        "추천 이유 · ${candidate.reason}",
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.secondary,
+                          color: muted,
+                        ),
+                      ),
+                    ],
                     if (candidate.checks.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Wrap(
@@ -258,6 +324,24 @@ class _CandidateTile extends StatelessWidget {
                           for (final check in candidate.checks)
                             _CheckChip(check: check),
                         ],
+                      ),
+                    ],
+                    if (candidate.caution case final caution?) ...[
+                      const SizedBox(height: 8),
+                      _Notice(
+                        icon: Icons.warning_amber_rounded,
+                        color: const Color(0xFFBC793C),
+                        text: "주의 · $caution · 자동 발송하지 않고 승인을 기다려요.",
+                      ),
+                    ],
+                    if (candidate.unknownFields.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        "확인 못 한 항목 · ${candidate.unknownFields.map(unknownFieldLabel).join(", ")}",
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.secondary,
+                          color: muted,
+                        ),
                       ),
                     ],
                     if (candidate.failsRequired) ...[
@@ -340,6 +424,43 @@ class _Tag extends StatelessWidget {
         fontSize: AppFontSizes.caption,
         color: Color(0xFF347BC8),
       ),
+    ),
+  );
+}
+
+/// One-line notice inside the candidate list.
+class _Notice extends StatelessWidget {
+  const _Notice({
+    required this.icon,
+    required this.text,
+    this.color = muted,
+    this.action,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color color;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF7F8FA),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 15, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(fontSize: AppFontSizes.secondary, color: color),
+          ),
+        ),
+        ?action,
+      ],
     ),
   );
 }

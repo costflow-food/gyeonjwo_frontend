@@ -482,7 +482,24 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
     }
     final set = _workspace.candidateSets[caseId]!;
     final selected = (body["selected_supplier_ids"] as List).cast<String>();
-    set["selected_supplier_ids"] = selected;
+    if (set["candidate_set_id"] != body["candidate_set_id"]) {
+      throw const WorkQueueApiException(
+        409,
+        "CANDIDATES_CHANGED",
+        "후보 세트가 바뀌었습니다. 다시 확인해 주세요.",
+      );
+    }
+    set
+      ..["selected_supplier_ids"] = selected
+      // Like the server: a set is chosen once; the drafts carry on from here.
+      ..["allowed_actions"] = <String>[]
+      ..["disabled_actions"] = [
+        {
+          "action": "SELECT_CANDIDATES",
+          "reason_code": "ACTION_NOT_ALLOWED",
+          "message": "이미 요청 대상을 선택했습니다. 현재 초안·발송 상태를 확인해 주세요.",
+        },
+      ];
     // One RFQ draft per supplier, with the effective send policy applied.
     final drafts = _workspace.drafts.putIfAbsent(caseId, () => []);
     final results = <Map<String, Object?>>[];

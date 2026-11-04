@@ -1,6 +1,7 @@
 import "../../mail_draft/domain/mail_draft.dart";
+import "work_case.dart";
 
-/// API-11 후보 세트. 08의 응답 형식은 아직 서버에 없어서 제안 계약을 따릅니다.
+/// API-11 후보 세트. 조건 충족 여부는 MET·UNMET·UNKNOWN입니다.
 enum CheckState {
   met("MET", "충족"),
   unmet("UNMET", "불충족"),
@@ -29,15 +30,34 @@ class CandidateCheck {
   final bool required;
 }
 
+/// 서버가 확인 못 한 항목의 키. 모르는 키는 그대로 보여 줍니다.
+const _unknownFieldLabels = {
+  "item_name": "품목명",
+  "specification": "규격",
+  "quantity": "수량",
+  "unit": "단위",
+  "unit_price": "단가",
+  "due_date": "납기",
+  "origin": "원산지",
+  "certifications": "인증",
+  "contact_email": "연락처",
+  "supplier_name": "업체명",
+};
+
+String unknownFieldLabel(String key) => _unknownFieldLabels[key] ?? key;
+
 class Candidate {
   const Candidate({
     required this.supplierId,
     required this.name,
     required this.handlingEvidence,
+    this.reason = "",
     this.contactEmail,
     this.checks = const [],
     this.preferenceScore,
     this.webCandidate = false,
+    this.caution,
+    this.unknownFields = const [],
   });
 
   final String supplierId;
@@ -46,6 +66,15 @@ class Candidate {
 
   /// 이 품목을 취급한다고 본 근거(거래 이력·등록 품목 등).
   final String handlingEvidence;
+
+  /// 에이전트가 이 후보를 고른 이유.
+  final String reason;
+
+  /// 주의 사유. 있으면 자동 발송하지 않고 승인을 기다립니다.
+  final String? caution;
+
+  /// 이 후보에서 확인하지 못한 항목의 키.
+  final List<String> unknownFields;
   final List<CandidateCheck> checks;
 
   /// 선호 점수(0~100). 필수 조건 위반을 가리지 않습니다.
@@ -67,6 +96,10 @@ class CandidateSet {
     required this.revision,
     required this.candidates,
     this.selectedSupplierIds = const [],
+    this.isStale = false,
+    this.unknownFields = const [],
+    this.allowedActions = const [],
+    this.disabledActions = const [],
   });
 
   final String id;
@@ -75,6 +108,25 @@ class CandidateSet {
 
   /// 이미 저장한 선택(다시 열었을 때 체크 상태 복원).
   final List<String> selectedSupplierIds;
+
+  /// 업무 입력이 바뀌어 이 후보는 과거 후보입니다. 고를 수 없습니다.
+  final bool isStale;
+
+  /// 업무 전체에서 확인하지 못한 항목의 키.
+  final List<String> unknownFields;
+  final List<String> allowedActions;
+  final List<DisabledWorkCaseAction> disabledActions;
+
+  /// 선택 가능 여부는 서버의 allowed_actions를 따르고, 과거 후보는 막습니다.
+  bool get canSelect =>
+      !isStale && allowedActions.contains(WorkCaseAction.selectCandidates);
+
+  String? get blockedReason =>
+      disabledActions
+          .where((disabled) => disabled.action == WorkCaseAction.selectCandidates)
+          .firstOrNull
+          ?.message ??
+      (isStale ? "업무 내용이 바뀌어 이전 후보로는 견적을 요청할 수 없어요." : null);
 }
 
 /// API-12 drafts[]: the RFQ draft made for one selected supplier.
