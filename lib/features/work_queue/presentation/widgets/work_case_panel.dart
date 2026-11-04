@@ -182,7 +182,11 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
           const SizedBox(height: 24),
           const Divider(height: 1, color: line),
           const SizedBox(height: 20),
-          if (workCase.can(WorkCaseAction.selectCandidates))
+          // Blocked candidates are still shown, read-only, with the reason.
+          if (workCase.can(WorkCaseAction.selectCandidates) ||
+              (workCase.atCandidates &&
+                  workCase.disabledMessage(WorkCaseAction.selectCandidates) !=
+                      null))
             CandidateSelection(workCase: workCase)
           else if (workCase.notStarted)
             _Decision(

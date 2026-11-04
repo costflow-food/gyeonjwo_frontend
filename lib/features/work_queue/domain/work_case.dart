@@ -272,6 +272,16 @@ class WorkQueueFailure implements Exception {
     "WORK_ALREADY_STARTED",
     "ACTION_NOT_ALLOWED",
     "RESOURCE_NOT_FOUND",
+    "CANDIDATES_CHANGED",
+  }.contains(code);
+
+  /// 후보 세트가 바뀌었거나 이 선택이 더 맞지 않음: 후보를 다시 조회합니다.
+  bool get candidatesChanged => const {
+    "CANDIDATES_CHANGED",
+    "REVISION_CONFLICT",
+    "ACTION_NOT_ALLOWED",
+    "CANDIDATES_NOT_READY",
+    "INVALID_CANDIDATE_SELECTION",
   }.contains(code);
 
   @override

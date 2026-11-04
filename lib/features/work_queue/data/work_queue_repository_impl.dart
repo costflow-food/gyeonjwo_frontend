@@ -151,6 +151,21 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       selectedSupplierIds: List.unmodifiable(
         (json["selected_supplier_ids"] as List? ?? const []).cast<String>(),
       ),
+      isStale: json["is_stale"] as bool? ?? false,
+      unknownFields: List.unmodifiable(
+        (json["unknown_fields"] as List? ?? const []).cast<String>(),
+      ),
+      allowedActions: List.unmodifiable(
+        (json["allowed_actions"] as List? ?? const []).cast<String>(),
+      ),
+      disabledActions: List.unmodifiable([
+        for (final entry in json["disabled_actions"] as List? ?? const [])
+          DisabledWorkCaseAction(
+            action: entry["action"] as String,
+            reasonCode: entry["reason_code"] as String,
+            message: entry["message"] as String,
+          ),
+      ]),
       candidates: List.unmodifiable([
         for (final entry in json["items"] as List)
           Candidate(
@@ -158,6 +173,12 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
             name: entry["name"] as String,
             contactEmail: entry["contact_email"] as String?,
             handlingEvidence: entry["handling_evidence"] as String? ?? "",
+            reason: entry["reason"] as String? ?? "",
+            caution: (entry["caution"] as Map<String, dynamic>?)?["reason"]
+                as String?,
+            unknownFields: List.unmodifiable(
+              (entry["unknown_fields"] as List? ?? const []).cast<String>(),
+            ),
             preferenceScore: entry["preference_score"] as int?,
             webCandidate: entry["is_web_candidate"] as bool? ?? false,
             checks: List.unmodifiable([
