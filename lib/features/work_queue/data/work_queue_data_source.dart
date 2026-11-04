@@ -21,6 +21,8 @@ WorkQueueDataSource workQueueDataSource(Ref ref) => ApiWorkQueueDataSource(
 /// API-01 `GET /work-cases`, API-25 `GET /mail-messages/{mail_id}`,
 /// API-04 `POST /work-cases/{case_id}/start`,
 /// API-05 `POST /work-cases/{case_id}/accept-increase`,
+/// API-03 `GET /work-cases/{case_id}/progress`,
+/// API-07 `POST /work-cases/{case_id}/resume`,
 /// API-11 `GET /work-cases/{case_id}/candidates`,
 /// API-12 `PUT /work-cases/{case_id}/candidate-selection`,
 /// API-26 `GET /mail-messages/{mail_id}/attachments/{attachment_id}/content`.
@@ -43,6 +45,14 @@ abstract interface class WorkQueueDataSource {
   });
 
   Future<Map<String, dynamic>> start(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  });
+
+  Future<Map<String, dynamic>> fetchProgress(String caseId);
+
+  Future<Map<String, dynamic>> resume(
     String caseId,
     Map<String, Object?> body, {
     required String idempotencyKey,
@@ -145,6 +155,28 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
   }) => _send(
     (headers) => _dio.post<Map<String, dynamic>>(
       "$_cases/$caseId/start",
+      data: body,
+      options: Options(headers: headers),
+    ),
+    idempotencyKey: idempotencyKey,
+  );
+
+  @override
+  Future<Map<String, dynamic>> fetchProgress(String caseId) => _send(
+    (headers) => _dio.get<Map<String, dynamic>>(
+      "$_cases/$caseId/progress",
+      options: Options(headers: headers),
+    ),
+  );
+
+  @override
+  Future<Map<String, dynamic>> resume(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) => _send(
+    (headers) => _dio.post<Map<String, dynamic>>(
+      "$_cases/$caseId/resume",
       data: body,
       options: Options(headers: headers),
     ),
@@ -368,6 +400,52 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
   }
 
   @override
+  Future<Map<String, dynamic>> fetchProgress(String caseId) async {
+    await Future<void>.delayed(latency);
+    final item = _case(caseId);
+    return _copy({
+      "data": {
+        "case_id": caseId,
+        "status": item["status"],
+        "processing_step": item["processing_step"],
+        "hold": item["hold"],
+        "input_revision": item["input_revision"],
+        "updated_at": null,
+        "batch_id": "b-preview-$caseId",
+        "progress_url": "/api/v1/work-cases/$caseId/progress",
+        "error": item["error"],
+      },
+      "meta": {"request_id": "req-preview-progress"},
+    });
+  }
+
+  @override
+  Future<Map<String, dynamic>> resume(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) async {
+    await Future<void>.delayed(latency);
+    final item = _waitingCase(caseId, "RESUME");
+    item
+      ..["status"] = "Running"
+      ..["processing_step"] = "EXTRACTING"
+      ..["step_detail"] = {"code": "EXTRACTING", "message": "요청 정보 확인 중"}
+      ..["hold"] = null
+      ..["allowed_actions"] = ["VIEW_ORIGINAL"]
+      ..["disabled_actions"] = [];
+    return _copy({
+      "data": {
+        "case_id": caseId,
+        "input_revision": item["input_revision"],
+        "batch_id": "b-preview-$caseId",
+        "progress_url": "/api/v1/work-cases/$caseId/progress",
+      },
+      "meta": {"request_id": "req-preview-resume"},
+    });
+  }
+
+  @override
   Future<Map<String, dynamic>> fetchCandidates(String caseId) async {
     await Future<void>.delayed(latency);
     final set = _workspace.candidateSets[caseId];
@@ -415,7 +493,7 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
     });
   }
 
-  Map<String, dynamic> _waitingCase(String caseId, String action) {
+  Map<String, dynamic> _case(String caseId) {
     final item = _workspace.queueCases
         .where((item) => item["case_id"] == caseId)
         .firstOrNull;
@@ -426,6 +504,11 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
         "업무를 찾을 수 없어요.",
       );
     }
+    return item;
+  }
+
+  Map<String, dynamic> _waitingCase(String caseId, String action) {
+    final item = _case(caseId);
     if (!(item["allowed_actions"] as List).contains(action)) {
       throw const WorkQueueApiException(
         409,

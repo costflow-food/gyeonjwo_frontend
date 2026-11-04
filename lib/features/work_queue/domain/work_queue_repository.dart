@@ -23,6 +23,12 @@ abstract interface class WorkQueueRepository {
   /// API-04. 202 접수만 확인하며 처리 완료를 뜻하지 않습니다.
   Future<void> start(WorkCase workCase);
 
+  /// API-03. 저장된 진행 단계와 보류·오류 코드(실행 없음).
+  Future<CaseProgress> getProgress(String caseId);
+
+  /// API-07 `reason=RESUME_HOLD`. 202 접수만 확인하며 추출 완료를 뜻하지 않습니다.
+  Future<void> resume(WorkCase workCase);
+
   /// API-11. 에이전트가 고른 견적 요청 후보.
   Future<CandidateSet> getCandidates(String caseId);
 
