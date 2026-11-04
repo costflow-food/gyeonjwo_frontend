@@ -93,9 +93,12 @@ class IntakePage {
 }
 
 class IntakeFailure implements Exception {
-  const IntakeFailure(this.code, this.message);
+  const IntakeFailure(this.code, this.message, {this.unknownOutcome = false});
   final String code;
   final String message;
+
+  /// No response arrived; the server may or may not have applied the change.
+  final bool unknownOutcome;
 
   @override
   String toString() => "IntakeFailure($code)";

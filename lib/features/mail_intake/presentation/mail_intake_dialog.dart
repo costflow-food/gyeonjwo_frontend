@@ -103,7 +103,9 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = failure.message;
+        _error = failure.unknownOutcome
+            ? "처리 결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."
+            : failure.message;
       });
     } catch (_) {
       if (!mounted) return;
