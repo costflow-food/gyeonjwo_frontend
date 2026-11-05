@@ -202,7 +202,7 @@ class PreviewSendSettingsDataSource implements SendSettingsDataSource {
       throw const SendSettingsApiException(
         422,
         "SEND_SCOPE_REQUIRED",
-        "자동 발송(승인 OFF)을 쓰려면 허용 업체를 한 곳 이상 선택해 주세요.",
+        "자동 발송을 켜려면 허용 업체를 한 곳 이상 선택해 주세요.",
       );
     }
     final applyExisting = body['apply_to'] == 'SPECIFIED_DRAFTS';
