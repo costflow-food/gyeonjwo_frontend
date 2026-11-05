@@ -1,5 +1,6 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/network/authorized_json_get.dart";
 import "../domain/workflow_log.dart";
 import "../domain/workflow_log_filter.dart";
 import "../domain/workflow_log_repository.dart";
@@ -22,10 +23,15 @@ class WorkflowLogRepositoryImpl implements WorkflowLogRepository {
     WorkflowLogFilter filter, {
     String? cursor,
   }) async {
-    final response = await _dataSource.fetchLogs(
-      filter.toQuery(),
-      cursor: cursor,
-    );
+    final Map<String, dynamic> response;
+    try {
+      response = await _dataSource.fetchLogs(filter.toQuery(), cursor: cursor);
+    } on ApiReadException catch (error) {
+      throw WorkflowLogFailure(
+        error.code ?? "HTTP_${error.statusCode}",
+        error.message ?? "실행 로그를 불러오지 못했어요.",
+      );
+    }
     final data = response["data"] as Map<String, dynamic>;
     final items = [
       for (final entry in data["items"] as List)
@@ -43,12 +49,12 @@ class WorkflowLogRepositoryImpl implements WorkflowLogRepository {
   static WorkflowLogEntry _entry(Map<String, dynamic> json) => WorkflowLogEntry(
     id: json["id"] as String,
     createdAt: json["created_at"] as String,
-    component: LogComponent.fromCode(json["component_type"] as String),
-    actor: LogActor.fromCode(json["agent_role"] as String),
-    eventType: LogEventType.fromCode(json["event_type"] as String),
-    summary: json["summary"] as String,
-    outcome: LogOutcome.fromCode(json["outcome"] as String),
-    requestId: json["request_id"] as String,
+    componentCode: json["component_type"] as String?,
+    actorCode: json["agent_role"] as String?,
+    eventCode: json["event_type"] as String,
+    summary: json["summary"] as String? ?? "",
+    outcome: LogOutcome.fromCode(json["outcome"] as String?),
+    requestId: json["request_id"] as String?,
     caseId: json["case_id"] as String?,
     caseTitle: json["case_title"] as String?,
     durationMs: json["duration_ms"] as int?,

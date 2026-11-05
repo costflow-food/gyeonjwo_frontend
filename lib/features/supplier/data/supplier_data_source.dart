@@ -1,22 +1,28 @@
 import "dart:convert";
 
+import "package:dio/dio.dart";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/network/api_client.dart";
+import "../../../shared/network/authorized_json_get.dart";
+import "../../auth/data/auth_session_data_source.dart";
 import "supplier_preview_data.dart";
 
 part "supplier_data_source.g.dart";
 
+/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 @Riverpod(keepAlive: true)
-SupplierDataSource supplierDataSource(Ref ref) {
-  return PreviewSupplierDataSource();
-}
+SupplierDataSource supplierDataSource(Ref ref) => ApiSupplierDataSource(
+  ref.watch(apiClientProvider),
+  ref.watch(authSessionDataSourceProvider).freshAccessToken,
+);
 
 /// Returns decoded JSON in the 08 API shape (`data`, `meta`).
 ///
 /// Reads: API-29 `GET /suppliers`, API-30 `GET /suppliers/{supplier_id}`,
 /// API-31 `GET /supplier-items/{supplier_item_id}/price-history`.
-/// Create: `POST /suppliers`, a proposed contract not yet in 08; the server
-/// stores it with service_role.
+/// Create: 08에 없는 계약입니다(거래처 CRUD는 Must 밖). 서버 지원이 합의되기
+/// 전에는 [ApiSupplierDataSource]가 요청을 보내지 않고 거절합니다.
 /// Failures use the 08 error shape via [SupplierApiException].
 abstract interface class SupplierDataSource {
   Future<Map<String, dynamic>> fetchSuppliers({
@@ -41,8 +47,72 @@ class SupplierApiException implements Exception {
   final Map<String, dynamic> body;
 }
 
-/// In-memory responses until the API is ready. Registered suppliers last
-/// until the browser reloads.
+/// API-29~31 조회. 조회만 하며 거래처를 바꾸지 않습니다.
+class ApiSupplierDataSource implements SupplierDataSource {
+  const ApiSupplierDataSource(this._dio, this._accessToken);
+
+  static const _suppliers = "/api/v1/suppliers";
+  static const _supplierItems = "/api/v1/supplier-items";
+
+  final Dio _dio;
+  final ApiTokenReader _accessToken;
+
+  @override
+  Future<Map<String, dynamic>> fetchSuppliers({
+    required String query,
+    String? cursor,
+    int limit = 25,
+  }) => _get(
+    _suppliers,
+    queryParameters: {
+      if (query.isNotEmpty) "q": query,
+      "cursor": ?cursor,
+      "limit": limit,
+    },
+  );
+
+  @override
+  Future<Map<String, dynamic>> fetchSupplier(String supplierId) =>
+      _get("$_suppliers/${Uri.encodeComponent(supplierId)}");
+
+  @override
+  Future<Map<String, dynamic>> fetchPriceHistory(String supplierItemId) => _get(
+    "$_supplierItems/${Uri.encodeComponent(supplierItemId)}/price-history",
+  );
+
+  /// `POST /suppliers`는 08에 없어 서버에 보내지 않습니다.
+  @override
+  Future<Map<String, dynamic>> createSupplier(
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) async {
+    throw const SupplierApiException(501, {
+      "error": {
+        "code": "SUPPLIER_REGISTRATION_UNSUPPORTED",
+        "message": "거래처 등록은 아직 서버에서 지원하지 않습니다.",
+      },
+    });
+  }
+
+  Future<Map<String, dynamic>> _get(
+    String path, {
+    Map<String, Object?>? queryParameters,
+  }) async {
+    try {
+      return await authorizedJsonGet(
+        _dio,
+        _accessToken,
+        path,
+        queryParameters: queryParameters,
+      );
+    } on ApiReadException catch (error) {
+      throw SupplierApiException(error.statusCode, error.body);
+    }
+  }
+}
+
+/// In-memory responses for the UI preview page and tests. Registered
+/// suppliers last until the browser reloads.
 class PreviewSupplierDataSource implements SupplierDataSource {
   PreviewSupplierDataSource({this.latency = const Duration(milliseconds: 250)})
     : _details = [

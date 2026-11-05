@@ -1,5 +1,3 @@
-import "dart:async";
-
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../data/workflow_log_repository_impl.dart";
@@ -10,22 +8,14 @@ part "workflow_log_view_model.g.dart";
 
 Duration? _noRetry(int retryCount, Object error) => null;
 
-/// SCR-010 filters, selection, and cursor paging.
+/// SCR-010 filters, selection, and cursor paging (API-28).
 @Riverpod(keepAlive: true, retry: _noRetry)
 class WorkflowLogViewModel extends _$WorkflowLogViewModel {
-  static const searchDelay = Duration(milliseconds: 300);
-
-  Timer? _searchTimer;
-
-  // Typed text not applied yet; a dropdown change must not drop it.
-  String? _pendingQuery;
-
   // A late response for an older filter must not replace a newer one.
   int _requestSerial = 0;
 
   @override
   Future<WorkflowLogState> build() async {
-    ref.onDispose(() => _searchTimer?.cancel());
     const filter = WorkflowLogFilter();
     final page = await ref.watch(workflowLogRepositoryProvider).getLogs(filter);
     return WorkflowLogState(
@@ -37,27 +27,11 @@ class WorkflowLogViewModel extends _$WorkflowLogViewModel {
     );
   }
 
-  /// Text search waits for typing to pause; other filters apply at once.
-  void searchCase(String query) {
-    _pendingQuery = query.trim();
-    _searchTimer?.cancel();
-    _searchTimer = Timer(searchDelay, () {
-      final current = state.asData?.value;
-      if (current == null) return;
-      applyFilter(current.filter);
-    });
-  }
-
-  void applyFilter(WorkflowLogFilter filter) {
-    _searchTimer?.cancel();
-    final query = _pendingQuery;
-    _pendingQuery = null;
-    _reload(query == null ? filter : filter.copyWith(caseQuery: query));
-  }
-
-  void resetFilter() {
-    _pendingQuery = null;
-    applyFilter(const WorkflowLogFilter());
+  /// Shows only one case's logs (`case_id`); null shows every case again.
+  void filterCase(String? caseId, {String? caseTitle}) {
+    final current = state.asData?.value;
+    if (current == null) return;
+    _reload(WorkflowLogFilter(caseId: caseId, caseTitle: caseTitle));
   }
 
   void select(String id) {
@@ -72,7 +46,6 @@ class WorkflowLogViewModel extends _$WorkflowLogViewModel {
       ref.invalidateSelf();
       return;
     }
-    _searchTimer?.cancel();
     await _reload(current.filter);
   }
 
