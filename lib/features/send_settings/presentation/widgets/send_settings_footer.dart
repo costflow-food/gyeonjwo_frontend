@@ -25,11 +25,6 @@ class SendSettingsFooter extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            '시연 데이터 · 실제 메일은 발송되지 않습니다.',
-            style: TextStyle(fontSize: AppFontSizes.caption, color: muted),
-          ),
-          const SizedBox(height: 8),
           if (error != null) ...[
             Semantics(
               liveRegion: true,
