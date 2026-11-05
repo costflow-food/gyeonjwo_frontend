@@ -95,7 +95,7 @@ View → ViewModel → Repository → DataSource 순서로 요청하고, 응답�
 
 ## 인증·Gmail 연결
 
-인증·Gmail 연결은 **KAN-19 프론트 작업 완료, 서버 연동 대기** 상태입니다. Supabase Auth Google 로그인과 Gmail 연결 코드는 `features/auth/`에 있습니다. 실행 설정, 흐름, 서버 연결 계약은 `docs/auth-ui.md`를 참고하세요. Supabase 설정 없이 실행하면 기존 화면 미리보기 모드로 동작합니다.
+인증·Gmail 연결은 **KAN-19 프론트 작업 완료, 서버 연동 대기** 상태입니다. Supabase Auth Google 로그인과 Gmail 연결 코드는 `features/auth/`에 있습니다. Supabase 설정 없이 실행하면 기존 화면 미리보기 모드로 동작합니다.
 
 ## 실제 API 연결
 
