@@ -73,13 +73,16 @@ const _stepLabels = {
 
 String processingStepLabel(String step) => _stepLabels[step] ?? "처리 상태 확인";
 
-/// API-03 error는 코드만 옵니다. 서버가 문구를 보내기 전까지 hold와 같은 문구를 씁니다.
-const _stopMessages = {
+/// 서버 hold가 없을 때만 쓰는 임시 문구. 현재 서버는 ON_HOLD에만 hold를 보내므로
+/// NEEDS_INFO에 hold가 오기 전까지(KAN-124) error.code로 문구를 고릅니다.
+const _fallbackStopMessages = {
   "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
   "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 해요.",
 };
 
-String? stopReasonMessage(String? errorCode) => _stopMessages[errorCode];
+/// 멈춘 이유 문구. 서버 hold 문구가 우선이고, 없으면 [errorCode]의 임시 문구입니다.
+String? stopReasonMessage(HoldReason? hold, String? errorCode) =>
+    hold?.message ?? _fallbackStopMessages[errorCode];
 
 /// API-01·03 hold. 문구는 서버가 정한 그대로 보여 줍니다.
 class HoldReason {
@@ -125,8 +128,11 @@ class CaseProgress {
   final int inputRevision;
   final HoldReason? hold;
 
-  /// error.code. 서버는 코드만 보내고 문구는 보내지 않습니다.
+  /// error.code. 화면 문구로 쓰지 않습니다.
   final String? errorCode;
+
+  /// 멈춘 이유 코드. 단계 추정·버튼 표시에만 쓰고 문구는 [hold]의 message를 씁니다.
+  String? get stopCode => hold?.code ?? errorCode;
 }
 
 class DisabledWorkCaseAction {
