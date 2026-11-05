@@ -4,9 +4,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
-import "../../../shared/widgets/async_content.dart";
-import "../../work_queue/domain/work_case.dart";
-import "../domain/review_phase.dart";
+import "../domain/review_progress_repository.dart";
 import "review_progress_view_model.dart";
 import "widgets/review_progress_body.dart";
 import "widgets/review_progress_dialog.dart";
@@ -36,7 +34,7 @@ Future<void> showReviewProgressDialog(
   );
 }
 
-class ReviewProgressView extends ConsumerWidget {
+class ReviewProgressView extends ConsumerStatefulWidget {
   const ReviewProgressView({
     super.key,
     required this.caseId,
@@ -48,21 +46,64 @@ class ReviewProgressView extends ConsumerWidget {
   final VoidCallback onViewCase;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = reviewProgressViewModelProvider(caseId);
-    final value = ref.watch(provider);
-    final progress = value.asData?.value;
+  ConsumerState<ReviewProgressView> createState() => _ReviewProgressViewState();
+}
+
+class _ReviewProgressViewState extends ConsumerState<ReviewProgressView> {
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    // A hidden tab or a backgrounded app asks nothing until it is back.
+    _lifecycle = AppLifecycleListener(
+      onStateChange: (lifecycle) {
+        final viewModel = ref.read(reviewProgressViewModelProvider(widget.caseId).notifier);
+        switch (lifecycle) {
+          case AppLifecycleState.resumed:
+            viewModel.resume();
+          case AppLifecycleState.hidden ||
+              AppLifecycleState.paused ||
+              AppLifecycleState.detached:
+            viewModel.pause();
+          case AppLifecycleState.inactive:
+            break;
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = ref.watch(reviewProgressViewModelProvider(widget.caseId));
+    final current = value.asData?.value;
+    final retry = ref.read(reviewProgressViewModelProvider(widget.caseId).notifier).refresh;
     return ReviewProgressDialog(
-      title: title,
-      outcome: progress == null ? null : outcomeOf(progress.processingStep),
+      title: widget.title,
+      outcome: current?.outcome,
       onClose: () => Navigator.of(context).pop(),
-      onViewCase: onViewCase,
-      body: AsyncContent<CaseProgress>(
-        // Keep the steps on screen while a poll reloads.
-        value: progress == null ? value : AsyncData(progress),
-        onRetry: ref.read(provider.notifier).refresh,
-        builder: (progress) => ReviewProgressBody(progress: progress),
-      ),
+      onViewCase: widget.onViewCase,
+      body: switch (value) {
+        // Keep the steps on screen while a check reloads.
+        _ when current != null => ReviewProgressBody(
+          state: current,
+          onRetry: retry,
+        ),
+        AsyncError(:final error) => ReviewProgressError(
+          failure: error is ReviewProgressFailure ? error : null,
+          onRetry: retry,
+        ),
+        _ => const Padding(
+          padding: EdgeInsets.all(32),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      },
     );
   }
 }

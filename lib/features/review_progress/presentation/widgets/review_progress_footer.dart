@@ -31,6 +31,7 @@ class ReviewProgressFooter extends StatelessWidget {
             switch (current) {
               null => "창을 닫아도 검토는 서버에서 계속돼요.",
               ReviewOutcome(stopped: true) => "멈춘 이유는 업무에서 확인할 수 있어요.",
+              ReviewOutcome.waitingReply => "회신이 오면 업무 큐에서 이어서 볼 수 있어요.",
               _ => "다음 단계는 업무에서 진행해 주세요.",
             },
             style: const TextStyle(fontSize: 11, color: muted),

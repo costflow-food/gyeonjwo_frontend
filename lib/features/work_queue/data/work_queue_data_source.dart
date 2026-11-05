@@ -22,7 +22,6 @@ WorkQueueDataSource workQueueDataSource(Ref ref) => ApiWorkQueueDataSource(
 /// API-25 `GET /mail-messages/{mail_id}`,
 /// API-04 `POST /work-cases/{case_id}/start`,
 /// API-05 `POST /work-cases/{case_id}/accept-increase`,
-/// API-03 `GET /work-cases/{case_id}/progress`,
 /// API-07 `POST /work-cases/{case_id}/resume`,
 /// API-11 `GET /work-cases/{case_id}/candidates`,
 /// API-12 `PUT /work-cases/{case_id}/candidate-selection`,
@@ -51,7 +50,6 @@ abstract interface class WorkQueueDataSource {
     required String idempotencyKey,
   });
 
-  Future<Map<String, dynamic>> fetchProgress(String caseId);
 
   /// API-02 one case: stored state and actions, no mail body.
   Future<Map<String, dynamic>> fetchCase(String caseId);
@@ -169,14 +167,6 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
   Future<Map<String, dynamic>> fetchCase(String caseId) => _send(
     (headers) => _dio.get<Map<String, dynamic>>(
       "$_cases/$caseId",
-      options: Options(headers: headers),
-    ),
-  );
-
-  @override
-  Future<Map<String, dynamic>> fetchProgress(String caseId) => _send(
-    (headers) => _dio.get<Map<String, dynamic>>(
-      "$_cases/$caseId/progress",
       options: Options(headers: headers),
     ),
   );
@@ -470,7 +460,8 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
     });
   }
 
-  @override
+  /// API-03 shape for [PreviewReviewProgressDataSource], so a START here
+  /// advances the steps shown in the review progress dialog.
   Future<Map<String, dynamic>> fetchProgress(String caseId) async {
     await Future<void>.delayed(latency);
     final item = _case(caseId);

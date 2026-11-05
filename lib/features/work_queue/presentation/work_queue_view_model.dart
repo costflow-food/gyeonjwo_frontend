@@ -4,6 +4,7 @@ import "dart:typed_data";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../auth/presentation/auth_session_view_model.dart";
+import "../../review_progress/data/review_progress_repository_impl.dart";
 import "../data/work_case_change_source.dart";
 import "../data/work_queue_repository_impl.dart";
 import "../domain/candidate.dart";
@@ -137,7 +138,7 @@ Future<WorkCase> caseDetail(Ref ref, String caseId) =>
 /// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
 @Riverpod(retry: _noRetry)
 Future<CaseProgress> caseProgress(Ref ref, String caseId) =>
-    ref.watch(workQueueRepositoryProvider).getProgress(caseId);
+    ref.watch(reviewProgressRepositoryProvider).getProgress(caseId);
 
 /// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
 @Riverpod(retry: _noRetry)

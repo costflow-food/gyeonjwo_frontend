@@ -146,21 +146,6 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
   });
 
   @override
-  Future<CaseProgress> getProgress(String caseId) => _guard(() async {
-    final response = await _dataSource.fetchProgress(caseId);
-    final json = response["data"] as Map<String, dynamic>;
-    final error = json["error"] as Map<String, dynamic>?;
-    return CaseProgress(
-      caseId: json["case_id"] as String,
-      status: json["status"] as String,
-      processingStep: json["processing_step"] as String,
-      inputRevision: json["input_revision"] as int,
-      hold: _hold(json["hold"]),
-      errorCode: error?["code"] as String?,
-    );
-  });
-
-  @override
   Future<void> resume(WorkCase workCase) {
     // This release accepts only RESUME_HOLD; the server rejects other reasons.
     final body = <String, Object?>{

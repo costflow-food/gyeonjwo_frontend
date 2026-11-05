@@ -20,6 +20,7 @@ import '../features/mail_intake/data/mail_intake_data_source.dart';
 import '../features/mail_intake/presentation/mail_intake_dialog.dart';
 import '../features/purchase_review/presentation/purchase_review_view.dart';
 import '../features/purchase_review/data/purchase_review_data_source.dart';
+import '../features/review_progress/data/review_progress_data_source.dart';
 import '../features/review_progress/presentation/review_progress_view.dart';
 import '../features/send_settings/data/send_settings_data_source.dart';
 import '../features/send_settings/presentation/send_settings_dialog.dart';
@@ -41,6 +42,7 @@ import '../shared/widgets/outline_panel.dart';
 import '../shared/widgets/workspace_button_styles.dart';
 import '../shared/workspace_colors.dart';
 
+const _progressSampleCase = 'c0a80001-0000-4000-8000-000000000001';
 const _sampleCase = 'REQ-2026-1019-003';
 
 /// A separate router and provider container keep UI checks out of the user's
@@ -89,6 +91,13 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
           (ref) => PreviewWorkQueueDataSource(
             workspace: store,
             latency: Duration.zero,
+          ),
+        ),
+        // Follows the preview queue; the '검토 진행' sample runs every step.
+        reviewProgressDataSourceProvider.overrideWith(
+          (ref) => PreviewReviewProgressDataSource(
+            ref.watch(workQueueDataSourceProvider) as PreviewWorkQueueDataSource,
+            demoCaseId: _progressSampleCase,
           ),
         ),
         sourceDocumentDataSourceProvider.overrideWith(
@@ -328,10 +337,10 @@ class _PreviewCatalogState extends ConsumerState<_PreviewCatalog> {
       case 'source':
         await showSourceDocument(context, requestId: _sampleCase);
       case 'progress':
-        // A preview case that is extracting; its steps move on over time.
+        // Runs extraction → candidates → reply review → card ready.
         await showReviewProgressDialog(
           context,
-          caseId: 'c0a80001-0000-4000-8000-000000000001',
+          caseId: _progressSampleCase,
           title: '[단가변경] 냉동 딸기 공급 조건 변경의 건',
         );
       case 'needs-info':

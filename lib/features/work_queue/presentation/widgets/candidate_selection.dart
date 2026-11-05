@@ -37,7 +37,10 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         before.can(WorkCaseAction.selectCandidates) !=
             after.can(WorkCaseAction.selectCandidates)) {
       _retry?.cancel();
-      ref.invalidate(caseCandidatesProvider(after.id));
+      // Not while the tree is building: the panel may be removing this widget.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.invalidate(caseCandidatesProvider(widget.workCase.id));
+      });
     }
   }
 

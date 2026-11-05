@@ -206,7 +206,7 @@ final class CaseProgressProvider
   }
 }
 
-String _$caseProgressHash() => r'8061f455eae66e2ccd87ca82d73ba47ac4976bcd';
+String _$caseProgressHash() => r'c53ef5e0766cea1b0225c820d97c23dac979dff9';
 
 /// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
 

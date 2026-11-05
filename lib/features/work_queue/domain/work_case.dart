@@ -89,7 +89,7 @@ class HoldReason {
   final String message;
 }
 
-/// API-03 저장된 진행 단계.
+/// API-03 저장된 진행 단계. 검토 진행 팝업(KAN-142)과 보류 안내(FE-4)가 함께 씁니다.
 class CaseProgress {
   const CaseProgress({
     required this.caseId,
@@ -99,6 +99,25 @@ class CaseProgress {
     this.hold,
     this.errorCode,
   });
+
+  /// API-03 `data`.
+  factory CaseProgress.fromJson(Map<String, dynamic> json) {
+    final hold = json["hold"];
+    final error = json["error"];
+    return CaseProgress(
+      caseId: json["case_id"] as String,
+      status: json["status"] as String,
+      processingStep: json["processing_step"] as String,
+      inputRevision: json["input_revision"] as int,
+      hold: hold is Map<String, dynamic>
+          ? HoldReason(
+              code: hold["code"] as String,
+              message: hold["message"] as String,
+            )
+          : null,
+      errorCode: error is Map<String, dynamic> ? error["code"] as String? : null,
+    );
+  }
 
   final String caseId;
   final String status;
