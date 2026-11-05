@@ -109,18 +109,39 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
     );
   }
 
+  /// API-02 has no title, sender, or step text, so the mail (API-25)
+  /// supplies them and the step text follows the server's labels.
   @override
-  Future<CaseProgress> getProgress(String caseId) => _guard(() async {
-    final response = await _dataSource.fetchProgress(caseId);
+  Future<WorkCase> getCase(String caseId) => _guard(() async {
+    final response = await _dataSource.fetchCase(caseId);
     final json = response["data"] as Map<String, dynamic>;
-    final error = json["error"] as Map<String, dynamic>?;
-    return CaseProgress(
-      caseId: json["case_id"] as String,
-      status: json["status"] as String,
-      processingStep: json["processing_step"] as String,
+    final mail = await getOriginalMail(json["initial_mail_id"] as String);
+    final statusCode = json["status"] as String;
+    final step = json["processing_step"] as String;
+    return WorkCase(
+      id: json["case_id"] as String,
+      initialMailId: json["initial_mail_id"] as String,
+      title: mail.subject,
+      sender: mail.sender,
+      itemName: json["item_name"] as String?,
+      receivedAt: mail.receivedAt,
+      status: WorkCaseStatus.fromCode(statusCode),
+      statusCode: statusCode,
+      processingStep: step,
+      stepMessage: processingStepLabel(step),
       inputRevision: json["input_revision"] as int,
-      hold: _hold(json["hold"]),
-      errorCode: error?["code"] as String?,
+      attachmentCount: mail.attachments.length,
+      allowedActions: List.unmodifiable(
+        (json["allowed_actions"] as List? ?? const []).cast<String>(),
+      ),
+      disabledActions: List.unmodifiable([
+        for (final entry in json["disabled_actions"] as List? ?? const [])
+          DisabledWorkCaseAction(
+            action: entry["action"] as String,
+            reasonCode: entry["reason_code"] as String,
+            message: entry["message"] as String,
+          ),
+      ]),
     );
   });
 

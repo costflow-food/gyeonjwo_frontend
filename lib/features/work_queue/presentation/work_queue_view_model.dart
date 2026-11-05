@@ -4,6 +4,7 @@ import "dart:typed_data";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../auth/presentation/auth_session_view_model.dart";
+import "../../review_progress/data/review_progress_repository_impl.dart";
 import "../data/work_case_change_source.dart";
 import "../data/work_queue_repository_impl.dart";
 import "../domain/candidate.dart";
@@ -129,10 +130,15 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   }
 }
 
+/// API-02 업무 한 건. 주소로 연 업무가 지금 목록(탭·검색·페이지)에 없을 때 씁니다.
+@Riverpod(retry: _noRetry)
+Future<WorkCase> caseDetail(Ref ref, String caseId) =>
+    ref.watch(workQueueRepositoryProvider).getCase(caseId);
+
 /// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
 @Riverpod(retry: _noRetry)
 Future<CaseProgress> caseProgress(Ref ref, String caseId) =>
-    ref.watch(workQueueRepositoryProvider).getProgress(caseId);
+    ref.watch(reviewProgressRepositoryProvider).getProgress(caseId);
 
 /// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
 @Riverpod(retry: _noRetry)

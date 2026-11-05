@@ -18,10 +18,10 @@ WorkQueueDataSource workQueueDataSource(Ref ref) => ApiWorkQueueDataSource(
   ref.watch(authSessionDataSourceProvider).freshAccessToken,
 );
 
-/// API-01 `GET /work-cases`, API-25 `GET /mail-messages/{mail_id}`,
+/// API-01 `GET /work-cases`, API-02 `GET /work-cases/{case_id}`,
+/// API-25 `GET /mail-messages/{mail_id}`,
 /// API-04 `POST /work-cases/{case_id}/start`,
 /// API-05 `POST /work-cases/{case_id}/accept-increase`,
-/// API-03 `GET /work-cases/{case_id}/progress`,
 /// API-07 `POST /work-cases/{case_id}/resume`,
 /// API-11 `GET /work-cases/{case_id}/candidates`,
 /// API-12 `PUT /work-cases/{case_id}/candidate-selection`,
@@ -50,7 +50,9 @@ abstract interface class WorkQueueDataSource {
     required String idempotencyKey,
   });
 
-  Future<Map<String, dynamic>> fetchProgress(String caseId);
+
+  /// API-02 one case: stored state and actions, no mail body.
+  Future<Map<String, dynamic>> fetchCase(String caseId);
 
   Future<Map<String, dynamic>> resume(
     String caseId,
@@ -162,9 +164,9 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
   );
 
   @override
-  Future<Map<String, dynamic>> fetchProgress(String caseId) => _send(
+  Future<Map<String, dynamic>> fetchCase(String caseId) => _send(
     (headers) => _dio.get<Map<String, dynamic>>(
-      "$_cases/$caseId/progress",
+      "$_cases/$caseId",
       options: Options(headers: headers),
     ),
   );
@@ -277,10 +279,14 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
 class PreviewWorkQueueDataSource implements WorkQueueDataSource {
   PreviewWorkQueueDataSource({
     this.latency = const Duration(milliseconds: 250),
+    this.stepDelay = const Duration(seconds: 3),
     PreviewWorkspace? workspace,
   }) : _workspace = workspace ?? PreviewWorkspace();
 
   final Duration latency;
+
+  /// Time each preview pipeline step takes after START/RESUME.
+  final Duration stepDelay;
   final PreviewWorkspace _workspace;
 
   @override
@@ -290,6 +296,7 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
     String? cursor,
   }) async {
     await Future<void>.delayed(latency);
+    _workspace.queueCases.forEach(_advance);
     final keyword = query.trim().toLowerCase();
     final searched = [
       for (final item in _workspace.queueCases)
@@ -383,6 +390,7 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
   }) async {
     await Future<void>.delayed(latency);
     final item = _waitingCase(caseId, "START");
+    _startedAt[caseId] = DateTime.now();
     item
       ..["status"] = "Running"
       ..["processing_step"] = "EXTRACTING"
@@ -399,10 +407,65 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
     });
   }
 
+  /// When START/RESUME was accepted; steps move on from here over time.
+  final Map<String, DateTime> _startedAt = {};
+
+  /// Stands in for the server pipeline: extraction, then candidates.
+  void _advance(Map<String, dynamic> item) {
+    final since = _startedAt[item["case_id"]];
+    if (since == null) return;
+    final elapsed = DateTime.now().difference(since);
+    void step(String code, String message) => item
+      ..["processing_step"] = code
+      ..["step_detail"] = {"code": code, "message": message};
+    if (elapsed >= stepDelay * 2) {
+      _startedAt.remove(item["case_id"]);
+      final set = _workspace.candidateSets[item["case_id"]];
+      if (set != null) {
+        step("CANDIDATES", "견적 요청 준비 중");
+        item["allowed_actions"] = ["VIEW_ORIGINAL", "SELECT_CANDIDATES"];
+      } else {
+        step("NEEDS_INFO", "추가 정보 확인 필요");
+        item["error"] = {"code": "NO_SUITABLE_CANDIDATES"};
+      }
+    } else if (elapsed >= stepDelay) {
+      step("SELECTING_CANDIDATES", "후보 찾기 대기");
+    }
+  }
+
   @override
+  Future<Map<String, dynamic>> fetchCase(String caseId) async {
+    await Future<void>.delayed(latency);
+    final item = _case(caseId);
+    _advance(item);
+    return _copy({
+      "data": {
+        "case_id": caseId,
+        "initial_mail_id": item["initial_mail_id"],
+        "status": item["status"],
+        "processing_step": item["processing_step"],
+        "input_revision": item["input_revision"],
+        "item_name": item["item_name"],
+        "specification": null,
+        "quantity": null,
+        "unit": null,
+        "decision": null,
+        "archived_at": null,
+        "batch_id": "b-preview-$caseId",
+        "progress_url": "/api/v1/work-cases/$caseId/progress",
+        "allowed_actions": item["allowed_actions"],
+        "disabled_actions": item["disabled_actions"] ?? const [],
+      },
+      "meta": {"request_id": "req-preview-case"},
+    });
+  }
+
+  /// API-03 shape for [PreviewReviewProgressDataSource], so a START here
+  /// advances the steps shown in the review progress dialog.
   Future<Map<String, dynamic>> fetchProgress(String caseId) async {
     await Future<void>.delayed(latency);
     final item = _case(caseId);
+    _advance(item);
     return _copy({
       "data": {
         "case_id": caseId,
@@ -427,6 +490,7 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
   }) async {
     await Future<void>.delayed(latency);
     final item = _waitingCase(caseId, "RESUME");
+    _startedAt[caseId] = DateTime.now();
     item
       ..["status"] = "Running"
       ..["processing_step"] = "EXTRACTING"

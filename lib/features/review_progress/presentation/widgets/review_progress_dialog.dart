@@ -1,23 +1,26 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/workspace_colors.dart";
+import "../../domain/review_phase.dart";
 import "review_progress_header.dart";
 import "review_progress_footer.dart";
 
 class ReviewProgressDialog extends StatelessWidget {
   const ReviewProgressDialog({
     super.key,
-    required this.supplier,
-    required this.complete,
+    required this.title,
+    required this.outcome,
     required this.body,
     required this.onClose,
-    required this.onViewResult,
+    required this.onViewCase,
   });
 
-  final String supplier;
-  final bool complete;
+  final String title;
+
+  /// null while the server is still working.
+  final ReviewOutcome? outcome;
   final Widget body;
-  final VoidCallback onClose, onViewResult;
+  final VoidCallback onClose, onViewCase;
 
   @override
   Widget build(BuildContext context) => Dialog(
@@ -40,14 +43,11 @@ class ReviewProgressDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ReviewProgressHeader(supplier: supplier, onClose: onClose),
+              ReviewProgressHeader(title: title, onClose: onClose),
               const Divider(height: 1, color: line),
               body,
               const Divider(height: 1, color: line),
-              ReviewProgressFooter(
-                complete: complete,
-                onViewResult: onViewResult,
-              ),
+              ReviewProgressFooter(outcome: outcome, onViewCase: onViewCase),
             ],
           ),
         ),

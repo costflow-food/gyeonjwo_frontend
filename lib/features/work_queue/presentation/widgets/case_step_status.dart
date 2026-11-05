@@ -5,6 +5,7 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
+import "../../../review_progress/presentation/review_progress_view.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
@@ -20,12 +21,6 @@ class CaseStepStatus extends ConsumerStatefulWidget {
 }
 
 class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
-  /// API-03 error는 코드만 옵니다. 서버가 문구를 보내기 전까지 hold와 같은 문구를 씁니다.
-  static const _errorMessages = {
-    "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
-    "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 해요.",
-  };
-
   bool _busy = false;
   String? _error;
 
@@ -35,16 +30,19 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
       _busy = true;
       _error = null;
     });
-    final messenger = ScaffoldMessenger.maybeOf(context);
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
+    // The panel rebuilds as the step changes; keep a context that stays.
+    final navigator = Navigator.of(context, rootNavigator: true).context;
     try {
       await viewModel.resume(widget.workCase);
-      messenger?.showSnackBar(
-        const SnackBar(
-          content: Text("다시 추출을 접수했어요. 요청 정보 확인부터 다시 진행해요."),
-        ),
-      );
       if (mounted) setState(() => _busy = false);
+      if (navigator.mounted) {
+        await showReviewProgressDialog(
+          navigator,
+          caseId: widget.workCase.id,
+          title: widget.workCase.title,
+        );
+      }
     } on WorkQueueFailure catch (failure) {
       if (!mounted) return;
       if (failure.caseChanged) viewModel.refresh();
@@ -73,7 +71,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
     final hold = progress?.hold ?? workCase.hold;
     final reason =
         hold?.message ??
-        _errorMessages[progress?.errorCode] ??
+        stopReasonMessage(progress?.errorCode) ??
         (workCase.atCandidates
             ? workCase.disabledMessage(WorkCaseAction.selectCandidates)
             : null);
