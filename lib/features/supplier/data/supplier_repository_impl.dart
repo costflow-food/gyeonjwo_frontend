@@ -52,7 +52,7 @@ class SupplierRepositoryImpl implements SupplierRepository {
         final data = response["data"] as Map<String, dynamic>;
         List<PriceRecord> records(String key, String dateKey) {
           final list = [
-            for (final entry in data[key] as List)
+            for (final entry in data[key] as List? ?? const [])
               _priceRecord(entry as Map<String, dynamic>, dateKey),
           ]..sort((a, b) => (b.date ?? "").compareTo(a.date ?? ""));
           return List.unmodifiable(list);
@@ -119,7 +119,9 @@ class SupplierRepositoryImpl implements SupplierRepository {
     id: json["supplier_id"] as String,
     name: json["name"] as String,
     sourceType: SupplierSourceType.fromCode(json["source_type"] as String),
-    itemNames: List.unmodifiable((json["item_names"] as List).cast<String>()),
+    itemNames: List.unmodifiable(
+      (json["item_names"] as List? ?? const []).cast<String>(),
+    ),
     contactEmail: json["contact_email"] as String?,
     location: json["location"] as String?,
   );
@@ -139,7 +141,7 @@ class SupplierRepositoryImpl implements SupplierRepository {
       location: json["location"] as String?,
       evidence: _evidence(json["evidence"]),
       items: List.unmodifiable([
-        for (final entry in json["items"] as List)
+        for (final entry in json["items"] as List? ?? const [])
           _item(entry as Map<String, dynamic>),
       ]),
     );
@@ -183,6 +185,13 @@ class SupplierRepositoryImpl implements SupplierRepository {
     );
   }
 
+  /// API-31 `source_type` when the server sends no display label.
+  static const _sourceTypeLabels = {
+    "MAIL_QUOTE": "메일 견적",
+    "RECEIPT": "영수증",
+    "USER_CONFIRMATION": "구매담당자 확인",
+  };
+
   static PriceRecord _priceRecord(Map<String, dynamic> json, String dateKey) =>
       PriceRecord(
         unitPrice: json["unit_price"] as String,
@@ -190,7 +199,10 @@ class SupplierRepositoryImpl implements SupplierRepository {
         date: json[dateKey] as String?,
         quantity: json["quantity"] as String?,
         conditions: json["conditions"] as String?,
-        sourceLabel: json["source_label"] as String? ?? "출처 미확인",
+        sourceLabel:
+            json["source_label"] as String? ??
+            _sourceTypeLabels[json["source_type"]] ??
+            "출처 미확인",
         sourceMailId: json["source_mail_id"] as String?,
       );
 

@@ -10,45 +10,11 @@ import "widgets/workflow_log_header.dart";
 import "workflow_log_view_model.dart";
 
 /// SCR-010 실행 로그. Case, role, node, tool, send, and settings history.
-class WorkflowLogView extends ConsumerStatefulWidget {
+class WorkflowLogView extends ConsumerWidget {
   const WorkflowLogView({super.key});
 
   @override
-  ConsumerState<WorkflowLogView> createState() => _WorkflowLogViewState();
-}
-
-class _WorkflowLogViewState extends ConsumerState<WorkflowLogView> {
-  late final TextEditingController _search;
-
-  @override
-  void initState() {
-    super.initState();
-    // Restore the filter kept by the ViewModel when returning to this route.
-    _search = TextEditingController(
-      text:
-          ref
-              .read(workflowLogViewModelProvider)
-              .asData
-              ?.value
-              .filter
-              .caseQuery ??
-          "",
-    );
-  }
-
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
-  }
-
-  void _resetFilter() {
-    _search.clear();
-    ref.read(workflowLogViewModelProvider.notifier).resetFilter();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(workflowLogViewModelProvider);
     final viewModel = ref.read(workflowLogViewModelProvider.notifier);
     return WorkspaceShell(
@@ -60,16 +26,12 @@ class _WorkflowLogViewState extends ConsumerState<WorkflowLogView> {
           AsyncContent<WorkflowLogState>(
             value: value,
             onRetry: viewModel.refresh,
-            builder: (data) => WorkflowLogContent(
-              data: data,
-              search: _search,
-              viewModel: viewModel,
-              onReset: _resetFilter,
-            ),
+            builder: (data) =>
+                WorkflowLogContent(data: data, viewModel: viewModel),
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 20, 4, 32),
-            child: NoteLine("시연 데이터입니다. 관련 업무와 원문에서 근거를 확인하세요."),
+            child: NoteLine("관련 업무와 원문에서 근거를 확인하세요."),
           ),
         ],
       ),

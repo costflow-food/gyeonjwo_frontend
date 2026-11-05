@@ -8,9 +8,12 @@ part of 'supplier_data_source.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 @ProviderFor(supplierDataSource)
 final supplierDataSourceProvider = SupplierDataSourceProvider._();
+
+/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 final class SupplierDataSourceProvider
     extends
@@ -20,6 +23,7 @@ final class SupplierDataSourceProvider
           SupplierDataSource
         >
     with $Provider<SupplierDataSource> {
+  /// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
   SupplierDataSourceProvider._()
     : super(
         from: null,
@@ -55,4 +59,4 @@ final class SupplierDataSourceProvider
 }
 
 String _$supplierDataSourceHash() =>
-    r'4273a57f6040c4a3127b399e8cd1047fe9eb7ceb';
+    r'3cfa3c541a9e76d0785944c92304c06f0050d1c9';

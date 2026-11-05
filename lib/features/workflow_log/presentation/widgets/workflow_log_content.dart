@@ -14,15 +14,11 @@ class WorkflowLogContent extends StatefulWidget {
   const WorkflowLogContent({
     super.key,
     required this.data,
-    required this.search,
     required this.viewModel,
-    required this.onReset,
   });
 
   final WorkflowLogState data;
-  final TextEditingController search;
   final WorkflowLogViewModel viewModel;
-  final VoidCallback onReset;
 
   @override
   State<WorkflowLogContent> createState() => _WorkflowLogContentState();
@@ -100,16 +96,17 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
             ],
           ),
         );
-        final detail = WorkflowLogDetail(entry: data.selected);
+        final detail = WorkflowLogDetail(
+          entry: data.selected,
+          caseFiltered: data.filter.caseId != null,
+          onFilterCase: viewModel.filterCase,
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             WorkflowLogFilters(
               filter: data.filter,
-              search: widget.search,
-              onSearch: viewModel.searchCase,
-              onChanged: viewModel.applyFilter,
-              onReset: widget.onReset,
+              onClearCase: () => viewModel.filterCase(null),
             ),
             const SizedBox(height: 16),
             LayoutBuilder(

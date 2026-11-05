@@ -13,10 +13,9 @@ enum LogComponent {
   final String code;
   final String label;
 
-  static LogComponent fromCode(String code) => values.firstWhere(
-    (value) => value.code == code,
-    orElse: () => LogComponent.system,
-  );
+  /// Null for a code this app does not know yet; the raw code is shown.
+  static LogComponent? fromCode(String? code) =>
+      values.where((value) => value.code == code).firstOrNull;
 }
 
 /// Five agent roles and the lightweight nodes from 07.
@@ -36,10 +35,9 @@ enum LogActor {
   final String code;
   final String label;
 
-  static LogActor fromCode(String code) => values.firstWhere(
-    (value) => value.code == code,
-    orElse: () => LogActor.receiver,
-  );
+  /// Null for a code this app does not know yet; the raw code is shown.
+  static LogActor? fromCode(String? code) =>
+      values.where((value) => value.code == code).firstOrNull;
 }
 
 enum LogEventType {
@@ -59,10 +57,9 @@ enum LogEventType {
   final String code;
   final String label;
 
-  static LogEventType fromCode(String code) => values.firstWhere(
-    (value) => value.code == code,
-    orElse: () => LogEventType.agentRun,
-  );
+  /// Null for a code this app does not know yet; the raw code is shown.
+  static LogEventType? fromCode(String? code) =>
+      values.where((value) => value.code == code).firstOrNull;
 }
 
 enum LogOutcome {
@@ -74,10 +71,9 @@ enum LogOutcome {
   final String code;
   final String label;
 
-  static LogOutcome fromCode(String code) => values.firstWhere(
-    (value) => value.code == code,
-    orElse: () => LogOutcome.waiting,
-  );
+  /// Null for a code this app does not know yet; the raw code is shown.
+  static LogOutcome? fromCode(String? code) =>
+      values.where((value) => value.code == code).firstOrNull;
 }
 
 /// Whether a send went out after approval (ON) or by settings (OFF).
@@ -97,12 +93,12 @@ class WorkflowLogEntry {
   const WorkflowLogEntry({
     required this.id,
     required this.createdAt,
-    required this.component,
-    required this.actor,
-    required this.eventType,
-    required this.summary,
-    required this.outcome,
-    required this.requestId,
+    required this.componentCode,
+    required this.actorCode,
+    required this.eventCode,
+    this.summary = "",
+    this.outcome,
+    this.requestId,
     this.caseId,
     this.caseTitle,
     this.durationMs,
@@ -122,14 +118,19 @@ class WorkflowLogEntry {
 
   /// UTC ISO 8601.
   final String createdAt;
-  final LogComponent component;
-  final LogActor actor;
-  final LogEventType eventType;
+
+  /// Raw `component_type`, `agent_role`, `event_type`. New server codes stay
+  /// visible as-is instead of being shown under a wrong label.
+  final String? componentCode;
+  final String? actorCode;
+  final String eventCode;
 
   /// Short user-facing result. Never a private model reasoning trace.
   final String summary;
-  final LogOutcome outcome;
-  final String requestId;
+
+  /// Null when the server does not report a result for the event.
+  final LogOutcome? outcome;
+  final String? requestId;
   final String? caseId;
   final String? caseTitle;
   final int? durationMs;
@@ -145,6 +146,20 @@ class WorkflowLogEntry {
   final String? errorCode;
   final String? mailId;
   final String? draftId;
+
+  LogComponent? get component => LogComponent.fromCode(componentCode);
+  LogActor? get actor => LogActor.fromCode(actorCode);
+  LogEventType? get eventType => LogEventType.fromCode(eventCode);
+
+  String get eventLabel => eventType?.label ?? eventCode;
+
+  /// "① 정보 추출 (에이전트)" style; whichever part is known.
+  String get actorLabel {
+    final actorText = actor?.label ?? actorCode;
+    final componentText = component?.label ?? componentCode;
+    if (actorText == null) return componentText ?? "미확인";
+    return componentText == null ? actorText : "$actorText ($componentText)";
+  }
 }
 
 class WorkflowLogPage {

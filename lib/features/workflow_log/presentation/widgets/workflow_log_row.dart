@@ -23,8 +23,8 @@ class WorkflowLogRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final meta = [
       formatSeoulDateTime(entry.createdAt),
-      entry.actor.label,
-      entry.eventType.label,
+      entry.actor?.label ?? entry.actorLabel,
+      entry.eventLabel,
       if (entry.durationMs != null) formatDuration(entry.durationMs!),
     ].join(" · ");
     return Semantics(
@@ -61,18 +61,22 @@ class WorkflowLogRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    LogOutcomeBadge(entry.outcome),
+                    if (entry.outcome != null) ...[
+                      const SizedBox(width: 8),
+                      LogOutcomeBadge(entry.outcome!),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  entry.summary,
-                  style: const TextStyle(
-                    fontSize: AppFontSizes.body,
-                    height: 1.45,
+                if (entry.summary.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    entry.summary,
+                    style: const TextStyle(
+                      fontSize: AppFontSizes.body,
+                      height: 1.45,
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 5),
                 Text(
                   meta,
