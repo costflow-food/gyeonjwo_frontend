@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/widgets/sign_out_action.dart';
+import '../../features/server_status/presentation/widgets/server_status_banner.dart';
 import '../workspace_colors.dart';
 import 'workspace_sidebar.dart';
 
@@ -88,29 +89,12 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
                     color: line,
                   ),
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, viewport) {
-                      final padding = (viewport.maxWidth * .03).clamp(
-                        16.0,
-                        36.0,
-                      );
-                      final content = SingleChildScrollView(
-                        padding: EdgeInsets.all(padding),
-                        child: widget.child,
-                      );
-                      if (viewport.maxWidth >= _minimumBodyWidth) {
-                        return content;
-                      }
-                      // Preserve readable content in extremely narrow windows.
-                      return SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SizedBox(
-                          width: _minimumBodyWidth,
-                          height: viewport.maxHeight,
-                          child: content,
-                        ),
-                      );
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const ServerStatusBanner(),
+                      Expanded(child: _body()),
+                    ],
                   ),
                 ),
               ],
@@ -120,4 +104,26 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
       },
     );
   }
+
+  Widget _body() => LayoutBuilder(
+    builder: (context, viewport) {
+      final padding = (viewport.maxWidth * .03).clamp(16.0, 36.0);
+      final content = SingleChildScrollView(
+        padding: EdgeInsets.all(padding),
+        child: widget.child,
+      );
+      if (viewport.maxWidth >= _minimumBodyWidth) {
+        return content;
+      }
+      // Preserve readable content in extremely narrow windows.
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: _minimumBodyWidth,
+          height: viewport.maxHeight,
+          child: content,
+        ),
+      );
+    },
+  );
 }

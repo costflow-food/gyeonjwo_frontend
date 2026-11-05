@@ -24,6 +24,7 @@ import '../features/purchase_review/data/purchase_review_preview_data.dart';
 import '../features/review_progress/data/review_progress_data_source.dart';
 import '../features/review_progress/presentation/review_progress_view.dart';
 import '../features/send_settings/data/send_settings_data_source.dart';
+import '../features/server_status/data/server_status_data_source.dart';
 import '../features/send_settings/presentation/send_settings_dialog.dart';
 import '../features/source_document/data/source_document_data_source.dart';
 import '../features/source_document/presentation/source_document_dialog.dart';
@@ -97,7 +98,8 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
         // Follows the preview queue; the '검토 진행' sample runs every step.
         reviewProgressDataSourceProvider.overrideWith(
           (ref) => PreviewReviewProgressDataSource(
-            ref.watch(workQueueDataSourceProvider) as PreviewWorkQueueDataSource,
+            ref.watch(workQueueDataSourceProvider)
+                as PreviewWorkQueueDataSource,
             demoCaseId: _progressSampleCase,
           ),
         ),
@@ -133,6 +135,15 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
         ),
         workflowLogDataSourceProvider.overrideWithValue(
           const PreviewWorkflowLogDataSource(latency: Duration.zero),
+        ),
+        // `?server=degraded` shows both server notices; otherwise none.
+        serverStatusDataSourceProvider.overrideWithValue(
+          parameters['server'] == 'degraded'
+              ? const PreviewServerStatusDataSource()
+              : const PreviewServerStatusDataSource(
+                  mailSendingEnabled: true,
+                  degradedFeatures: [],
+                ),
         ),
       ],
     );
