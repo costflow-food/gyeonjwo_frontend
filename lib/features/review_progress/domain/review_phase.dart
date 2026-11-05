@@ -75,7 +75,7 @@ enum StageState { done, running, stopped, waiting }
 /// 보류·실패가 어느 단계에서 났는지 정할 때 씁니다.
 List<StageState> stageStates(
   String step, {
-  String? errorCode,
+  String? stopCode,
   ReviewStage? lastRunning,
 }) {
   List<StageState> upTo(ReviewStage at, StageState current) => [
@@ -90,7 +90,7 @@ List<StageState> stageStates(
   if (running != null) return upTo(running, StageState.running);
   final outcome = outcomeOf(step)!;
   if (outcome.stopped) {
-    final guess = _stoppedAt(outcome, errorCode);
+    final guess = _stoppedAt(outcome, stopCode);
     final at = lastRunning != null && lastRunning.index > guess.index
         ? lastRunning
         : guess;
@@ -104,9 +104,11 @@ List<StageState> stageStates(
 }
 
 /// 팝업을 늦게 열어 처리 중 단계를 못 봤을 때의 추정.
-ReviewStage _stoppedAt(ReviewOutcome outcome, String? errorCode) =>
-    switch (errorCode) {
+ReviewStage _stoppedAt(ReviewOutcome outcome, String? stopCode) =>
+    switch (stopCode) {
       "NO_SUITABLE_CANDIDATES" ||
+      "NO_REGISTERED_SUPPLIER_EVIDENCE" ||
+      "RFQ_CONDITIONS_REQUIRED" ||
       "SEND_POLICY_REQUIRED" => ReviewStage.findingCandidates,
       _ when outcome == ReviewOutcome.sendUnknown =>
         ReviewStage.findingCandidates,

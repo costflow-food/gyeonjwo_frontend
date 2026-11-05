@@ -64,21 +64,20 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
   @override
   Widget build(BuildContext context) {
     final workCase = widget.workCase;
-    // The list already carries hold; API-03 also gives the NEEDS_INFO code.
+    // The list already carries hold; API-03 gives the latest one.
     final progress = workCase.stopped
         ? ref.watch(caseProgressProvider(workCase.id)).asData?.value
         : null;
     final hold = progress?.hold ?? workCase.hold;
     final reason =
         hold?.message ??
-        stopReasonMessage(progress?.errorCode) ??
         (workCase.atCandidates
             ? workCase.disabledMessage(WorkCaseAction.selectCandidates)
             : null);
     // Drafts exist once RFQs were prepared, including a send-setting stop.
     final hasDrafts =
         ProcessingStep.withDrafts.contains(workCase.processingStep) ||
-        progress?.errorCode == "SEND_POLICY_REQUIRED";
+        (hold?.code ?? progress?.errorCode) == "SEND_POLICY_REQUIRED";
     final canResume = workCase.can(WorkCaseAction.resume);
     final resumeBlocked = workCase.disabledMessage(WorkCaseAction.resume);
     return Column(

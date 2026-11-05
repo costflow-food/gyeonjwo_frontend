@@ -426,7 +426,10 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
         item["allowed_actions"] = ["VIEW_ORIGINAL", "SELECT_CANDIDATES"];
       } else {
         step("NEEDS_INFO", "추가 정보 확인 필요");
-        item["error"] = {"code": "NO_SUITABLE_CANDIDATES"};
+        item["hold"] = {
+          "code": "NO_SUITABLE_CANDIDATES",
+          "message": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
+        };
       }
     } else if (elapsed >= stepDelay) {
       step("SELECTING_CANDIDATES", "후보 찾기 대기");

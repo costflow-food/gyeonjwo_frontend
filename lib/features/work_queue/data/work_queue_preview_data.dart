@@ -53,7 +53,10 @@ const workQueuePreviewCases = [
     "status": "Running",
     "processing_step": "NEEDS_INFO",
     "step_detail": {"code": "NEEDS_INFO", "message": "추가 정보 확인 필요"},
-    "error": {"code": "NO_SUITABLE_CANDIDATES"},
+    "hold": {
+      "code": "NO_SUITABLE_CANDIDATES",
+      "message": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
+    },
     "input_revision": 1,
     "attachment_count": 0,
     "allowed_actions": ["VIEW_ORIGINAL"],

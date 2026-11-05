@@ -27,12 +27,12 @@ class ReviewProgress {
 
   List<StageState> get stages => stageStates(
     progress.processingStep,
-    errorCode: progress.errorCode,
+    stopCode: progress.stopCode,
     lastRunning: lastRunning,
   );
 
-  /// 보류는 서버 문구, 그 밖의 멈춘 이유는 오류 코드에 맞춘 문구.
-  String? get detail => progress.hold?.message ?? stopReasonMessage(progress.errorCode);
+  /// 멈춘 이유. 서버 hold 문구를 그대로 씁니다.
+  String? get detail => progress.hold?.message;
 
   ReviewProgress withRefreshFailure(
     ReviewProgressFailure failure, {
