@@ -20,6 +20,7 @@ import '../features/mail_intake/data/mail_intake_data_source.dart';
 import '../features/mail_intake/presentation/mail_intake_dialog.dart';
 import '../features/purchase_review/presentation/purchase_review_view.dart';
 import '../features/purchase_review/data/purchase_review_data_source.dart';
+import '../features/purchase_review/data/purchase_review_preview_data.dart';
 import '../features/review_progress/data/review_progress_data_source.dart';
 import '../features/review_progress/presentation/review_progress_view.dart';
 import '../features/send_settings/data/send_settings_data_source.dart';
@@ -121,8 +122,8 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
             latency: Duration.zero,
           ),
         ),
-        purchaseReviewDataSourceProvider.overrideWithValue(
-          const PreviewPurchaseReviewDataSource(latency: Duration.zero),
+        purchaseReviewDataSourceProvider.overrideWith(
+          (ref) => PreviewPurchaseReviewDataSource(latency: Duration.zero),
         ),
         analysisStopDataSourceProvider.overrideWithValue(
           const PreviewAnalysisStopDataSource(latency: Duration.zero),
@@ -208,11 +209,9 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
                   WorkQueueView(caseId: state.pathParameters['caseId']),
             ),
             GoRoute(
-              path: '/review',
-              builder: (context, state) => PurchaseReviewView(
-                requestId:
-                    state.uri.queryParameters['requestId'] ?? _sampleCase,
-              ),
+              path: '/cases/:caseId/review',
+              builder: (context, state) =>
+                  PurchaseReviewView(caseId: state.pathParameters['caseId']!),
             ),
             GoRoute(
               path: '/logs',
@@ -248,7 +247,7 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
   String _initialLocation(Map<String, String> parameters) =>
       switch (parameters['screen']) {
         'queue' => '/',
-        'review' => '/review',
+        'review' => '/cases/$previewReviewCaseId/review',
         'logs' => '/logs',
         'suppliers' => '/suppliers',
         'account' => '/account',
@@ -424,7 +423,7 @@ class _PreviewCatalogState extends ConsumerState<_PreviewCatalog> {
                       children: [
                         for (final (label, path) in const [
                           ('업무 큐', '/'),
-                          ('구매 검토', '/review'),
+                          ('검토 카드', '/cases/$previewReviewCaseId/review'),
                           ('실행 로그', '/logs'),
                           ('거래처', '/suppliers'),
                           ('로그인', '/login'),

@@ -69,12 +69,11 @@ final appRouter = GoRouter(
       path: '/suppliers',
       builder: (context, state) => const SupplierView(),
     ),
+    // SCR-002 검토 카드 (API-13·14·15)
     GoRoute(
-      path: '/review',
-      builder: (context, state) => PurchaseReviewView(
-        requestId:
-            state.uri.queryParameters["requestId"] ?? "REQ-2026-1019-003",
-      ),
+      path: '/cases/:caseId/review',
+      builder: (context, state) =>
+          PurchaseReviewView(caseId: state.pathParameters['caseId']!),
     ),
   ],
 );

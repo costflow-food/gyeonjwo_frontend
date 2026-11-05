@@ -212,6 +212,18 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
             )
           else
             CaseStepStatus(workCase: workCase),
+          if (workCase.hasReviewCard) ...[
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                style: WorkspaceButtonStyles.filled,
+                onPressed: () => context.go("/cases/${workCase.id}/review"),
+                icon: const Icon(Icons.fact_check_outlined, size: 16),
+                label: const Text("검토 카드 보기"),
+              ),
+            ),
+          ],
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(

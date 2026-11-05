@@ -97,7 +97,7 @@ class WorkflowLogDetail extends StatelessWidget {
                 if (caseId != null)
                   OutlinedButton.icon(
                     style: WorkspaceButtonStyles.outlined,
-                    onPressed: () => context.go("/review?requestId=$caseId"),
+                    onPressed: () => context.go("/cases/$caseId"),
                     icon: const Icon(Icons.open_in_new, size: 16),
                     label: const Text("업무 보기"),
                   ),

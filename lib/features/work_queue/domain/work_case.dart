@@ -192,6 +192,10 @@ class WorkCase {
   /// 아직 검토를 실행하지 않은 업무. 원문 확인 후 수긍·대안 찾기를 고릅니다.
   bool get notStarted => status == WorkCaseStatus.waiting;
 
+  /// 저장된 검토 카드가 있는 업무(API-14). 카드 화면으로 갈 수 있습니다.
+  bool get hasReviewCard =>
+      processingStep == "REVIEW_READY" || status == WorkCaseStatus.complete;
+
   bool get onHold => processingStep == ProcessingStep.onHold;
 
   /// 후보 단계(후보 찾기 대기·견적 요청 준비).
