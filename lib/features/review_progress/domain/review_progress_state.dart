@@ -31,8 +31,8 @@ class ReviewProgress {
     lastRunning: lastRunning,
   );
 
-  /// 멈춘 이유. 서버 hold 문구를 그대로 씁니다.
-  String? get detail => progress.hold?.message;
+  /// 멈춘 이유. 서버 hold 문구가 우선이고, 없으면 오류 코드의 임시 문구입니다.
+  String? get detail => stopReasonMessage(progress.hold, progress.errorCode);
 
   ReviewProgress withRefreshFailure(
     ReviewProgressFailure failure, {

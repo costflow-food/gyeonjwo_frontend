@@ -70,7 +70,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         : null;
     final hold = progress?.hold ?? workCase.hold;
     final reason =
-        hold?.message ??
+        stopReasonMessage(hold, progress?.errorCode) ??
         (workCase.atCandidates
             ? workCase.disabledMessage(WorkCaseAction.selectCandidates)
             : null);
