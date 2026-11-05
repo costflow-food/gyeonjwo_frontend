@@ -1,5 +1,6 @@
-// Mock stored settings for API-21/22. Values are synthetic. The default ON/OFF
-// policy is still undecided by the team, so one purpose is left unset on purpose.
+// Mock stored settings for API-21/22. Values are synthetic. One purpose is left
+// unset to show a mailbox that has not saved it yet; the dialog shows it as the
+// default (auto-send off) and stores that on save.
 const sendSettingsPreviewMailbox = {
   "mailbox_ref": "demo-purchase-mailbox",
   "version": 2,

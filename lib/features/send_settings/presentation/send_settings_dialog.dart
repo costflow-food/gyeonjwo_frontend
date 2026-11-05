@@ -120,13 +120,9 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     _dirty = true;
   });
 
-  /// Approval OFF somewhere in the values being saved.
+  /// Auto-send on somewhere in the values being saved.
   bool _automatic(SendSettings settings) => settings.approvals.any(
-    (approval) =>
-        _approval[approval.purpose] == false ||
-        (_approval[approval.purpose] == null &&
-            settings.isCaseScope &&
-            approval.effectiveValue == false),
+    (approval) => autoSendShown(approval, _approval[approval.purpose]),
   );
 
   Future<void> _save() async {
@@ -141,10 +137,16 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     }
     // Decided before the request, from the values actually sent.
     final missingSuppliers = _automatic(loaded) && _allowed.isEmpty;
+    // The mailbox default stores the team default (auto-send off) for any
+    // purpose still unset; a case keeps null so it inherits the mailbox.
+    final approval = {
+      for (final entry in _approval.entries)
+        entry.key: widget.caseId == null ? entry.value ?? true : entry.value,
+    };
     final update = SendSettingsUpdate(
       mailboxRef: mailboxRef,
       expectedSettingsVersion: version,
-      approvalByPurpose: Map.unmodifiable(_approval),
+      approvalByPurpose: Map.unmodifiable(approval),
       allowedSupplierIds: List.unmodifiable(_allowed),
       tone: _tone,
       signature: _signature.text.trim(),
@@ -190,9 +192,9 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
             "다른 곳에서 설정이 바뀌어 최신 설정을 불러왔습니다. 확인한 뒤 다시 저장해 주세요.",
           SendSettingsFailure(scopeRequired: true) when missingSuppliers =>
             widget.caseId == null
-                ? "승인 OFF(자동 발송)는 허용 업체가 있어야 저장됩니다. "
-                      "메일함 기본값은 승인 ON으로 두고, 업무별 설정에서 허용 업체를 고른 뒤 OFF로 바꿔 주세요."
-                : "승인 OFF(자동 발송)로 저장하려면 자동 발송 허용 업체를 한 곳 이상 선택해 주세요.",
+                ? "자동 발송은 허용 업체가 있어야 켤 수 있습니다. "
+                      "메일함 기본값은 꺼 두고, 업무별 설정에서 허용 업체를 고른 뒤 켜 주세요."
+                : "자동 발송을 켜려면 자동 발송 허용 업체를 한 곳 이상 선택해 주세요.",
           _ => failure.message,
         };
       });
@@ -347,14 +349,17 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!settings.configured) ...[
-          SettingsMissingBanner(missingItems: settings.missingItems),
+          SettingsMissingBanner(
+            missingItems: settings.missingItems,
+            caseScope: settings.isCaseScope,
+          ),
           const SizedBox(height: 20),
         ],
         SettingsSectionTitle(
-          "목적별 승인",
+          "목적별 자동 발송",
           settings.isCaseScope
-              ? "이 업무에 적용할 값을 고르거나 메일함 기본값을 따릅니다."
-              : "승인 ON은 담당자가 승인한 초안만, OFF는 업무마다 선택한 업체에 자동 발송합니다.",
+              ? "이 업무에만 적용됩니다. 바꾸지 않은 항목은 메일함 기본값을 따릅니다."
+              : "켜면 허용 범위 안에서 자동 발송하고, 끄면 담당자가 승인한 초안만 발송합니다. 기본값은 꺼짐입니다.",
         ),
         const SizedBox(height: 14),
         for (final approval in settings.approvals)

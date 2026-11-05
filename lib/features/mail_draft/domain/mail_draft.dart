@@ -47,7 +47,7 @@ abstract final class DraftAction {
 /// API-12 drafts[].dispatch_state: what happened to each selected supplier.
 enum DraftDispatchState {
   waitingApproval("WAITING_APPROVAL", "승인 대기", "승인 후 발송을 눌러야 발송돼요."),
-  autoQueued("AUTO_QUEUED", "자동 발송 대기", "승인 OFF 설정이라 서버가 자동 발송해요."),
+  autoQueued("AUTO_QUEUED", "자동 발송 대기", "자동 발송이 켜져 있어 서버가 자동 발송해요."),
   cautionRequired(
     "CAUTION_REQUIRED",
     "주의 필요",
@@ -180,7 +180,7 @@ class MailDraft {
       "설정 → 메일 발송 설정을 완료해야 발송할 수 있어요.",
     DraftAction.approveSend when isStale => "업무 내용이 바뀌어 이 초안은 발송할 수 없어요.",
     DraftAction.approveSend when approvalRequired == false =>
-      "승인 OFF 설정이라 허용 범위 안에서 서버가 자동 발송해요.",
+      "자동 발송이 켜져 있어 허용 범위 안에서 서버가 자동 발송해요.",
     DraftAction.approveSend when settingsVersion == null =>
       "발송 설정 버전을 확인할 수 없어요. 다시 불러와 주세요.",
     DraftAction.reconcile when awaitingResult =>
