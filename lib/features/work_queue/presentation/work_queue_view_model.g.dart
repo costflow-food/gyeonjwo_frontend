@@ -67,6 +67,85 @@ abstract class _$WorkQueueViewModel extends $AsyncNotifier<WorkQueueState> {
   }
 }
 
+/// API-02 업무 한 건. 주소로 연 업무가 지금 목록(탭·검색·페이지)에 없을 때 씁니다.
+
+@ProviderFor(caseDetail)
+final caseDetailProvider = CaseDetailFamily._();
+
+/// API-02 업무 한 건. 주소로 연 업무가 지금 목록(탭·검색·페이지)에 없을 때 씁니다.
+
+final class CaseDetailProvider
+    extends
+        $FunctionalProvider<AsyncValue<WorkCase>, WorkCase, FutureOr<WorkCase>>
+    with $FutureModifier<WorkCase>, $FutureProvider<WorkCase> {
+  /// API-02 업무 한 건. 주소로 연 업무가 지금 목록(탭·검색·페이지)에 없을 때 씁니다.
+  CaseDetailProvider._({
+    required CaseDetailFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: _noRetry,
+         name: r'caseDetailProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$caseDetailHash();
+
+  @override
+  String toString() {
+    return r'caseDetailProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<WorkCase> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<WorkCase> create(Ref ref) {
+    final argument = this.argument as String;
+    return caseDetail(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CaseDetailProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$caseDetailHash() => r'4cc1a8aba7b67a17f85ffc3218b8c678395d7a7d';
+
+/// API-02 업무 한 건. 주소로 연 업무가 지금 목록(탭·검색·페이지)에 없을 때 씁니다.
+
+final class CaseDetailFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<WorkCase>, String> {
+  CaseDetailFamily._()
+    : super(
+        retry: _noRetry,
+        name: r'caseDetailProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// API-02 업무 한 건. 주소로 연 업무가 지금 목록(탭·검색·페이지)에 없을 때 씁니다.
+
+  CaseDetailProvider call(String caseId) =>
+      CaseDetailProvider._(argument: caseId, from: this);
+
+  @override
+  String toString() => r'caseDetailProvider';
+}
+
 /// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
 
 @ProviderFor(caseProgress)

@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -24,6 +26,34 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
   Set<String>? _selected;
   bool _busy = false;
   String? _error;
+  Timer? _retry;
+
+  @override
+  void didUpdateWidget(CandidateSelection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 후보 찾기가 끝나 업무 단계나 가능한 작업이 바뀌면 후보 목록을 다시 읽습니다.
+    final before = oldWidget.workCase, after = widget.workCase;
+    if (before.processingStep != after.processingStep ||
+        before.can(WorkCaseAction.selectCandidates) !=
+            after.can(WorkCaseAction.selectCandidates)) {
+      _retry?.cancel();
+      ref.invalidate(caseCandidatesProvider(after.id));
+    }
+  }
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    super.dispose();
+  }
+
+  /// 후보를 아직 찾는 중(CANDIDATES_NOT_READY)이면 3초 뒤 다시 조회합니다.
+  void _retryLater() {
+    if (_retry?.isActive ?? false) return;
+    _retry = Timer(const Duration(seconds: 3), () {
+      if (mounted) ref.invalidate(caseCandidatesProvider(widget.workCase.id));
+    });
+  }
 
   Future<void> _submit(CandidateSet set) async {
     final selected = _selected ?? set.selectedSupplierIds.toSet();
@@ -96,10 +126,31 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         padding: EdgeInsets.all(24),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (error, _) => Text(
-        error is WorkQueueFailure ? error.message : "후보 목록을 불러오지 못했어요.",
-        style: const TextStyle(fontSize: AppFontSizes.body, color: muted),
-      ),
+      error: (error, _) {
+        if (error is WorkQueueFailure && error.code == "CANDIDATES_NOT_READY") {
+          _retryLater();
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 10),
+                Text(
+                  "에이전트가 견적 요청 후보를 찾고 있어요.",
+                  style: TextStyle(fontSize: AppFontSizes.body, color: muted),
+                ),
+              ],
+            ),
+          );
+        }
+        return Text(
+          error is WorkQueueFailure ? error.message : "후보 목록을 불러오지 못했어요.",
+          style: const TextStyle(fontSize: AppFontSizes.body, color: muted),
+        );
+      },
       data: (set) {
         final selected = _selected ?? set.selectedSupplierIds.toSet();
         final itemName = widget.workCase.itemName;

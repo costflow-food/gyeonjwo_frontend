@@ -1,4 +1,3 @@
-import "dart:async";
 import "dart:ui";
 
 import "package:flutter/material.dart";
@@ -6,38 +5,31 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../shared/widgets/async_content.dart";
+import "../../work_queue/domain/work_case.dart";
 import "../domain/review_phase.dart";
 import "review_progress_view_model.dart";
 import "widgets/review_progress_body.dart";
 import "widgets/review_progress_dialog.dart";
 
+/// SCR-003 검토 진행. START·RESUME가 접수된 뒤 API-03 단계를 보여 줍니다.
 Future<void> showReviewProgressDialog(
   BuildContext context, {
-  required String requestId,
-  required String supplier,
+  required String caseId,
+  required String title,
 }) {
-  // Capture navigation before progress can remove this row from a status filter.
+  // Capture navigation before the step change can rebuild the caller.
   final router = GoRouter.of(context);
-  final container = ProviderScope.containerOf(context, listen: false);
-  unawaited(
-    container.read(reviewProgressViewModelProvider(requestId).notifier).start(),
-  );
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (dialogContext) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
       child: ReviewProgressView(
-        requestId: requestId,
-        supplier: supplier,
-        onViewResult: () {
+        caseId: caseId,
+        title: title,
+        onViewCase: () {
           Navigator.of(dialogContext).pop();
-          router.go(
-            Uri(
-              path: "/review",
-              queryParameters: {"requestId": requestId},
-            ).toString(),
-          );
+          router.go("/cases/$caseId");
         },
       ),
     ),
@@ -47,27 +39,29 @@ Future<void> showReviewProgressDialog(
 class ReviewProgressView extends ConsumerWidget {
   const ReviewProgressView({
     super.key,
-    required this.requestId,
-    required this.supplier,
-    required this.onViewResult,
+    required this.caseId,
+    required this.title,
+    required this.onViewCase,
   });
 
-  final String requestId, supplier;
-  final VoidCallback onViewResult;
+  final String caseId, title;
+  final VoidCallback onViewCase;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final provider = reviewProgressViewModelProvider(requestId);
+    final provider = reviewProgressViewModelProvider(caseId);
     final value = ref.watch(provider);
+    final progress = value.asData?.value;
     return ReviewProgressDialog(
-      supplier: supplier,
-      complete: value.asData?.value == ReviewPhase.completed,
+      title: title,
+      outcome: progress == null ? null : outcomeOf(progress.processingStep),
       onClose: () => Navigator.of(context).pop(),
-      onViewResult: onViewResult,
-      body: AsyncContent<ReviewPhase>(
-        value: value,
-        onRetry: () => ref.read(provider.notifier).start(),
-        builder: (_) => const ReviewProgressBody(),
+      onViewCase: onViewCase,
+      body: AsyncContent<CaseProgress>(
+        // Keep the steps on screen while a poll reloads.
+        value: progress == null ? value : AsyncData(progress),
+        onRetry: ref.read(provider.notifier).refresh,
+        builder: (progress) => ReviewProgressBody(progress: progress),
       ),
     );
   }

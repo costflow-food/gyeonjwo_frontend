@@ -1,11 +1,13 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
 
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/formatters.dart";
 import "../../../../shared/widgets/outline_panel.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
+import "../../../review_progress/presentation/review_progress_view.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 import "attachment_viewer.dart";
@@ -83,22 +85,32 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    await _run(
+    // The case is deleted, so leave its address.
+    final router = GoRouter.of(context);
+    if (await _run(
       () => _viewModel.acceptIncrease(widget.workCase),
       done: "수긍했어요. 업무 큐에서 정리했어요.",
-    );
+    )) {
+      router.go("/");
+    }
   }
 
-  Future<void> _start() => _run(
-    () => _viewModel.start(widget.workCase),
-    done: "검토를 시작했어요. 요청 정보 추출이 끝나면 다음 단계로 넘어가요.",
-  );
+  Future<void> _start() async {
+    // The panel rebuilds as the step changes; keep a context that stays.
+    final navigator = Navigator.of(context, rootNavigator: true).context;
+    if (await _run(() => _viewModel.start(widget.workCase)) &&
+        navigator.mounted) {
+      await showReviewProgressDialog(
+        navigator,
+        caseId: widget.workCase.id,
+        title: widget.workCase.title,
+      );
+    }
+  }
 
-  Future<void> _run(
-    Future<void> Function() request, {
-    required String done,
-  }) async {
-    if (_busy) return;
+  /// true when the request was accepted.
+  Future<bool> _run(Future<void> Function() request, {String? done}) async {
+    if (_busy) return false;
     setState(() {
       _busy = true;
       _error = null;
@@ -106,10 +118,11 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
     final messenger = ScaffoldMessenger.maybeOf(context);
     try {
       await request();
-      messenger?.showSnackBar(SnackBar(content: Text(done)));
+      if (done != null) messenger?.showSnackBar(SnackBar(content: Text(done)));
       if (mounted) setState(() => _busy = false);
+      return true;
     } on WorkQueueFailure catch (failure) {
-      if (!mounted) return;
+      if (!mounted) return false;
       if (failure.caseChanged) _viewModel.refresh();
       setState(() {
         _busy = false;
@@ -117,12 +130,14 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
             ? "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요."
             : failure.message;
       });
+      return false;
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() {
         _busy = false;
         _error = "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요.";
       });
+      return false;
     }
   }
 
@@ -154,7 +169,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               ),
               IconButton(
                 tooltip: "닫기",
-                onPressed: () => _viewModel.select(null),
+                onPressed: () => context.go("/"),
                 icon: const Icon(Icons.close, size: 20),
               ),
             ],

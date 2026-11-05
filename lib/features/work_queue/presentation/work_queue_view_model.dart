@@ -129,6 +129,11 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   }
 }
 
+/// API-02 업무 한 건. 주소로 연 업무가 지금 목록(탭·검색·페이지)에 없을 때 씁니다.
+@Riverpod(retry: _noRetry)
+Future<WorkCase> caseDetail(Ref ref, String caseId) =>
+    ref.watch(workQueueRepositoryProvider).getCase(caseId);
+
 /// API-03 진행 단계. 멈춘 업무(보류·추가 정보 필요)에서만 조회합니다.
 @Riverpod(retry: _noRetry)
 Future<CaseProgress> caseProgress(Ref ref, String caseId) =>

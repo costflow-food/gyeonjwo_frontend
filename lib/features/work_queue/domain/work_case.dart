@@ -51,6 +51,36 @@ abstract final class ProcessingStep {
   };
 }
 
+/// API-01 step_detail 문구와 같은 표. API-02·03은 단계 코드만 줍니다.
+const _stepLabels = {
+  "PENDING_START": "원문 확인 후 검토 시작",
+  "ACKNOWLEDGED": "수신 메일 확인됨",
+  "EXTRACTING": "요청 정보 확인 중",
+  "WAITING_REPLY": "거래처 회신 대기",
+  "WAITING_APPROVAL": "발송 승인 대기",
+  "AWAITING_APPROVAL": "발송 승인 대기",
+  "REVIEW_READY": "검토 결과 준비 완료",
+  "FAILED": "처리 오류 확인 필요",
+  "ON_HOLD": "검토 보류",
+  "NEEDS_INFO": "추가 정보 확인 필요",
+  "SELECTING_CANDIDATES": "후보 찾기 대기",
+  "CANDIDATES": "견적 요청 준비 중",
+  "GENERATING_PLANS": "검토안 생성 중",
+  "BUILDING_PLANS": "검토안 생성 중",
+  "BUILDING_COUNTER_OFFER": "역제안 준비 중",
+  "SEND_UNKNOWN": "발송 결과 확인 필요",
+};
+
+String processingStepLabel(String step) => _stepLabels[step] ?? "처리 상태 확인";
+
+/// API-03 error는 코드만 옵니다. 서버가 문구를 보내기 전까지 hold와 같은 문구를 씁니다.
+const _stopMessages = {
+  "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
+  "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 해요.",
+};
+
+String? stopReasonMessage(String? errorCode) => _stopMessages[errorCode];
+
 /// API-01·03 hold. 문구는 서버가 정한 그대로 보여 줍니다.
 class HoldReason {
   const HoldReason({required this.code, required this.message});

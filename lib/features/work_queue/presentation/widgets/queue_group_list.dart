@@ -24,10 +24,8 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
   // Groups the user folded. Keyed by item name; null is "품목 미확인".
   final _collapsed = <String?>{};
 
-  void _open(WorkCase workCase) {
-    ref.read(workQueueViewModelProvider.notifier).select(workCase.id);
-    if (GoRouterState.of(context).uri.path != "/") context.go("/");
-  }
+  /// The address drives the selection (KAN-144), from any screen.
+  void _open(WorkCase workCase) => context.go("/cases/${workCase.id}");
 
   @override
   Widget build(BuildContext context) {

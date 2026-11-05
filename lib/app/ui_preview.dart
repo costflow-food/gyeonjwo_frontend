@@ -192,6 +192,12 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
               path: '/',
               builder: (context, state) => const WorkQueueView(),
             ),
+            // Same case address as the app router (KAN-144).
+            GoRoute(
+              path: '/cases/:caseId',
+              builder: (context, state) =>
+                  WorkQueueView(caseId: state.pathParameters['caseId']),
+            ),
             GoRoute(
               path: '/review',
               builder: (context, state) => PurchaseReviewView(
@@ -322,10 +328,11 @@ class _PreviewCatalogState extends ConsumerState<_PreviewCatalog> {
       case 'source':
         await showSourceDocument(context, requestId: _sampleCase);
       case 'progress':
+        // A preview case that is extracting; its steps move on over time.
         await showReviewProgressDialog(
           context,
-          requestId: _sampleCase,
-          supplier: 'A사',
+          caseId: 'c0a80001-0000-4000-8000-000000000001',
+          title: '[단가변경] 냉동 딸기 공급 조건 변경의 건',
         );
       case 'needs-info':
         await showAnalysisStopDialog(

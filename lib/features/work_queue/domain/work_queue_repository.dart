@@ -23,6 +23,9 @@ abstract interface class WorkQueueRepository {
   /// API-04. 202 접수만 확인하며 처리 완료를 뜻하지 않습니다.
   Future<void> start(WorkCase workCase);
 
+  /// API-02 + API-25. 목록에 없는 업무(주소로 바로 연 업무)를 엽니다.
+  Future<WorkCase> getCase(String caseId);
+
   /// API-03. 저장된 진행 단계와 보류·오류 코드(실행 없음).
   Future<CaseProgress> getProgress(String caseId);
 

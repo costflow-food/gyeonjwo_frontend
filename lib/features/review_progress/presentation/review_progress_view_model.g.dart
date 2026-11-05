@@ -8,19 +8,34 @@ part of 'review_progress_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// API-03 progress of one case after START or RESUME was accepted.
+///
+/// Re-reads every [pollInterval] while the server is still working and
+/// stops once the case waits for the buyer. Closing the dialog stops
+/// polling; the server keeps working.
 
 @ProviderFor(ReviewProgressViewModel)
 final reviewProgressViewModelProvider = ReviewProgressViewModelFamily._();
 
+/// API-03 progress of one case after START or RESUME was accepted.
+///
+/// Re-reads every [pollInterval] while the server is still working and
+/// stops once the case waits for the buyer. Closing the dialog stops
+/// polling; the server keeps working.
 final class ReviewProgressViewModelProvider
-    extends $AsyncNotifierProvider<ReviewProgressViewModel, ReviewPhase> {
+    extends $AsyncNotifierProvider<ReviewProgressViewModel, CaseProgress> {
+  /// API-03 progress of one case after START or RESUME was accepted.
+  ///
+  /// Re-reads every [pollInterval] while the server is still working and
+  /// stops once the case waits for the buyer. Closing the dialog stops
+  /// polling; the server keeps working.
   ReviewProgressViewModelProvider._({
     required ReviewProgressViewModelFamily super.from,
     required String super.argument,
   }) : super(
          retry: _noRetry,
          name: r'reviewProgressViewModelProvider',
-         isAutoDispose: false,
+         isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -52,15 +67,21 @@ final class ReviewProgressViewModelProvider
 }
 
 String _$reviewProgressViewModelHash() =>
-    r'f59b3a30c1c960911725633a0e595b66cd80b643';
+    r'5fffbabd47ffc1f59457fd05375cd4f41f80b374';
+
+/// API-03 progress of one case after START or RESUME was accepted.
+///
+/// Re-reads every [pollInterval] while the server is still working and
+/// stops once the case waits for the buyer. Closing the dialog stops
+/// polling; the server keeps working.
 
 final class ReviewProgressViewModelFamily extends $Family
     with
         $ClassFamilyOverride<
           ReviewProgressViewModel,
-          AsyncValue<ReviewPhase>,
-          ReviewPhase,
-          FutureOr<ReviewPhase>,
+          AsyncValue<CaseProgress>,
+          CaseProgress,
+          FutureOr<CaseProgress>,
           String
         > {
   ReviewProgressViewModelFamily._()
@@ -69,30 +90,42 @@ final class ReviewProgressViewModelFamily extends $Family
         name: r'reviewProgressViewModelProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: false,
+        isAutoDispose: true,
       );
 
-  ReviewProgressViewModelProvider call(String requestId) =>
-      ReviewProgressViewModelProvider._(argument: requestId, from: this);
+  /// API-03 progress of one case after START or RESUME was accepted.
+  ///
+  /// Re-reads every [pollInterval] while the server is still working and
+  /// stops once the case waits for the buyer. Closing the dialog stops
+  /// polling; the server keeps working.
+
+  ReviewProgressViewModelProvider call(String caseId) =>
+      ReviewProgressViewModelProvider._(argument: caseId, from: this);
 
   @override
   String toString() => r'reviewProgressViewModelProvider';
 }
 
-abstract class _$ReviewProgressViewModel extends $AsyncNotifier<ReviewPhase> {
-  late final _$args = ref.$arg as String;
-  String get requestId => _$args;
+/// API-03 progress of one case after START or RESUME was accepted.
+///
+/// Re-reads every [pollInterval] while the server is still working and
+/// stops once the case waits for the buyer. Closing the dialog stops
+/// polling; the server keeps working.
 
-  FutureOr<ReviewPhase> build(String requestId);
+abstract class _$ReviewProgressViewModel extends $AsyncNotifier<CaseProgress> {
+  late final _$args = ref.$arg as String;
+  String get caseId => _$args;
+
+  FutureOr<CaseProgress> build(String caseId);
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<ReviewPhase>, ReviewPhase>;
+    final ref = this.ref as $Ref<AsyncValue<CaseProgress>, CaseProgress>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<ReviewPhase>, ReviewPhase>,
-              AsyncValue<ReviewPhase>,
+              AnyNotifier<AsyncValue<CaseProgress>, CaseProgress>,
+              AsyncValue<CaseProgress>,
               Object?,
               Object?
             >;
