@@ -193,8 +193,6 @@ class PreviewSendSettingsDataSource implements SendSettingsDataSource {
     final approval = Map<String, Object?>.from(
       body["approval_required_by_purpose"] as Map,
     );
-    // allowed_supplier_ids is ignored: there is no per-supplier allow list,
-    // so turning auto-send on never needs one.
     if (body['apply_to'] != 'FUTURE_DRAFTS') {
       throw const SendSettingsApiException(
         503,
