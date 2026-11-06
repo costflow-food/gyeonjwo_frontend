@@ -24,9 +24,12 @@ class MailIntakeViewModel extends _$MailIntakeViewModel {
   @override
   Future<IntakePage> build() async {
     ref.onDispose(() => _poll?.cancel());
-    final page = await ref.watch(mailIntakeRepositoryProvider).getPending();
-    _schedulePoll();
-    return page;
+    try {
+      return await ref.watch(mailIntakeRepositoryProvider).getPending();
+    } finally {
+      // Also after a failed first load, so the list recovers by itself (S1-7).
+      _schedulePoll();
+    }
   }
 
   void refresh() => ref.invalidateSelf();
@@ -37,12 +40,13 @@ class MailIntakeViewModel extends _$MailIntakeViewModel {
   }
 
   /// Replaces the data without a loading state, so the list does not flash.
-  /// A failure keeps what is shown; the next poll tries again.
+  /// A failure keeps what is shown; the next poll tries again. After a
+  /// failed load it keeps trying until the list shows.
   Future<void> _pollNow() async {
     final signedIn =
         ref.read(authSessionViewModelProvider).asData?.value.isSignedIn ??
         false;
-    if (signedIn && state.hasValue && !state.isLoading) {
+    if (signedIn && (state.hasValue || state.hasError) && !state.isLoading) {
       try {
         final page = await ref.read(mailIntakeRepositoryProvider).getPending();
         if (!ref.mounted) return;
