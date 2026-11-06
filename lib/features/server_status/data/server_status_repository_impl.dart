@@ -17,34 +17,21 @@ class ServerStatusRepositoryImpl implements ServerStatusRepository {
 
   @override
   Future<ServerStatus> getStatus() async {
-    final (reviewReady, mailSendingEnabled) = await (
-      _reviewReady(),
-      _mailSendingEnabled(),
-    ).wait;
-    return ServerStatus(
-      reviewReady: reviewReady,
-      mailSendingEnabled: mailSendingEnabled,
-    );
-  }
-
-  Future<bool?> _reviewReady() async {
     try {
       final (status, body) = await _dataSource.fetchReady();
-      if (status == 503) return false;
+      if (status == 503) return const ServerStatus(notReady: true);
       final degraded = body["degraded_features"];
-      if (body["status"] != "ready" || degraded is! List) return null;
-      return !degraded.contains("review");
+      if (body["status"] != "ready" || degraded is! List) {
+        return ServerStatus.unknown;
+      }
+      return ServerStatus(
+        degraded: {
+          for (final feature in ServerFeature.values)
+            if (degraded.contains(feature.code)) feature,
+        },
+      );
     } catch (_) {
-      return null;
-    }
-  }
-
-  Future<bool?> _mailSendingEnabled() async {
-    try {
-      final value = (await _dataSource.fetchHealth())["mail_sending_enabled"];
-      return value is bool ? value : null;
-    } catch (_) {
-      return null;
+      return ServerStatus.unknown;
     }
   }
 }

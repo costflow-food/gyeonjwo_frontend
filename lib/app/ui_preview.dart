@@ -22,6 +22,7 @@ import '../features/purchase_review/data/purchase_review_preview_data.dart';
 import '../features/review_progress/data/review_progress_data_source.dart';
 import '../features/review_progress/presentation/review_progress_view.dart';
 import '../features/send_settings/data/send_settings_data_source.dart';
+import '../features/mailbox_sync/data/mailbox_sync_data_source.dart';
 import '../features/server_status/data/server_status_data_source.dart';
 import '../features/send_settings/presentation/send_settings_dialog.dart';
 import '../features/source_document/data/source_document_data_source.dart';
@@ -131,14 +132,26 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
         workflowLogDataSourceProvider.overrideWithValue(
           const PreviewWorkflowLogDataSource(latency: Duration.zero),
         ),
-        // `?server=degraded` shows both server notices; otherwise none.
+        // `?mailbox=failing` shows the receive-failure notice; otherwise none.
+        mailboxSyncDataSourceProvider.overrideWithValue(
+          PreviewMailboxSyncDataSource(
+            failing: parameters['mailbox'] == 'failing',
+          ),
+        ),
+        // `?server=degraded`: review is down. `?server=limited`: review
+        // runs but reply review, final decision, and reply linking do not.
         serverStatusDataSourceProvider.overrideWithValue(
-          parameters['server'] == 'degraded'
-              ? const PreviewServerStatusDataSource()
-              : const PreviewServerStatusDataSource(
-                  mailSendingEnabled: true,
-                  degradedFeatures: [],
-                ),
+          PreviewServerStatusDataSource(
+            degradedFeatures: switch (parameters['server']) {
+              'degraded' => const ['review', 'review_reply', 'final_decision'],
+              'limited' => const [
+                'review_reply',
+                'final_decision',
+                'rfq_metadata',
+              ],
+              _ => const [],
+            },
+          ),
         ),
       ],
     );

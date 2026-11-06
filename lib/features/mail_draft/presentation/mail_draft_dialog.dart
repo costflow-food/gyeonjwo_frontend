@@ -174,6 +174,38 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.reconcile(draft));
   }
 
+  /// X-2: an unsent draft otherwise blocks the next selection and the review.
+  Future<void> _withdraw(MailDraft draft) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("이 초안을 보내지 않을까요?"),
+        content: Text(
+          "${draft.displayName}에게 이 초안을 보내지 않고 닫습니다. 되돌릴 수 없으며, "
+          "다시 보내려면 새 초안이 필요합니다. 보내지 않은 초안이 남아 있으면 "
+          "다음 후보 선택이나 검토 완료로 넘어갈 수 없습니다.",
+        ),
+        actions: [
+          TextButton(
+            style: WorkspaceButtonStyles.text,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("취소"),
+          ),
+          FilledButton(
+            style: WorkspaceButtonStyles.filled,
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text("보내지 않음"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final viewModel = ref.read(
+      mailDraftViewModelProvider(widget.caseId).notifier,
+    );
+    _run(() => viewModel.withdraw(draft, reason: "담당자가 보내지 않기로 함"));
+  }
+
   /// The mailbox default (설정 → 메일 발송 설정). A save reloads the drafts.
   Future<void> _openSettings() => showSendSettingsDialog(context);
 
@@ -306,6 +338,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                   onSaveRevision: () => _saveRevision(draft!),
                   onApprove: () => _approve(draft!),
                   onReconcile: () => _reconcile(draft!),
+                  onWithdraw: () => _withdraw(draft!),
                   onClose: _close,
                 ),
               ],

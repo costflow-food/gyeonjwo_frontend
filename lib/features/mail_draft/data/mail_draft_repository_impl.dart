@@ -90,6 +90,19 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
         );
       });
 
+  @override
+  Future<void> withdraw(MailDraft draft, {required String reason}) {
+    final body = <String, Object?>{
+      "expected_revision": draft.inputRevision,
+      "expected_snapshot_hash": draft.snapshotHash,
+      "reason": reason,
+    };
+    // 200; the draft's new status comes from API-17.
+    return _send("withdraw:${draft.id}", body, (key) async {
+      await _dataSource.withdraw(draft.id, body, idempotencyKey: key);
+    });
+  }
+
   /// 202 only says the request was accepted; the result comes from API-17.
   static void _accepted(String draftId, Map<String, dynamic> response) {
     final data = response["data"] as Map<String, dynamic>;

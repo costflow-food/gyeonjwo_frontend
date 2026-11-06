@@ -41,8 +41,27 @@ abstract final class WorkCaseAction {
   static const acceptIncrease = "ACCEPT_INCREASE";
   static const selectCandidates = "SELECT_CANDIDATES";
 
-  /// API-07 `reason=RESUME_HOLD`: 추출 보류 업무를 추출 단계부터 다시 실행합니다.
+  /// API-07. 보류·처리 오류·검토 완료 업무에서 열리며, 사유는 [ResumeReason]입니다.
   static const resume = "RESUME";
+}
+
+/// API-07 재개 사유. 단계마다 서버가 받는 사유가 다릅니다(S2-11).
+enum ResumeReason {
+  resumeHold("RESUME_HOLD", "다시 추출", "보류 사유를 확인했다면 요청 정보 확인부터 다시 실행해요."),
+  retryFailed("RETRY_FAILED", "다시 시도", "오류가 난 처리를 다시 실행해요."),
+  reopenReview("REOPEN_REVIEW", "다시 검토", "이 업무의 검토를 다시 실행해요.");
+
+  const ResumeReason(this.code, this.buttonLabel, this.help);
+  final String code;
+  final String buttonLabel;
+  final String help;
+
+  static ResumeReason forStep(String processingStep) =>
+      switch (processingStep) {
+        "FAILED" => retryFailed,
+        "REVIEW_READY" => reopenReview,
+        _ => resumeHold,
+      };
 }
 
 /// 서버 processing_step 중 화면이 따로 다루는 값.
@@ -153,6 +172,26 @@ class CaseProgress {
   String? get stopCode => hold?.code ?? errorCode;
 }
 
+/// API-01 reply_summary. 메일 수가 아니라 이번 차수에 견적 요청을 보낸 업체 수와
+/// 그중 회신이 확인된 업체 수입니다.
+class ReplySummary {
+  const ReplySummary({required this.requested, required this.responded});
+
+  final int requested;
+  final int responded;
+
+  /// 견적 요청을 보낸 업체가 있을 때만 표시합니다.
+  bool get visible => requested > 0;
+
+  /// 예: "회신 2/8곳".
+  String get shortLabel => "회신 $responded/$requested곳";
+
+  /// 예: "견적 요청 8곳 중 2곳 회신 (25%)".
+  String get label =>
+      "견적 요청 $requested곳 중 $responded곳 회신 "
+      "(${(responded * 100 / requested).round()}%)";
+}
+
 class DisabledWorkCaseAction {
   const DisabledWorkCaseAction({
     required this.action,
@@ -182,6 +221,7 @@ class WorkCase {
     this.senderName,
     this.itemName,
     this.hold,
+    this.replySummary,
     this.allowedActions = const [],
     this.disabledActions = const [],
   });
@@ -210,6 +250,9 @@ class WorkCase {
 
   /// ON_HOLD일 때 서버가 정한 보류 사유.
   final HoldReason? hold;
+
+  /// 회신 현황. API-01에만 있고 API-02로 읽은 업무는 null입니다.
+  final ReplySummary? replySummary;
   final List<String> allowedActions;
   final List<DisabledWorkCaseAction> disabledActions;
 
@@ -230,6 +273,9 @@ class WorkCase {
   /// 멈춘 이유를 API-03에서 다시 확인할 단계.
   bool get stopped =>
       onHold || processingStep == ProcessingStep.needsInfo;
+
+  /// 이 업무에서 재개할 때 보낼 사유.
+  ResumeReason get resumeReason => ResumeReason.forStep(processingStep);
 
   bool can(String action) => allowedActions.contains(action);
 

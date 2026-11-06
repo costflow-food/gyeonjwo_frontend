@@ -6,6 +6,7 @@ import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
+import "../../../server_status/presentation/server_status_view_model.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
@@ -86,6 +87,11 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         draftsByStep ||
         (mayHaveDrafts &&
             (ref.watch(caseHasDraftsProvider(workCase.id)).value ?? false));
+    // X-15: a linked reply waits here while the server cannot review it.
+    final server = ref.watch(serverStatusViewModelProvider).asData?.value;
+    final replyReviewBlocked =
+        isReplyExtraction(workCase.processingStep, workCase.inputRevision) &&
+        (server?.replyReviewBlocked ?? false);
     final canResume = workCase.can(WorkCaseAction.resume);
     final resumeBlocked = workCase.disabledMessage(WorkCaseAction.resume);
     return Column(
@@ -123,6 +129,29 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                             : FontWeight.w700,
                       ),
                     ),
+                    if (workCase.replySummary case final replies?
+                        when replies.visible) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        replies.label,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.secondary,
+                          color: muted,
+                        ),
+                      ),
+                    ],
+                    if (replyReviewBlocked) ...[
+                      const SizedBox(height: 6),
+                      const Text(
+                        "서버의 회신 검토 기능이 아직 준비되지 않아 "
+                        "이 회신은 검토로 넘어가지 못하고 있어요.",
+                        style: TextStyle(
+                          fontSize: AppFontSizes.body,
+                          color: accent,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
                     if (reason != null) ...[
                       const SizedBox(height: 6),
                       Text(
@@ -165,15 +194,13 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                 onPressed: canResume && !_busy ? _resume : null,
                 style: WorkspaceButtonStyles.filled,
                 icon: const Icon(Icons.replay, size: 16),
-                label: const Text("다시 추출"),
+                label: Text(workCase.resumeReason.buttonLabel),
               ),
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            canResume
-                ? "보류 사유를 확인했다면 요청 정보 확인부터 다시 실행해요."
-                : resumeBlocked!,
+            canResume ? workCase.resumeReason.help : resumeBlocked!,
             style: const TextStyle(
               fontSize: AppFontSizes.secondary,
               color: muted,

@@ -60,9 +60,12 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.listen(workCaseChangesProvider, (_, next) {
       if (next.hasValue) _refreshSoon();
     });
-    final page = await _fetchAll(ref.watch(workQueueRepositoryProvider));
-    _schedulePoll();
-    return _fromPage(page);
+    try {
+      return _fromPage(await _fetchAll(ref.watch(workQueueRepositoryProvider)));
+    } finally {
+      // Also after a failed first load, so the queue recovers by itself (S1-7).
+      _schedulePoll();
+    }
   }
 
   /// Every case for the search, all tabs, page after page up to [maxPages].
@@ -143,7 +146,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   /// flash. Uses the open search and keeps the open tab; a result for a
   /// search the user has since changed is dropped. Skipped while signed out
   /// or after load more; a failure keeps what is shown and the next poll
-  /// tries again.
+  /// tries again. After a failed load it keeps trying until the list shows.
   Future<void> _pollNow() async {
     final signedIn =
         ref.read(authSessionViewModelProvider).asData?.value.isSignedIn ??
@@ -151,14 +154,16 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     final current = state.hasValue && !state.isLoading
         ? state.requireValue
         : null;
-    if (signedIn && current != null && !_extended && !current.loadingMore) {
+    final failed = state.hasError && !state.isLoading;
+    if (signedIn &&
+        (failed || (current != null && !_extended && !current.loadingMore))) {
       final query = _query;
       try {
         final page = await _fetchAll(ref.read(workQueueRepositoryProvider));
         if (!ref.mounted) return;
         if (!_extended &&
             query == _query &&
-            state.hasValue &&
+            (state.hasValue || state.hasError) &&
             !state.isLoading) {
           state = AsyncData(_fromPage(page));
         }
