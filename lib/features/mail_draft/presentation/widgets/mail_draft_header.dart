@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 
 class MailDraftHeader extends StatelessWidget {
@@ -8,10 +9,14 @@ class MailDraftHeader extends StatelessWidget {
     super.key,
     required this.caseId,
     required this.onClose,
+    this.onOpenSettings,
   });
 
   final String caseId;
   final VoidCallback onClose;
+
+  /// Opens this case's send settings (AC-23); null while editing or busy.
+  final VoidCallback? onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +47,13 @@ class MailDraftHeader extends StatelessWidget {
               ],
             ),
           ),
+          TextButton.icon(
+            onPressed: onOpenSettings,
+            style: WorkspaceButtonStyles.text,
+            icon: const Icon(Icons.tune, size: 16),
+            label: const Text("이 업무 발송 설정"),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             tooltip: "닫기",
             onPressed: onClose,

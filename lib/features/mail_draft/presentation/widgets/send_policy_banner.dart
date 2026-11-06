@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/formatters.dart";
+import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/mail_draft.dart";
 
@@ -12,6 +13,7 @@ class SendPolicyBanner extends StatelessWidget {
     required this.draft,
     required this.editing,
     this.dispatchState,
+    this.onOpenSettings,
   });
 
   final MailDraft draft;
@@ -20,8 +22,16 @@ class SendPolicyBanner extends StatelessWidget {
   /// API-12 result for this draft right after a candidate selection.
   final DraftDispatchState? dispatchState;
 
+  /// Opens this case's send settings when the draft waits on them.
+  final VoidCallback? onOpenSettings;
+
   @override
   Widget build(BuildContext context) {
+    final needsSettings =
+        draft.status == DraftStatus.draft &&
+        !draft.awaitingResult &&
+        (!draft.settingsConfigured ||
+            dispatchState == DraftDispatchState.blockedPolicy);
     final policy = switch (draft.approvalRequired) {
       _ when !draft.settingsConfigured => "발송 설정 필요",
       true => "자동 발송 꺼짐 · 승인한 초안만 발송됩니다",
@@ -33,7 +43,8 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.draft when !draft.settingsConfigured => (
         Icons.warning_amber_rounded,
         const Color(0xFFBC793C),
-        '설정 → 메일 발송 설정을 완료해야 발송할 수 있습니다.',
+        "발송 설정을 완료해야 발송할 수 있습니다. 메일함 기본값은 설정 → 메일 발송 설정에서, "
+            "이 업무만의 값은 아래 '발송 설정 열기'에서 정합니다.",
       ),
       DraftStatus.draft when draft.isStale => (
         Icons.warning_amber_rounded,
@@ -122,6 +133,15 @@ class SendPolicyBanner extends StatelessWidget {
                   message,
                   style: TextStyle(fontSize: AppFontSizes.body, color: color),
                 ),
+                if (needsSettings && onOpenSettings != null) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: onOpenSettings,
+                    style: WorkspaceButtonStyles.outlined,
+                    icon: const Icon(Icons.tune, size: 16),
+                    label: const Text("발송 설정 열기"),
+                  ),
+                ],
               ],
             ),
           ),
