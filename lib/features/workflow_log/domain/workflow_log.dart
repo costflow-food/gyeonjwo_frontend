@@ -18,29 +18,61 @@ enum LogComponent {
       values.where((value) => value.code == code).firstOrNull;
 }
 
-/// Five agent roles and the lightweight nodes from 07.
+/// Five agent roles and the lightweight nodes from 07. [code] is the DB
+/// agent_runs.agent_role (06); [aliases] are earlier app codes still used by
+/// the UI preview.
 enum LogActor {
-  extraction("EXTRACTION", "① 정보 추출"),
-  candidate("CANDIDATE_SELECTION", "② 후보 선정"),
-  priority("CLARIFICATION_PRIORITY", "③ 확인 우선순위"),
+  extraction("INFO_EXTRACTOR", "① 정보 추출", ["EXTRACTION"]),
+  candidate("CANDIDATE", "② 후보 선정", ["CANDIDATE_SELECTION"]),
+  priority("INFO_PRIORITY", "③ 확인 우선순위", ["CLARIFICATION_PRIORITY"]),
   responsePlan("RESPONSE_PLAN", "④ 대응안 생성"),
   counterOffer("COUNTER_OFFER", "⑤ 역제안 생성"),
-  classifier("MAIL_CLASSIFIER", "경량 분류 노드"),
+  classifier("LIGHT_CLASSIFIER", "경량 분류 노드", ["MAIL_CLASSIFIER"]),
   validator("CODE_VALIDATOR", "코드 검증 노드"),
   dispatch("MAIL_DISPATCH", "메일 발송 노드"),
   receiver("MAIL_RECEIVER", "메일 수신기"),
   user("USER", "구매담당자");
 
-  const LogActor(this.code, this.label);
+  const LogActor(this.code, this.label, [this.aliases = const []]);
   final String code;
   final String label;
+  final List<String> aliases;
 
   /// Null for a code this app does not know yet; the raw code is shown.
-  static LogActor? fromCode(String? code) =>
-      values.where((value) => value.code == code).firstOrNull;
+  static LogActor? fromCode(String? code) => values
+      .where((value) => value.code == code || value.aliases.contains(code))
+      .firstOrNull;
 }
 
+/// workflow_logs.event_type. The DB codes (06 v2.7 list and what the graph
+/// writes) come first; the rest are earlier app codes kept for the UI preview.
 enum LogEventType {
+  groupLinked("GROUP_LINKED", "업무 묶음 연결"),
+  mailAcknowledged("MAIL_ACKNOWLEDGED", "메일 확인"),
+  reviewRequested("REVIEW_REQUESTED", "검토 요청"),
+  reviewStepChanged("REVIEW_STEP_CHANGED", "진행 단계 변경"),
+  roleStarted("GRAPH_ROLE_STARTED", "역할 실행 시작"),
+  roleFinished("GRAPH_ROLE_FINISHED", "역할 실행 완료"),
+  graphCompleted("GRAPH_COMPLETED", "검토 실행 완료"),
+  graphFailed("GRAPH_FAILED", "검토 실행 실패"),
+  quoteStored("QUOTE_STORED", "견적 저장"),
+  rfqIntakeLinked("RFQ_INTAKE_LINKED", "회신 연결"),
+  hold("HOLD", "보류"),
+  resume("RESUME", "재개"),
+  acceptIncrease("ACCEPT_INCREASE", "수긍"),
+  archive("ARCHIVE", "보관"),
+  restore("RESTORE", "복원"),
+  approvalRequired("APPROVAL_REQUIRED", "승인 필요"),
+  draftApproved("DRAFT_APPROVED", "초안 승인"),
+  approved("APPROVED", "발송 승인"),
+  autoSendAuthorized("AUTO_SEND_AUTHORIZED", "자동 발송 허용"),
+  rfqDispatchRequested("RFQ_DISPATCH_REQUESTED", "발송 요청"),
+  sent("SENT", "발송됨"),
+  failed("FAILED", "실패"),
+  sendUnknown("SEND_UNKNOWN", "발송 결과 확인 필요"),
+  reviewCreated("REVIEW_CREATED", "검토 카드 생성"),
+  planSelected("PLAN_SELECTED", "구매안 선택"),
+  selectionInvalidated("SELECTION_INVALIDATED", "선택 무효"),
   mailReceived("MAIL_RECEIVED", "메일 수신"),
   classified("MAIL_CLASSIFIED", "분류"),
   reviewStarted("REVIEW_STARTED", "검토 시작"),
@@ -50,8 +82,7 @@ enum LogEventType {
   sendApproved("SEND_APPROVED", "승인 발송"),
   autoSent("AUTO_SENT", "자동 발송"),
   sendResult("SEND_RESULT", "발송 결과"),
-  settingsChanged("SETTINGS_CHANGED", "설정 변경"),
-  reviewCreated("REVIEW_CREATED", "검토 카드 생성");
+  settingsChanged("SETTINGS_CHANGED", "설정 변경");
 
   const LogEventType(this.code, this.label);
   final String code;
