@@ -16,4 +16,8 @@ abstract interface class MailDraftRepository {
 
   /// API-20. 202 accepts a sent-folder check. Never re-sends.
   Future<void> reconcile(MailDraft draft);
+
+  /// `POST /mail-drafts/{draft_id}/withdraw`. Closes an unsent DRAFT so it
+  /// no longer blocks the next selection or the review.
+  Future<void> withdraw(MailDraft draft, {required String reason});
 }

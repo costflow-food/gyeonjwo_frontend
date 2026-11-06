@@ -63,6 +63,15 @@ class MailDraftViewModel extends _$MailDraftViewModel {
     () => ref.read(mailDraftRepositoryProvider).reconcile(draft),
   );
 
+  /// Closes an unsent draft, then API-17 for its new status.
+  Future<MailDraft> withdraw(MailDraft draft, {required String reason}) =>
+      _submit(
+        draft,
+        () => ref
+            .read(mailDraftRepositoryProvider)
+            .withdraw(draft, reason: reason),
+      );
+
   Future<MailDraft> _submit(
     MailDraft draft,
     Future<void> Function() request,

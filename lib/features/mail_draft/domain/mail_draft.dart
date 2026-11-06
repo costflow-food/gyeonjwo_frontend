@@ -42,6 +42,9 @@ abstract final class DraftAction {
   static const edit = "EDIT_DRAFT";
   static const approveSend = "APPROVE_SEND";
   static const reconcile = "RECONCILE_SEND";
+
+  /// 보내지 않은 초안을 닫습니다. 남은 초안이 다음 후보 선택·검토 완료를 막지 않게 합니다.
+  static const withdraw = "WITHDRAW_DRAFT";
 }
 
 /// API-12 drafts[].dispatch_state: what happened to each selected supplier.
@@ -167,6 +170,7 @@ class MailDraft {
           !isStale &&
           !awaitingResult,
     DraftAction.reconcile => status == DraftStatus.unknown && !awaitingResult,
+    DraftAction.withdraw => status == DraftStatus.draft && !awaitingResult,
     // API-18 (revisions) does not exist on the server yet.
     _ => false,
   };
