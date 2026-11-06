@@ -44,6 +44,9 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   WorkCaseStatus? _status;
   String _query = "";
 
+  /// 보관함(API-01 archived=true)을 보는 중.
+  bool _archived = false;
+
   /// counts.waiting from the last response without a search (status does
   /// not change counts), for the home summary.
   int? _allWaiting;
@@ -68,7 +71,11 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   /// Every case for the search, all tabs, page after page up to [maxPages].
   /// Counts come from the first page; the server counts the whole search.
   Future<WorkQueuePage> _fetchAll(WorkQueueRepository repository) async {
-    final first = await repository.getCases(query: _query, limit: pageSize);
+    final first = await repository.getCases(
+      query: _query,
+      limit: pageSize,
+      archived: _archived,
+    );
     final items = [...first.items];
     var cursor = first.nextCursor;
     for (var pages = 1; cursor != null && pages < maxPages; pages++) {
@@ -76,6 +83,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         query: _query,
         cursor: cursor,
         limit: pageSize,
+        archived: _archived,
       );
       items.addAll(page.items);
       cursor = page.nextCursor;
@@ -102,7 +110,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       _selectedId = null;
     }
     final counts = _counts(page.items, page.nextCursor, page.counts);
-    if (_query.isEmpty) _allWaiting = counts.waiting;
+    if (_query.isEmpty && !_archived) _allWaiting = counts.waiting;
     return WorkQueueState(
       items: page.items,
       counts: counts,
@@ -111,6 +119,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       query: _query,
       selectedId: _selectedId,
       allWaiting: _allWaiting,
+      archived: _archived,
     );
   }
 
@@ -124,6 +133,16 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     final current = state.value;
     // While a load is still in flight it reads [_status] when it lands.
     if (current != null) state = AsyncData(current.withStatus(status));
+  }
+
+  bool get archived => _archived;
+
+  /// 업무 큐와 보관함을 오갑니다. 서버에서 다른 목록을 읽습니다.
+  void setArchived(bool archived) {
+    if (archived == _archived) return;
+    _archived = archived;
+    _selectedId = null;
+    ref.invalidateSelf();
   }
 
   /// 제목·보낸 사람 검색. 화면에서 입력을 잠시 모은 뒤 부릅니다.
@@ -247,6 +266,24 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       ref.invalidateSelf();
     }
     return drafts;
+  }
+
+  /// API-08. 보관한 업무는 지금 목록(큐)에서 빠지므로 선택을 닫습니다.
+  Future<void> archive(WorkCase workCase) async {
+    await ref.read(workQueueRepositoryProvider).archive(workCase);
+    if (!ref.mounted) return;
+    select(null);
+    ref.invalidate(caseDetailProvider(workCase.id));
+    ref.invalidateSelf();
+  }
+
+  /// API-09. 복원한 업무는 보관함에서 빠지므로 선택을 닫습니다.
+  Future<void> restore(WorkCase workCase) async {
+    await ref.read(workQueueRepositoryProvider).restore(workCase);
+    if (!ref.mounted) return;
+    select(null);
+    ref.invalidate(caseDetailProvider(workCase.id));
+    ref.invalidateSelf();
   }
 
   /// API-07. 접수(202)되면 서버가 추출 단계로 되돌리므로 목록과 진행 단계를 다시 읽습니다.

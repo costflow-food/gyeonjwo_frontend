@@ -10,6 +10,7 @@ class WorkQueueState {
     this.selectedId,
     this.loadingMore = false,
     this.allWaiting,
+    this.archived = false,
   });
 
   /// 검색어에 맞는 업무 전체(모든 탭). 탭은 이 목록을 화면에서 거릅니다.
@@ -28,6 +29,9 @@ class WorkQueueState {
   /// 검색과 무관한 대기 건수(첫 화면 요약용). 검색 중에는 마지막으로 본
   /// 검색 없는 값을 유지합니다. 아직 모르면 null.
   final int? allWaiting;
+
+  /// 보관함을 보는 중. 목록과 건수가 보관된 업무 기준입니다.
+  final bool archived;
 
   /// 지금 탭에 보이는 업무. [WorkCaseStatus.tab] 기준입니다.
   List<WorkCase> get visibleItems => status == null
@@ -76,6 +80,7 @@ class WorkQueueState {
     selectedId: id,
     loadingMore: loadingMore,
     allWaiting: allWaiting,
+    archived: archived,
   );
 
   /// 탭만 바꿉니다. 목록은 그대로라 다시 조회하지 않습니다.
@@ -88,6 +93,7 @@ class WorkQueueState {
     selectedId: selectedId,
     loadingMore: loadingMore,
     allWaiting: allWaiting,
+    archived: archived,
   );
 
   WorkQueueState withMore({
@@ -104,5 +110,6 @@ class WorkQueueState {
     selectedId: selectedId,
     loadingMore: loadingMore,
     allWaiting: allWaiting,
+    archived: archived,
   );
 }

@@ -65,8 +65,10 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
   @override
   Widget build(BuildContext context) {
     final workCase = widget.workCase;
+    // A failure (FAILED) stopped too; API-03 carries its error code (S7-8).
+    final halted = workCase.stopped || workCase.processingStep == "FAILED";
     // The list already carries hold; API-03 gives the latest one.
-    final progress = workCase.stopped
+    final progress = halted
         ? ref.watch(caseProgressProvider(workCase.id)).asData?.value
         : null;
     final hold = progress?.hold ?? workCase.hold;
@@ -102,11 +104,9 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                workCase.stopped
-                    ? Icons.pause_circle_outline
-                    : Icons.info_outline,
+                halted ? Icons.pause_circle_outline : Icons.info_outline,
                 size: 18,
-                color: workCase.stopped ? accent : muted,
+                color: halted ? accent : muted,
               ),
               const SizedBox(width: 10),
               Expanded(

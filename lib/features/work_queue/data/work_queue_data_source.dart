@@ -27,14 +27,30 @@ WorkQueueDataSource workQueueDataSource(Ref ref) => ApiWorkQueueDataSource(
 /// API-12 `PUT /work-cases/{case_id}/candidate-selection`,
 /// API-26 `GET /mail-messages/{mail_id}/attachments/{attachment_id}/content`.
 abstract interface class WorkQueueDataSource {
+  /// [archived]: the archive (보관함) instead of the open queue.
   Future<Map<String, dynamic>> fetchCases({
     String? status,
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   });
 
   Future<Map<String, dynamic>> fetchOriginalMail(String mailId);
+
+  /// API-08 `POST /work-cases/{case_id}/archive`.
+  Future<Map<String, dynamic>> archive(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  });
+
+  /// API-09 `POST /work-cases/{case_id}/restore`.
+  Future<Map<String, dynamic>> restore(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  });
 
   /// 첨부 원본 바이트. 서버는 Gmail에서 받아 그대로 넘겨주고 저장하지 않습니다.
   Future<Uint8List> fetchAttachmentContent(String mailId, String attachmentId);
@@ -103,6 +119,7 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) => _send(
     (headers) => _dio.get<Map<String, dynamic>>(
       _cases,
@@ -111,9 +128,38 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
         if (query.isNotEmpty) "q": query,
         "cursor": ?cursor,
         "limit": ?limit,
+        if (archived) "archived": true,
       },
       options: Options(headers: headers),
     ),
+  );
+
+  @override
+  Future<Map<String, dynamic>> archive(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) => _send(
+    (headers) => _dio.post<Map<String, dynamic>>(
+      "$_cases/$caseId/archive",
+      data: body,
+      options: Options(headers: headers),
+    ),
+    idempotencyKey: idempotencyKey,
+  );
+
+  @override
+  Future<Map<String, dynamic>> restore(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) => _send(
+    (headers) => _dio.post<Map<String, dynamic>>(
+      "$_cases/$caseId/restore",
+      data: body,
+      options: Options(headers: headers),
+    ),
+    idempotencyKey: idempotencyKey,
   );
 
   @override
@@ -298,16 +344,18 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) async {
     await Future<void>.delayed(latency);
     _workspace.queueCases.forEach(_advance);
     final keyword = query.trim().toLowerCase();
     final searched = [
       for (final item in _workspace.queueCases)
-        if (keyword.isEmpty ||
-            "${item["title"]} ${item["sender"]}".toLowerCase().contains(
-              keyword,
-            ))
+        if ((item["archived_at"] != null) == archived &&
+            (keyword.isEmpty ||
+                "${item["title"]} ${item["sender"]}".toLowerCase().contains(
+                  keyword,
+                )))
           item,
     ];
     int count(String value) =>
@@ -316,7 +364,8 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
       "data": {
         "items": [
           for (final item in searched)
-            if (status == null || item["status"] == status) item,
+            if (status == null || item["status"] == status)
+              _withCaseChanges(item),
         ],
         "next_cursor": null,
         "counts": {
@@ -383,6 +432,60 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
     return _copy({
       "data": {"case_id": caseId, "deleted": true},
       "meta": {"request_id": "req-preview-accept"},
+    });
+  }
+
+  /// ARCHIVE/RESTORE the way the server allows them (case_actions.py):
+  /// archive from Waiting, Pending, or Complete; restore once archived.
+  static Map<String, dynamic> _withCaseChanges(Map<String, dynamic> item) {
+    final archived = item["archived_at"] != null;
+    final canArchive =
+        !archived &&
+        const {"Waiting", "Pending", "Complete"}.contains(item["status"]);
+    return {
+      ...item,
+      "allowed_actions": [
+        ...(item["allowed_actions"] as List).cast<String>(),
+        if (archived) "RESTORE",
+        if (canArchive) "ARCHIVE",
+      ],
+    };
+  }
+
+  /// Archive/restore only flip archived_at; the server keeps the step.
+  @override
+  Future<Map<String, dynamic>> archive(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) => _setArchived(caseId, archived: true);
+
+  @override
+  Future<Map<String, dynamic>> restore(
+    String caseId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) => _setArchived(caseId, archived: false);
+
+  Future<Map<String, dynamic>> _setArchived(
+    String caseId, {
+    required bool archived,
+  }) async {
+    await Future<void>.delayed(latency);
+    final item = _case(caseId);
+    if ((item["archived_at"] != null) == archived) {
+      throw const WorkQueueApiException(
+        409,
+        "ACTION_NOT_ALLOWED",
+        "현재 상태에서는 업무를 보관하거나 복원할 수 없습니다.",
+      );
+    }
+    item["archived_at"] = archived
+        ? DateTime.now().toUtc().toIso8601String()
+        : null;
+    return _copy({
+      "data": {"case_id": caseId, "input_revision": item["input_revision"]},
+      "meta": {"request_id": "req-preview-archive"},
     });
   }
 
@@ -457,10 +560,10 @@ class PreviewWorkQueueDataSource implements WorkQueueDataSource {
         "quantity": null,
         "unit": null,
         "decision": null,
-        "archived_at": null,
+        "archived_at": item["archived_at"],
         "batch_id": "b-preview-$caseId",
         "progress_url": "/api/v1/work-cases/$caseId/progress",
-        "allowed_actions": item["allowed_actions"],
+        "allowed_actions": _withCaseChanges(item)["allowed_actions"],
         "disabled_actions": item["disabled_actions"] ?? const [],
       },
       "meta": {"request_id": "req-preview-case"},

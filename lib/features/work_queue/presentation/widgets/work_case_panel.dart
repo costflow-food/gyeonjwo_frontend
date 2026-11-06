@@ -122,6 +122,58 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
     }
   }
 
+  /// API-08. 큐에서 빠질 뿐 단계는 그대로이고, 보관함에서 복원할 수 있습니다.
+  Future<void> _archive() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          "이 업무를 보관할까요?",
+          style: TextStyle(
+            fontSize: AppFontSizes.dialogTitleSmall,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: const Text(
+          "보관하면 업무 큐에서 빠지고 보관함으로 옮겨져요.\n"
+          "메일과 진행 기록은 지우지 않으며, 보관함에서 언제든 복원할 수 있어요.",
+          style: TextStyle(fontSize: AppFontSizes.body, height: 1.7),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: WorkspaceButtonStyles.text,
+            child: const Text("취소"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: WorkspaceButtonStyles.filled,
+            child: const Text("보관하기"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final router = GoRouter.of(context);
+    if (await _run(
+      () => _viewModel.archive(widget.workCase),
+      done: "보관했어요. 보관함에서 복원할 수 있어요.",
+    )) {
+      router.go("/");
+    }
+  }
+
+  /// API-09. 복원하면 보관함에서 빠져 업무 큐로 돌아갑니다.
+  Future<void> _restore() async {
+    final router = GoRouter.of(context);
+    if (await _run(
+      () => _viewModel.restore(widget.workCase),
+      done: "복원했어요. 업무 큐에서 다시 볼 수 있어요.",
+    )) {
+      router.go("/");
+    }
+  }
+
   Future<void> _start() async {
     // The panel rebuilds as the step changes; keep a context that stays.
     final navigator = Navigator.of(context, rootNavigator: true).context;
@@ -252,6 +304,12 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               ),
             ),
           ],
+          _ArchiveSection(
+            workCase: workCase,
+            busy: _busy,
+            onArchive: _archive,
+            onRestore: _restore,
+          ),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -617,4 +675,87 @@ class _Choice extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// 보관(API-08)·복원(API-09). 서버가 허용하거나, 업무 변경 저장 기능이 아직
+/// 준비되지 않아 막힌 경우에만 보여 줍니다(그 밖의 상태에서는 숨김).
+class _ArchiveSection extends StatelessWidget {
+  const _ArchiveSection({
+    required this.workCase,
+    required this.busy,
+    required this.onArchive,
+    required this.onRestore,
+  });
+
+  final WorkCase workCase;
+  final bool busy;
+  final VoidCallback onArchive;
+  final VoidCallback onRestore;
+
+  static const _notReady = "CASE_CHANGE_INTEGRATION_REQUIRED";
+
+  @override
+  Widget build(BuildContext context) {
+    final action = workCase.archived
+        ? WorkCaseAction.restore
+        : WorkCaseAction.archive;
+    final allowed = workCase.can(action);
+    final blocked = workCase.disabledMessage(action);
+    // A restore is always offered on an archived case; an archive only where
+    // the server would allow it once case changes are ready.
+    if (!allowed &&
+        !workCase.archived &&
+        workCase.disabledCode(action) != _notReady) {
+      return const SizedBox.shrink();
+    }
+    final archivedAt = workCase.archivedAt;
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(height: 1, color: line),
+          const SizedBox(height: 16),
+          if (archivedAt != null) ...[
+            Text(
+              "보관된 업무예요 · ${formatSeoulDateTime(archivedAt)} 보관",
+              style: const TextStyle(
+                fontSize: AppFontSizes.body,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              "복원하면 업무 큐로 돌아가 이어서 처리할 수 있어요.",
+              style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
+            ),
+            const SizedBox(height: 10),
+          ],
+          OutlinedButton.icon(
+            onPressed: allowed && !busy
+                ? (workCase.archived ? onRestore : onArchive)
+                : null,
+            style: WorkspaceButtonStyles.outlined,
+            icon: Icon(
+              workCase.archived
+                  ? Icons.unarchive_outlined
+                  : Icons.archive_outlined,
+              size: 16,
+            ),
+            label: Text(workCase.archived ? "복원" : "보관"),
+          ),
+          if (!allowed && blocked != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              blocked,
+              style: const TextStyle(
+                fontSize: AppFontSizes.secondary,
+                color: muted,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }

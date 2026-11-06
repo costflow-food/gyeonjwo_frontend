@@ -29,6 +29,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) => _guard(() async {
     final response = await _dataSource.fetchCases(
       status: status == null || status == WorkCaseStatus.other
@@ -37,6 +38,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       query: query,
       cursor: cursor,
       limit: limit,
+      archived: archived,
     );
     final data = response["data"] as Map<String, dynamic>;
     final counts = data["counts"] as Map<String, dynamic>;
@@ -99,6 +101,32 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
   }
 
   @override
+  Future<void> archive(WorkCase workCase) {
+    final body = <String, Object?>{"expected_revision": workCase.inputRevision};
+    return _keys.run(
+      "archive:${workCase.id}",
+      body,
+      (key) => _guard(
+        () => _dataSource.archive(workCase.id, body, idempotencyKey: key),
+      ),
+      serverCode: _serverCode,
+    );
+  }
+
+  @override
+  Future<void> restore(WorkCase workCase) {
+    final body = <String, Object?>{"expected_revision": workCase.inputRevision};
+    return _keys.run(
+      "restore:${workCase.id}",
+      body,
+      (key) => _guard(
+        () => _dataSource.restore(workCase.id, body, idempotencyKey: key),
+      ),
+      serverCode: _serverCode,
+    );
+  }
+
+  @override
   Future<void> start(WorkCase workCase) {
     final body = <String, Object?>{"expected_revision": workCase.inputRevision};
     return _keys.run(
@@ -136,6 +164,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       ),
       inputRevision: json["input_revision"] as int,
       attachmentCount: mail.attachments.length,
+      archivedAt: json["archived_at"] as String?,
       allowedActions: List.unmodifiable(
         (json["allowed_actions"] as List? ?? const []).cast<String>(),
       ),
@@ -307,6 +336,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
           : step?["message"] as String? ?? "",
       inputRevision: json["input_revision"] as int,
       attachmentCount: json["attachment_count"] as int? ?? 0,
+      archivedAt: json["archived_at"] as String?,
       hold: _hold(json["hold"]),
       allowedActions: List.unmodifiable(
         (json["allowed_actions"] as List? ?? const []).cast<String>(),

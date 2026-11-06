@@ -62,6 +62,9 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
       counts: value.value?.counts,
       loading: value.isLoading && value.hasValue,
       onStatus: viewModel.setStatus,
+      // The view model flips at once; the list follows when it loads.
+      archived: viewModel.archived,
+      onArchived: viewModel.setArchived,
     );
     final list = _list(value, viewModel);
     if (widget.shrinkWrap) {
@@ -97,7 +100,9 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
     final groups = data.groups;
     if (groups.isEmpty) {
       return _Message(
-        data.status == null && data.query.isEmpty
+        data.archived && data.status == null && data.query.isEmpty
+            ? "보관한 업무가 없어요."
+            : data.status == null && data.query.isEmpty
             ? "아직 도착한 업무가 없어요."
             : "조건에 맞는 업무가 없어요.",
       );
@@ -221,6 +226,8 @@ class _QueueFilters extends StatelessWidget {
     required this.counts,
     required this.loading,
     required this.onStatus,
+    required this.archived,
+    required this.onArchived,
   });
 
   final TextEditingController search;
@@ -229,6 +236,10 @@ class _QueueFilters extends StatelessWidget {
   final WorkQueueCounts? counts;
   final bool loading;
   final ValueChanged<WorkCaseStatus?> onStatus;
+
+  /// 보관함(API-01 archived=true)을 보는 중.
+  final bool archived;
+  final ValueChanged<bool> onArchived;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -290,6 +301,28 @@ class _QueueFilters extends StatelessWidget {
                 side: BorderSide(color: option == status ? blush : line),
                 onSelected: (_) => onStatus(option),
               ),
+            FilterChip(
+              avatar: Icon(
+                Icons.archive_outlined,
+                size: 14,
+                color: archived ? accent : muted,
+              ),
+              label: const Text("보관함"),
+              labelStyle: TextStyle(
+                fontSize: AppFontSizes.secondary,
+                fontWeight: archived ? FontWeight.w700 : FontWeight.w500,
+                color: archived ? accent : muted,
+              ),
+              selected: archived,
+              showCheckmark: false,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              selectedColor: blush,
+              backgroundColor: Colors.transparent,
+              side: BorderSide(color: archived ? blush : line),
+              tooltip: archived ? "업무 큐로 돌아가기" : "보관한 업무 보기",
+              onSelected: onArchived,
+            ),
           ],
         ),
         SizedBox(

@@ -36,6 +36,10 @@ enum WorkCaseStatus {
 
 /// API 행동 코드(08 §3). 버튼 표시 여부는 서버의 allowed_actions를 따릅니다.
 abstract final class WorkCaseAction {
+  /// API-08·09. 업무 변경 저장(DB)이 준비되기 전에는 disabled_actions로만 옵니다.
+  static const archive = "ARCHIVE";
+  static const restore = "RESTORE";
+
   static const viewOriginal = "VIEW_ORIGINAL";
   static const start = "START";
   static const acceptIncrease = "ACCEPT_INCREASE";
@@ -96,6 +100,14 @@ String processingStepLabel(String step, {int inputRevision = 1}) =>
 const _fallbackStopMessages = {
   "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
   "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 해요.",
+  // FAILED: API-03 error.code (S7-8).
+  "EXTRACTION_FAILED": "요청 정보를 읽는 중 오류가 나 멈췄어요.",
+  "EXTRACTION_TIME_LIMIT": "요청 정보를 읽는 데 시간이 너무 오래 걸려 멈췄어요.",
+  "GRAPH_FAILED": "검토를 실행하는 중 오류가 나 멈췄어요.",
+  "GRAPH_TIME_LIMIT": "검토 실행 시간이 너무 오래 걸려 멈췄어요.",
+  "GRAPH_ORPHANED": "서버가 다시 시작되면서 실행 중이던 검토가 중단됐어요.",
+  "WORKER_INTERRUPTED": "서버가 다시 시작되면서 실행 중이던 검토가 중단됐어요.",
+  "RFQ_PREPARATION_FAILED": "견적 요청 초안을 만드는 중 오류가 났어요.",
 };
 
 /// 멈춘 이유 문구. 서버 hold 문구가 우선이고, 없으면 [errorCode]의 임시 문구입니다.
@@ -182,6 +194,7 @@ class WorkCase {
     this.senderName,
     this.itemName,
     this.hold,
+    this.archivedAt,
     this.allowedActions = const [],
     this.disabledActions = const [],
   });
@@ -210,6 +223,11 @@ class WorkCase {
 
   /// ON_HOLD일 때 서버가 정한 보류 사유.
   final HoldReason? hold;
+
+  /// 보관한 시각(UTC ISO 8601). 보관함에 있는 업무만 값이 있습니다.
+  final String? archivedAt;
+
+  bool get archived => archivedAt != null;
   final List<String> allowedActions;
   final List<DisabledWorkCaseAction> disabledActions;
 
@@ -232,6 +250,12 @@ class WorkCase {
       onHold || processingStep == ProcessingStep.needsInfo;
 
   bool can(String action) => allowedActions.contains(action);
+
+  /// 서버가 막은 이유 코드. 기능 준비 전(…_INTEGRATION_REQUIRED)인지 볼 때 씁니다.
+  String? disabledCode(String action) => disabledActions
+      .where((disabled) => disabled.action == action)
+      .firstOrNull
+      ?.reasonCode;
 
   String? disabledMessage(String action) => disabledActions
       .where((disabled) => disabled.action == action)

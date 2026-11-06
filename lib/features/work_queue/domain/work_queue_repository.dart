@@ -11,7 +11,14 @@ abstract interface class WorkQueueRepository {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   });
+
+  /// API-08. 큐에서 빼 보관함으로 옮깁니다. 단계는 그대로입니다.
+  Future<void> archive(WorkCase workCase);
+
+  /// API-09. 보관함에서 큐로 되돌립니다.
+  Future<void> restore(WorkCase workCase);
 
   /// API-25. 읽기 전용이며 추출을 시작하지 않습니다.
   Future<OriginalMail> getOriginalMail(String mailId);
