@@ -19,6 +19,7 @@ class MailDraftFooter extends StatelessWidget {
     required this.onSaveRevision,
     required this.onApprove,
     required this.onReconcile,
+    required this.onWithdraw,
     required this.onClose,
   });
 
@@ -31,6 +32,7 @@ class MailDraftFooter extends StatelessWidget {
   final VoidCallback onSaveRevision;
   final VoidCallback onApprove;
   final VoidCallback onReconcile;
+  final VoidCallback onWithdraw;
   final VoidCallback onClose;
 
   @override
@@ -101,6 +103,12 @@ class MailDraftFooter extends StatelessWidget {
                   onPressed: busy ? null : onClose,
                   child: const Text("닫기"),
                 ),
+                if (current != null && current.can(DraftAction.withdraw))
+                  TextButton(
+                    style: WorkspaceButtonStyles.text,
+                    onPressed: busy ? null : onWithdraw,
+                    child: const Text("보내지 않음"),
+                  ),
                 // Shown but disabled until the server has API-18.
                 if (current != null && editable)
                   Tooltip(
