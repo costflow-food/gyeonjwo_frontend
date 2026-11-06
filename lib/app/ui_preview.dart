@@ -138,14 +138,20 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
             failing: parameters['mailbox'] == 'failing',
           ),
         ),
-        // `?server=degraded` shows both server notices; otherwise none.
+        // `?server=degraded`: review is down. `?server=limited`: review
+        // runs but reply review, final decision, and reply linking do not.
         serverStatusDataSourceProvider.overrideWithValue(
-          parameters['server'] == 'degraded'
-              ? const PreviewServerStatusDataSource()
-              : const PreviewServerStatusDataSource(
-                  mailSendingEnabled: true,
-                  degradedFeatures: [],
-                ),
+          PreviewServerStatusDataSource(
+            degradedFeatures: switch (parameters['server']) {
+              'degraded' => const ['review', 'review_reply', 'final_decision'],
+              'limited' => const [
+                'review_reply',
+                'final_decision',
+                'rfq_metadata',
+              ],
+              _ => const [],
+            },
+          ),
         ),
       ],
     );
