@@ -28,7 +28,8 @@ abstract interface class WorkQueueRepository {
   /// API-02 + API-25. 목록에 없는 업무(주소로 바로 연 업무)를 엽니다.
   Future<WorkCase> getCase(String caseId);
 
-  /// API-07 `reason=RESUME_HOLD`. 202 접수만 확인하며 추출 완료를 뜻하지 않습니다.
+  /// API-07. 사유는 업무 단계에 맞춰 고릅니다([WorkCase.resumeReason]).
+  /// 202 접수만 확인하며 처리 완료를 뜻하지 않습니다.
   Future<void> resume(WorkCase workCase);
 
   /// API-11. 에이전트가 고른 견적 요청 후보.
