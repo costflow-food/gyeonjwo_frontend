@@ -7,6 +7,7 @@ import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
 import "../../../server_status/presentation/server_status_view_model.dart";
+import "../../../supplier/presentation/supplier_register_dialog.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
@@ -92,6 +93,9 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
     final replyReviewBlocked =
         isReplyExtraction(workCase.processingStep, workCase.inputRevision) &&
         (server?.replyReviewBlocked ?? false);
+    final needsSupplier =
+        workCase.stopped &&
+        supplierMissingStopCodes.contains(hold?.code ?? progress?.errorCode);
     final canResume = workCase.can(WorkCaseAction.resume);
     final resumeBlocked = workCase.disabledMessage(WorkCaseAction.resume);
     return Column(
@@ -181,6 +185,30 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                 icon: const Icon(Icons.mail_outline, size: 16),
                 label: const Text("메일 초안 보기"),
               ),
+            ),
+          ),
+        ],
+        if (needsSupplier) ...[
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              height: 44,
+              child: OutlinedButton.icon(
+                onPressed: () => showSupplierRegisterDialog(context),
+                style: WorkspaceButtonStyles.outlined,
+                icon: const Icon(Icons.store_outlined, size: 16),
+                label: const Text("거래처 등록"),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            "요청 품목을 취급하는 거래처를 등록하면 후보로 찾을 수 있어요.",
+            style: TextStyle(
+              fontSize: AppFontSizes.secondary,
+              color: muted,
+              height: 1.5,
             ),
           ),
         ],

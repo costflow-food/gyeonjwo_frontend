@@ -117,6 +117,12 @@ const _fallbackStopMessages = {
   "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 해요.",
 };
 
+/// 거래처가 없어 멈춘 코드. 거래처 등록으로 원인을 풀 수 있습니다(KAN-129).
+const supplierMissingStopCodes = {
+  "NO_SUITABLE_CANDIDATES",
+  "NO_REGISTERED_SUPPLIER_EVIDENCE",
+};
+
 /// 멈춘 이유 문구. 서버 hold 문구가 우선이고, 없으면 [errorCode]의 임시 문구입니다.
 String? stopReasonMessage(HoldReason? hold, String? errorCode) =>
     hold?.message ?? _fallbackStopMessages[errorCode];
