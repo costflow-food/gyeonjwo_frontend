@@ -98,7 +98,7 @@ List<StageState> stageStates(
   if (running != null) return upTo(running, StageState.running);
   final outcome = outcomeOf(step)!;
   if (outcome.stopped) {
-    final guess = _stoppedAt(outcome, stopCode);
+    final guess = _stoppedAt(outcome, stopCode, inputRevision);
     final at = lastRunning != null && lastRunning.index > guess.index
         ? lastRunning
         : guess;
@@ -111,14 +111,22 @@ List<StageState> stageStates(
   return upTo(reached, StageState.done);
 }
 
-/// 팝업을 늦게 열어 처리 중 단계를 못 봤을 때의 추정.
-ReviewStage _stoppedAt(ReviewOutcome outcome, String? stopCode) =>
-    switch (stopCode) {
-      "NO_SUITABLE_CANDIDATES" ||
-      "NO_REGISTERED_SUPPLIER_EVIDENCE" ||
-      "RFQ_CONDITIONS_REQUIRED" ||
-      "SEND_POLICY_REQUIRED" => ReviewStage.findingCandidates,
-      _ when outcome == ReviewOutcome.sendUnknown =>
-        ReviewStage.findingCandidates,
-      _ => ReviewStage.extracting,
-    };
+/// 팝업을 늦게 열어 처리 중 단계를 못 봤을 때의 추정. API-03은 보류를 낸
+/// 역할을 주지 않아 코드와 input_revision으로 정합니다(X-44).
+///
+/// - 회신이 연결된 뒤(input_revision > 1)에 멈췄다면 회신 검토 단계입니다.
+/// - CONDITIONS_MISSING은 ① 추출이 아니라 ② 후보 단계의 보류입니다(품목 미정 등).
+ReviewStage _stoppedAt(
+  ReviewOutcome outcome,
+  String? stopCode,
+  int inputRevision,
+) => switch (stopCode) {
+  _ when inputRevision > 1 => ReviewStage.reviewingReplies,
+  "NO_SUITABLE_CANDIDATES" ||
+  "NO_REGISTERED_SUPPLIER_EVIDENCE" ||
+  "RFQ_CONDITIONS_REQUIRED" ||
+  "CONDITIONS_MISSING" ||
+  "SEND_POLICY_REQUIRED" => ReviewStage.findingCandidates,
+  _ when outcome == ReviewOutcome.sendUnknown => ReviewStage.findingCandidates,
+  _ => ReviewStage.extracting,
+};
