@@ -20,7 +20,8 @@ MailDraftDataSource mailDraftDataSource(Ref ref) => ApiMailDraftDataSource(
 /// API-17 `GET /mail-drafts/{draft_id}`,
 /// API-18 `POST /mail-drafts/{draft_id}/revisions` (not on the server yet),
 /// API-19 `POST /mail-drafts/{draft_id}/approve-and-send`,
-/// API-20 `POST /mail-drafts/{draft_id}/reconcile`.
+/// API-20 `POST /mail-drafts/{draft_id}/reconcile`,
+/// `POST /mail-drafts/{draft_id}/withdraw` (unsent draft, X-2).
 abstract interface class MailDraftDataSource {
   Future<Map<String, dynamic>> fetchDrafts(String caseId, {String? cursor});
 
@@ -40,6 +41,12 @@ abstract interface class MailDraftDataSource {
 
   Future<Map<String, dynamic>> reconcile(
     String draftId, {
+    required String idempotencyKey,
+  });
+
+  Future<Map<String, dynamic>> withdraw(
+    String draftId,
+    Map<String, Object?> body, {
     required String idempotencyKey,
   });
 }
@@ -122,6 +129,20 @@ class ApiMailDraftDataSource implements MailDraftDataSource {
     (headers) => _dio.post<Map<String, dynamic>>(
       "$_drafts/$draftId/reconcile",
       data: const <String, Object?>{},
+      options: Options(headers: headers),
+    ),
+    idempotencyKey: idempotencyKey,
+  );
+
+  @override
+  Future<Map<String, dynamic>> withdraw(
+    String draftId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) => _send(
+    (headers) => _dio.post<Map<String, dynamic>>(
+      "$_drafts/$draftId/withdraw",
+      data: body,
       options: Options(headers: headers),
     ),
     idempotencyKey: idempotencyKey,
@@ -299,6 +320,25 @@ class PreviewMailDraftDataSource implements MailDraftDataSource {
   });
 
   /// 202 acceptance, replayed for the same key and body.
+  /// The preview closes the draft the way the DB does (DRAFT → FAILED).
+  @override
+  Future<Map<String, dynamic>> withdraw(
+    String draftId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) => _once(idempotencyKey, {"withdraw": draftId, ...body}, () {
+    final (_, draft) = _find(draftId);
+    if (draft["status"] != "DRAFT") {
+      throw const MailDraftApiException(
+        409,
+        "ACTION_NOT_ALLOWED",
+        "최신 초안·설정과 서버 실행 상태를 확인해 주세요.",
+      );
+    }
+    draft["status"] = "FAILED";
+    return draftId;
+  });
+
   Future<Map<String, dynamic>> _once(
     String key,
     Map<String, Object?> body,

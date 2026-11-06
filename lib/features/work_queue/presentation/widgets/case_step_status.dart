@@ -130,6 +130,17 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                             : FontWeight.w700,
                       ),
                     ),
+                    if (workCase.replySummary case final replies?
+                        when replies.visible) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        replies.label,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.secondary,
+                          color: muted,
+                        ),
+                      ),
+                    ],
                     if (replyReviewBlocked) ...[
                       const SizedBox(height: 6),
                       const Text(
@@ -199,15 +210,13 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                 onPressed: canResume && !_busy ? _resume : null,
                 style: WorkspaceButtonStyles.filled,
                 icon: const Icon(Icons.replay, size: 16),
-                label: const Text("다시 추출"),
+                label: Text(workCase.resumeReason.buttonLabel),
               ),
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            canResume
-                ? "보류 사유를 확인했다면 요청 정보 확인부터 다시 실행해요."
-                : resumeBlocked!,
+            canResume ? workCase.resumeReason.help : resumeBlocked!,
             style: const TextStyle(
               fontSize: AppFontSizes.secondary,
               color: muted,
