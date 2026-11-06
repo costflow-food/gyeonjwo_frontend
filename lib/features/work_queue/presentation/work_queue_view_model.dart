@@ -20,8 +20,16 @@ Duration? _noRetry(int retryCount, Object error) => null;
 /// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
 @Riverpod(keepAlive: true, retry: _noRetry)
 class WorkQueueViewModel extends _$WorkQueueViewModel {
+  /// Fallback when Realtime is down or misses a change (08 §11: 15 seconds).
+  /// Any reload restarts it, so it only fires after a quiet interval.
+  static const pollInterval = Duration(seconds: 15);
+
   String? _selectedId;
   Timer? _refreshTimer;
+  Timer? _poll;
+
+  /// More pages were loaded; a poll would drop them, so it waits.
+  bool _extended = false;
 
   /// 상태 탭(null은 전체)과 검색어. 서버(API-01 status·q)가 거릅니다.
   WorkCaseStatus? _status;
@@ -33,7 +41,11 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
 
   @override
   Future<WorkQueueState> build() async {
-    ref.onDispose(() => _refreshTimer?.cancel());
+    ref.onDispose(() {
+      _refreshTimer?.cancel();
+      _poll?.cancel();
+    });
+    _extended = false;
     // Supabase says a case changed (new mail, AI step, deletion): re-read
     // the queue so only the widgets showing that case update.
     ref.listen(workCaseChangesProvider, (_, next) {
@@ -42,6 +54,11 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     final page = await ref
         .watch(workQueueRepositoryProvider)
         .getCases(status: _status, query: _query);
+    _schedulePoll();
+    return _fromPage(page);
+  }
+
+  WorkQueueState _fromPage(WorkQueuePage page) {
     // A case accepted elsewhere disappears; drop a selection that no longer exists.
     if (!page.items.any((workCase) => workCase.id == _selectedId)) {
       _selectedId = null;
@@ -75,6 +92,44 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.invalidateSelf();
   }
 
+  void _schedulePoll() {
+    _poll?.cancel();
+    _poll = Timer(pollInterval, _pollNow);
+  }
+
+  /// Replaces the first page without a loading state, so the queue does not
+  /// flash. Uses the open status tab and search; a result for a filter the
+  /// user has since changed is dropped. Skipped while signed out or after
+  /// load more; a failure keeps what is shown and the next poll tries again.
+  Future<void> _pollNow() async {
+    final signedIn =
+        ref.read(authSessionViewModelProvider).asData?.value.isSignedIn ??
+        false;
+    final current = state.hasValue && !state.isLoading
+        ? state.requireValue
+        : null;
+    if (signedIn && current != null && !_extended && !current.loadingMore) {
+      final status = _status;
+      final query = _query;
+      try {
+        final page = await ref
+            .read(workQueueRepositoryProvider)
+            .getCases(status: status, query: query);
+        if (!ref.mounted) return;
+        if (!_extended &&
+            status == _status &&
+            query == _query &&
+            state.hasValue &&
+            !state.isLoading) {
+          state = AsyncData(_fromPage(page));
+        }
+      } catch (_) {
+        if (!ref.mounted) return;
+      }
+    }
+    if (ref.mounted) _schedulePoll();
+  }
+
   /// One reload for a burst of changes (e.g. one mail touching several rows).
   void _refreshSoon() {
     _refreshTimer?.cancel();
@@ -93,6 +148,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     final current = state.hasValue ? state.requireValue : null;
     final cursor = current?.nextCursor;
     if (current == null || cursor == null || current.loadingMore) return;
+    _extended = true;
     state = AsyncData(
       current.withMore(
         items: current.items,

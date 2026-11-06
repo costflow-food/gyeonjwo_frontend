@@ -25,9 +25,10 @@ class PlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final decision = card.decision;
     final selected =
+        plan.planId != null &&
         decision?.decision == ReviewAction.selectPlan &&
         decision?.planId == plan.planId;
-    final canSelect = card.can(ReviewAction.selectPlan) && plan.valid;
+    final canSelect = card.can(ReviewAction.selectPlan) && plan.selectable;
     final blocked = card.disabledMessage(ReviewAction.selectPlan);
     return OutlinePanel(
       padding: const EdgeInsets.all(20),
@@ -102,6 +103,11 @@ class PlanCard extends StatelessWidget {
             Text(
               "${plan.validationLabel} 안은 확정 선택할 수 없어요.",
               style: const TextStyle(fontSize: 11, color: muted),
+            )
+          else if (plan.planId == null)
+            const Text(
+              "서버가 이 안의 ID를 보내지 않아 선택할 수 없어요. 보류나 검토 확인은 할 수 있어요.",
+              style: TextStyle(fontSize: 11, color: muted),
             )
           else if (blocked != null)
             Text(blocked, style: const TextStyle(fontSize: 11, color: muted)),

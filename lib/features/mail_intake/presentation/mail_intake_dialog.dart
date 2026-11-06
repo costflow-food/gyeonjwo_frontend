@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../shared/widgets/async_content.dart";
+import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../../shared/workspace_colors.dart";
 import "../domain/intake_mail.dart";
 import "mail_intake_view_model.dart";
@@ -71,8 +72,43 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
     _reason.clear();
   });
 
+  /// 회신으로 보이는 메일을 새 업무로 만들면 원래 업무와 Work ID가 갈라지고,
+  /// 나중에 원래 업무에 다시 연결할 수 없습니다(E2E S5-11). 한 번 더 묻습니다.
+  Future<bool> _confirmCreateFromReply() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("회신 메일을 새 업무로 만들까요?"),
+        content: const Text(
+          "이 메일은 보낸 견적 요청이나 추가 확인에 대한 회신일 수 있어요. "
+          "새 업무로 접수하면 원래 업무와 따로 진행되고, 나중에 원래 업무에 연결할 수 없어요.\n\n"
+          "공급사가 보낸 새 인상 안내라면 새 업무로 접수해 주세요.",
+        ),
+        actions: [
+          TextButton(
+            style: WorkspaceButtonStyles.text,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("취소"),
+          ),
+          FilledButton(
+            style: WorkspaceButtonStyles.filled,
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text("새 업무로 접수"),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
   Future<void> _resolve(IntakeMail mail, IntakeResolution resolution) async {
     if (_busy) return;
+    if (resolution == IntakeResolution.createCase &&
+        mail.looksLikeReply &&
+        !await _confirmCreateFromReply()) {
+      return;
+    }
+    if (!mounted || _busy) return;
     final target = resolution == IntakeResolution.linkCase
         ? _selectedCaseId
         : null;

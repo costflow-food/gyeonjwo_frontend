@@ -6,6 +6,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/workspace_colors.dart";
 import "../../../shared/widgets/workspace_button_styles.dart";
+import "../../send_settings/presentation/send_settings_dialog.dart";
 import "../domain/mail_draft.dart";
 import "mail_draft_view_model.dart";
 import "widgets/mail_draft_body.dart";
@@ -173,6 +174,10 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.reconcile(draft));
   }
 
+  /// AC-23: this case's own values. A save reloads the drafts' send policy.
+  Future<void> _openSettings() =>
+      showSendSettingsDialog(context, caseId: widget.caseId);
+
   Future<void> _close() async {
     if (_busy) return;
     if (!_dirty) {
@@ -233,7 +238,11 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                MailDraftHeader(caseId: widget.caseId, onClose: _close),
+                MailDraftHeader(
+                  caseId: widget.caseId,
+                  onClose: _close,
+                  onOpenSettings: _editing || _busy ? null : _openSettings,
+                ),
                 const Divider(height: 1, color: line),
                 Flexible(
                   child: SingleChildScrollView(
@@ -272,6 +281,9 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                                     editing: _editing,
                                     dispatchState:
                                         widget.dispatchStates[draft.id],
+                                    onOpenSettings: _editing
+                                        ? null
+                                        : _openSettings,
                                   ),
                                   const SizedBox(height: 16),
                                   MailDraftBody(

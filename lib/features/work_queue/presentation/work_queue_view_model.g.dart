@@ -43,7 +43,7 @@ final class WorkQueueViewModelProvider
 }
 
 String _$workQueueViewModelHash() =>
-    r'ea030eb14f95ad4aedec99e5e4d688d4bb8fd737';
+    r'357202b6b5301c1a0b0dcebff1c45890b6fa7cd1';
 
 /// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
 ///

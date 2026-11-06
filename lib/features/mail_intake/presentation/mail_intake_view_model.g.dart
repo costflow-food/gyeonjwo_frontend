@@ -9,14 +9,23 @@ part of 'mail_intake_view_model.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// SCR-009 pending intake mails. The work queue reads totalPending from here.
+///
+/// No Realtime signal covers intake mails (they do not touch work_cases), so
+/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds).
 
 @ProviderFor(MailIntakeViewModel)
 final mailIntakeViewModelProvider = MailIntakeViewModelProvider._();
 
 /// SCR-009 pending intake mails. The work queue reads totalPending from here.
+///
+/// No Realtime signal covers intake mails (they do not touch work_cases), so
+/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds).
 final class MailIntakeViewModelProvider
     extends $AsyncNotifierProvider<MailIntakeViewModel, IntakePage> {
   /// SCR-009 pending intake mails. The work queue reads totalPending from here.
+  ///
+  /// No Realtime signal covers intake mails (they do not touch work_cases), so
+  /// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds).
   MailIntakeViewModelProvider._()
     : super(
         from: null,
@@ -37,9 +46,12 @@ final class MailIntakeViewModelProvider
 }
 
 String _$mailIntakeViewModelHash() =>
-    r'5b148f3cc0fb1ed07f04ace1f26bf0c8a5ae32bc';
+    r'71dd89747f65fce43d26a73fda206e36f84bd5e7';
 
 /// SCR-009 pending intake mails. The work queue reads totalPending from here.
+///
+/// No Realtime signal covers intake mails (they do not touch work_cases), so
+/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds).
 
 abstract class _$MailIntakeViewModel extends $AsyncNotifier<IntakePage> {
   FutureOr<IntakePage> build();

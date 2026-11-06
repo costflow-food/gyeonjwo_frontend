@@ -3,11 +3,13 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/file_save/file_save.dart";
 import "../../../../shared/formatters.dart";
 import "../../../../shared/widgets/outline_panel.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
+import "../../data/work_queue_repository_impl.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 import "attachment_viewer.dart";
@@ -50,6 +52,31 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
   });
 
   void _closeViewer() => setState(() => _viewerClosed = true);
+
+  /// 미리 볼 수 없는 첨부(Excel·이미지 등)는 API-26 원본을 내려받습니다.
+  Future<void> _download(String mailId, MailAttachment attachment) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    try {
+      final bytes = await ref
+          .read(workQueueRepositoryProvider)
+          .getAttachmentContent(mailId, attachment.id);
+      saveFile(
+        bytes,
+        filename: attachment.filename,
+        mimeType: attachment.mimeType,
+      );
+    } catch (error) {
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(
+            error is WorkQueueFailure
+                ? error.message
+                : "${attachment.filename}을(를) 내려받지 못했어요.",
+          ),
+        ),
+      );
+    }
+  }
 
   WorkQueueViewModel get _viewModel =>
       ref.read(workQueueViewModelProvider.notifier);
@@ -192,6 +219,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               mail: mail,
               openAttachmentId: openAttachment?.id,
               onOpen: _openViewer,
+              onDownload: (attachment) => _download(mail.id, attachment),
             ),
           ),
           const SizedBox(height: 24),
@@ -277,11 +305,15 @@ class _MailContent extends StatelessWidget {
     required this.mail,
     required this.openAttachmentId,
     required this.onOpen,
+    required this.onDownload,
   });
 
   final OriginalMail mail;
   final String? openAttachmentId;
   final ValueChanged<MailAttachment> onOpen;
+
+  /// PDF가 아닌 첨부: 미리 보기 대신 내려받습니다.
+  final ValueChanged<MailAttachment> onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -334,7 +366,9 @@ class _MailContent extends StatelessWidget {
                 _AttachmentTile(
                   attachment: attachment,
                   selected: attachment.id == openAttachmentId,
-                  onTap: attachment.isPdf ? () => onOpen(attachment) : null,
+                  onTap: attachment.isPdf
+                      ? () => onOpen(attachment)
+                      : () => onDownload(attachment),
                 ),
             ],
           ),
@@ -383,8 +417,8 @@ class _AttachmentTile extends StatelessWidget {
   final MailAttachment attachment;
   final bool selected;
 
-  /// PDF만 열 수 있습니다. 다른 형식은 null.
-  final VoidCallback? onTap;
+  /// PDF는 뷰어로 열고, 다른 형식은 내려받습니다.
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -404,7 +438,7 @@ class _AttachmentTile extends StatelessWidget {
           Icon(
             attachment.isPdf
                 ? Icons.picture_as_pdf_outlined
-                : Icons.insert_drive_file_outlined,
+                : Icons.download_outlined,
             size: 20,
             color: selected ? accent : muted,
           ),
@@ -436,16 +470,17 @@ class _AttachmentTile extends StatelessWidget {
         ],
       ),
     );
-    if (onTap == null) {
-      return Tooltip(message: "PDF만 미리 볼 수 있어요.", child: tile);
-    }
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: "${attachment.filename} 열기",
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(onTap: onTap, child: tile),
+    final action = attachment.isPdf ? "열기" : "내려받기";
+    return Tooltip(
+      message: attachment.isPdf ? "PDF 미리 보기" : "미리 볼 수 없는 형식이라 내려받아요.",
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: "${attachment.filename} $action",
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(onTap: onTap, child: tile),
+        ),
       ),
     );
   }

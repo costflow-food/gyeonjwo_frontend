@@ -199,9 +199,9 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
           ResponsiveColumns(
             minItemWidth: 280 * textScale,
             children: [
-              for (final plan in card.plans)
+              for (final (index, plan) in card.plans.indexed)
                 PlanCard(
-                  key: ValueKey("plan-${plan.planId}"),
+                  key: ValueKey("plan-${plan.planId ?? index}"),
                   plan: plan,
                   card: card,
                   busy: _busy,
