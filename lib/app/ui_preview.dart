@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/analysis_stop/presentation/analysis_stop_dialog.dart';
-import '../features/analysis_stop/data/analysis_stop_data_source.dart';
 import '../features/auth/data/account_connection_data_source.dart';
 import '../features/auth/data/auth_session_data_source.dart';
 import '../features/auth/domain/gmail_connection.dart';
@@ -126,9 +124,6 @@ class _UiPreviewAppState extends State<UiPreviewApp> {
         ),
         purchaseReviewDataSourceProvider.overrideWith(
           (ref) => PreviewPurchaseReviewDataSource(latency: Duration.zero),
-        ),
-        analysisStopDataSourceProvider.overrideWithValue(
-          const PreviewAnalysisStopDataSource(latency: Duration.zero),
         ),
         supplierDataSourceProvider.overrideWith(
           (ref) => PreviewSupplierDataSource(latency: Duration.zero),
@@ -353,13 +348,6 @@ class _PreviewCatalogState extends ConsumerState<_PreviewCatalog> {
           caseId: _progressSampleCase,
           title: '[단가변경] 냉동 딸기 공급 조건 변경의 건',
         );
-      case 'needs-info':
-        await showAnalysisStopDialog(
-          context,
-          requestId: 'REQ-2026-1018-003',
-          onOpenSource: () =>
-              showSourceDocument(context, requestId: 'REQ-2026-1018-003'),
-        );
       case 'mail-draft':
         await showMailDraftDialog(
           context,
@@ -472,7 +460,6 @@ class _PreviewCatalogState extends ConsumerState<_PreviewCatalog> {
                         for (final (label, modal) in const [
                           ('원문·첨부', 'source'),
                           ('검토 진행', 'progress'),
-                          ('확인 필요', 'needs-info'),
                           ('거래처·가격 근거', 'supplier-evidence'),
                           ('메일 초안·발송', 'mail-draft'),
                           ('메일함 발송 설정', 'send-settings'),
