@@ -85,6 +85,14 @@ class PurchaseReviewRepositoryImpl implements PurchaseReviewRepository {
     }
   }
 
+  /// 서버 Decimal. 문자열이 계약이지만 숫자로 와도 그대로 읽습니다.
+  static String? _decimal(Object? json) => switch (json) {
+    null => null,
+    String value => value,
+    num value => value.toString(),
+    _ => throw const FormatException(),
+  };
+
   static List<String> _strings(Object? json) =>
       json is List ? [for (final item in json) item as String] : const [];
 
@@ -130,20 +138,20 @@ class PurchaseReviewRepositoryImpl implements PurchaseReviewRepository {
   }
 
   static ResponsePlan _plan(Map<String, dynamic> json) => ResponsePlan(
-    planId: json["plan_id"] as String,
+    planId: json["plan_id"] as String?,
     planType: json["plan_type"] as String,
     validationStatus: json["validation_status"] as String,
-    totalAmount: json["total_amount"] as String?,
+    totalAmount: _decimal(json["total_amount"]),
     currency: json["currency"] as String? ?? "KRW",
     allocations: [
       for (final item in json["allocations"] as List)
         PlanAllocation(
           supplierId: (item as Map<String, dynamic>)["supplier_id"] as String,
           supplierName: item["supplier_name"] as String? ?? "이름 미확인 업체",
-          quoteId: item["quote_id"] as String,
-          quantity: item["quantity"] as String,
+          quoteId: (item["quote_id"] ?? item["quote_version_id"]) as String?,
+          quantity: _decimal(item["quantity"])!,
           unit: item["unit"] as String?,
-          unitPrice: item["unit_price"] as String?,
+          unitPrice: _decimal(item["unit_price"]),
         ),
     ],
     conditions: _strings(json["conditions"]),

@@ -9,11 +9,21 @@ abstract final class ReviewAction {
   static const confirmReview = "CONFIRM_REVIEW";
 }
 
-/// 검토가 끝난 결과. 정상 비교 성공(OPTIONS_READY)과 그렇지 않은 종료를 구분합니다.
+/// 검토가 끝난 결과. 정상 비교 성공과 그렇지 않은 종료를 구분합니다.
+///
+/// 08은 OPTIONS_READY·NEEDS_INFO·ON_HOLD를, 현재 BE·DB(06 종료 코드)는
+/// COMPLETED·NO_VALID_PLAN·REVIEW_REQUIRED_CLOSED를 보냅니다. 코드 집합이
+/// 합의될 때까지 두 집합을 모두 받아 같은 뜻으로 보여 줍니다.
 enum ReviewOutcome {
   optionsReady("OPTIONS_READY", "비교가 끝났어요. 구매안을 골라 주세요."),
+  completed("COMPLETED", "비교가 끝났어요. 구매안을 골라 주세요."),
   noFeasiblePlan("NO_FEASIBLE_PLAN", "요청 조건을 만족하는 구매안이 없어요."),
+  noValidPlan("NO_VALID_PLAN", "요청 조건을 만족하는 구매안이 없어요."),
   needsInfo("NEEDS_INFO", "확인이 필요한 항목이 있어 비교를 끝내지 못했어요."),
+  reviewRequiredClosed(
+    "REVIEW_REQUIRED_CLOSED",
+    "확인이 필요한 항목이 남은 채 검토를 마쳤어요.",
+  ),
   onHold("ON_HOLD", "검토를 보류했어요."),
   unknown("", "업무에서 현재 상태를 확인해 주세요.");
 
@@ -26,7 +36,7 @@ enum ReviewOutcome {
     orElse: () => unknown,
   );
 
-  bool get ready => this == optionsReady;
+  bool get ready => this == optionsReady || this == completed;
 }
 
 class DisabledReviewAction {
@@ -63,7 +73,9 @@ class ResponsePlan {
     this.reason,
   });
 
-  final String planId;
+  /// 확정 선택(API-15 SELECT_PLAN)에 보내는 ID. 아직 에이전트 출력에 없을 수
+  /// 있으며(E2E S7-4), 없으면 이 안만 선택할 수 없고 카드는 그대로 보여 줍니다.
+  final String? planId;
   final String planType;
   final String validationStatus;
   final List<PlanAllocation> allocations;
@@ -80,6 +92,9 @@ class ResponsePlan {
 
   /// 08: 최신 revision의 VALID 안만 확정 선택할 수 있습니다.
   bool get valid => validationStatus == "VALID";
+
+  /// 확정 선택을 보낼 수 있는 안: VALID이고 plan_id가 있음.
+  bool get selectable => valid && planId != null;
 }
 
 class PlanAllocation {
@@ -94,7 +109,9 @@ class PlanAllocation {
 
   final String supplierId;
   final String supplierName;
-  final String quoteId;
+
+  /// 08 quote_id. 에이전트 출력의 quote_version_id도 받습니다. 표시에는 쓰지 않습니다.
+  final String? quoteId;
   final String quantity;
   final String? unit;
   final String? unitPrice;
@@ -238,8 +255,9 @@ class ReviewCard {
       .firstOrNull
       ?.message;
 
-  ResponsePlan? plan(String? planId) =>
-      plans.where((plan) => plan.planId == planId).firstOrNull;
+  ResponsePlan? plan(String? planId) => planId == null
+      ? null
+      : plans.where((plan) => plan.planId == planId).firstOrNull;
 }
 
 /// API-13 견적 한 버전. 원문에서 읽은 값과 필드별 근거를 함께 담습니다.
