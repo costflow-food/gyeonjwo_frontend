@@ -114,7 +114,10 @@ class _SidebarTabsState extends ConsumerState<_SidebarTabs>
   Widget build(BuildContext context) {
     final queue = ref.watch(workQueueViewModelProvider);
     final intake = ref.watch(mailIntakeViewModelProvider);
-    final queueCount = queue.hasValue ? queue.requireValue.items.length : null;
+    // All cases matching the search, whichever status tab is open.
+    final queueCount = queue.hasValue
+        ? queue.requireValue.counts.total
+        : null;
     final intakeCount = intake.hasValue
         ? intake.requireValue.totalPending
         : null;
