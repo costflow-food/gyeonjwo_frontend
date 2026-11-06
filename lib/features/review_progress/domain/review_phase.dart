@@ -1,3 +1,5 @@
+import "../../work_queue/domain/work_case.dart";
+
 /// 검토 진행 팝업의 단계. API-03 processing_step을 화면 단계로 묶습니다.
 enum ReviewStage {
   extracting("요청 정보 추출"),
@@ -53,7 +55,12 @@ enum ReviewOutcome {
   final bool stopped;
 }
 
-ReviewStage? runningStage(String step) => _running[step];
+/// [inputRevision]이 1보다 큰 EXTRACTING은 처음 추출이 아니라 연결된 거래처
+/// 회신을 읽는 중입니다(회신이 올 때만 input_revision이 오릅니다).
+ReviewStage? runningStage(String step, {int inputRevision = 1}) =>
+    isReplyExtraction(step, inputRevision)
+    ? ReviewStage.reviewingReplies
+    : _running[step];
 
 /// 처리 중이면 null.
 ReviewOutcome? outcomeOf(String step) => switch (step) {
@@ -75,6 +82,7 @@ enum StageState { done, running, stopped, waiting }
 /// 보류·실패가 어느 단계에서 났는지 정할 때 씁니다.
 List<StageState> stageStates(
   String step, {
+  int inputRevision = 1,
   String? stopCode,
   ReviewStage? lastRunning,
 }) {
@@ -86,7 +94,7 @@ List<StageState> stageStates(
           ? current
           : StageState.waiting,
   ];
-  final running = runningStage(step);
+  final running = runningStage(step, inputRevision: inputRevision);
   if (running != null) return upTo(running, StageState.running);
   final outcome = outcomeOf(step)!;
   if (outcome.stopped) {

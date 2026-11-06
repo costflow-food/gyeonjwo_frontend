@@ -27,6 +27,7 @@ class ReviewProgress {
 
   List<StageState> get stages => stageStates(
     progress.processingStep,
+    inputRevision: progress.inputRevision,
     stopCode: progress.stopCode,
     lastRunning: lastRunning,
   );

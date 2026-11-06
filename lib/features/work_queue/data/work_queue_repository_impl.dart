@@ -128,7 +128,10 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       status: WorkCaseStatus.fromCode(statusCode),
       statusCode: statusCode,
       processingStep: step,
-      stepMessage: processingStepLabel(step),
+      stepMessage: processingStepLabel(
+        step,
+        inputRevision: json["input_revision"] as int,
+      ),
       inputRevision: json["input_revision"] as int,
       attachmentCount: mail.attachments.length,
       allowedActions: List.unmodifiable(

@@ -76,9 +76,17 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
             ? workCase.disabledMessage(WorkCaseAction.selectCandidates)
             : null);
     // Drafts exist once RFQs were prepared, including a send-setting stop.
-    final hasDrafts =
+    // A send failure (FAILED) or any step after a linked reply may also have
+    // drafts, but the step alone cannot tell, so ask API-16 there.
+    final draftsByStep =
         ProcessingStep.withDrafts.contains(workCase.processingStep) ||
         (hold?.code ?? progress?.errorCode) == "SEND_POLICY_REQUIRED";
+    final mayHaveDrafts =
+        workCase.processingStep == "FAILED" || workCase.inputRevision > 1;
+    final hasDrafts =
+        draftsByStep ||
+        (mayHaveDrafts &&
+            (ref.watch(caseHasDraftsProvider(workCase.id)).value ?? false));
     final canResume = workCase.can(WorkCaseAction.resume);
     final resumeBlocked = workCase.disabledMessage(WorkCaseAction.resume);
     return Column(
