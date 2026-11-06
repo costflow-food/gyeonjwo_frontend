@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
@@ -24,6 +26,28 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
   // Groups the user folded. Keyed by item name; null is "품목 미확인".
   final _collapsed = <String?>{};
 
+  late final _search = TextEditingController(
+    text: ref.read(workQueueViewModelProvider).value?.query ?? "",
+  );
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _search.dispose();
+    super.dispose();
+  }
+
+  /// One request after typing pauses, not one per key.
+  void _onSearchChanged(String text) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        ref.read(workQueueViewModelProvider.notifier).setQuery(text);
+      }
+    });
+  }
+
   /// The address drives the selection (KAN-144), from any screen.
   void _open(WorkCase workCase) => context.go("/cases/${workCase.id}");
 
@@ -31,6 +55,29 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
   Widget build(BuildContext context) {
     final value = ref.watch(workQueueViewModelProvider);
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
+    final filters = _QueueFilters(
+      search: _search,
+      onSearchChanged: _onSearchChanged,
+      status: value.value?.status,
+      counts: value.value?.counts,
+      loading: value.isLoading && value.hasValue,
+      onStatus: viewModel.setStatus,
+    );
+    final list = _list(value, viewModel);
+    if (widget.shrinkWrap) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [filters, list],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [filters, Expanded(child: list)],
+    );
+  }
+
+  Widget _list(AsyncValue<WorkQueueState> value, WorkQueueViewModel viewModel) {
     if (!value.hasValue) {
       if (value.hasError) {
         return _Message(
@@ -48,7 +95,13 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
     }
     final data = value.requireValue;
     final groups = data.groups;
-    if (groups.isEmpty) return const _Message("아직 도착한 업무가 없어요.");
+    if (groups.isEmpty) {
+      return _Message(
+        data.status == null && data.query.isEmpty
+            ? "아직 도착한 업무가 없어요."
+            : "조건에 맞는 업무가 없어요.",
+      );
+    }
     return ListView(
       shrinkWrap: widget.shrinkWrap,
       physics: widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null,
@@ -156,6 +209,98 @@ class _GroupHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 검색창과 상태 탭(전체·대기·진행 중·완료). 건수는 서버 counts 그대로입니다.
+/// 보류(Pending) 업무는 전체에서만 보입니다.
+class _QueueFilters extends StatelessWidget {
+  const _QueueFilters({
+    required this.search,
+    required this.onSearchChanged,
+    required this.status,
+    required this.counts,
+    required this.loading,
+    required this.onStatus,
+  });
+
+  final TextEditingController search;
+  final ValueChanged<String> onSearchChanged;
+  final WorkCaseStatus? status;
+  final WorkQueueCounts? counts;
+  final bool loading;
+  final ValueChanged<WorkCaseStatus?> onStatus;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: search,
+          onChanged: onSearchChanged,
+          style: const TextStyle(fontSize: AppFontSizes.body),
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: "제목·보낸 사람 검색",
+            hintStyle: const TextStyle(
+              fontSize: AppFontSizes.body,
+              color: muted,
+            ),
+            prefixIcon: const Icon(Icons.search, size: 18, color: muted),
+            prefixIconConstraints: const BoxConstraints(minWidth: 36),
+            contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(7),
+              borderSide: const BorderSide(color: line),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(7),
+              borderSide: const BorderSide(color: line),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            for (final option in const <WorkCaseStatus?>[
+              null,
+              ...WorkCaseStatus.tabs,
+            ])
+              ChoiceChip(
+                label: Text(
+                  "${option?.label ?? "전체"}"
+                  "${counts == null ? "" : " ${counts!.countFor(option)}"}",
+                ),
+                labelStyle: TextStyle(
+                  fontSize: AppFontSizes.secondary,
+                  fontWeight: option == status
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  color: option == status ? accent : muted,
+                ),
+                selected: option == status,
+                showCheckmark: false,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                selectedColor: blush,
+                backgroundColor: Colors.transparent,
+                side: BorderSide(color: option == status ? blush : line),
+                onSelected: (_) => onStatus(option),
+              ),
+          ],
+        ),
+        SizedBox(
+          height: 2,
+          child: loading
+              ? const LinearProgressIndicator(minHeight: 2, color: accent)
+              : null,
+        ),
+      ],
+    ),
+  );
 }
 
 class _LoadMore extends StatelessWidget {

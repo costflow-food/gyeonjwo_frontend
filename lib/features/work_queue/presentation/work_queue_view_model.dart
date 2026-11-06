@@ -23,6 +23,14 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   String? _selectedId;
   Timer? _refreshTimer;
 
+  /// 상태 탭(null은 전체)과 검색어. 서버(API-01 status·q)가 거릅니다.
+  WorkCaseStatus? _status;
+  String _query = "";
+
+  /// counts.waiting from the last response without a search (status does
+  /// not change counts), for the home summary.
+  int? _allWaiting;
+
   @override
   Future<WorkQueueState> build() async {
     ref.onDispose(() => _refreshTimer?.cancel());
@@ -31,20 +39,41 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.listen(workCaseChangesProvider, (_, next) {
       if (next.hasValue) _refreshSoon();
     });
-    final page = await ref.watch(workQueueRepositoryProvider).getCases();
+    final page = await ref
+        .watch(workQueueRepositoryProvider)
+        .getCases(status: _status, query: _query);
     // A case accepted elsewhere disappears; drop a selection that no longer exists.
     if (!page.items.any((workCase) => workCase.id == _selectedId)) {
       _selectedId = null;
     }
+    if (_query.isEmpty) _allWaiting = page.counts.waiting;
     return WorkQueueState(
       items: page.items,
       counts: page.counts,
       nextCursor: page.nextCursor,
+      status: _status,
+      query: _query,
       selectedId: _selectedId,
+      allWaiting: _allWaiting,
     );
   }
 
   void refresh() => ref.invalidateSelf();
+
+  /// 상태 탭을 바꿉니다. null은 전체입니다.
+  void setStatus(WorkCaseStatus? status) {
+    if (status == _status) return;
+    _status = status;
+    ref.invalidateSelf();
+  }
+
+  /// 제목·보낸 사람 검색. 화면에서 입력을 잠시 모은 뒤 부릅니다.
+  void setQuery(String query) {
+    final trimmed = query.trim();
+    if (trimmed == _query) return;
+    _query = trimmed;
+    ref.invalidateSelf();
+  }
 
   /// One reload for a burst of changes (e.g. one mail touching several rows).
   void _refreshSoon() {
@@ -74,7 +103,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     try {
       final page = await ref
           .read(workQueueRepositoryProvider)
-          .getCases(cursor: cursor);
+          .getCases(status: _status, query: _query, cursor: cursor);
       if (!ref.mounted) return;
       state = AsyncData(
         current.withMore(

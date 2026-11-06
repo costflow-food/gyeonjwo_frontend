@@ -81,7 +81,9 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
                 child: Center(child: CircularProgressIndicator()),
               )
             else ...[
-              QueueSummary(waitingCount: data?.counts.waiting ?? 0),
+              QueueSummary(
+                waitingCount: data?.allWaiting ?? data?.counts.waiting ?? 0,
+              ),
               const SizedBox(height: 24),
               if (constraints.maxWidth < _inlineQueueWidth)
                 const OutlinePanel(
