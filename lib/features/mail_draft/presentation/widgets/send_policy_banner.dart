@@ -22,7 +22,8 @@ class SendPolicyBanner extends StatelessWidget {
   /// API-12 result for this draft right after a candidate selection.
   final DraftDispatchState? dispatchState;
 
-  /// Opens this case's send settings when the draft waits on them.
+  /// Opens the mailbox send settings (설정 → 메일 발송 설정) when the draft
+  /// waits on them. Send settings are per purpose for the whole mailbox only.
   final VoidCallback? onOpenSettings;
 
   @override
@@ -30,8 +31,7 @@ class SendPolicyBanner extends StatelessWidget {
     final needsSettings =
         draft.status == DraftStatus.draft &&
         !draft.awaitingResult &&
-        (!draft.settingsConfigured ||
-            dispatchState == DraftDispatchState.blockedPolicy);
+        !draft.settingsConfigured;
     final policy = switch (draft.approvalRequired) {
       _ when !draft.settingsConfigured => "발송 설정 필요",
       true => "자동 발송 꺼짐 · 승인한 초안만 발송됩니다",
@@ -43,8 +43,7 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.draft when !draft.settingsConfigured => (
         Icons.warning_amber_rounded,
         const Color(0xFFBC793C),
-        "발송 설정을 완료해야 발송할 수 있습니다. 메일함 기본값은 설정 → 메일 발송 설정에서, "
-            "이 업무만의 값은 아래 '발송 설정 열기'에서 정합니다.",
+        '설정 → 메일 발송 설정을 완료해야 발송할 수 있습니다.',
       ),
       DraftStatus.draft when draft.isStale => (
         Icons.warning_amber_rounded,
@@ -139,7 +138,7 @@ class SendPolicyBanner extends StatelessWidget {
                     onPressed: onOpenSettings,
                     style: WorkspaceButtonStyles.outlined,
                     icon: const Icon(Icons.tune, size: 16),
-                    label: const Text("발송 설정 열기"),
+                    label: const Text("메일 발송 설정 열기"),
                   ),
                 ],
               ],

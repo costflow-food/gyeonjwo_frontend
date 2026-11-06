@@ -206,9 +206,8 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.withdraw(draft, reason: "담당자가 보내지 않기로 함"));
   }
 
-  /// AC-23: this case's own values. A save reloads the drafts' send policy.
-  Future<void> _openSettings() =>
-      showSendSettingsDialog(context, caseId: widget.caseId);
+  /// The mailbox default (설정 → 메일 발송 설정). A save reloads the drafts.
+  Future<void> _openSettings() => showSendSettingsDialog(context);
 
   Future<void> _close() async {
     if (_busy) return;
@@ -270,11 +269,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                MailDraftHeader(
-                  caseId: widget.caseId,
-                  onClose: _close,
-                  onOpenSettings: _editing || _busy ? null : _openSettings,
-                ),
+                MailDraftHeader(caseId: widget.caseId, onClose: _close),
                 const Divider(height: 1, color: line),
                 Flexible(
                   child: SingleChildScrollView(
