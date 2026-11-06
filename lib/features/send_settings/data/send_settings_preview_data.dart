@@ -5,10 +5,6 @@ const sendSettingsPreviewMailbox = {
   "mailbox_ref": "demo-purchase-mailbox",
   "version": 2,
   "approval": {"RFQ": true, "CLARIFICATION": null, "COUNTER_OFFER": true},
-  "allowed_supplier_ids": [
-    "bfe4fb8c-eaf8-45e3-8eb7-7def7777a002",
-    "bfe4fb8c-eaf8-45e3-8eb7-7def7777a004",
-  ],
   "tone": "FORMAL",
   "signature": "구매팀 드림",
 };

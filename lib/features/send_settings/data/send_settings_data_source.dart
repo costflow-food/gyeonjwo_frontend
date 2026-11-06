@@ -193,47 +193,24 @@ class PreviewSendSettingsDataSource implements SendSettingsDataSource {
     final approval = Map<String, Object?>.from(
       body["approval_required_by_purpose"] as Map,
     );
-    final allowed = (body["allowed_supplier_ids"] as List).cast<String>();
-    final effective = {
-      for (final purpose in _purposes)
-        purpose: _effective(caseId, purpose, approval),
-    };
-    if (effective.values.contains(false) && allowed.isEmpty) {
+    // allowed_supplier_ids is ignored: there is no per-supplier allow list,
+    // so turning auto-send on never needs one.
+    if (body['apply_to'] != 'FUTURE_DRAFTS') {
+      throw const SendSettingsApiException(
+        503,
+        "PROCESSING_UNAVAILABLE",
+        "기존 초안에 적용하는 저장은 아직 지원하지 않습니다.",
+      );
+    }
+    if ((body['draft_ids'] as List).isNotEmpty) {
       throw const SendSettingsApiException(
         422,
         "SEND_SCOPE_REQUIRED",
-        "자동 발송을 켜려면 허용 업체를 한 곳 이상 선택해 주세요.",
+        "앞으로 만들 초안에 적용할 때는 초안을 지정할 수 없습니다.",
       );
-    }
-    final applyExisting = body['apply_to'] == 'SPECIFIED_DRAFTS';
-    final draftIds = (body['draft_ids'] as List).cast<String>().toSet();
-    if (applyExisting && (caseId == null || draftIds.isEmpty)) {
-      throw const SendSettingsApiException(
-        422,
-        "SEND_SCOPE_REQUIRED",
-        "기존 초안에 적용하려면 적용할 초안을 선택해 주세요.",
-      );
-    }
-    final targets = <Map<String, dynamic>>[];
-    if (applyExisting) {
-      for (final id in draftIds) {
-        final draft =
-            (_workspace.drafts[caseId] ?? const <Map<String, dynamic>>[])
-                .where((entry) => entry['draft_id'] == id)
-                .firstOrNull;
-        if (draft == null || draft['status'] != 'DRAFT') {
-          throw const SendSettingsApiException(
-            409,
-            'DRAFT_CHANGED',
-            '초안 상태가 바뀌었습니다. 현재 적용 가능한 초안을 다시 확인해 주세요.',
-          );
-        }
-        targets.add(draft);
-      }
     }
     final style = body["style"] as Map;
     if (caseId == null) {
-      _mailbox['allowed_supplier_ids'] = allowed;
       _mailbox['tone'] = style['tone'];
       _mailbox['signature'] = style['signature'];
       _mailbox["approval"] = approval;
@@ -244,19 +221,9 @@ class PreviewSendSettingsDataSource implements SendSettingsDataSource {
         ...?current,
         "version": ((current?["version"] as int?) ?? 0) + 1,
         "approval": approval,
-        'allowed_supplier_ids': allowed,
         'tone': style['tone'],
         'signature': style['signature'],
       };
-    }
-    for (final draft in targets) {
-      _workspace.applyDraftPolicy(draft);
-      if (draft['approval_required'] == false &&
-          draft['settings_configured'] == true &&
-          draft['auto_send_allowed'] == true) {
-        draft['status'] = 'SENDING';
-        _workspace.sendingSince[draft['draft_id'] as String] = DateTime.now();
-      }
     }
     final response = _response(caseId);
     _results[idempotencyKey] = (hash, response);
@@ -278,7 +245,6 @@ class PreviewSendSettingsDataSource implements SendSettingsDataSource {
         (_cases[caseId] as Map<String, dynamic>?)?["approval"] as Map?;
     final caseVersion = (_cases[caseId] as Map<String, dynamic>?)?["version"];
     final scope = _workspace.sendScope(caseId);
-    final allowed = (scope['allowed_supplier_ids'] as List).cast<String>();
     final settings = <String, Object?>{};
     final missing = <String>[];
     for (final purpose in _purposes) {
@@ -305,9 +271,11 @@ class PreviewSendSettingsDataSource implements SendSettingsDataSource {
         "settings_version": _version(caseId),
         "missing_items": missing,
         "effective_settings": settings,
+        // Registered suppliers, not an allow list: any with a contact
+        // address can receive mail.
         "allowed_suppliers": [
           for (final supplier in sendSettingsPreviewSuppliers)
-            {...supplier, "allowed": allowed.contains(supplier["supplier_id"])},
+            {...supplier, "allowed": supplier["email"] != null},
         ],
         "style": {"tone": scope['tone'], "signature": scope['signature']},
         "pending_drafts": caseId == null

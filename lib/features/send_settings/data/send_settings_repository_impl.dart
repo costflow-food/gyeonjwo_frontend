@@ -40,13 +40,13 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
         for (final entry in update.approvalByPurpose.entries)
           entry.key.code: entry.value,
       },
-      "allowed_supplier_ids": update.allowedSupplierIds,
+      // No per-supplier allow list. The server ignores this field, but a
+      // server built before it became optional still requires the key.
+      "allowed_supplier_ids": const <String>[],
       "style": {"tone": update.tone.code, "signature": update.signature},
-      "apply_to": switch (update.applyTo) {
-        ApplyTo.futureDrafts => "FUTURE_DRAFTS",
-        ApplyTo.specifiedDrafts => "SPECIFIED_DRAFTS",
-      },
-      "draft_ids": update.draftIds,
+      // The server stores only FUTURE_DRAFTS for now.
+      "apply_to": "FUTURE_DRAFTS",
+      "draft_ids": const <String>[],
     };
     return _keys.run(
       "save:${caseId ?? "mailbox"}",
@@ -93,27 +93,8 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
         for (final purpose in DraftPurpose.values)
           _approval(purpose, effective[purpose.code] as Map<String, dynamic>),
       ]),
-      suppliers: List.unmodifiable([
-        for (final entry in json["allowed_suppliers"] as List)
-          AllowedSupplier(
-            id: entry["supplier_id"] as String,
-            name: entry["name"] as String,
-            email: entry["email"] as String?,
-            allowed: entry["allowed"] as bool,
-          ),
-      ]),
       tone: MailTone.fromCode(style["tone"] as String),
       signature: style["signature"] as String? ?? "",
-      pendingDrafts: List.unmodifiable([
-        for (final entry in json["pending_drafts"] as List)
-          PendingDraft(
-            draftId: entry["draft_id"] as String,
-            purpose: DraftPurpose.fromCode(entry["purpose"] as String),
-            supplierName: entry["supplier_name"] as String,
-            recipient: entry["recipient"] as String,
-            status: DraftStatus.fromCode(entry["status"] as String),
-          ),
-      ]),
     );
   }
 

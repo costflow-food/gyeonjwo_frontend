@@ -67,7 +67,7 @@ class PreviewWorkspace {
   Map<String, dynamic> sendScope(String? caseId) {
     final current = cases[caseId] as Map?;
     return {
-      for (final key in ['allowed_supplier_ids', 'tone', 'signature'])
+      for (final key in ['tone', 'signature'])
         key: current != null && current.containsKey(key)
             ? current[key]
             : mailbox[key],
@@ -87,7 +87,6 @@ class PreviewWorkspace {
   /// Copies the effective policy onto one newly created or selected draft.
   void applyDraftPolicy(Map<String, dynamic> draft) {
     final caseId = draft['case_id'] as String;
-    final scope = sendScope(caseId);
     final approval = approvalFor(caseId, draft['purpose'] as String);
     draft['approval_required'] = approval ?? true;
     draft['settings_configured'] = [
@@ -95,15 +94,12 @@ class PreviewWorkspace {
       'CLARIFICATION',
       'COUNTER_OFFER',
     ].every((purpose) => approvalFor(caseId, purpose) != null);
-    draft['auto_send_allowed'] =
-        (scope['allowed_supplier_ids'] as List).contains(
-          draft['supplier_id'],
-        ) &&
-        sendSettingsPreviewSuppliers.any(
-          (supplier) =>
-              supplier['supplier_id'] == draft['supplier_id'] &&
-              supplier['email'] == draft['recipient'],
-        );
+    // Auto-send only to the registered supplier's own address.
+    draft['auto_send_allowed'] = sendSettingsPreviewSuppliers.any(
+      (supplier) =>
+          supplier['supplier_id'] == draft['supplier_id'] &&
+          supplier['email'] == draft['recipient'],
+    );
     draft['settings_version'] = settingsVersion(caseId);
   }
 
