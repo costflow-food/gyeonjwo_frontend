@@ -4,6 +4,7 @@ import "dart:typed_data";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../auth/presentation/auth_session_view_model.dart";
+import "../../mail_draft/data/mail_draft_repository_impl.dart";
 import "../../review_progress/data/review_progress_repository_impl.dart";
 import "../data/work_case_change_source.dart";
 import "../data/work_queue_repository_impl.dart";
@@ -139,6 +140,12 @@ Future<WorkCase> caseDetail(Ref ref, String caseId) =>
 @Riverpod(retry: _noRetry)
 Future<CaseProgress> caseProgress(Ref ref, String caseId) =>
     ref.watch(reviewProgressRepositoryProvider).getProgress(caseId);
+
+/// API-16 초안이 있는지. 단계만으로 알 수 없는 업무(처리 오류, 회신 연결 뒤)에서만
+/// 조회해 '메일 초안 보기'를 보여 줄지 정합니다.
+@Riverpod(retry: _noRetry)
+Future<bool> caseHasDrafts(Ref ref, String caseId) async =>
+    (await ref.watch(mailDraftRepositoryProvider).getDrafts(caseId)).isNotEmpty;
 
 /// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
 @Riverpod(retry: _noRetry)

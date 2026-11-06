@@ -71,7 +71,15 @@ const _stepLabels = {
   "SEND_UNKNOWN": "발송 결과 확인 필요",
 };
 
-String processingStepLabel(String step) => _stepLabels[step] ?? "처리 상태 확인";
+/// EXTRACTING이지만 처음 추출이 아니라 연결된 거래처 회신을 읽는 중인지.
+/// 회신이 연결될 때만 input_revision이 오르므로 1보다 크면 회신 처리입니다.
+bool isReplyExtraction(String step, int inputRevision) =>
+    step == "EXTRACTING" && inputRevision > 1;
+
+String processingStepLabel(String step, {int inputRevision = 1}) =>
+    isReplyExtraction(step, inputRevision)
+    ? "거래처 회신 확인 중"
+    : _stepLabels[step] ?? "처리 상태 확인";
 
 /// 서버 hold가 없을 때만 쓰는 임시 문구. 현재 서버는 ON_HOLD에만 hold를 보내므로
 /// NEEDS_INFO에 hold가 오기 전까지(KAN-124) error.code로 문구를 고릅니다.

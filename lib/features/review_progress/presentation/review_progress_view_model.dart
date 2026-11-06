@@ -85,7 +85,9 @@ class ReviewProgressViewModel extends _$ReviewProgressViewModel {
     final step = progress.processingStep;
     final changed = step != _lastStep;
     _lastStep = step;
-    _lastRunning = runningStage(step) ?? _lastRunning;
+    _lastRunning =
+        runningStage(step, inputRevision: progress.inputRevision) ??
+        _lastRunning;
     _poll?.cancel();
     var stopped = false;
     if (outcomeOf(step) != null) {

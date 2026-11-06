@@ -230,6 +230,89 @@ final class CaseProgressFamily extends $Family
   String toString() => r'caseProgressProvider';
 }
 
+/// API-16 초안이 있는지. 단계만으로 알 수 없는 업무(처리 오류, 회신 연결 뒤)에서만
+/// 조회해 '메일 초안 보기'를 보여 줄지 정합니다.
+
+@ProviderFor(caseHasDrafts)
+final caseHasDraftsProvider = CaseHasDraftsFamily._();
+
+/// API-16 초안이 있는지. 단계만으로 알 수 없는 업무(처리 오류, 회신 연결 뒤)에서만
+/// 조회해 '메일 초안 보기'를 보여 줄지 정합니다.
+
+final class CaseHasDraftsProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// API-16 초안이 있는지. 단계만으로 알 수 없는 업무(처리 오류, 회신 연결 뒤)에서만
+  /// 조회해 '메일 초안 보기'를 보여 줄지 정합니다.
+  CaseHasDraftsProvider._({
+    required CaseHasDraftsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: _noRetry,
+         name: r'caseHasDraftsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$caseHasDraftsHash();
+
+  @override
+  String toString() {
+    return r'caseHasDraftsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    final argument = this.argument as String;
+    return caseHasDrafts(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CaseHasDraftsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$caseHasDraftsHash() => r'256b826c0c71740c5e0addda35516e314fd87cb1';
+
+/// API-16 초안이 있는지. 단계만으로 알 수 없는 업무(처리 오류, 회신 연결 뒤)에서만
+/// 조회해 '메일 초안 보기'를 보여 줄지 정합니다.
+
+final class CaseHasDraftsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<bool>, String> {
+  CaseHasDraftsFamily._()
+    : super(
+        retry: _noRetry,
+        name: r'caseHasDraftsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// API-16 초안이 있는지. 단계만으로 알 수 없는 업무(처리 오류, 회신 연결 뒤)에서만
+  /// 조회해 '메일 초안 보기'를 보여 줄지 정합니다.
+
+  CaseHasDraftsProvider call(String caseId) =>
+      CaseHasDraftsProvider._(argument: caseId, from: this);
+
+  @override
+  String toString() => r'caseHasDraftsProvider';
+}
+
 /// API-11 후보. 고를 수 있는 업무(SELECT_CANDIDATES)에서만 조회합니다.
 
 @ProviderFor(caseCandidates)
