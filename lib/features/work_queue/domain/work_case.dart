@@ -22,6 +22,16 @@ enum WorkCaseStatus {
 
   /// 큐 탭에 표시하는 세 상태.
   static const tabs = [waiting, running, complete];
+
+  /// 이 상태의 업무가 들어가는 큐 탭. 보류·실패·승인 대기(Pending)는
+  /// 08의 Running/ON_HOLD처럼 진행 중에, 메일만 확인한 업무(Confirm)는
+  /// 아직 검토 전이라 대기에 넣습니다. 모르는 상태는 전체에만 보입니다.
+  WorkCaseStatus? get tab => switch (this) {
+    waiting || confirm => waiting,
+    running || pending => running,
+    complete => complete,
+    other => null,
+  };
 }
 
 /// API 행동 코드(08 §3). 버튼 표시 여부는 서버의 allowed_actions를 따릅니다.
@@ -250,6 +260,18 @@ class WorkQueueCounts {
     this.complete = 0,
     this.total = 0,
   });
+
+  /// 받아 둔 업무로 탭 건수를 셉니다. 탭은 [WorkCaseStatus.tab]을 따릅니다.
+  factory WorkQueueCounts.fromCases(List<WorkCase> cases) {
+    int count(WorkCaseStatus tab) =>
+        cases.where((workCase) => workCase.status.tab == tab).length;
+    return WorkQueueCounts(
+      waiting: count(WorkCaseStatus.waiting),
+      running: count(WorkCaseStatus.running),
+      complete: count(WorkCaseStatus.complete),
+      total: cases.length,
+    );
+  }
 
   final int waiting;
   final int running;

@@ -12,8 +12,11 @@ class WorkQueueState {
     this.allWaiting,
   });
 
+  /// 검색어에 맞는 업무 전체(모든 탭). 탭은 이 목록을 화면에서 거릅니다.
   final List<WorkCase> items;
   final WorkQueueCounts counts;
+
+  /// 페이지 상한을 넘어 아직 받지 않은 업무가 있을 때만 값이 있습니다.
   final String? nextCursor;
 
   /// null은 전체 탭입니다.
@@ -26,10 +29,19 @@ class WorkQueueState {
   /// 검색 없는 값을 유지합니다. 아직 모르면 null.
   final int? allWaiting;
 
-  /// 품목별 그룹. 가장 최근 메일이 온 품목이 먼저, 품목 미확인은 맨 뒤입니다.
+  /// 지금 탭에 보이는 업무. [WorkCaseStatus.tab] 기준입니다.
+  List<WorkCase> get visibleItems => status == null
+      ? items
+      : [
+          for (final workCase in items)
+            if (workCase.status.tab == status) workCase,
+        ];
+
+  /// 지금 탭의 품목별 그룹. 가장 최근 메일이 온 품목이 먼저, 품목 미확인은
+  /// 맨 뒤입니다.
   List<WorkCaseGroup> get groups {
     final byItem = <String?, List<WorkCase>>{};
-    for (final workCase in items) {
+    for (final workCase in visibleItems) {
       final name = workCase.itemName?.trim();
       byItem
           .putIfAbsent(name == null || name.isEmpty ? null : name, () => [])
@@ -66,13 +78,26 @@ class WorkQueueState {
     allWaiting: allWaiting,
   );
 
+  /// 탭만 바꿉니다. 목록은 그대로라 다시 조회하지 않습니다.
+  WorkQueueState withStatus(WorkCaseStatus? tab) => WorkQueueState(
+    items: items,
+    counts: counts,
+    nextCursor: nextCursor,
+    status: tab,
+    query: query,
+    selectedId: selectedId,
+    loadingMore: loadingMore,
+    allWaiting: allWaiting,
+  );
+
   WorkQueueState withMore({
     required List<WorkCase> items,
     required String? nextCursor,
     required bool loadingMore,
+    WorkQueueCounts? counts,
   }) => WorkQueueState(
     items: items,
-    counts: counts,
+    counts: counts ?? this.counts,
     nextCursor: nextCursor,
     status: status,
     query: query,
