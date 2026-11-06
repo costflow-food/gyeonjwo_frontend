@@ -40,9 +40,6 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
         for (final entry in update.approvalByPurpose.entries)
           entry.key.code: entry.value,
       },
-      // No per-supplier allow list. The server ignores this field, but a
-      // server built before it became optional still requires the key.
-      "allowed_supplier_ids": const <String>[],
       "style": {"tone": update.tone.code, "signature": update.signature},
       // The server stores only FUTURE_DRAFTS for now.
       "apply_to": "FUTURE_DRAFTS",
