@@ -3,9 +3,10 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
+import "../../domain/server_status.dart";
 import "../server_status_view_model.dart";
 
-/// 검토 실행·메일 발송이 서버에서 막혀 있을 때만 보이는 안내 줄.
+/// 서버의 검토 실행이나 일부 기능(`/ready` degraded_features)이 막혀 있을 때만 보이는 안내 줄.
 class ServerStatusBanner extends ConsumerWidget {
   const ServerStatusBanner({super.key});
 
@@ -13,6 +14,7 @@ class ServerStatusBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(serverStatusViewModelProvider).asData?.value;
     if (status == null) return const SizedBox.shrink();
+    final limited = status.limitedFeatures;
     final notices = [
       if (status.showReviewBanner)
         const _Notice(
@@ -22,11 +24,18 @@ class ServerStatusBanner extends ConsumerWidget {
           color: accent,
           background: blush,
         ),
-      if (status.showMailSendingBanner)
-        const _Notice(
-          icon: Icons.unsubscribe_outlined,
-          title: "메일 발송 꺼짐",
-          body: "서버에서 메일 발송이 꺼져 있어 승인해도 실제 메일은 나가지 않아요.",
+      if (limited.isNotEmpty)
+        _Notice(
+          icon: Icons.info_outline,
+          title: "일부 기능 준비 안 됨",
+          body: [
+            "${limited.map((feature) => feature.label).join(", ")}.",
+            if (limited.contains(ServerFeature.reviewReply))
+              "회신이 연결된 업무는 '거래처 회신 확인 중'에서 더 진행되지 않아요.",
+            if (limited.contains(ServerFeature.rfqDispatch))
+              "승인하거나 자동 발송해도 메일이 바로 나가지 않아요.",
+            "준비되면 이 안내는 저절로 사라져요.",
+          ].join(" "),
           color: ink,
           background: line,
         ),

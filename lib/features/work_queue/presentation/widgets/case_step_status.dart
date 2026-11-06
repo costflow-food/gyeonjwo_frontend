@@ -7,6 +7,7 @@ import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
 import "../../../send_settings/presentation/send_settings_dialog.dart";
+import "../../../server_status/presentation/server_status_view_model.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
@@ -87,6 +88,11 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         draftsByStep ||
         (mayHaveDrafts &&
             (ref.watch(caseHasDraftsProvider(workCase.id)).value ?? false));
+    // X-15: a linked reply waits here while the server cannot review it.
+    final server = ref.watch(serverStatusViewModelProvider).asData?.value;
+    final replyReviewBlocked =
+        isReplyExtraction(workCase.processingStep, workCase.inputRevision) &&
+        (server?.replyReviewBlocked ?? false);
     final canResume = workCase.can(WorkCaseAction.resume);
     final resumeBlocked = workCase.disabledMessage(WorkCaseAction.resume);
     return Column(
@@ -124,6 +130,18 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                             : FontWeight.w700,
                       ),
                     ),
+                    if (replyReviewBlocked) ...[
+                      const SizedBox(height: 6),
+                      const Text(
+                        "서버의 회신 검토 기능이 아직 준비되지 않아 "
+                        "이 회신은 검토로 넘어가지 못하고 있어요.",
+                        style: TextStyle(
+                          fontSize: AppFontSizes.body,
+                          color: accent,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
                     if (reason != null) ...[
                       const SizedBox(height: 6),
                       Text(
