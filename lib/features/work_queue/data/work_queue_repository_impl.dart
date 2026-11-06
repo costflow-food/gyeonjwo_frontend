@@ -291,7 +291,18 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       status: WorkCaseStatus.fromCode(statusCode),
       statusCode: statusCode,
       processingStep: json["processing_step"] as String,
-      stepMessage: step?["message"] as String? ?? "",
+      // The server labels every EXTRACTING as the first extraction; after a
+      // linked reply (input_revision > 1) it is reading the reply instead.
+      stepMessage:
+          isReplyExtraction(
+            json["processing_step"] as String,
+            json["input_revision"] as int,
+          )
+          ? processingStepLabel(
+              json["processing_step"] as String,
+              inputRevision: json["input_revision"] as int,
+            )
+          : step?["message"] as String? ?? "",
       inputRevision: json["input_revision"] as int,
       attachmentCount: json["attachment_count"] as int? ?? 0,
       hold: _hold(json["hold"]),
