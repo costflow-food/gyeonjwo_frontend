@@ -279,6 +279,13 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
         )
       : null;
 
+  static ReplySummary? _replies(Object? json) => json is Map<String, dynamic>
+      ? ReplySummary(
+          requested: json["requested_supplier_count"] as int? ?? 0,
+          responded: json["responded_supplier_count"] as int? ?? 0,
+        )
+      : null;
+
   static WorkCase _case(Map<String, dynamic> json) {
     final statusCode = json["status"] as String;
     final step = json["step_detail"] as Map<String, dynamic>?;
@@ -308,6 +315,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       inputRevision: json["input_revision"] as int,
       attachmentCount: json["attachment_count"] as int? ?? 0,
       hold: _hold(json["hold"]),
+      replySummary: _replies(json["reply_summary"]),
       allowedActions: List.unmodifiable(
         (json["allowed_actions"] as List? ?? const []).cast<String>(),
       ),

@@ -73,6 +73,16 @@ class RequestRow extends StatelessWidget {
                         color: muted,
                       ),
                     ),
+                    if (data.replySummary case final replies?
+                        when replies.visible)
+                      Text(
+                        replies.shortLabel,
+                        semanticsLabel: replies.label,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.caption,
+                          color: muted,
+                        ),
+                      ),
                     if (data.attachmentCount > 0)
                       Row(
                         mainAxisSize: MainAxisSize.min,

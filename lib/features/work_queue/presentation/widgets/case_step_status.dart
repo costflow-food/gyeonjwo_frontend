@@ -124,6 +124,17 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                             : FontWeight.w700,
                       ),
                     ),
+                    if (workCase.replySummary case final replies?
+                        when replies.visible) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        replies.label,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.secondary,
+                          color: muted,
+                        ),
+                      ),
+                    ],
                     if (reason != null) ...[
                       const SizedBox(height: 6),
                       Text(

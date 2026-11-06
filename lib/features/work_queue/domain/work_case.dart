@@ -153,6 +153,26 @@ class CaseProgress {
   String? get stopCode => hold?.code ?? errorCode;
 }
 
+/// API-01 reply_summary. 메일 수가 아니라 이번 차수에 견적 요청을 보낸 업체 수와
+/// 그중 회신이 확인된 업체 수입니다.
+class ReplySummary {
+  const ReplySummary({required this.requested, required this.responded});
+
+  final int requested;
+  final int responded;
+
+  /// 견적 요청을 보낸 업체가 있을 때만 표시합니다.
+  bool get visible => requested > 0;
+
+  /// 예: "회신 2/8곳".
+  String get shortLabel => "회신 $responded/$requested곳";
+
+  /// 예: "견적 요청 8곳 중 2곳 회신 (25%)".
+  String get label =>
+      "견적 요청 $requested곳 중 $responded곳 회신 "
+      "(${(responded * 100 / requested).round()}%)";
+}
+
 class DisabledWorkCaseAction {
   const DisabledWorkCaseAction({
     required this.action,
@@ -182,6 +202,7 @@ class WorkCase {
     this.senderName,
     this.itemName,
     this.hold,
+    this.replySummary,
     this.allowedActions = const [],
     this.disabledActions = const [],
   });
@@ -210,6 +231,9 @@ class WorkCase {
 
   /// ON_HOLD일 때 서버가 정한 보류 사유.
   final HoldReason? hold;
+
+  /// 회신 현황. API-01에만 있고 API-02로 읽은 업무는 null입니다.
+  final ReplySummary? replySummary;
   final List<String> allowedActions;
   final List<DisabledWorkCaseAction> disabledActions;
 

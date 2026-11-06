@@ -139,6 +139,11 @@ const workQueuePreviewCases = [
     "step_detail": {"code": "REVIEW_READY", "message": "최신 검토 카드 준비됨"},
     "input_revision": 2,
     "attachment_count": 2,
+    "reply_summary": {
+      "requested_supplier_count": 3,
+      "responded_supplier_count": 2,
+      "reply_rate": "0.6666666666666666666666666667",
+    },
     "allowed_actions": ["VIEW_ORIGINAL"],
     "disabled_actions": [],
   },
