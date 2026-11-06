@@ -27,8 +27,6 @@ enum MailTone {
   );
 }
 
-enum ApplyTo { futureDrafts, specifiedDrafts }
-
 /// Effective approval for one purpose. null means not set (inherited or
 /// missing); false is an explicit OFF.
 class PurposeApproval {
@@ -51,40 +49,6 @@ class PurposeApproval {
   final int? sourceVersion;
 }
 
-class AllowedSupplier {
-  const AllowedSupplier({
-    required this.id,
-    required this.name,
-    required this.allowed,
-    this.email,
-  });
-
-  final String id;
-  final String name;
-  final String? email;
-  final bool allowed;
-}
-
-/// Existing draft that a save could also apply to.
-class PendingDraft {
-  const PendingDraft({
-    required this.draftId,
-    required this.purpose,
-    required this.supplierName,
-    required this.recipient,
-    required this.status,
-  });
-
-  final String draftId;
-  final DraftPurpose purpose;
-  final String supplierName;
-  final String recipient;
-  final DraftStatus status;
-
-  /// SENDING, SENT, and UNKNOWN drafts never change settings retroactively.
-  bool get selectable => status == DraftStatus.draft;
-}
-
 class SendSettings {
   const SendSettings({
     required this.mailboxRef,
@@ -92,10 +56,8 @@ class SendSettings {
     required this.settingsVersion,
     required this.approvals,
     required this.missingItems,
-    required this.suppliers,
     required this.tone,
     required this.signature,
-    required this.pendingDrafts,
     this.caseId,
   });
 
@@ -105,36 +67,30 @@ class SendSettings {
   final int settingsVersion;
   final List<PurposeApproval> approvals;
   final List<String> missingItems;
-  final List<AllowedSupplier> suppliers;
   final MailTone tone;
   final String signature;
-  final List<PendingDraft> pendingDrafts;
 
   bool get isCaseScope => caseId != null;
 }
 
-/// API-22 body.
+/// API-22 body. Auto-send is set per purpose only; who receives the mail
+/// comes from the case's candidate selection (API-12), not from these
+/// settings. Saves always apply to future drafts.
 class SendSettingsUpdate {
   const SendSettingsUpdate({
     required this.mailboxRef,
     required this.expectedSettingsVersion,
     required this.approvalByPurpose,
-    required this.allowedSupplierIds,
     required this.tone,
     required this.signature,
-    required this.applyTo,
-    required this.draftIds,
   });
 
   /// The mailbox_ref the loaded settings came with.
   final String mailboxRef;
   final int expectedSettingsVersion;
   final Map<DraftPurpose, bool?> approvalByPurpose;
-  final List<String> allowedSupplierIds;
   final MailTone tone;
   final String signature;
-  final ApplyTo applyTo;
-  final List<String> draftIds;
 }
 
 class SendSettingsFailure implements Exception {
@@ -151,9 +107,6 @@ class SendSettingsFailure implements Exception {
 
   /// Someone saved a newer version; reload before deciding again.
   bool get settingsChanged => code == "SETTINGS_CHANGED";
-
-  /// 422: the send scope is incomplete, e.g. approval OFF with no supplier.
-  bool get scopeRequired => code == "SEND_SCOPE_REQUIRED";
 
   @override
   String toString() => "SendSettingsFailure($code)";

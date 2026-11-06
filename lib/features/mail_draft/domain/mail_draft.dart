@@ -56,7 +56,7 @@ enum DraftDispatchState {
   blockedPolicy(
     "BLOCKED_POLICY",
     "정책상 차단",
-    "발송 설정의 허용 범위 밖이라 발송하지 않아요. 발송 설정을 확인해 주세요.",
+    "발송 설정이 끝나지 않았거나 받는 주소가 등록된 업체 주소와 달라 발송하지 않아요.",
   );
 
   const DraftDispatchState(this.code, this.label, this.message);
@@ -180,7 +180,7 @@ class MailDraft {
       "설정 → 메일 발송 설정을 완료해야 발송할 수 있어요.",
     DraftAction.approveSend when isStale => "업무 내용이 바뀌어 이 초안은 발송할 수 없어요.",
     DraftAction.approveSend when approvalRequired == false =>
-      "자동 발송이 켜져 있어 허용 범위 안에서 서버가 자동 발송해요.",
+      "자동 발송이 켜져 있어 서버가 검증한 뒤 자동 발송해요.",
     DraftAction.approveSend when settingsVersion == null =>
       "발송 설정 버전을 확인할 수 없어요. 다시 불러와 주세요.",
     DraftAction.reconcile when awaitingResult =>

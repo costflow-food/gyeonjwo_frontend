@@ -10,8 +10,6 @@ import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../mail_draft/domain/mail_draft.dart";
 import "../domain/send_settings.dart";
 import "send_settings_view_model.dart";
-import "widgets/allowed_supplier_list.dart";
-import "widgets/apply_scope_section.dart";
 import "widgets/mail_style_section.dart";
 import "widgets/purpose_approval_row.dart";
 import "widgets/send_settings_footer.dart";
@@ -52,10 +50,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
   String? _mailboxRef;
   int? _loadedVersion;
   Map<DraftPurpose, bool?> _approval = {};
-  Set<String> _allowed = {};
   MailTone _tone = MailTone.formal;
-  ApplyTo _applyTo = ApplyTo.futureDrafts;
-  Set<String> _draftIds = {};
   bool _dirty = false;
 
   bool _saving = false;
@@ -104,14 +99,8 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       for (final approval in settings.approvals)
         approval.purpose: approval.ownValue,
     };
-    _allowed = {
-      for (final supplier in settings.suppliers)
-        if (supplier.allowed) supplier.id,
-    };
     _tone = settings.tone;
     _signature.text = settings.signature;
-    _applyTo = ApplyTo.futureDrafts;
-    _draftIds = {};
     _dirty = false;
   }
 
@@ -119,11 +108,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     change();
     _dirty = true;
   });
-
-  /// Auto-send on somewhere in the values being saved.
-  bool _automatic(SendSettings settings) => settings.approvals.any(
-    (approval) => autoSendShown(approval, _approval[approval.purpose]),
-  );
 
   Future<void> _save() async {
     final version = _loadedVersion;
@@ -135,8 +119,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     if (_saving || version == null || mailboxRef == null || loaded == null) {
       return;
     }
-    // Decided before the request, from the values actually sent.
-    final missingSuppliers = _automatic(loaded) && _allowed.isEmpty;
     // The mailbox default stores the team default (auto-send off) for any
     // purpose still unset; a case keeps null so it inherits the mailbox.
     final approval = {
@@ -147,13 +129,8 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       mailboxRef: mailboxRef,
       expectedSettingsVersion: version,
       approvalByPurpose: Map.unmodifiable(approval),
-      allowedSupplierIds: List.unmodifiable(_allowed),
       tone: _tone,
       signature: _signature.text.trim(),
-      applyTo: _applyTo,
-      draftIds: _applyTo == ApplyTo.specifiedDrafts
-          ? List.unmodifiable(_draftIds)
-          : const [],
     );
     setState(() {
       _saving = true;
@@ -190,11 +167,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
             "저장 결과를 확인하지 못했습니다. 다시 저장하면 같은 요청으로 확인합니다.",
           SendSettingsFailure(settingsChanged: true) =>
             "다른 곳에서 설정이 바뀌어 최신 설정을 불러왔습니다. 확인한 뒤 다시 저장해 주세요.",
-          SendSettingsFailure(scopeRequired: true) when missingSuppliers =>
-            widget.caseId == null
-                ? "자동 발송은 허용 업체가 있어야 켤 수 있습니다. "
-                      "메일함 기본값은 꺼 두고, 업무별 설정에서 허용 업체를 고른 뒤 켜 주세요."
-                : "자동 발송을 켜려면 자동 발송 허용 업체를 한 곳 이상 선택해 주세요.",
           _ => failure.message,
         };
       });
@@ -338,13 +310,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       );
 
   Widget _body(SendSettings settings) {
-    final automatic = _automatic(settings);
-    final suppliers = AllowedSupplierList(
-      suppliers: settings.suppliers,
-      allowedIds: _allowed,
-      onToggle: (id, allowed) =>
-          _edit(() => allowed ? _allowed.add(id) : _allowed.remove(id)),
-    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -359,7 +324,8 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           "목적별 자동 발송",
           settings.isCaseScope
               ? "이 업무에만 적용됩니다. 바꾸지 않은 항목은 메일함 기본값을 따릅니다."
-              : "켜면 허용 범위 안에서 자동 발송하고, 끄면 담당자가 승인한 초안만 발송합니다. 기본값은 꺼짐입니다.",
+              : "켜면 후보 선택에서 고른 업체의 등록된 주소로 자동 발송하고, 끄면 담당자가 승인한 초안만 발송합니다. "
+                    "기본값은 꺼짐이며, 바꾼 설정은 앞으로 만드는 초안부터 적용됩니다.",
         ),
         const SizedBox(height: 14),
         for (final approval in settings.approvals)
@@ -371,34 +337,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
                 _edit(() => _approval[approval.purpose] = next),
           ),
         const SizedBox(height: 12),
-        // Which suppliers get a request depends on the item, so the mailbox
-        // default does not pick them; each case chooses its own recipients.
-        if (!settings.isCaseScope)
-          const SizedBox.shrink()
-        else if (automatic) ...[
-          SettingsSectionTitle(
-            '자동 발송 허용 업체 · ${_allowed.length}곳',
-            '선택한 업체의 등록된 수신자에게만 자동 발송합니다.',
-          ),
-          const SizedBox(height: 8),
-          suppliers,
-        ] else
-          ExpansionTile(
-            iconColor: ink,
-            collapsedIconColor: muted,
-            shape: const Border(),
-            collapsedShape: const Border(),
-            tilePadding: EdgeInsets.zero,
-            title: Text(
-              '자동 발송 허용 업체 · ${_allowed.length}곳',
-              style: const TextStyle(
-                fontSize: AppFontSizes.bodyLarge,
-                fontWeight: FontWeight.w700,
-                color: ink,
-              ),
-            ),
-            children: [suppliers],
-          ),
         ExpansionTile(
           iconColor: ink,
           collapsedIconColor: muted,
@@ -421,37 +359,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
               signature: _signature,
               onToneChanged: (tone) => _edit(() => _tone = tone),
               onSignatureChanged: (_) => _edit(() {}),
-            ),
-          ],
-        ),
-        ExpansionTile(
-          iconColor: ink,
-          collapsedIconColor: muted,
-          shape: const Border(),
-          collapsedShape: const Border(),
-          tilePadding: EdgeInsets.zero,
-          title: const Text(
-            '적용 대상',
-            style: TextStyle(
-              fontSize: AppFontSizes.bodyLarge,
-              fontWeight: FontWeight.w700,
-              color: ink,
-            ),
-          ),
-          subtitle: Text(
-            _applyTo == ApplyTo.futureDrafts
-                ? '앞으로 생성할 초안'
-                : '선택한 기존 초안 ${_draftIds.length}건에도 적용',
-          ),
-          children: [
-            ApplyScopeSection(
-              applyTo: _applyTo,
-              drafts: settings.pendingDrafts,
-              selectedDraftIds: _draftIds,
-              onApplyToChanged: (applyTo) => _edit(() => _applyTo = applyTo),
-              onToggleDraft: (id, selected) => _edit(
-                () => selected ? _draftIds.add(id) : _draftIds.remove(id),
-              ),
             ),
           ],
         ),

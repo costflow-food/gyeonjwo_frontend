@@ -25,7 +25,7 @@ class SendPolicyBanner extends StatelessWidget {
     final policy = switch (draft.approvalRequired) {
       _ when !draft.settingsConfigured => "발송 설정 필요",
       true => "자동 발송 꺼짐 · 승인한 초안만 발송됩니다",
-      false => "자동 발송 켜짐 · 설정 범위 안에서 검증 후 자동 발송됩니다",
+      false => "자동 발송 켜짐 · 서버가 검증한 뒤 자동 발송됩니다",
       null => "발송 설정 확인 중",
     };
     final dispatch = dispatchState;
