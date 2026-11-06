@@ -28,6 +28,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
     WorkCaseStatus? status,
     String query = "",
     String? cursor,
+    int? limit,
   }) => _guard(() async {
     final response = await _dataSource.fetchCases(
       status: status == null || status == WorkCaseStatus.other
@@ -35,6 +36,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
           : status.code,
       query: query,
       cursor: cursor,
+      limit: limit,
     );
     final data = response["data"] as Map<String, dynamic>;
     final counts = data["counts"] as Map<String, dynamic>;

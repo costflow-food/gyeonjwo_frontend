@@ -5,10 +5,12 @@ import "work_case.dart";
 
 abstract interface class WorkQueueRepository {
   /// API-01. 상태·검색을 바꾸면 cursor 없이 처음부터 조회합니다.
+  /// [limit]은 한 페이지 건수(서버 기본 25, 최대 100)입니다.
   Future<WorkQueuePage> getCases({
     WorkCaseStatus? status,
     String query = "",
     String? cursor,
+    int? limit,
   });
 
   /// API-25. 읽기 전용이며 추출을 시작하지 않습니다.

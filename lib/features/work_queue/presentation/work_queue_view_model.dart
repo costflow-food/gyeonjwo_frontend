@@ -10,6 +10,7 @@ import "../data/work_case_change_source.dart";
 import "../data/work_queue_repository_impl.dart";
 import "../domain/candidate.dart";
 import "../domain/work_case.dart";
+import "../domain/work_queue_repository.dart";
 import "../domain/work_queue_state.dart";
 
 part "work_queue_view_model.g.dart";
@@ -29,10 +30,17 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   Timer? _refreshTimer;
   Timer? _poll;
 
+  /// API-01 page size (server maximum) and how many pages one load reads.
+  /// Up to 1,000 cases arrive in one load, so the status tabs can filter
+  /// in memory; past that, "더 불러오기" reads the rest.
+  static const pageSize = 100;
+  static const maxPages = 10;
+
   /// More pages were loaded; a poll would drop them, so it waits.
   bool _extended = false;
 
-  /// 상태 탭(null은 전체)과 검색어. 서버(API-01 status·q)가 거릅니다.
+  /// 상태 탭(null은 전체)은 받아 둔 목록을 화면에서 거릅니다. 검색어는
+  /// 메일 제목까지 보는 서버(API-01 q)가 거릅니다.
   WorkCaseStatus? _status;
   String _query = "";
 
@@ -52,22 +60,52 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.listen(workCaseChangesProvider, (_, next) {
       if (next.hasValue) _refreshSoon();
     });
-    final page = await ref
-        .watch(workQueueRepositoryProvider)
-        .getCases(status: _status, query: _query);
+    final page = await _fetchAll(ref.watch(workQueueRepositoryProvider));
     _schedulePoll();
     return _fromPage(page);
   }
+
+  /// Every case for the search, all tabs, page after page up to [maxPages].
+  /// Counts come from the first page; the server counts the whole search.
+  Future<WorkQueuePage> _fetchAll(WorkQueueRepository repository) async {
+    final first = await repository.getCases(query: _query, limit: pageSize);
+    final items = [...first.items];
+    var cursor = first.nextCursor;
+    for (var pages = 1; cursor != null && pages < maxPages; pages++) {
+      final page = await repository.getCases(
+        query: _query,
+        cursor: cursor,
+        limit: pageSize,
+      );
+      items.addAll(page.items);
+      cursor = page.nextCursor;
+    }
+    return WorkQueuePage(
+      items: List.unmodifiable(items),
+      counts: first.counts,
+      nextCursor: cursor,
+    );
+  }
+
+  /// Tab counts from the cases in hand, so held and failed cases (Pending)
+  /// count under 진행 중 like the tab shows them. With cases still on the
+  /// server, the server's counts are the only complete ones.
+  static WorkQueueCounts _counts(
+    List<WorkCase> items,
+    String? nextCursor,
+    WorkQueueCounts server,
+  ) => nextCursor == null ? WorkQueueCounts.fromCases(items) : server;
 
   WorkQueueState _fromPage(WorkQueuePage page) {
     // A case accepted elsewhere disappears; drop a selection that no longer exists.
     if (!page.items.any((workCase) => workCase.id == _selectedId)) {
       _selectedId = null;
     }
-    if (_query.isEmpty) _allWaiting = page.counts.waiting;
+    final counts = _counts(page.items, page.nextCursor, page.counts);
+    if (_query.isEmpty) _allWaiting = counts.waiting;
     return WorkQueueState(
       items: page.items,
-      counts: page.counts,
+      counts: counts,
       nextCursor: page.nextCursor,
       status: _status,
       query: _query,
@@ -78,11 +116,14 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
 
   void refresh() => ref.invalidateSelf();
 
-  /// 상태 탭을 바꿉니다. null은 전체입니다.
+  /// 상태 탭을 바꿉니다. null은 전체입니다. 받아 둔 목록을 거를 뿐이라
+  /// 서버를 다시 부르지 않습니다.
   void setStatus(WorkCaseStatus? status) {
     if (status == _status) return;
     _status = status;
-    ref.invalidateSelf();
+    final current = state.value;
+    // While a load is still in flight it reads [_status] when it lands.
+    if (current != null) state = AsyncData(current.withStatus(status));
   }
 
   /// 제목·보낸 사람 검색. 화면에서 입력을 잠시 모은 뒤 부릅니다.
@@ -98,10 +139,11 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     _poll = Timer(pollInterval, _pollNow);
   }
 
-  /// Replaces the first page without a loading state, so the queue does not
-  /// flash. Uses the open status tab and search; a result for a filter the
-  /// user has since changed is dropped. Skipped while signed out or after
-  /// load more; a failure keeps what is shown and the next poll tries again.
+  /// Replaces the list without a loading state, so the queue does not
+  /// flash. Uses the open search and keeps the open tab; a result for a
+  /// search the user has since changed is dropped. Skipped while signed out
+  /// or after load more; a failure keeps what is shown and the next poll
+  /// tries again.
   Future<void> _pollNow() async {
     final signedIn =
         ref.read(authSessionViewModelProvider).asData?.value.isSignedIn ??
@@ -110,15 +152,11 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         ? state.requireValue
         : null;
     if (signedIn && current != null && !_extended && !current.loadingMore) {
-      final status = _status;
       final query = _query;
       try {
-        final page = await ref
-            .read(workQueueRepositoryProvider)
-            .getCases(status: status, query: query);
+        final page = await _fetchAll(ref.read(workQueueRepositoryProvider));
         if (!ref.mounted) return;
         if (!_extended &&
-            status == _status &&
             query == _query &&
             state.hasValue &&
             !state.isLoading) {
@@ -160,18 +198,28 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     try {
       final page = await ref
           .read(workQueueRepositoryProvider)
-          .getCases(status: _status, query: _query, cursor: cursor);
+          .getCases(query: _query, cursor: cursor, limit: pageSize);
       if (!ref.mounted) return;
+      final items = List<WorkCase>.unmodifiable([
+        ...current.items,
+        ...page.items,
+      ]);
+      final counts = _counts(items, page.nextCursor, page.counts);
+      if (_query.isEmpty) _allWaiting = counts.waiting;
+      // The tab may have changed while this page was loading.
       state = AsyncData(
-        current.withMore(
-          items: List.unmodifiable([...current.items, ...page.items]),
-          nextCursor: page.nextCursor,
-          loadingMore: false,
-        ),
+        current
+            .withStatus(_status)
+            .withMore(
+              items: items,
+              nextCursor: page.nextCursor,
+              loadingMore: false,
+              counts: counts,
+            ),
       );
     } catch (_) {
       // Keep what is shown; the user can press load more again.
-      if (ref.mounted) state = AsyncData(current);
+      if (ref.mounted) state = AsyncData(current.withStatus(_status));
     }
   }
 
