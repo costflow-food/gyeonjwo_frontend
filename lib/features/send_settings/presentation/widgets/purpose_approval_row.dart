@@ -36,6 +36,9 @@ class PurposeApprovalRow extends StatelessWidget {
     final state = autoSend ? "자동 발송 켜짐" : "자동 발송 꺼짐";
     final note = value != null && value != approval.ownValue
         ? "저장 후 $state"
+        : value == null && approval.effectiveValue == null
+        // Nothing to inherit: saving fills the team default (S4-14).
+        ? "미설정 · 저장하면 자동 발송 꺼짐으로 정해져요"
         : value == null
         ? caseScope
               ? "메일함 기본값 따름 · $state"

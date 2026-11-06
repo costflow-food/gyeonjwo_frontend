@@ -119,11 +119,15 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     if (_saving || version == null || mailboxRef == null || loaded == null) {
       return;
     }
-    // The mailbox default stores the team default (auto-send off) for any
-    // purpose still unset; a case keeps null so it inherits the mailbox.
+    // A purpose left untouched stores the team default (auto-send off) when
+    // nothing would be inherited: always at the mailbox, and at a case when
+    // the mailbox has no value either. Otherwise a case keeps null so it
+    // inherits the mailbox (S4-14: saving null there kept it unconfigured).
     final approval = {
       for (final entry in _approval.entries)
-        entry.key: widget.caseId == null ? entry.value ?? true : entry.value,
+        entry.key:
+            entry.value ??
+            (widget.caseId == null || _unset(loaded, entry.key) ? true : null),
     };
     final update = SendSettingsUpdate(
       mailboxRef: mailboxRef,
@@ -178,6 +182,26 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       });
     }
   }
+
+  /// Nothing set at this scope or inherited for [purpose].
+  static bool _unset(SendSettings settings, DraftPurpose purpose) =>
+      settings.approvals.any(
+        (a) =>
+            a.purpose == purpose &&
+            a.ownValue == null &&
+            a.effectiveValue == null,
+      );
+
+  /// A save changes something: an edit, or a default filled for an unset
+  /// purpose. An unchanged save would still bump the settings version and
+  /// send approved drafts back to approval (S4-14), so it is not offered.
+  bool _canSave(SendSettings settings) =>
+      _dirty ||
+      settings.approvals.any(
+        (approval) =>
+            _approval[approval.purpose] == null &&
+            approval.effectiveValue == null,
+      );
 
   /// Embedded: drop unsaved edits and show the saved values again.
   void _discard() {
@@ -240,7 +264,9 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       error: _error,
       saving: _saving,
       onCancel: widget.embedded ? _discard : _close,
-      onSave: settings == null || _loadedVersion == null ? null : _save,
+      onSave: settings == null || _loadedVersion == null || !_canSave(settings)
+          ? null
+          : _save,
     );
     if (widget.embedded) {
       return Column(
