@@ -152,10 +152,10 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
 
   @override
   Future<void> resume(WorkCase workCase) {
-    // This release accepts only RESUME_HOLD; the server rejects other reasons.
+    // The reason follows the step: hold, failure, or a finished review.
     final body = <String, Object?>{
       "expected_revision": workCase.inputRevision,
-      "reason": "RESUME_HOLD",
+      "reason": workCase.resumeReason.code,
     };
     return _keys.run(
       "resume:${workCase.id}",
