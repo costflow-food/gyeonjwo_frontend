@@ -6,6 +6,7 @@ import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
+import "../../../send_settings/presentation/send_settings_dialog.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
@@ -131,20 +132,35 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
             ],
           ),
         ),
-        if (hasDrafts) ...[
+        if (hasDrafts || workCase.atCandidates) ...[
           const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: SizedBox(
-              height: 44,
-              child: OutlinedButton.icon(
-                onPressed: () =>
-                    showMailDraftDialog(context, caseId: workCase.id),
-                style: WorkspaceButtonStyles.outlined,
-                icon: const Icon(Icons.mail_outline, size: 16),
-                label: const Text("메일 초안 보기"),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (hasDrafts)
+                SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        showMailDraftDialog(context, caseId: workCase.id),
+                    style: WorkspaceButtonStyles.outlined,
+                    icon: const Icon(Icons.mail_outline, size: 16),
+                    label: const Text("메일 초안 보기"),
+                  ),
+                ),
+              // AC-23: this case's own values override the mailbox default.
+              SizedBox(
+                height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      showSendSettingsDialog(context, caseId: workCase.id),
+                  style: WorkspaceButtonStyles.outlined,
+                  icon: const Icon(Icons.tune, size: 16),
+                  label: const Text("이 업무 발송 설정"),
+                ),
               ),
-            ),
+            ],
           ),
         ],
         if (canResume || resumeBlocked != null) ...[

@@ -7,6 +7,7 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
+import "../../../send_settings/presentation/send_settings_dialog.dart";
 import "../../domain/candidate.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
@@ -211,28 +212,46 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 }),
               ),
             const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: selected.isEmpty || _busy || !canSelect
-                    ? null
-                    : () => _submit(set),
-                style: WorkspaceButtonStyles.filled,
-                icon: _busy
-                    ? const SizedBox.square(
-                        dimension: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                // AC-23: auto-send for these drafts follows the settings at
+                // selection time, so set this case's own values first.
+                TextButton.icon(
+                  onPressed: _busy
+                      ? null
+                      : () => showSendSettingsDialog(
+                          context,
+                          caseId: widget.workCase.id,
                         ),
-                      )
-                    : const Icon(Icons.send_outlined, size: 16),
-                label: Text(
-                  selected.isEmpty
-                      ? "업체를 골라 주세요"
-                      : "선택한 ${selected.length}곳에 견적 요청",
+                  style: WorkspaceButtonStyles.text,
+                  icon: const Icon(Icons.tune, size: 16),
+                  label: const Text("이 업무 발송 설정"),
                 ),
-              ),
+                FilledButton.icon(
+                  onPressed: selected.isEmpty || _busy || !canSelect
+                      ? null
+                      : () => _submit(set),
+                  style: WorkspaceButtonStyles.filled,
+                  icon: _busy
+                      ? const SizedBox.square(
+                          dimension: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.send_outlined, size: 16),
+                  label: Text(
+                    selected.isEmpty
+                        ? "업체를 골라 주세요"
+                        : "선택한 ${selected.length}곳에 견적 요청",
+                  ),
+                ),
+              ],
             ),
             // Already chosen: the drafts carry on in SCR-007.
             if (!canSelect && set.selectedSupplierIds.isNotEmpty) ...[
