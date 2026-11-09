@@ -22,7 +22,7 @@ class DraftStatusBadge extends StatelessWidget {
         const Color(0xFFE7F5E1),
         Icons.check,
       ),
-      DraftStatus.failed => (accent, blush, Icons.error_outline),
+      DraftStatus.failed => (danger, dangerTint, Icons.error_outline),
       DraftStatus.unknown => (
         const Color(0xFFBC793C),
         const Color(0xFFFFF2E2),

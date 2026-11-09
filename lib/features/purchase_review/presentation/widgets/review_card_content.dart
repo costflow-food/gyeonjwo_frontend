@@ -3,7 +3,6 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../../shared/formatters.dart";
-import "../../../../shared/widgets/outline_panel.dart";
 import "../../../../shared/widgets/preview_button.dart";
 import "../../../../shared/widgets/responsive_columns.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
@@ -12,7 +11,7 @@ import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../domain/purchase_review.dart";
 import "../purchase_review_view_model.dart";
 import "counter_offer_panel.dart";
-import "plan_card.dart";
+import "plan_board.dart";
 import "quote_card.dart";
 import "review_format.dart";
 
@@ -95,19 +94,9 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
     final card = _card;
     final textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
     final quotes = widget.review.sourceQuotes;
-    return Column(
+    final main = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          "PURCHASE REVIEW",
-          style: TextStyle(
-            color: accent,
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.1,
-          ),
-        ),
-        const SizedBox(height: 10),
         Wrap(
           alignment: WrapAlignment.spaceBetween,
           crossAxisAlignment: WrapCrossAlignment.end,
@@ -117,22 +106,22 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "검토 카드",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -1.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Text(
                   [
                     "검토 ${card.reviewRevision}회차",
                     if (card.createdAt != null)
                       "${formatSeoulDateTime(card.createdAt!)} 저장",
                   ].join(" · "),
-                  style: const TextStyle(fontSize: 12, color: muted),
+                  style: const TextStyle(fontSize: 13, color: muted),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  "검토 카드",
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.5,
+                  ),
                 ),
               ],
             ),
@@ -142,12 +131,10 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
               children: [
                 PreviewButton(
                   "업무로 돌아가기",
-                  icon: Icons.arrow_back,
                   onPressed: () => context.go("/cases/${card.caseId}"),
                 ),
                 PreviewButton(
                   "메일 초안",
-                  icon: Icons.drafts_outlined,
                   onPressed: () =>
                       showMailDraftDialog(context, caseId: card.caseId),
                 ),
@@ -164,20 +151,20 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
           ),
           const SizedBox(height: 12),
         ],
-        _Notice(
-          icon: card.outcome.ready
-              ? Icons.check_circle_outline
-              : Icons.pause_circle_outline,
-          text: card.outcome.message,
-          strong: !card.outcome.ready,
-          details: card.unresolved,
-        ),
-        if (card.decision != null) ...[
+        if (!card.outcome.ready || card.unresolved.isNotEmpty) ...[
+          _Notice(
+            icon: Icons.pause_circle_outline,
+            text: card.outcome.message,
+            strong: !card.outcome.ready,
+            details: card.unresolved,
+          ),
           const SizedBox(height: 12),
+        ],
+        if (card.decision != null) ...[
           _Notice(icon: Icons.task_alt, text: _decisionText(card)),
+          const SizedBox(height: 12),
         ],
         if (_error != null) ...[
-          const SizedBox(height: 12),
           Semantics(
             liveRegion: true,
             child: _Notice(
@@ -186,92 +173,79 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
               strong: true,
             ),
           ),
+          const SizedBox(height: 12),
         ],
-        const SizedBox(height: 28),
-        const _Heading("구매안"),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         if (card.plans.isEmpty)
           const Text(
             "보여 줄 구매안이 없어요.",
-            style: TextStyle(fontSize: 12, color: muted),
+            style: TextStyle(fontSize: 13, color: muted),
           )
         else
-          ResponsiveColumns(
-            minItemWidth: 280 * textScale,
-            children: [
-              for (final (index, plan) in card.plans.indexed)
-                PlanCard(
-                  key: ValueKey("plan-${plan.planId ?? index}"),
-                  plan: plan,
-                  card: card,
-                  busy: _busy,
-                  onSelect: () => _run((viewModel) => viewModel.selectPlan(plan)),
-                ),
-            ],
+          PlanBoard(
+            card: card,
+            busy: _busy,
+            onSelect: (plan) => _run((viewModel) => viewModel.selectPlan(plan)),
           ),
-        if (card.counterOffer != null) ...[
-          const SizedBox(height: 28),
-          const _Heading("역제안"),
-          const SizedBox(height: 12),
-          CounterOfferPanel(offer: card.counterOffer!),
+      ],
+    );
+    final side = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_RaiseCard.from(card, widget.review.quotes) case final raise?) ...[
+          raise,
+          const SizedBox(height: 16),
         ],
-        if (card.questions.isNotEmpty) ...[
-          const SizedBox(height: 28),
-          const _Heading("확인할 항목"),
-          const SizedBox(height: 12),
-          for (final question in card.questions)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: OutlinePanel(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "${question.supplierName} · ${question.fieldLabel}",
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(question.reason, style: const TextStyle(fontSize: 12)),
-                    if (question.formula != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        question.formula!,
-                        style: const TextStyle(fontSize: 11, color: muted),
-                      ),
-                    ] else if (question.breakEvenAmount != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        "역전 기준 ${won(question.breakEvenAmount)}",
-                        style: const TextStyle(fontSize: 11, color: muted),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-        ],
-        const SizedBox(height: 28),
+        _SidePanel(
+          card: card,
+          busy: _busy,
+          onHold: _hold,
+          onConfirm: _confirm,
+          onMailDraft: () => showMailDraftDialog(context, caseId: card.caseId),
+        ),
+      ],
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final sideWidth = 320 * textScale;
+            if (constraints.maxWidth < 640 * textScale + sideWidth) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [main, const SizedBox(height: 24), side],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: main),
+                const SizedBox(width: 20),
+                SizedBox(width: sideWidth, child: side),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 32),
         const _Heading("견적과 근거"),
         const SizedBox(height: 12),
         if (quotes.isEmpty)
           const Text(
             "이 카드에 연결된 견적이 없어요.",
-            style: TextStyle(fontSize: 12, color: muted),
+            style: TextStyle(fontSize: 13, color: muted),
           )
         else
           ResponsiveColumns(
             minItemWidth: 280 * textScale,
             children: [
               for (final quote in quotes)
-                QuoteCard(key: ValueKey("quote-${quote.quoteId}"), quote: quote),
+                QuoteCard(
+                  key: ValueKey("quote-${quote.quoteId}"),
+                  quote: quote,
+                ),
             ],
           ),
-        const SizedBox(height: 28),
-        _Actions(card: card, busy: _busy, onHold: _hold, onConfirm: _confirm),
         const SizedBox(height: 16),
       ],
     );
@@ -294,18 +268,107 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
   }
 }
 
-/// 보류·확인. 서버가 허용한 동작만 누를 수 있고, 막힌 동작은 이유를 보여 줍니다.
-class _Actions extends StatelessWidget {
-  const _Actions({
+/// 인상 요청: 역제안 대상 업체가 올린 단가(인상 전 → 요청).
+class _RaiseCard extends StatelessWidget {
+  const _RaiseCard({
+    required this.supplierName,
+    required this.previous,
+    required this.requested,
+    required this.unit,
+    required this.effectiveFrom,
+  });
+
+  final String supplierName;
+  final String previous, requested;
+  final String? unit, effectiveFrom;
+
+  static _RaiseCard? from(ReviewCard card, List<QuoteVersion> quotes) {
+    final offer = card.counterOffer;
+    final reference = offer?.reference;
+    final target = offer?.target;
+    if (target == null ||
+        reference?.previousUnitPrice == null ||
+        reference?.requestedUnitPrice == null) {
+      return null;
+    }
+    final quote = quotes
+        .where((quote) => quote.supplierId == target.supplierId)
+        .firstOrNull;
+    return _RaiseCard(
+      supplierName: target.supplierName,
+      previous: reference!.previousUnitPrice!,
+      requested: reference.requestedUnitPrice!,
+      unit: reference.unit,
+      effectiveFrom: quote?.effectiveFrom,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(16),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [accent, ink],
+      ),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x2E1E3932),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+    ),
+    child: DefaultTextStyle.merge(
+      style: const TextStyle(color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "$supplierName 인상 요청",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "${decimal(previous)}\n→ ${decimal(requested)}",
+            style: const TextStyle(
+              fontSize: 52,
+              fontWeight: FontWeight.w600,
+              height: 1.05,
+              letterSpacing: -.5,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            [
+              "원${unit == null ? "" : "/$unit"}",
+              if (effectiveFrom != null)
+                "${effectiveFrom!.replaceAll("-", ".")}부터",
+            ].join(" · "),
+            style: const TextStyle(fontSize: 14, color: onDeepMuted),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// 역제안 · 확인할 항목 · 보류/확인하고 보관.
+class _SidePanel extends StatelessWidget {
+  const _SidePanel({
     required this.card,
     required this.busy,
     required this.onHold,
     required this.onConfirm,
+    required this.onMailDraft,
   });
 
   final ReviewCard card;
   final bool busy;
-  final VoidCallback onHold, onConfirm;
+  final VoidCallback onHold, onConfirm, onMailDraft;
 
   @override
   Widget build(BuildContext context) {
@@ -313,40 +376,135 @@ class _Actions extends StatelessWidget {
     final confirmBlocked = card.disabledMessage(ReviewAction.confirmReview);
     final canHold = card.can(ReviewAction.hold);
     final canConfirm = card.can(ReviewAction.confirmReview);
-    if (!canHold && !canConfirm && holdBlocked == null && confirmBlocked == null) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          alignment: WrapAlignment.end,
-          children: [
-            if (canHold || holdBlocked != null)
-              OutlinedButton(
-                style: WorkspaceButtonStyles.outlined,
-                onPressed: canHold && !busy ? onHold : null,
-                child: const Text("검토 보류"),
+    final showActions =
+        canHold || canConfirm || holdBlocked != null || confirmBlocked != null;
+    final offer = card.counterOffer;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x141E3932),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (offer != null) ...[
+            CounterOfferPanel(offer: offer, onMailDraft: onMailDraft),
+            const SizedBox(height: 24),
+          ],
+          if (card.questions.isNotEmpty) ...[
+            Row(
+              children: [
+                const _Heading("확인할 항목"),
+                const SizedBox(width: 8),
+                Container(
+                  constraints: const BoxConstraints(minWidth: 22),
+                  height: 22,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    "${card.questions.length}",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            for (final question in card.questions)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: line),
+                    bottom: BorderSide(color: line),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "${question.supplierName} ${question.fieldLabel}",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (question.breakEvenAmount != null)
+                          Text(
+                            "역전 기준 ${won(question.breakEvenAmount)}",
+                            style: const TextStyle(fontSize: 13, color: muted),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      question.reason,
+                      style: const TextStyle(fontSize: 13, color: muted),
+                    ),
+                  ],
+                ),
               ),
-            if (canConfirm || confirmBlocked != null)
-              FilledButton(
-                style: WorkspaceButtonStyles.filled,
-                onPressed: canConfirm && !busy ? onConfirm : null,
-                child: const Text("검토 확인"),
+            const SizedBox(height: 24),
+          ],
+          if (showActions) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: WorkspaceButtonStyles.outlined.copyWith(
+                      minimumSize: const WidgetStatePropertyAll(
+                        Size.fromHeight(48),
+                      ),
+                    ),
+                    onPressed: canHold && !busy ? onHold : null,
+                    child: const Text("보류"),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    style: WorkspaceButtonStyles.filled.copyWith(
+                      minimumSize: const WidgetStatePropertyAll(
+                        Size.fromHeight(48),
+                      ),
+                    ),
+                    onPressed: canConfirm && !busy ? onConfirm : null,
+                    child: const Text("확인하고 보관"),
+                  ),
+                ),
+              ],
+            ),
+            for (final message in [?holdBlocked, ?confirmBlocked])
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  message,
+                  style: const TextStyle(fontSize: 12, color: muted),
+                ),
               ),
           ],
-        ),
-        for (final message in [?holdBlocked, ?confirmBlocked])
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              message,
-              style: const TextStyle(fontSize: 11, color: muted),
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -392,7 +550,9 @@ class _HoldDialogState extends State<_HoldDialog> {
         ),
         FilledButton(
           style: WorkspaceButtonStyles.filled,
-          onPressed: note.isEmpty ? null : () => Navigator.of(context).pop(note),
+          onPressed: note.isEmpty
+              ? null
+              : () => Navigator.of(context).pop(note),
           child: const Text("보류"),
         ),
       ],
@@ -408,11 +568,7 @@ class _Heading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     text,
-    style: const TextStyle(
-      fontSize: 19,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.5,
-    ),
+    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
   );
 }
 
@@ -433,13 +589,13 @@ class _Notice extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: strong ? blush : const Color(0xFFF7F8FA),
-      borderRadius: BorderRadius.circular(8),
+      color: strong ? dangerTint : blush,
+      borderRadius: BorderRadius.circular(16),
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: strong ? accent : ink),
+        Icon(icon, size: 16, color: strong ? danger : ink),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -450,7 +606,7 @@ class _Notice extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: strong ? accent : ink,
+                  color: strong ? danger : ink,
                 ),
               ),
               for (final detail in details)

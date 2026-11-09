@@ -74,7 +74,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                       icon: const Icon(
                         Icons.error_outline,
                         size: 15,
-                        color: accent,
+                        color: danger,
                       ),
                       label: const Text(
                         "조회 실패 · 다시 시도",

@@ -268,7 +268,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 textAlign: TextAlign.right,
                 style: const TextStyle(
                   fontSize: AppFontSizes.body,
-                  color: accent,
+                  color: danger,
                 ),
               ),
             ],

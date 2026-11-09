@@ -21,8 +21,8 @@ class ServerStatusBanner extends ConsumerWidget {
           icon: Icons.warning_amber_rounded,
           title: "검토 실행 준비 안 됨",
           body: "서버의 검토 기능이 아직 준비되지 않아 지금은 검토를 시작할 수 없어요. 준비되면 이 안내는 저절로 사라져요.",
-          color: accent,
-          background: blush,
+          color: danger,
+          background: dangerTint,
         ),
       if (limited.isNotEmpty)
         _Notice(

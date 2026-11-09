@@ -61,7 +61,7 @@ class _Unavailable extends StatelessWidget {
             Icon(
               notReady ? Icons.hourglass_empty : Icons.error_outline,
               size: 28,
-              color: notReady ? muted : accent,
+              color: notReady ? muted : danger,
             ),
             const SizedBox(height: 12),
             Text(

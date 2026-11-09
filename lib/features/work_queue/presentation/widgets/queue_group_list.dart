@@ -73,7 +73,10 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [filters, Expanded(child: list)],
+      children: [
+        filters,
+        Expanded(child: list),
+      ],
     );
   }
 
@@ -249,14 +252,16 @@ class _QueueFilters extends StatelessWidget {
             ),
             prefixIcon: const Icon(Icons.search, size: 18, color: muted),
             prefixIconConstraints: const BoxConstraints(minWidth: 36),
-            contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            filled: true,
+            fillColor: Colors.white,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(7),
-              borderSide: const BorderSide(color: line),
+              borderRadius: BorderRadius.circular(22),
+              borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(7),
-              borderSide: const BorderSide(color: line),
+              borderRadius: BorderRadius.circular(22),
+              borderSide: BorderSide.none,
             ),
           ),
         ),
@@ -279,15 +284,18 @@ class _QueueFilters extends StatelessWidget {
                   fontWeight: option == status
                       ? FontWeight.w700
                       : FontWeight.w500,
-                  color: option == status ? accent : muted,
+                  color: option == status ? Colors.white : ink,
                 ),
                 selected: option == status,
                 showCheckmark: false,
                 visualDensity: VisualDensity.compact,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                selectedColor: blush,
+                selectedColor: accent,
                 backgroundColor: Colors.transparent,
-                side: BorderSide(color: option == status ? blush : line),
+                shape: const StadiumBorder(),
+                side: BorderSide(
+                  color: option == status ? accent : const Color(0x471E3932),
+                ),
                 onSelected: (_) => onStatus(option),
               ),
           ],

@@ -258,7 +258,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               _error!,
               style: const TextStyle(
                 fontSize: AppFontSizes.body,
-                color: accent,
+                color: danger,
               ),
             ),
           ],

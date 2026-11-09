@@ -17,7 +17,7 @@ class LogOutcomeBadge extends StatelessWidget {
         const Color(0xFFE7F5E1),
         Icons.check,
       ),
-      LogOutcome.failure => (accent, blush, Icons.error_outline),
+      LogOutcome.failure => (danger, dangerTint, Icons.error_outline),
       LogOutcome.waiting => (
         const Color(0xFFBC793C),
         const Color(0xFFFFF2E2),

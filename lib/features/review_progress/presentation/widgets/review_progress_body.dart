@@ -40,7 +40,7 @@ class ReviewProgressBody extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: outcome.stopped ? accent : ink,
+                      color: outcome.stopped ? danger : ink,
                     ),
                   ),
                   if (detail != null) ...[
@@ -125,7 +125,7 @@ class ReviewProgressError extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: accent,
+                color: danger,
               ),
             ),
             const SizedBox(height: 6),
@@ -193,7 +193,7 @@ class _StageRow extends StatelessWidget {
             StageState.stopped => const Icon(
               Icons.pause_circle_outline,
               size: 20,
-              color: accent,
+              color: danger,
             ),
             StageState.waiting => const Icon(
               Icons.radio_button_unchecked,

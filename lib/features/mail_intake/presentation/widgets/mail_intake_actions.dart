@@ -35,14 +35,14 @@ class MailIntakeActions extends StatelessWidget {
               liveRegion: true,
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, size: 16, color: accent),
+                  const Icon(Icons.error_outline, size: 16, color: danger),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       error!,
                       style: const TextStyle(
                         fontSize: AppFontSizes.body,
-                        color: accent,
+                        color: danger,
                       ),
                     ),
                   ),

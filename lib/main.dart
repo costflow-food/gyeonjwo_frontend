@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:google_fonts/google_fonts.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 
 import "app/app_config.dart";
@@ -10,16 +11,30 @@ import "features/auth/data/auth_session_data_source.dart";
 import "features/auth/data/provider_token_free_local_storage.dart";
 import "features/auth/presentation/auth_session_view_model.dart";
 import "features/auth/presentation/gmail_connection_view_model.dart";
+import "shared/workspace_colors.dart";
 
-final appTheme = ThemeData(
-  colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFED2635)),
-  scaffoldBackgroundColor: const Color(0xFFFCFCFD),
-  useMaterial3: true,
-  textTheme: ThemeData.light().textTheme.apply(
-    bodyColor: const Color(0xFF191A1B),
-    displayColor: const Color(0xFF191A1B),
-  ),
-);
+final appTheme = _buildTheme();
+
+ThemeData _buildTheme() {
+  final base = ThemeData(
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: accent,
+      primary: accent,
+      error: danger,
+      surface: Colors.white,
+    ),
+    scaffoldBackgroundColor: canvas,
+    useMaterial3: true,
+    // IBM Plex Sans KR for Hangul, Latin and numbers alike.
+    fontFamily: GoogleFonts.ibmPlexSansKr().fontFamily,
+  );
+  return base.copyWith(
+    textTheme: GoogleFonts.ibmPlexSansKrTextTheme(base.textTheme)
+        .apply(bodyColor: ink, displayColor: ink),
+    dividerColor: line,
+    progressIndicatorTheme: const ProgressIndicatorThemeData(color: accent),
+  );
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
