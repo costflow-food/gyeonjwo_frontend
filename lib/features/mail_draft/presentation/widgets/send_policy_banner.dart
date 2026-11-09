@@ -31,8 +31,9 @@ class SendPolicyBanner extends StatelessWidget {
     final needsSettings =
         draft.status == DraftStatus.draft &&
         !draft.awaitingResult &&
-        !draft.settingsConfigured;
+        draft.needsSettings;
     final policy = switch (draft.approvalRequired) {
+      _ when draft.recipientNotRegistered => "등록 업체 주소 불일치",
       _ when !draft.settingsConfigured => "발송 설정 필요",
       true => "자동 발송 꺼짐 · 승인한 초안만 발송됩니다",
       false => "자동 발송 켜짐 · 서버가 검증한 뒤 자동 발송됩니다",
@@ -40,6 +41,11 @@ class SendPolicyBanner extends StatelessWidget {
     };
     final dispatch = dispatchState;
     final (icon, color, message) = switch (draft.status) {
+      DraftStatus.draft when draft.recipientNotRegistered => (
+        Icons.warning_amber_rounded,
+        const Color(0xFFBC793C),
+        "받는 주소가 등록된 업체 주소와 달라 발송할 수 없습니다. 거래처 연락처를 확인해 주세요.",
+      ),
       DraftStatus.draft when !draft.settingsConfigured => (
         Icons.warning_amber_rounded,
         const Color(0xFFBC793C),
@@ -75,6 +81,11 @@ class SendPolicyBanner extends StatelessWidget {
         Icons.info_outline,
         muted,
         "저장하면 새 초안이 됩니다. 이전 승인은 이어지지 않습니다.",
+      ),
+      DraftStatus.draft when draft.manualApprovalUnderAutoSend => (
+        Icons.warning_amber_rounded,
+        const Color(0xFFBC793C),
+        "이 초안은 자동 발송 대상이 아니에요. 내용을 확인한 뒤 승인 후 발송을 눌러 주세요.",
       ),
       DraftStatus.draft => (
         Icons.info_outline,

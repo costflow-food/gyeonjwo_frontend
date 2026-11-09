@@ -47,6 +47,12 @@ abstract final class DraftAction {
   static const withdraw = "WITHDRAW_DRAFT";
 }
 
+/// API-16·17 approval_block_reason.
+abstract final class DraftBlockReason {
+  static const settingsRequired = "SEND_SETTINGS_REQUIRED";
+  static const recipientNotRegistered = "RECIPIENT_NOT_REGISTERED";
+}
+
 /// API-12 drafts[].dispatch_state: what happened to each selected supplier.
 enum DraftDispatchState {
   waitingApproval("WAITING_APPROVAL", "승인 대기", "승인 후 발송을 눌러야 발송돼요."),
@@ -96,6 +102,9 @@ class MailDraft {
     required this.settingsConfigured,
     this.approvalRequired,
     this.settingsVersion,
+    this.approvalAvailable,
+    this.autoPolicyEligible,
+    this.blockReason,
     this.isStale = false,
     this.supplierName,
     this.replacesId,
@@ -121,6 +130,26 @@ class MailDraft {
 
   /// Opaque version from the server; sent back unchanged on approval.
   final String? settingsVersion;
+
+  /// KAN-167 S4-4 (API-16·17). Null on servers that do not send it yet.
+  /// With approval OFF, a draft the server will not auto-send (chosen before
+  /// the settings were saved, or a caution supplier) still needs approval.
+  final bool? approvalAvailable;
+  final bool? autoPolicyEligible;
+
+  /// SEND_SETTINGS_REQUIRED or RECIPIENT_NOT_REGISTERED when sending is blocked.
+  final String? blockReason;
+
+  bool get needsSettings =>
+      blockReason == DraftBlockReason.settingsRequired ||
+      (blockReason == null && !settingsConfigured);
+
+  bool get recipientNotRegistered =>
+      blockReason == DraftBlockReason.recipientNotRegistered;
+
+  /// Approval OFF, yet this draft waits for a manual approval.
+  bool get manualApprovalUnderAutoSend =>
+      approvalRequired == false && approvalAvailable == true;
 
   /// The case input changed after this draft was written.
   final bool isStale;
@@ -153,6 +182,9 @@ class MailDraft {
     settingsConfigured: settingsConfigured,
     approvalRequired: approvalRequired,
     settingsVersion: settingsVersion,
+    approvalAvailable: approvalAvailable,
+    autoPolicyEligible: autoPolicyEligible,
+    blockReason: blockReason,
     isStale: isStale,
     supplierName: supplierName ?? this.supplierName,
     replacesId: replacesId,
@@ -165,7 +197,9 @@ class MailDraft {
     DraftAction.approveSend =>
       status == DraftStatus.draft &&
           settingsConfigured &&
-          approvalRequired == true &&
+          // The server decides when it sends approval_available; older
+          // servers only allow approval with the setting ON.
+          (approvalAvailable ?? approvalRequired == true) &&
           settingsVersion != null &&
           !isStale &&
           !awaitingResult,
@@ -180,10 +214,13 @@ class MailDraft {
     DraftAction.approveSend when status != DraftStatus.draft => null,
     DraftAction.approveSend when awaitingResult =>
       "발송 요청을 접수했어요. 결과를 확인하고 있어요.",
+    DraftAction.approveSend when recipientNotRegistered =>
+      "받는 주소가 등록된 업체 주소와 달라 발송할 수 없어요.",
     DraftAction.approveSend when !settingsConfigured =>
       "설정 → 메일 발송 설정을 완료해야 발송할 수 있어요.",
     DraftAction.approveSend when isStale => "업무 내용이 바뀌어 이 초안은 발송할 수 없어요.",
-    DraftAction.approveSend when approvalRequired == false =>
+    DraftAction.approveSend
+        when approvalRequired == false && approvalAvailable != true =>
       "자동 발송이 켜져 있어 서버가 검증한 뒤 자동 발송해요.",
     DraftAction.approveSend when settingsVersion == null =>
       "발송 설정 버전을 확인할 수 없어요. 다시 불러와 주세요.",
