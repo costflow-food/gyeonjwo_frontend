@@ -207,7 +207,12 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
   }
 
   /// The mailbox default (설정 → 메일 발송 설정). A save reloads the drafts.
-  Future<void> _openSettings() => showSendSettingsDialog(context);
+  Future<void> _openSettings() async {
+    final saved = await showSendSettingsDialog(context);
+    if (saved == true && mounted) {
+      ref.read(mailDraftViewModelProvider(widget.caseId).notifier).refresh();
+    }
+  }
 
   Future<void> _close() async {
     if (_busy) return;
