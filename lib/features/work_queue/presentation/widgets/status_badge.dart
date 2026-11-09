@@ -17,26 +17,26 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (status) {
       WorkCaseStatus.waiting => (
-        const Color(0xFF347BC8),
-        const Color(0xFFDCF2FD),
+        const Color(0xFF2F5E8C),
+        const Color(0xFFE6EEF6),
         Icons.schedule,
       ),
       WorkCaseStatus.running => (
         ink,
-        const Color(0xFFF0F1F4),
+        const Color(0xFFEEF2F0),
         Icons.hourglass_top,
       ),
       WorkCaseStatus.complete => (
-        const Color(0xFF4B9138),
-        const Color(0xFFE7F5E1),
+        const Color(0xFF00754A),
+        const Color(0xFFE2F4EA),
         Icons.check,
       ),
       WorkCaseStatus.pending || WorkCaseStatus.confirm => (
-        const Color(0xFFBC793C),
-        const Color(0xFFFFF2E2),
+        const Color(0xFF8A6516),
+        const Color(0xFFF6EEDC),
         Icons.pause_circle_outline,
       ),
-      WorkCaseStatus.other => (muted, const Color(0xFFF0F1F4), Icons.remove),
+      WorkCaseStatus.other => (muted, const Color(0xFFEEF2F0), Icons.remove),
     };
     final label = status == WorkCaseStatus.other
         ? (rawCode ?? status.label)
@@ -45,7 +45,7 @@ class StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

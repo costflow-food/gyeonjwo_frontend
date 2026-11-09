@@ -24,7 +24,7 @@ class SourceDocumentHeader extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4),
-                Text('수신 문서 원문', style: TextStyle(fontSize: 11, color: muted)),
+                Text('수신 문서 원문', style: TextStyle(fontSize: 13, color: muted)),
               ],
             ),
           ),

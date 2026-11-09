@@ -25,7 +25,7 @@ class PreviewButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         minimumSize: const Size(0, 40),
         shape: const StadiumBorder(),
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
       onPressed: onPressed ?? () {},
       child: Row(

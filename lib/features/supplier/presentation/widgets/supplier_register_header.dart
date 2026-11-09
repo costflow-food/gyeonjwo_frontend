@@ -17,7 +17,7 @@ class SupplierRegisterHeader extends StatelessWidget {
               "거래처 등록",
               style: TextStyle(
                 fontSize: AppFontSizes.dialogTitle,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),

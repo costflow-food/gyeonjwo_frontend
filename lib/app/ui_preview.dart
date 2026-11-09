@@ -404,7 +404,7 @@ class _PreviewCatalogState extends ConsumerState<_PreviewCatalog> {
                 '화면·모달 미리보기',
                 style: TextStyle(
                   fontSize: AppFontSizes.pageTitle,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 10),

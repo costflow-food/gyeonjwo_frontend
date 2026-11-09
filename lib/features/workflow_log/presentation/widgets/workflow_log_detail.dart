@@ -58,7 +58,7 @@ class WorkflowLogDetail extends StatelessWidget {
                 value.eventLabel,
                 style: const TextStyle(
                   fontSize: AppFontSizes.cardTitle,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               if (value.outcome != null) LogOutcomeBadge(value.outcome!),

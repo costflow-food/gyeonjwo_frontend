@@ -64,7 +64,7 @@ class _AccountViewState extends State<AccountView>
                 '설정',
                 style: TextStyle(
                   fontSize: AppFontSizes.pageTitle,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 20),

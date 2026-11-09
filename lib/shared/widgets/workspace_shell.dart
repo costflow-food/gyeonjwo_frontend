@@ -40,8 +40,8 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
                 builder: (context, constraints) {
                   // Wide enough for the four status filters on one line.
                   final sidebarWidth = (constraints.maxWidth * .22).clamp(
-                    260.0,
                     330.0,
+                    360.0,
                   );
                   final canExpandSidebar =
                       constraints.maxWidth >= sidebarWidth + _minimumBodyWidth;

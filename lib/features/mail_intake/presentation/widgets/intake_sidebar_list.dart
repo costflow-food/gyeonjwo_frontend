@@ -41,9 +41,9 @@ class IntakeSidebarList extends ConsumerWidget {
         final received = formatSeoulDateTime(mail.receivedAt);
         return Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(16),
           child: InkWell(
-            borderRadius: BorderRadius.circular(7),
+            borderRadius: BorderRadius.circular(16),
             onTap: () => showMailIntakeDialog(context, mailId: mail.mailId),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
@@ -82,14 +82,14 @@ class IntakeSidebarList extends ConsumerWidget {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF2E2),
-                          borderRadius: BorderRadius.circular(3),
+                          color: const Color(0xFFF6EEDC),
+                          borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
                           mail.reason.label,
                           style: const TextStyle(
                             fontSize: AppFontSizes.caption,
-                            color: Color(0xFFBC793C),
+                            color: Color(0xFF8A6516),
                           ),
                         ),
                       ),

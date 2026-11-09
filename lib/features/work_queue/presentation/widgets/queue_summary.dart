@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import "../../../../shared/workspace_colors.dart";
 
+/// 업무 큐 첫 화면: 진한 초록 카드에 안내와 검토를 기다리는 요청 수.
 class QueueSummary extends StatelessWidget {
   const QueueSummary({super.key, required this.waitingCount});
 
@@ -10,104 +11,85 @@ class QueueSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFDADCE2)),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      foregroundDecoration: const BoxDecoration(
-        border: Border(left: BorderSide(color: accent, width: 3)),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(10),
-          bottomLeft: Radius.circular(10),
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [accent, ink],
         ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2E1E3932),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 680;
-          const introduction = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '흩어진 요청을, 한눈에 검토하세요.',
-                style: TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.8,
-                ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수긍하거나 다른 대안을 찾을 수 있어요.',
-                style: TextStyle(fontSize: 12, color: muted),
-              ),
-            ],
-          );
-          final count = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '검토를 기다리는 요청',
-                style: TextStyle(fontSize: 11, color: muted),
-              ),
-              const SizedBox(height: 8),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: waitingCount.toString().padLeft(2, "0"),
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w800,
-                        color: accent,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    TextSpan(
-                      text: ' 건',
-                      style: TextStyle(fontSize: 12, color: muted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-          if (compact) {
-            return Column(
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(color: Colors.white),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 620;
+            const introduction = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.inbox_outlined, color: accent, size: 28),
-                SizedBox(height: 16),
-                introduction,
-                SizedBox(height: 20),
-                Divider(color: line),
-                SizedBox(height: 12),
+                Text(
+                  '흩어진 요청을, 한눈에 검토하세요.',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수긍하거나 다른 대안을 찾을 수 있어요.',
+                  style: TextStyle(fontSize: 14, color: onDeepMuted),
+                ),
+              ],
+            );
+            final count = Column(
+              crossAxisAlignment: compact
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.end,
+              children: [
+                const Text(
+                  '검토를 기다리는 요청',
+                  style: TextStyle(fontSize: 13, color: onDeepMuted),
+                ),
+                const SizedBox(height: 4),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: waitingCount.toString().padLeft(2, "0"),
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w600,
+                          height: 1.1,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      const TextSpan(text: ' 건', style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                ),
+              ],
+            );
+            if (compact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [introduction, const SizedBox(height: 20), count],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Expanded(child: introduction),
+                const SizedBox(width: 24),
                 count,
               ],
             );
-          }
-          return Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: blush,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.inbox_outlined,
-                  color: accent,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 20),
-              const Expanded(flex: 4, child: introduction),
-              const SizedBox(width: 24),
-              Expanded(child: count),
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }

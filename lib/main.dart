@@ -32,7 +32,93 @@ ThemeData _buildTheme() {
     textTheme: GoogleFonts.ibmPlexSansKrTextTheme(base.textTheme)
         .apply(bodyColor: ink, displayColor: ink),
     dividerColor: line,
+    dividerTheme: const DividerThemeData(color: line, space: 1),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: accent),
+    dialogTheme: DialogThemeData(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      titleTextStyle: const TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: ink,
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: line),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: line),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: accent, width: 1.5),
+      ),
+      labelStyle: const TextStyle(color: muted),
+      hintStyle: const TextStyle(color: muted),
+    ),
+    tabBarTheme: const TabBarThemeData(
+      labelColor: ink,
+      unselectedLabelColor: muted,
+      indicatorColor: accent,
+      dividerColor: line,
+    ),
+    chipTheme: ChipThemeData(
+      shape: const StadiumBorder(),
+      side: const BorderSide(color: line),
+      selectedColor: accent,
+      backgroundColor: Colors.white,
+      labelStyle: const TextStyle(color: ink),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: const WidgetStatePropertyAll(Colors.white),
+      trackColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected) ? accent : line,
+      ),
+      trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    tooltipTheme: TooltipThemeData(
+      decoration: BoxDecoration(
+        color: ink,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      textStyle: const TextStyle(color: Colors.white, fontSize: 13),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: ink,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: accent,
+        foregroundColor: Colors.white,
+        shape: const StadiumBorder(),
+        minimumSize: const Size(0, 40),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: accent,
+        side: const BorderSide(color: accent),
+        shape: const StadiumBorder(),
+        minimumSize: const Size(0, 40),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: accent),
+    ),
   );
 }
 
@@ -122,24 +208,24 @@ class MissingConfigApp extends StatelessWidget {
               children: [
                 const Text(
                   '실행 설정이 필요해요',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   '다음 값이 비어 있어요: ${missingKeys.join(", ")}',
-                  style: const TextStyle(fontSize: 13, height: 1.7),
+                  style: const TextStyle(fontSize: 15, height: 1.7),
                 ),
                 const SizedBox(height: 16),
                 const SelectableText(
                   'flutter run -d chrome --web-port 3000 '
                   '--dart-define-from-file=config/dart_defines.local.json',
-                  style: TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                  style: TextStyle(fontSize: 14, fontFamily: 'monospace'),
                 ),
                 if (kDebugMode) ...[
                   const SizedBox(height: 16),
                   const Text(
                     '서버 없이 화면만 보려면 /#/ui-preview 를 여세요.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF7C7F85)),
+                    style: TextStyle(fontSize: 14, color: Color(0xFF4F6862)),
                   ),
                 ],
               ],

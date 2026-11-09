@@ -104,8 +104,8 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFFF8FBF9),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

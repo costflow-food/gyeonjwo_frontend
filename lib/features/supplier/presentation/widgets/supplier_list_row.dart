@@ -31,20 +31,18 @@ class SupplierListRow extends StatelessWidget {
       button: true,
       label: "${supplier.name} 거래처",
       child: Material(
-        color: selected ? blush : Colors.transparent,
+        color: selected ? Colors.white : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: selected
+              ? const BorderSide(color: accent, width: 1.5)
+              : BorderSide.none,
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: selected ? accent : Colors.transparent,
-                  width: 3,
-                ),
-                bottom: const BorderSide(color: line),
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -112,7 +110,7 @@ class _ItemChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         border: Border.all(color: line),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(999),
         color: Colors.white,
       ),
       child: Text(

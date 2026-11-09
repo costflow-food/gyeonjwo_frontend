@@ -154,7 +154,7 @@ class _GroupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onToggle,
-      borderRadius: BorderRadius.circular(7),
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         child: Row(
@@ -280,7 +280,7 @@ class _QueueFilters extends StatelessWidget {
                   "${counts == null ? "" : " ${counts!.countFor(option)}"}",
                 ),
                 labelStyle: TextStyle(
-                  fontSize: AppFontSizes.secondary,
+                  fontSize: AppFontSizes.caption,
                   fontWeight: option == status
                       ? FontWeight.w700
                       : FontWeight.w500,
@@ -288,6 +288,8 @@ class _QueueFilters extends StatelessWidget {
                 ),
                 selected: option == status,
                 showCheckmark: false,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 visualDensity: VisualDensity.compact,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 selectedColor: accent,

@@ -74,7 +74,7 @@ class _Unavailable extends StatelessWidget {
                   ? "회신 검토가 끝나면 카드가 생겨요. 진행 상황은 업무에서 확인할 수 있어요."
                   : failure?.message ?? "잠시 뒤 다시 시도해 주세요.",
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: muted, height: 1.6),
+              style: const TextStyle(fontSize: 14, color: muted, height: 1.6),
             ),
             const SizedBox(height: 16),
             Wrap(

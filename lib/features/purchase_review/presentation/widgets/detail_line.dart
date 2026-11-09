@@ -25,7 +25,7 @@ class DetailLine extends StatelessWidget {
             flex: 4,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 11, color: muted),
+              style: const TextStyle(fontSize: 13, color: muted),
             ),
           ),
           const SizedBox(width: 10),
@@ -38,7 +38,7 @@ class DetailLine extends StatelessWidget {
                   value,
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     color: mutedValue ? muted : ink,
                     height: 1.6,
                   ),
@@ -48,7 +48,7 @@ class DetailLine extends StatelessWidget {
                   Text(
                     caption!,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(fontSize: 9, color: muted),
+                    style: const TextStyle(fontSize: 11, color: muted),
                   ),
                 ],
               ],

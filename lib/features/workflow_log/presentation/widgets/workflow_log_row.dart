@@ -31,20 +31,18 @@ class WorkflowLogRow extends StatelessWidget {
       selected: selected,
       button: true,
       child: Material(
-        color: selected ? blush : Colors.transparent,
+        color: selected ? Colors.white : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: selected
+              ? const BorderSide(color: accent, width: 1.5)
+              : BorderSide.none,
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: selected ? accent : Colors.transparent,
-                  width: 3,
-                ),
-                bottom: const BorderSide(color: line),
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

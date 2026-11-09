@@ -28,7 +28,7 @@ class MailDraftHeader extends StatelessWidget {
                   "메일 초안·발송",
                   style: TextStyle(
                     fontSize: AppFontSizes.dialogTitle,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),

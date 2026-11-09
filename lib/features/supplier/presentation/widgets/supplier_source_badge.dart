@@ -12,13 +12,13 @@ class SupplierSourceBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (sourceType) {
       SupplierSourceType.registered => (
-        const Color(0xFF4B9138),
-        const Color(0xFFE7F5E1),
+        const Color(0xFF00754A),
+        const Color(0xFFE2F4EA),
         Icons.verified_outlined,
       ),
       SupplierSourceType.verifiedWeb => (
-        const Color(0xFF347BC8),
-        const Color(0xFFDCF2FD),
+        const Color(0xFF2F5E8C),
+        const Color(0xFFE6EEF6),
         Icons.language,
       ),
     };
@@ -26,7 +26,7 @@ class SupplierSourceBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

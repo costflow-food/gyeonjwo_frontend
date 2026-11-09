@@ -23,7 +23,7 @@ class WorkflowLogHeader extends StatelessWidget {
               "실행 로그",
               style: TextStyle(
                 fontSize: AppFontSizes.pageTitle,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             SizedBox(height: 8),

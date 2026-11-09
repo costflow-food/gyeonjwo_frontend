@@ -14,9 +14,9 @@ class GoogleSignInButton extends StatelessWidget {
       backgroundColor: const WidgetStatePropertyAll(Colors.white),
       foregroundColor: const WidgetStatePropertyAll(Color(0xFF1F1F1F)),
       surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-      side: const WidgetStatePropertyAll(BorderSide(color: Color(0xFF747775))),
+      side: const WidgetStatePropertyAll(BorderSide(color: Color(0xFF4F6862))),
       shape: WidgetStatePropertyAll(
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
       minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
       padding: const WidgetStatePropertyAll(

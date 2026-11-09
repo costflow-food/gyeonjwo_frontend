@@ -46,7 +46,7 @@ class PriceRecordTile extends StatelessWidget {
                 "${formatDecimal(record.unitPrice)}원/${record.unit}",
                 style: const TextStyle(
                   fontSize: AppFontSizes.cardTitle,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               if (latest)

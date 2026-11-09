@@ -32,7 +32,7 @@ class SupplierEvidenceHeader extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontSize: AppFontSizes.dialogTitle,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],

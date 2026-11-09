@@ -64,7 +64,7 @@ class _SupplierContentState extends State<SupplierContent> {
               const SizedBox(height: 12),
               SupplierListStatus(data: data, onRetry: viewModel.refresh),
               const SizedBox(height: 8),
-              const Divider(height: 1, color: Color(0xFF64666B)),
+              const Divider(height: 1, color: Color(0xFF4F6862)),
               SupplierListPanel(
                 data: data,
                 onSelect: (id) {

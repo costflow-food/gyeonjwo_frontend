@@ -12,8 +12,8 @@ class SourceDocumentBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFDADCE1)),
-        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE3ECE7)),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: SelectionArea(
         child: Column(
@@ -32,7 +32,7 @@ class SourceDocumentBody extends StatelessWidget {
               Text.rich(
                 TextSpan(children: _highlight(paragraph)),
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   height: 2,
                   color: Color(0xFF72757A),
                 ),
@@ -55,7 +55,7 @@ class SourceDocumentBody extends StatelessWidget {
         TextSpan(
           text: match.group(0),
           style: const TextStyle(
-            backgroundColor: Color(0xFFE9EAEC),
+            backgroundColor: Color(0xFFE3ECE7),
             color: ink,
             decoration: TextDecoration.underline,
           ),
