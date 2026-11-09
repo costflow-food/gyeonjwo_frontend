@@ -9,8 +9,7 @@ abstract final class AppConfig {
   );
   static const apiBaseUrl = String.fromEnvironment("API_BASE_URL");
 
-  /// Values the app cannot run without. There is no preview mode: screens for
-  /// design checks live on the separate debug-only preview page.
+  /// Values the app cannot run without.
   static List<String> get missingKeys => [
     if (supabaseUrl.isEmpty) "SUPABASE_URL",
     if (supabasePublishableKey.isEmpty) "SUPABASE_PUBLISHABLE_KEY",

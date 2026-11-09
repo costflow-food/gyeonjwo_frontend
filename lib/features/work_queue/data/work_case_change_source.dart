@@ -56,11 +56,3 @@ class SupabaseWorkCaseChangeSource implements WorkCaseChangeSource {
     return controller.stream;
   }
 }
-
-/// No signal: the UI preview page and widget tests.
-class NoWorkCaseChanges implements WorkCaseChangeSource {
-  const NoWorkCaseChanges();
-
-  @override
-  Stream<int> watch() => const Stream.empty();
-}

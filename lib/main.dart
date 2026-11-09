@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:google_fonts/google_fonts.dart";
@@ -6,7 +5,6 @@ import "package:supabase_flutter/supabase_flutter.dart";
 
 import "app/app_config.dart";
 import "app/app_router.dart";
-import 'app/ui_preview.dart';
 import "features/auth/data/auth_session_data_source.dart";
 import "features/auth/data/provider_token_free_local_storage.dart";
 import "features/auth/presentation/auth_session_view_model.dart";
@@ -125,13 +123,7 @@ ThemeData _buildTheme() {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (!AppConfig.isConfigured) {
-    // The design preview page needs no server, so it still opens in debug.
-    final route = _hashRoute(Uri.base);
-    runApp(
-      kDebugMode && route.path == '/ui-preview'
-          ? UiPreviewApp(parameters: route.queryParameters, theme: appTheme)
-          : MissingConfigApp(missingKeys: AppConfig.missingKeys),
-    );
+    runApp(MissingConfigApp(missingKeys: AppConfig.missingKeys));
     return;
   }
   await Supabase.initialize(
@@ -149,11 +141,6 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-/// `/#/ui-preview?screen=queue` → `/ui-preview` with its query.
-Uri _hashRoute(Uri base) =>
-    Uri.tryParse(base.fragment.isEmpty ? base.path : base.fragment) ??
-    Uri(path: '/');
-
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -166,26 +153,16 @@ class MyApp extends ConsumerWidget {
       gmailConnectionViewModelProvider.select((value) => value.connectionPhase),
       (_, _) => appRouter.refresh(),
     );
-    return ListenableBuilder(
-      listenable: appRouter.routeInformationProvider,
-      builder: (context, _) {
-        final uri = appRouter.routeInformationProvider.value.uri;
-        // Preview owns the root Navigator so dialogs use its isolated scope.
-        if (kDebugMode && uri.path == '/ui-preview') {
-          return UiPreviewApp(parameters: uri.queryParameters, theme: appTheme);
-        }
-        return MaterialApp.router(
-          title: '견줘',
-          debugShowCheckedModeBanner: false,
-          theme: appTheme,
-          routerConfig: appRouter,
-        );
-      },
+    return MaterialApp.router(
+      title: '견줘',
+      debugShowCheckedModeBanner: false,
+      theme: appTheme,
+      routerConfig: appRouter,
     );
   }
 }
 
-/// Shown instead of a preview mode when the run settings are missing.
+/// Shown when the run settings are missing.
 class MissingConfigApp extends StatelessWidget {
   const MissingConfigApp({super.key, required this.missingKeys});
 
@@ -221,13 +198,6 @@ class MissingConfigApp extends StatelessWidget {
                   '--dart-define-from-file=config/dart_defines.local.json',
                   style: TextStyle(fontSize: 14, fontFamily: 'monospace'),
                 ),
-                if (kDebugMode) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    '서버 없이 화면만 보려면 /#/ui-preview 를 여세요.',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF4F6862)),
-                  ),
-                ],
               ],
             ),
           ),

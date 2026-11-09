@@ -34,25 +34,3 @@ class ApiMailboxSyncDataSource implements MailboxSyncDataSource {
     "/api/v1/mailboxes/google/sync-status",
   );
 }
-
-/// UI 미리보기용 고정 응답.
-class PreviewMailboxSyncDataSource implements MailboxSyncDataSource {
-  const PreviewMailboxSyncDataSource({this.failing = false});
-
-  /// true면 수신 실패, false면 방금 읽은 정상 상태입니다.
-  final bool failing;
-
-  @override
-  Future<Map<String, dynamic>> fetchSyncStatus() async => {
-    "data": {
-      "mailbox_ref": "preview-mailbox",
-      "status": failing ? "ERROR" : "IDLE",
-      "last_synced_at": DateTime.now()
-          .toUtc()
-          .subtract(Duration(minutes: failing ? 42 : 1))
-          .toIso8601String(),
-      "last_error": failing ? "GMAIL_SYNC_FAILED" : null,
-    },
-    "meta": {"request_id": "req-preview-sync-status"},
-  };
-}

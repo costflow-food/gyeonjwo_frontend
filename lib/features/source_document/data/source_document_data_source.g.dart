@@ -8,14 +8,12 @@ part of 'source_document_data_source.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The real app reads the mail through API-25; the UI preview overrides this
-/// with [PreviewSourceDocumentDataSource].
+/// Reads the mail through API-25.
 
 @ProviderFor(sourceDocumentDataSource)
 final sourceDocumentDataSourceProvider = SourceDocumentDataSourceProvider._();
 
-/// The real app reads the mail through API-25; the UI preview overrides this
-/// with [PreviewSourceDocumentDataSource].
+/// Reads the mail through API-25.
 
 final class SourceDocumentDataSourceProvider
     extends
@@ -25,8 +23,7 @@ final class SourceDocumentDataSourceProvider
           SourceDocumentDataSource
         >
     with $Provider<SourceDocumentDataSource> {
-  /// The real app reads the mail through API-25; the UI preview overrides this
-  /// with [PreviewSourceDocumentDataSource].
+  /// Reads the mail through API-25.
   SourceDocumentDataSourceProvider._()
     : super(
         from: null,
