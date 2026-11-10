@@ -33,8 +33,13 @@ class SendPolicyBanner extends StatelessWidget {
         !draft.awaitingResult &&
         draft.needsSettings;
     final policy = switch (draft.approvalRequired) {
-      _ when draft.recipientNotRegistered => "등록 업체 주소 불일치",
-      _ when !draft.settingsConfigured => "발송 설정 필요",
+      // Why an unsent draft cannot go out; not a label for one already sent.
+      _
+          when draft.status == DraftStatus.draft &&
+              draft.recipientNotRegistered =>
+        "등록 업체 주소 불일치",
+      _ when draft.status == DraftStatus.draft && !draft.settingsConfigured =>
+        "발송 설정 필요",
       true => "자동 발송 꺼짐 · 승인한 초안만 발송됩니다",
       false => "자동 발송 켜짐 · 서버가 검증한 뒤 자동 발송됩니다",
       null => "발송 설정 확인 중",
@@ -60,6 +65,12 @@ class SendPolicyBanner extends StatelessWidget {
         Icons.hourglass_top,
         const Color(0xFF2F5E8C),
         "요청을 접수했습니다. 결과가 나오면 자동으로 표시됩니다.",
+      ),
+      DraftStatus.draft || DraftStatus.unknown when draft.resultTimedOut => (
+        Icons.warning_amber_rounded,
+        const Color(0xFF8A6516),
+        "요청은 접수됐지만 1분이 지나도록 결과가 나오지 않았습니다. 아직 처리되지 않았을 수 있으니 "
+            "메일함 연결과 발송 설정을 확인한 뒤 다시 열어 확인해 주세요.",
       ),
       DraftStatus.draft when dispatch != null => (
         dispatch == DraftDispatchState.blockedPolicy ||
