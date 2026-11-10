@@ -92,9 +92,7 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
                               borderRadius: BorderRadius.circular(20),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(child: _body()),
-                                ],
+                                children: [Expanded(child: _body())],
                               ),
                             ),
                           ),
@@ -161,42 +159,45 @@ class _TopBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 20),
-          Flexible(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .5),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _NavTab(
-                      label: '업무 큐',
-                      icon: Icons.grid_view_rounded,
-                      selected: section == '/',
-                      onTap: () => goToQueueHome(context, ref),
-                    ),
-                    _NavTab(
-                      label: '거래처',
-                      icon: Icons.business_center_outlined,
-                      selected: section == '/suppliers',
-                      onTap: () => context.go('/suppliers'),
-                    ),
-                    _NavTab(
-                      label: '실행 로그',
-                      icon: Icons.receipt_long_outlined,
-                      selected: section == '/logs',
-                      onTap: () => context.go('/logs'),
-                    ),
-                  ],
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _NavTab(
+                        label: '업무 큐',
+                        icon: Icons.grid_view_rounded,
+                        selected: section == '/',
+                        onTap: () => goToQueueHome(context, ref),
+                      ),
+                      _NavTab(
+                        label: '거래처',
+                        icon: Icons.business_center_outlined,
+                        selected: section == '/suppliers',
+                        onTap: () => context.go('/suppliers'),
+                      ),
+                      _NavTab(
+                        label: '실행 로그',
+                        icon: Icons.receipt_long_outlined,
+                        selected: section == '/logs',
+                        onTap: () => context.go('/logs'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 16),
           const _AccountButton(),
         ],
       ),
