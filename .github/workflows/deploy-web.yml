@@ -1,0 +1,86 @@
+# dev → main PR이 머지됐을 때만 Flutter 웹을 빌드해 Vercel 프로덕션에 올린다.
+# Vercel은 GitHub 저장소와 연결하지 않는다. 이 워크플로만 배포를 만든다.
+#
+# 저장소 설정(Settings → Secrets and variables → Actions)에 필요한 값
+#   Secrets   : VERCEL_TOKEN              (vercel.com/account/tokens 에서 발급)
+#   Variables : SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, API_BASE_URL
+#               VERCEL_PROJECT (선택, 기본 gyeonjwo-frontend)
+name: Deploy web to Vercel
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+concurrency:
+  group: deploy-web-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # 머지된 PR + 출발 브랜치가 이 저장소의 dev 일 때만
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'dev' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT: ${{ vars.VERCEL_PROJECT || 'gyeonjwo-frontend' }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+    steps:
+      - name: Check required settings
+        run: |
+          missing=()
+          for name in VERCEL_TOKEN SUPABASE_URL SUPABASE_PUBLISHABLE_KEY API_BASE_URL; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::저장소 Actions 설정에 없는 값: ${missing[*]}"
+            exit 1
+          fi
+          case "$API_BASE_URL" in
+            https://*) ;;
+            *) echo "::error::API_BASE_URL은 https:// 로 시작해야 합니다"; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Build web
+        run: >-
+          flutter build web --release
+          --dart-define=SUPABASE_URL="$SUPABASE_URL"
+          --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+          --dart-define=API_BASE_URL="$API_BASE_URL"
+
+      # Git 정보가 없는 임시 폴더에서 올려 Vercel이 저장소를 자동 연결하지 않게 한다.
+      - name: Deploy to Vercel (production)
+        run: |
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site/.vercel/output"
+          cp -R build/web "$site/.vercel/output/static"
+          echo '{"version":3}' > "$site/.vercel/output/config.json"
+          cd "$site"
+          vercel="npx --yes vercel@65.14.0"
+          # 첫 배포 때만 프로젝트를 만든다(이미 있으면 실패해도 무시하고 아래 link가 확인)
+          $vercel project create "$VERCEL_PROJECT" --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+          $vercel link --yes --project "$VERCEL_PROJECT" --token "$VERCEL_TOKEN"
+          url=$($vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN")
+          echo "Deployed: $url"
+          echo "### 배포 완료: $url" >> "$GITHUB_STEP_SUMMARY"
