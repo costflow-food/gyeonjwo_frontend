@@ -20,7 +20,7 @@ class SourceMailButton extends StatelessWidget {
         style: TextStyle(fontSize: AppFontSizes.caption),
       ),
       style: TextButton.styleFrom(
-        foregroundColor: accent,
+        foregroundColor: context.palette.accentText,
         padding: const EdgeInsets.symmetric(horizontal: 6),
         minimumSize: const Size(0, 28),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,

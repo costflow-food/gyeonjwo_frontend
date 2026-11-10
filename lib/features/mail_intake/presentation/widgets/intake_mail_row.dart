@@ -24,11 +24,11 @@ class IntakeMailRow extends StatelessWidget {
       selected: selected,
       button: true,
       child: Material(
-        color: selected ? Colors.white : Colors.transparent,
+        color: selected ? context.palette.surface : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: selected
-              ? const BorderSide(color: accent, width: 1.5)
+              ? BorderSide(color: context.palette.accentText, width: 1.5)
               : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
@@ -51,9 +51,9 @@ class IntakeMailRow extends StatelessWidget {
                 Text(
                   "${mail.sender} · ${formatSeoulDateTime(mail.receivedAt)}",
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.caption,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
                 const SizedBox(height: 6),

@@ -42,14 +42,14 @@ class CounterOfferPanel extends StatelessWidget {
             if (target != null)
               Text(
                 target.supplierName,
-                style: const TextStyle(fontSize: 13, color: muted),
+                style: TextStyle(fontSize: 13, color: context.palette.muted),
               ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
           offer.statusLabel,
-          style: const TextStyle(fontSize: 12, color: muted),
+          style: TextStyle(fontSize: 12, color: context.palette.muted),
         ),
         if (target != null) ...[
           const SizedBox(height: 12),
@@ -71,7 +71,7 @@ class CounterOfferPanel extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   "목표 단가 원${unit == null ? "" : "/$unit"}",
-                  style: const TextStyle(fontSize: 13, color: muted),
+                  style: TextStyle(fontSize: 13, color: context.palette.muted),
                 ),
               ),
             ],
@@ -81,11 +81,11 @@ class CounterOfferPanel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
+            color: context.palette.panel,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x141E3932),
+                color: context.palette.ink.withValues(alpha: 0.08),
                 blurRadius: 8,
                 offset: Offset(0, 2),
               ),
@@ -107,14 +107,17 @@ class CounterOfferPanel extends StatelessWidget {
                     if (summary.isNotEmpty)
                       Text(
                         summary.join(" · "),
-                        style: const TextStyle(fontSize: 13, color: muted),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.palette.muted,
+                        ),
                       ),
                   ],
                 ),
               ),
               const SizedBox(width: 10),
               OutlinedButton(
-                style: WorkspaceButtonStyles.outlined,
+                style: WorkspaceButtonStyles.outlined(context),
                 onPressed: onMailDraft,
                 child: const Text("메일 초안"),
               ),
@@ -125,17 +128,29 @@ class CounterOfferPanel extends StatelessWidget {
         for (final condition in [...?target?.conditions])
           Text(
             "조건 · $condition",
-            style: const TextStyle(fontSize: 12, color: muted, height: 1.6),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.palette.muted,
+              height: 1.6,
+            ),
           ),
         if (offer.reason != null)
           Text(
             offer.reason!,
-            style: const TextStyle(fontSize: 12, color: muted, height: 1.6),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.palette.muted,
+              height: 1.6,
+            ),
           ),
         if (offer.draftIds.isNotEmpty)
-          const Text(
+          Text(
             "역제안 메일 초안은 '메일 초안'에서 확인하고 승인해 주세요.",
-            style: TextStyle(fontSize: 12, color: muted, height: 1.6),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.palette.muted,
+              height: 1.6,
+            ),
           ),
       ],
     );

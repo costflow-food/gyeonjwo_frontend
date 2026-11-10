@@ -11,7 +11,7 @@ class SourceDocumentHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(28, 20, 20, 24),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -20,18 +20,21 @@ class SourceDocumentHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 21,
                     fontWeight: FontWeight.w700,
-                    color: ink,
+                    color: context.palette.ink,
                   ),
                 ),
                 SizedBox(height: 4),
-                Text('수신 문서 원문', style: TextStyle(fontSize: 13, color: muted)),
+                Text(
+                  '수신 문서 원문',
+                  style: TextStyle(fontSize: 13, color: context.palette.muted),
+                ),
               ],
             ),
           ),
           IconButton(
             tooltip: '닫기',
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close, size: 20, color: muted),
+            icon: Icon(Icons.close, size: 20, color: context.palette.muted),
           ),
         ],
       ),

@@ -57,9 +57,9 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                   Expanded(
                     child: Text(
                       "총 ${data.total}건 · 최신순",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: AppFontSizes.secondary,
-                        color: muted,
+                        color: context.palette.muted,
                       ),
                     ),
                   ),
@@ -84,7 +84,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                 ],
               ),
               const SizedBox(height: 8),
-              const Divider(height: 1, color: Color(0xFF4F6862)),
+              Divider(height: 1, color: context.palette.muted),
               WorkflowLogList(
                 data: data,
                 onSelect: (id) {
@@ -137,7 +137,9 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                               onPressed: () => _scrollTo(_listKey),
                               icon: const Icon(Icons.arrow_back, size: 16),
                               label: const Text('목록으로'),
-                              style: TextButton.styleFrom(foregroundColor: ink),
+                              style: TextButton.styleFrom(
+                                foregroundColor: context.palette.ink,
+                              ),
                             ),
                           ),
                         detail,

@@ -18,7 +18,7 @@ class LoginView extends ConsumerWidget {
     return AuthLayout(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const introduction = Column(
+          final introduction = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -35,7 +35,7 @@ class LoginView extends ConsumerWidget {
                 '메일로 받은 요청부터 구매 판단에 필요한 근거까지.\n견줘와 함께 차근차근 확인하세요.',
                 style: TextStyle(
                   fontSize: AppFontSizes.bodyLarge,
-                  color: muted,
+                  color: context.palette.muted,
                   height: 1.9,
                 ),
               ),
@@ -83,7 +83,7 @@ class LoginView extends ConsumerWidget {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Expanded(child: introduction),
+                Expanded(child: introduction),
                 const SizedBox(width: 64),
                 Expanded(child: login),
               ],

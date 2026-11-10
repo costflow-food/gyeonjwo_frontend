@@ -11,12 +11,16 @@ class NoteLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.info_outline, size: 14, color: muted),
+        Icon(Icons.info_outline, size: 14, color: context.palette.muted),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(color: muted, fontSize: 13, height: 1.65),
+            style: TextStyle(
+              color: context.palette.muted,
+              fontSize: 13,
+              height: 1.65,
+            ),
           ),
         ),
       ],

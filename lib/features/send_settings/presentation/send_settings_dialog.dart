@@ -142,9 +142,8 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           .save(update);
       if (!mounted) return;
       if (widget.embedded) {
-        ScaffoldMessenger.maybeOf(
-          context,
-        )?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했어요.")));
+        ScaffoldMessenger.maybeOf(context)
+            ?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했어요.")));
         // Show the saved version right away.
         setState(() {
           _saving = false;
@@ -207,12 +206,12 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
         content: const Text("저장하지 않은 설정은 적용되지 않습니다."),
         actions: [
           TextButton(
-            style: WorkspaceButtonStyles.text,
+            style: WorkspaceButtonStyles.text(context),
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text("계속 설정"),
           ),
           FilledButton(
-            style: WorkspaceButtonStyles.filled,
+            style: WorkspaceButtonStyles.filled(context),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text("변경사항 버리기"),
           ),
@@ -252,7 +251,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
             child: content,
           ),
           const SizedBox(height: 16),
-          const Divider(height: 1, color: line),
+          Divider(height: 1, color: context.palette.line),
           footer,
         ],
       );
@@ -263,13 +262,13 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
         if (!didPop) _close();
       },
       child: Dialog(
-        backgroundColor: canvas,
+        backgroundColor: context.palette.canvas,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: line),
+          side: BorderSide(color: context.palette.line),
         ),
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
@@ -279,14 +278,14 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SendSettingsHeader(caseId: widget.caseId, onClose: _close),
-              const Divider(height: 1, color: line),
+              Divider(height: 1, color: context.palette.line),
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(28),
                   child: content,
                 ),
               ),
-              const Divider(height: 1, color: line),
+              Divider(height: 1, color: context.palette.line),
               footer,
             ],
           ),
@@ -338,17 +337,17 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           ),
         const SizedBox(height: 12),
         ExpansionTile(
-          iconColor: ink,
-          collapsedIconColor: muted,
+          iconColor: context.palette.ink,
+          collapsedIconColor: context.palette.muted,
           shape: const Border(),
           collapsedShape: const Border(),
           tilePadding: EdgeInsets.zero,
-          title: const Text(
+          title: Text(
             '문안·서명',
             style: TextStyle(
               fontSize: AppFontSizes.bodyLarge,
               fontWeight: FontWeight.w700,
-              color: ink,
+              color: context.palette.ink,
             ),
           ),
           subtitle: Text(_tone.label),

@@ -29,8 +29,8 @@ class MailDraftBody extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: line),
+          color: context.palette.surface,
+          border: Border.all(color: context.palette.line),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -38,7 +38,7 @@ class MailDraftBody extends StatelessWidget {
           children: [
             _ReadOnlyLine("받는 사람", draft.recipient),
             _ReadOnlyLine("제목", draft.subject),
-            const Divider(color: line, height: 24),
+            Divider(color: context.palette.line, height: 24),
             SelectableText(
               draft.body,
               style: const TextStyle(
@@ -56,7 +56,7 @@ class MailDraftBody extends StatelessWidget {
       labelStyle: const TextStyle(fontSize: AppFontSizes.body),
       isDense: true,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: context.palette.surface,
       border: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(6)),
       ),
@@ -122,9 +122,9 @@ class _ReadOnlyLine extends StatelessWidget {
             width: 72,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppFontSizes.secondary,
-                color: muted,
+                color: context.palette.muted,
               ),
             ),
           ),

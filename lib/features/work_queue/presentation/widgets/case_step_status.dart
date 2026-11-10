@@ -104,7 +104,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FBF9),
+            color: context.palette.panel,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -115,7 +115,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                     ? Icons.pause_circle_outline
                     : Icons.info_outline,
                 size: 18,
-                color: workCase.stopped ? danger : muted,
+                color: workCase.stopped ? danger : context.palette.muted,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -138,9 +138,9 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                       const SizedBox(height: 6),
                       Text(
                         replies.label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: AppFontSizes.secondary,
-                          color: muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],
@@ -181,7 +181,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
               child: OutlinedButton.icon(
                 onPressed: () =>
                     showMailDraftDialog(context, caseId: workCase.id),
-                style: WorkspaceButtonStyles.outlined,
+                style: WorkspaceButtonStyles.outlined(context),
                 icon: const Icon(Icons.mail_outline, size: 16),
                 label: const Text("메일 초안 보기"),
               ),
@@ -196,18 +196,18 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
               height: 44,
               child: OutlinedButton.icon(
                 onPressed: () => showSupplierRegisterDialog(context),
-                style: WorkspaceButtonStyles.outlined,
+                style: WorkspaceButtonStyles.outlined(context),
                 icon: const Icon(Icons.store_outlined, size: 16),
                 label: const Text("거래처 등록"),
               ),
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             "요청 품목을 취급하는 거래처를 등록하면 후보로 찾을 수 있어요.",
             style: TextStyle(
               fontSize: AppFontSizes.secondary,
-              color: muted,
+              color: context.palette.muted,
               height: 1.5,
             ),
           ),
@@ -220,7 +220,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
               height: 44,
               child: FilledButton.icon(
                 onPressed: canResume && !_busy ? _resume : null,
-                style: WorkspaceButtonStyles.filled,
+                style: WorkspaceButtonStyles.filled(context),
                 icon: const Icon(Icons.replay, size: 16),
                 label: Text(workCase.resumeReason.buttonLabel),
               ),
@@ -229,16 +229,16 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
           const SizedBox(height: 6),
           Text(
             canResume ? workCase.resumeReason.help : resumeBlocked!,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppFontSizes.secondary,
-              color: muted,
+              color: context.palette.muted,
               height: 1.5,
             ),
           ),
         ],
         if (_busy) ...[
           const SizedBox(height: 12),
-          const LinearProgressIndicator(minHeight: 2, color: accent),
+          LinearProgressIndicator(minHeight: 2, color: context.palette.accent),
         ],
         if (_error != null) ...[
           const SizedBox(height: 12),

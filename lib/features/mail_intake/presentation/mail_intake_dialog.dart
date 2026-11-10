@@ -86,12 +86,12 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
         ),
         actions: [
           TextButton(
-            style: WorkspaceButtonStyles.text,
+            style: WorkspaceButtonStyles.text(context),
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text("취소"),
           ),
           FilledButton(
-            style: WorkspaceButtonStyles.filled,
+            style: WorkspaceButtonStyles.filled(context),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text("새 업무로 접수"),
           ),
@@ -162,13 +162,13 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
         mails.where((item) => item.mailId == _selectedMailId).firstOrNull ??
         mails.firstOrNull;
     return Dialog(
-      backgroundColor: canvas,
+      backgroundColor: context.palette.canvas,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.all(20),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: line),
+        side: BorderSide(color: context.palette.line),
       ),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
@@ -182,7 +182,7 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
               onRefresh: viewModel.refresh,
               onClose: () => Navigator.of(context).pop(),
             ),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
@@ -246,7 +246,8 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
                                             ),
                                             label: const Text('목록으로'),
                                             style: TextButton.styleFrom(
-                                              foregroundColor: ink,
+                                              foregroundColor:
+                                                  context.palette.ink,
                                             ),
                                           ),
                                         ),
@@ -270,7 +271,7 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
                 ),
               ),
             ),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             MailIntakeActions(
               enabled: mail != null,
               canLink:

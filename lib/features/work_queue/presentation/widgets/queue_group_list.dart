@@ -162,7 +162,7 @@ class _GroupHeader extends StatelessWidget {
             Icon(
               collapsed ? Icons.chevron_right : Icons.expand_more,
               size: 18,
-              color: muted,
+              color: context.palette.muted,
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -185,14 +185,14 @@ class _GroupHeader extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: blush,
+                    color: context.palette.blush,
                     borderRadius: BorderRadius.circular(9),
                   ),
                   child: Text(
                     "${group.waitingCount}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: AppFontSizes.caption,
-                      color: accent,
+                      color: context.palette.accentText,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -202,9 +202,9 @@ class _GroupHeader extends StatelessWidget {
             Text(
               "${group.cases.length}",
               semanticsLabel: "${group.cases.length}건",
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppFontSizes.secondary,
-                color: muted,
+                color: context.palette.muted,
               ),
             ),
           ],
@@ -246,15 +246,19 @@ class _QueueFilters extends StatelessWidget {
           decoration: InputDecoration(
             isDense: true,
             hintText: "제목·보낸 사람 검색",
-            hintStyle: const TextStyle(
+            hintStyle: TextStyle(
               fontSize: AppFontSizes.body,
-              color: muted,
+              color: context.palette.muted,
             ),
-            prefixIcon: const Icon(Icons.search, size: 18, color: muted),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 18,
+              color: context.palette.muted,
+            ),
             prefixIconConstraints: const BoxConstraints(minWidth: 36),
             contentPadding: const EdgeInsets.symmetric(vertical: 12),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: context.palette.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(22),
               borderSide: BorderSide.none,
@@ -284,7 +288,9 @@ class _QueueFilters extends StatelessWidget {
                   fontWeight: option == status
                       ? FontWeight.w700
                       : FontWeight.w500,
-                  color: option == status ? Colors.white : ink,
+                  color: option == status
+                      ? context.palette.onAccent
+                      : context.palette.ink,
                 ),
                 selected: option == status,
                 showCheckmark: false,
@@ -292,11 +298,13 @@ class _QueueFilters extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 visualDensity: VisualDensity.compact,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                selectedColor: accent,
+                selectedColor: context.palette.accent,
                 backgroundColor: Colors.transparent,
                 shape: const StadiumBorder(),
                 side: BorderSide(
-                  color: option == status ? accent : const Color(0x471E3932),
+                  color: option == status
+                      ? context.palette.accent
+                      : context.palette.ink.withValues(alpha: 0.28),
                 ),
                 onSelected: (_) => onStatus(option),
               ),
@@ -305,7 +313,10 @@ class _QueueFilters extends StatelessWidget {
         SizedBox(
           height: 2,
           child: loading
-              ? const LinearProgressIndicator(minHeight: 2, color: accent)
+              ? LinearProgressIndicator(
+                  minHeight: 2,
+                  color: context.palette.accent,
+                )
               : null,
         ),
       ],
@@ -334,7 +345,7 @@ class _LoadMore extends StatelessWidget {
         "더 불러오기",
         style: TextStyle(fontSize: AppFontSizes.secondary),
       ),
-      style: TextButton.styleFrom(foregroundColor: muted),
+      style: TextButton.styleFrom(foregroundColor: context.palette.muted),
     ),
   );
 }
@@ -353,9 +364,9 @@ class _Message extends StatelessWidget {
       children: [
         Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppFontSizes.secondary,
-            color: muted,
+            color: context.palette.muted,
           ),
         ),
         ?action,

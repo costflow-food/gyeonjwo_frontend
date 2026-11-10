@@ -5,11 +5,11 @@ import '../workspace_colors.dart';
 
 /// Shared appearance; each button keeps its own disabled and busy behavior.
 abstract final class WorkspaceButtonStyles {
-  static final filled = FilledButton.styleFrom(
-    backgroundColor: accent,
-    foregroundColor: Colors.white,
-    disabledBackgroundColor: line,
-    disabledForegroundColor: muted,
+  static ButtonStyle filled(BuildContext context) => FilledButton.styleFrom(
+    backgroundColor: context.palette.accent,
+    foregroundColor: context.palette.onAccent,
+    disabledBackgroundColor: context.palette.line,
+    disabledForegroundColor: context.palette.muted,
     minimumSize: const Size(0, 38),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
     shape: const StadiumBorder(),
@@ -19,10 +19,10 @@ abstract final class WorkspaceButtonStyles {
     ),
   );
 
-  static final outlined = OutlinedButton.styleFrom(
-    foregroundColor: accent,
-    disabledForegroundColor: muted,
-    side: const BorderSide(color: accent),
+  static ButtonStyle outlined(BuildContext context) => OutlinedButton.styleFrom(
+    foregroundColor: context.palette.accentText,
+    disabledForegroundColor: context.palette.muted,
+    side: BorderSide(color: context.palette.accentText),
     minimumSize: const Size(0, 38),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
     shape: const StadiumBorder(),
@@ -32,18 +32,19 @@ abstract final class WorkspaceButtonStyles {
     ),
   );
 
-  static final text = TextButton.styleFrom(
-    foregroundColor: accent,
+  static ButtonStyle text(BuildContext context) => TextButton.styleFrom(
+    foregroundColor: context.palette.accentText,
     textStyle: const TextStyle(fontSize: AppFontSizes.button),
   );
 
-  static final segmented = ButtonStyle(
-    foregroundColor: const WidgetStatePropertyAll(ink),
+  static ButtonStyle segmented(BuildContext context) => ButtonStyle(
+    foregroundColor: WidgetStatePropertyAll(context.palette.ink),
     backgroundColor: WidgetStateProperty.resolveWith(
-      (states) =>
-          states.contains(WidgetState.selected) ? blush : Colors.transparent,
+      (states) => states.contains(WidgetState.selected)
+          ? context.palette.blush
+          : Colors.transparent,
     ),
-    side: const WidgetStatePropertyAll(BorderSide(color: line)),
+    side: WidgetStatePropertyAll(BorderSide(color: context.palette.line)),
     shape: const WidgetStatePropertyAll(StadiumBorder()),
     textStyle: const WidgetStatePropertyAll(
       TextStyle(fontSize: AppFontSizes.secondary),

@@ -22,7 +22,7 @@ class AuthLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: canvas,
+      backgroundColor: context.palette.canvas,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
@@ -35,7 +35,7 @@ class AuthLayout extends StatelessWidget {
                     constraints: BoxConstraints(maxWidth: maxWidth + 64),
                     padding: EdgeInsets.all(compact ? 20 : 32),
                     decoration: BoxDecoration(
-                      color: frame,
+                      color: context.palette.frame,
                       borderRadius: BorderRadius.circular(32),
                     ),
                     child: Column(
@@ -59,7 +59,7 @@ class AuthLayout extends StatelessWidget {
                               icon: const Icon(Icons.arrow_back, size: 16),
                               label: const Text('이전으로'),
                               style: TextButton.styleFrom(
-                                foregroundColor: muted,
+                                foregroundColor: context.palette.muted,
                               ),
                             ),
                           ),
@@ -72,11 +72,11 @@ class AuthLayout extends StatelessWidget {
                         SizedBox(height: compact ? 4 : 16),
                         Padding(
                           padding: const EdgeInsets.only(left: 4),
-                          child: const Text(
+                          child: Text(
                             '견줘 · 근거를 모아, 더 선명한 구매 검토.',
                             style: TextStyle(
                               fontSize: AppFontSizes.secondary,
-                              color: muted,
+                              color: context.palette.muted,
                             ),
                           ),
                         ),
@@ -104,10 +104,14 @@ class AuthCard extends StatelessWidget {
         padding ??
         EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 22 : 36),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: context.palette.surface,
       borderRadius: BorderRadius.circular(24),
-      boxShadow: const [
-        BoxShadow(color: Color(0x1F1E3932), blurRadius: 16, offset: Offset(0, 4)),
+      boxShadow: [
+        BoxShadow(
+          color: context.palette.ink.withValues(alpha: 0.12),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
       ],
     ),
     child: child,
@@ -132,13 +136,13 @@ class AuthHeading extends StatelessWidget {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: blush,
+          color: context.palette.blush,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
           step,
-          style: const TextStyle(
-            color: accent,
+          style: TextStyle(
+            color: context.palette.accentText,
             fontSize: AppFontSizes.caption,
             fontWeight: FontWeight.w600,
           ),
@@ -157,9 +161,9 @@ class AuthHeading extends StatelessWidget {
       const SizedBox(height: 12),
       Text(
         description,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: AppFontSizes.bodyLarge,
-          color: muted,
+          color: context.palette.muted,
           height: 1.8,
         ),
       ),
@@ -192,10 +196,14 @@ class AuthInfoTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: enabled ? Colors.white : canvas,
+            color: enabled ? context.palette.surface : context.palette.canvas,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 20, color: enabled ? accent : muted),
+          child: Icon(
+            icon,
+            size: 20,
+            color: enabled ? context.palette.accentText : context.palette.muted,
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -207,15 +215,15 @@ class AuthInfoTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AppFontSizes.bodyLarge,
                   fontWeight: FontWeight.w700,
-                  color: enabled ? ink : muted,
+                  color: enabled ? context.palette.ink : context.palette.muted,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: AppFontSizes.body,
-                  color: muted,
+                  color: context.palette.muted,
                   height: 1.7,
                 ),
               ),
@@ -226,7 +234,9 @@ class AuthInfoTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: AppFontSizes.secondary,
                     fontWeight: FontWeight.w600,
-                    color: enabled ? const Color(0xFF00754A) : muted,
+                    color: enabled
+                        ? const Color(0xFF00754A)
+                        : context.palette.muted,
                   ),
                 ),
               ],
@@ -247,15 +257,15 @@ class AuthNotice extends StatelessWidget {
     width: double.infinity,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: panel,
-      border: Border.all(color: line),
+      color: context.palette.panel,
+      border: Border.all(color: context.palette.line),
       borderRadius: BorderRadius.circular(16),
     ),
     child: Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: AppFontSizes.body,
-        color: muted,
+        color: context.palette.muted,
         height: 1.8,
       ),
     ),
@@ -279,8 +289,8 @@ class AuthButton extends StatelessWidget {
     child: FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: accent,
-        foregroundColor: Colors.white,
+        backgroundColor: context.palette.accent,
+        foregroundColor: context.palette.onAccent,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         shape: const StadiumBorder(),
       ),

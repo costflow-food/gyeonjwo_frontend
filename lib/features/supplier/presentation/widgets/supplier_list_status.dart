@@ -24,9 +24,9 @@ class SupplierListStatus extends StatelessWidget {
             data.query.isEmpty
                 ? "총 ${data.total}곳 · 이름순"
                 : "'${data.query}' 검색 결과 ${data.total}곳 · 이름순",
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppFontSizes.secondary,
-              color: muted,
+              color: context.palette.muted,
             ),
           ),
         ),

@@ -27,8 +27,8 @@ class PriceColumn extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: line),
+        color: context.palette.surface,
+        border: Border.all(color: context.palette.line),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -44,16 +44,19 @@ class PriceColumn extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             caption,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppFontSizes.caption,
-              color: muted,
+              color: context.palette.muted,
             ),
           ),
           const SizedBox(height: 12),
           if (records.isEmpty)
             Text(
               emptyText,
-              style: const TextStyle(fontSize: AppFontSizes.body, color: muted),
+              style: TextStyle(
+                fontSize: AppFontSizes.body,
+                color: context.palette.muted,
+              ),
             )
           else
             for (final (index, record) in records.indexed)

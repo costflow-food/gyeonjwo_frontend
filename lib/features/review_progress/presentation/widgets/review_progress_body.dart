@@ -40,7 +40,7 @@ class ReviewProgressBody extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: outcome.stopped ? danger : ink,
+                      color: outcome.stopped ? danger : context.palette.ink,
                     ),
                   ),
                   if (detail != null) ...[
@@ -75,7 +75,10 @@ class ReviewProgressBody extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       failure.message,
-                      style: const TextStyle(fontSize: 14, color: muted),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: context.palette.muted,
+                      ),
                     ),
                   ],
                   if (state.autoRefreshStopped) ...[
@@ -157,7 +160,7 @@ class _Box extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: const Color(0xFFF8FBF9),
+      color: context.palette.panel,
       borderRadius: BorderRadius.circular(16),
     ),
     child: Column(
@@ -186,19 +189,22 @@ class _StageRow extends StatelessWidget {
               size: 20,
               color: Color(0xFF00754A),
             ),
-            StageState.running => const Padding(
+            StageState.running => Padding(
               padding: EdgeInsets.all(2),
-              child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: context.palette.accent,
+              ),
             ),
             StageState.stopped => const Icon(
               Icons.pause_circle_outline,
               size: 20,
               color: danger,
             ),
-            StageState.waiting => const Icon(
+            StageState.waiting => Icon(
               Icons.radio_button_unchecked,
               size: 20,
-              color: line,
+              color: context.palette.line,
             ),
           },
         ),
@@ -210,12 +216,17 @@ class _StageRow extends StatelessWidget {
             fontWeight: state == StageState.running
                 ? FontWeight.w700
                 : FontWeight.w400,
-            color: state == StageState.waiting ? muted : ink,
+            color: state == StageState.waiting
+                ? context.palette.muted
+                : context.palette.ink,
           ),
         ),
         if (state == StageState.running) ...[
           const SizedBox(width: 8),
-          const Text("진행 중", style: TextStyle(fontSize: 14, color: muted)),
+          Text(
+            "진행 중",
+            style: TextStyle(fontSize: 14, color: context.palette.muted),
+          ),
         ],
       ],
     ),

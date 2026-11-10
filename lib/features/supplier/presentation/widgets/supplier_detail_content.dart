@@ -51,14 +51,17 @@ class SupplierDetailContent extends StatelessWidget {
         const SizedBox(height: 16),
         EvidenceSourceLine(prefix: "기준자료", evidence: supplier.evidence),
         const SizedBox(height: 24),
-        const Divider(color: line),
+        Divider(color: context.palette.line),
         const SizedBox(height: 16),
         SupplierSectionTitle("취급 품목 ${supplier.items.length}"),
         const SizedBox(height: 12),
         if (supplier.items.isEmpty)
-          const Text(
+          Text(
             "등록된 취급 품목이 없습니다. 품목이 없으면 후보 선정의 취급 근거로 쓰이지 않습니다.",
-            style: TextStyle(fontSize: AppFontSizes.body, color: muted),
+            style: TextStyle(
+              fontSize: AppFontSizes.body,
+              color: context.palette.muted,
+            ),
           )
         else
           for (final item in supplier.items) ...[

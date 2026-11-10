@@ -30,13 +30,16 @@ class WorkflowLogDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     final value = entry;
     if (value == null) {
-      return const OutlinePanel(
+      return OutlinePanel(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 24),
           child: Center(
             child: Text(
               "로그를 선택하면 근거와 참조를 볼 수 있어요.",
-              style: TextStyle(fontSize: AppFontSizes.body, color: muted),
+              style: TextStyle(
+                fontSize: AppFontSizes.body,
+                color: context.palette.muted,
+              ),
             ),
           ),
         ),
@@ -99,7 +102,7 @@ class WorkflowLogDetail extends StatelessWidget {
           if (value.requestId != null) _Field("request_id", value.requestId!),
           if (caseId != null || mailId != null || draftId != null) ...[
             const SizedBox(height: 14),
-            const Divider(color: line),
+            Divider(color: context.palette.line),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -107,7 +110,7 @@ class WorkflowLogDetail extends StatelessWidget {
               children: [
                 if (caseId != null && !caseFiltered)
                   OutlinedButton.icon(
-                    style: WorkspaceButtonStyles.outlined,
+                    style: WorkspaceButtonStyles.outlined(context),
                     onPressed: () =>
                         onFilterCase(caseId, caseTitle: value.caseTitle),
                     icon: const Icon(Icons.filter_list, size: 16),
@@ -115,14 +118,14 @@ class WorkflowLogDetail extends StatelessWidget {
                   ),
                 if (caseId != null)
                   OutlinedButton.icon(
-                    style: WorkspaceButtonStyles.outlined,
+                    style: WorkspaceButtonStyles.outlined(context),
                     onPressed: () => context.go("/cases/$caseId"),
                     icon: const Icon(Icons.open_in_new, size: 16),
                     label: const Text("업무 보기"),
                   ),
                 if (mailId != null)
                   OutlinedButton.icon(
-                    style: WorkspaceButtonStyles.outlined,
+                    style: WorkspaceButtonStyles.outlined(context),
                     onPressed: () =>
                         showSourceDocument(context, requestId: mailId),
                     icon: const Icon(Icons.mail_outline, size: 16),
@@ -130,7 +133,7 @@ class WorkflowLogDetail extends StatelessWidget {
                   ),
                 if (draftId != null && caseId != null)
                   OutlinedButton.icon(
-                    style: WorkspaceButtonStyles.outlined,
+                    style: WorkspaceButtonStyles.outlined(context),
                     onPressed: () => showMailDraftDialog(
                       context,
                       caseId: caseId,
@@ -165,9 +168,9 @@ class _Field extends StatelessWidget {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppFontSizes.secondary,
-                color: muted,
+                color: context.palette.muted,
               ),
             ),
           ),

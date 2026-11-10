@@ -28,11 +28,11 @@ class RequestRow extends StatelessWidget {
       selected: selected,
       button: true,
       child: Material(
-        color: selected ? Colors.white : Colors.transparent,
+        color: selected ? context.palette.surface : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: selected
-              ? const BorderSide(color: accent, width: 1.5)
+              ? BorderSide(color: context.palette.accentText, width: 1.5)
               : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
@@ -51,7 +51,7 @@ class RequestRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: AppFontSizes.body,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                    color: ink,
+                    color: context.palette.ink,
                     height: 1.4,
                   ),
                 ),
@@ -60,9 +60,9 @@ class RequestRow extends StatelessWidget {
                   data.senderName ?? data.sender,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.secondary,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -74,9 +74,9 @@ class RequestRow extends StatelessWidget {
                     StatusBadge(data.status, rawCode: data.statusCode),
                     Text(
                       shortTime,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: AppFontSizes.caption,
-                        color: muted,
+                        color: context.palette.muted,
                       ),
                     ),
                     if (data.replySummary case final replies?
@@ -84,22 +84,26 @@ class RequestRow extends StatelessWidget {
                       Text(
                         replies.shortLabel,
                         semanticsLabel: replies.label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: AppFontSizes.caption,
-                          color: muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     if (data.attachmentCount > 0)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.attach_file, size: 11, color: muted),
+                          Icon(
+                            Icons.attach_file,
+                            size: 11,
+                            color: context.palette.muted,
+                          ),
                           Text(
                             "${data.attachmentCount}",
                             semanticsLabel: "첨부 ${data.attachmentCount}개",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: AppFontSizes.caption,
-                              color: muted,
+                              color: context.palette.muted,
                             ),
                           ),
                         ],

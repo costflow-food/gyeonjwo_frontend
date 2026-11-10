@@ -21,9 +21,9 @@ class SupplierFact extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppFontSizes.caption,
-              color: muted,
+              color: context.palette.muted,
             ),
           ),
           const SizedBox(height: 4),
@@ -31,7 +31,7 @@ class SupplierFact extends StatelessWidget {
             value ?? "미확인",
             style: TextStyle(
               fontSize: AppFontSizes.body,
-              color: missing ? muted : ink,
+              color: missing ? context.palette.muted : context.palette.ink,
               fontWeight: missing ? FontWeight.w400 : FontWeight.w600,
             ),
           ),

@@ -191,7 +191,7 @@ class _SupplierHeader extends StatelessWidget {
             TextSpan(
               text:
                   "  원${allocation.unit == null ? "" : "/${allocation.unit}"}",
-              style: const TextStyle(fontSize: 12, color: muted),
+              style: TextStyle(fontSize: 12, color: context.palette.muted),
             ),
         ],
       ),
@@ -219,10 +219,10 @@ class _AllocationCell extends StatelessWidget {
         ? 0.0
         : (quantity / planQuantity).clamp(0, 1).toDouble();
     final barColor = lowest
-        ? gold
+        ? context.palette.gold
         : conditional
-        ? const Color(0x4D1E3932)
-        : accent;
+        ? context.palette.ink.withValues(alpha: 0.3)
+        : context.palette.accent;
     final unit = allocation.unit ?? "";
     return _Cell(
       child: Column(
@@ -242,7 +242,7 @@ class _AllocationCell extends StatelessWidget {
               value: share,
               minHeight: 6,
               color: barColor,
-              backgroundColor: line,
+              backgroundColor: context.palette.line,
             ),
           ),
           const SizedBox(height: 8),
@@ -257,11 +257,11 @@ class _AllocationCell extends StatelessWidget {
                   text:
                       " | ${decimal(planQuantity.toString())}$unit"
                       "${conditional ? " · 조건부" : ""}",
-                  style: const TextStyle(color: muted),
+                  style: TextStyle(color: context.palette.muted),
                 ),
               ],
             ),
-            style: const TextStyle(fontSize: 13, color: ink),
+            style: TextStyle(fontSize: 13, color: context.palette.ink),
           ),
         ],
       ),
@@ -273,13 +273,13 @@ class _EmptyCell extends StatelessWidget {
   const _EmptyCell();
 
   @override
-  Widget build(BuildContext context) => const _Cell(
+  Widget build(BuildContext context) => _Cell(
     child: Align(
       alignment: Alignment.centerLeft,
       child: Text(
         "—",
         semanticsLabel: "배정 없음",
-        style: TextStyle(color: muted),
+        style: TextStyle(color: context.palette.muted),
       ),
     ),
   );
@@ -295,12 +295,12 @@ class _Cell extends StatelessWidget {
     constraints: const BoxConstraints(minHeight: 64),
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: context.palette.surface,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: line),
-      boxShadow: const [
+      border: Border.all(color: context.palette.line),
+      boxShadow: [
         BoxShadow(
-          color: Color(0x141E3932),
+          color: context.palette.ink.withValues(alpha: 0.08),
           blurRadius: 8,
           offset: Offset(0, 2),
         ),
@@ -324,19 +324,25 @@ class _ExcludedNotice extends StatelessWidget {
             ? null
             : "역전 기준 ${won(question.breakEvenAmount)}");
     return CustomPaint(
-      painter: const _HatchPainter(),
+      painter: _HatchPainter(context.palette.ink.withValues(alpha: 0.06)),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x591E3932)),
+          border: Border.all(
+            color: context.palette.ink.withValues(alpha: 0.35),
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 2),
-              child: Icon(Icons.info_outline, size: 16, color: ink),
+              child: Icon(
+                Icons.info_outline,
+                size: 16,
+                color: context.palette.ink,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -350,9 +356,9 @@ class _ExcludedNotice extends StatelessWidget {
                   if (detail != null)
                     Text(
                       detail,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: muted,
+                        color: context.palette.muted,
                         height: 1.5,
                       ),
                     ),
@@ -367,7 +373,9 @@ class _ExcludedNotice extends StatelessWidget {
 }
 
 class _HatchPainter extends CustomPainter {
-  const _HatchPainter();
+  const _HatchPainter(this.color);
+
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -376,7 +384,7 @@ class _HatchPainter extends CustomPainter {
       RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(16)),
     );
     final paint = Paint()
-      ..color = const Color(0x0F1E3932)
+      ..color = color
       ..strokeWidth = 8;
     for (var x = -size.height; x < size.width; x += 16) {
       canvas.drawLine(
@@ -389,7 +397,7 @@ class _HatchPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_HatchPainter oldDelegate) => false;
+  bool shouldRepaint(_HatchPainter oldDelegate) => oldDelegate.color != color;
 }
 
 /// 확정 가능한 안: 이 안 선택. 조건부 안: 수긍하기(아직 서버 동작이 없어 비활성).
@@ -419,15 +427,15 @@ class _SelectButton extends StatelessWidget {
         height: 48,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: blush,
+          color: context.palette.blush,
           borderRadius: BorderRadius.circular(999),
         ),
-        child: const Text(
+        child: Text(
           "선택한 구매안",
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: accent,
+            color: context.palette.accentText,
           ),
         ),
       );
@@ -446,10 +454,10 @@ class _SelectButton extends StatelessWidget {
     final button = lowest
         ? FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: accent,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: line,
-              disabledForegroundColor: muted,
+              backgroundColor: context.palette.accent,
+              foregroundColor: context.palette.onAccent,
+              disabledBackgroundColor: context.palette.line,
+              disabledForegroundColor: context.palette.muted,
               minimumSize: size,
               shape: shape,
               textStyle: text,
@@ -459,9 +467,13 @@ class _SelectButton extends StatelessWidget {
           )
         : OutlinedButton(
             style: OutlinedButton.styleFrom(
-              foregroundColor: accent,
-              disabledForegroundColor: muted,
-              side: BorderSide(color: onPressed == null ? line : accent),
+              foregroundColor: context.palette.accentText,
+              disabledForegroundColor: context.palette.muted,
+              side: BorderSide(
+                color: onPressed == null
+                    ? context.palette.line
+                    : context.palette.accentText,
+              ),
               minimumSize: size,
               shape: shape,
               textStyle: text,

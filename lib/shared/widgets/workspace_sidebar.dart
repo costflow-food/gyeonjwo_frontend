@@ -34,7 +34,7 @@ class WorkspaceSidebar extends StatelessWidget {
                       ref.read(mailIntakeViewModelProvider.notifier).refresh();
                     },
                     icon: const Icon(Icons.refresh, size: 18),
-                    color: muted,
+                    color: context.palette.muted,
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
@@ -42,13 +42,19 @@ class WorkspaceSidebar extends StatelessWidget {
                 IconButton(
                   tooltip: '업무 큐 접기',
                   onPressed: onCollapse,
-                  icon: const Icon(Icons.chevron_left, size: 20, color: ink),
+                  icon: Icon(
+                    Icons.chevron_left,
+                    size: 20,
+                    color: context.palette.ink,
+                  ),
                   style: IconButton.styleFrom(
                     minimumSize: const Size(36, 36),
                     maximumSize: const Size(36, 36),
                     padding: const EdgeInsets.all(6),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    backgroundColor: Colors.white.withValues(alpha: .5),
+                    backgroundColor: context.palette.surface.withValues(
+                      alpha: .5,
+                    ),
                     shape: const CircleBorder(),
                   ),
                 ),
@@ -96,12 +102,12 @@ class _SidebarTabsState extends ConsumerState<_SidebarTabs>
         // Each tab takes half the width; counts sit in their own badge.
         TabBar(
           controller: _tabs,
-          labelColor: ink,
-          unselectedLabelColor: muted,
-          indicatorColor: accent,
+          labelColor: context.palette.ink,
+          unselectedLabelColor: context.palette.muted,
+          indicatorColor: context.palette.accent,
           indicatorWeight: 3,
           indicatorSize: TabBarIndicatorSize.tab,
-          dividerColor: const Color(0x331E3932),
+          dividerColor: context.palette.ink.withValues(alpha: 0.2),
           labelPadding: EdgeInsets.zero,
           labelStyle: const TextStyle(
             fontSize: AppFontSizes.body,
@@ -154,15 +160,15 @@ class _CountTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
               '$count',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppFontSizes.caption,
                 fontWeight: FontWeight.w600,
-                color: muted,
+                color: context.palette.muted,
               ),
             ),
           ),

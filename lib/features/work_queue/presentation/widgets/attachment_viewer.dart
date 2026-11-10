@@ -48,10 +48,10 @@ class AttachmentViewer extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.picture_as_pdf_outlined,
                     size: 18,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -73,7 +73,7 @@ class AttachmentViewer extends ConsumerWidget {
                 ],
               ),
             ),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
@@ -113,17 +113,20 @@ class _ViewerError extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.error_outline, size: 28, color: muted),
+        Icon(Icons.error_outline, size: 28, color: context.palette.muted),
         const SizedBox(height: 10),
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: AppFontSizes.body, color: muted),
+          style: TextStyle(
+            fontSize: AppFontSizes.body,
+            color: context.palette.muted,
+          ),
         ),
         const SizedBox(height: 10),
         OutlinedButton(
           onPressed: onRetry,
-          style: WorkspaceButtonStyles.outlined,
+          style: WorkspaceButtonStyles.outlined(context),
           child: const Text("다시 시도"),
         ),
       ],

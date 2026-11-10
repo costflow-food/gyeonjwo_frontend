@@ -25,8 +25,8 @@ class SupplierItemCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: line),
+        color: context.palette.surface,
+        border: Border.all(color: context.palette.line),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -49,9 +49,9 @@ class SupplierItemCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       item.specification ?? "규격 미확인",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: AppFontSizes.secondary,
-                        color: muted,
+                        color: context.palette.muted,
                       ),
                     ),
                   ],
@@ -65,7 +65,9 @@ class SupplierItemCard extends StatelessWidget {
                   "근거·가격 이력",
                   style: TextStyle(fontSize: AppFontSizes.buttonSmall),
                 ),
-                style: TextButton.styleFrom(foregroundColor: ink),
+                style: TextButton.styleFrom(
+                  foregroundColor: context.palette.ink,
+                ),
               ),
             ],
           ),
@@ -86,9 +88,12 @@ class SupplierItemCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           if (item.certifications.isEmpty)
-            const Text(
+            Text(
               "인증 정보 미확인",
-              style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
+              style: TextStyle(
+                fontSize: AppFontSizes.secondary,
+                color: context.palette.muted,
+              ),
             )
           else
             Wrap(

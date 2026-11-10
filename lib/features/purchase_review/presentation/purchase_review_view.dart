@@ -61,7 +61,7 @@ class _Unavailable extends StatelessWidget {
             Icon(
               notReady ? Icons.hourglass_empty : Icons.error_outline,
               size: 28,
-              color: notReady ? muted : danger,
+              color: notReady ? context.palette.muted : danger,
             ),
             const SizedBox(height: 12),
             Text(
@@ -74,19 +74,23 @@ class _Unavailable extends StatelessWidget {
                   ? "회신 검토가 끝나면 카드가 생겨요. 진행 상황은 업무에서 확인할 수 있어요."
                   : failure?.message ?? "잠시 뒤 다시 시도해 주세요.",
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: muted, height: 1.6),
+              style: TextStyle(
+                fontSize: 14,
+                color: context.palette.muted,
+                height: 1.6,
+              ),
             ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
               children: [
                 OutlinedButton(
-                  style: WorkspaceButtonStyles.outlined,
+                  style: WorkspaceButtonStyles.outlined(context),
                   onPressed: () => context.go("/cases/$caseId"),
                   child: const Text("업무 보기"),
                 ),
                 FilledButton(
-                  style: WorkspaceButtonStyles.filled,
+                  style: WorkspaceButtonStyles.filled(context),
                   onPressed: onRetry,
                   child: Text(notReady ? "다시 확인" : "다시 시도"),
                 ),

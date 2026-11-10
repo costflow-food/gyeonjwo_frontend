@@ -57,14 +57,14 @@ class MailIntakeActions extends StatelessWidget {
             runSpacing: 8,
             children: [
               OutlinedButton(
-                style: WorkspaceButtonStyles.outlined,
+                style: WorkspaceButtonStyles.outlined(context),
                 onPressed: active
                     ? () => onResolve(IntakeResolution.nonBusiness)
                     : null,
                 child: const Text("비업무로 확인"),
               ),
               OutlinedButton(
-                style: WorkspaceButtonStyles.outlined,
+                style: WorkspaceButtonStyles.outlined(context),
                 onPressed: active
                     ? () => onResolve(IntakeResolution.createCase)
                     : null,
@@ -74,7 +74,7 @@ class MailIntakeActions extends StatelessWidget {
                 onPressed: active && canLink
                     ? () => onResolve(IntakeResolution.linkCase)
                     : null,
-                style: WorkspaceButtonStyles.filled,
+                style: WorkspaceButtonStyles.filled(context),
                 child: Text(busy ? "처리 중" : "선택한 업무에 연결"),
               ),
             ],

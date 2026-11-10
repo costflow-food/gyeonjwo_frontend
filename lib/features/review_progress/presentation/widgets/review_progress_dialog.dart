@@ -24,7 +24,7 @@ class ReviewProgressDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Dialog(
-    backgroundColor: Colors.white,
+    backgroundColor: context.palette.surface,
     surfaceTintColor: Colors.transparent,
     insetPadding: const EdgeInsets.all(20),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -44,9 +44,9 @@ class ReviewProgressDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ReviewProgressHeader(title: title, onClose: onClose),
-              const Divider(height: 1, color: line),
+              Divider(height: 1, color: context.palette.line),
               body,
-              const Divider(height: 1, color: line),
+              Divider(height: 1, color: context.palette.line),
               ReviewProgressFooter(outcome: outcome, onViewCase: onViewCase),
             ],
           ),

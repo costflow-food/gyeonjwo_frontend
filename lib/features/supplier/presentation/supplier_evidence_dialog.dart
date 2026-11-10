@@ -43,13 +43,13 @@ class SupplierEvidenceDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: canvas,
+      backgroundColor: context.palette.canvas,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.all(20),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: line),
+        side: BorderSide(color: context.palette.line),
       ),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
@@ -61,7 +61,7 @@ class SupplierEvidenceDialog extends StatelessWidget {
             SupplierEvidenceHeader(
               title: "${supplier.name} · ${item.itemName}",
             ),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(28),
@@ -74,9 +74,9 @@ class SupplierEvidenceDialog extends StatelessWidget {
                         if (item.unit != null) "단위 ${item.unit}",
                         if (item.origin != null) item.origin!,
                       ].join(" · "),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: AppFontSizes.body,
-                        color: muted,
+                        color: context.palette.muted,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -87,14 +87,14 @@ class SupplierEvidenceDialog extends StatelessWidget {
                       childrenPadding: const EdgeInsets.only(top: 12),
                       shape: const Border(),
                       collapsedShape: const Border(),
-                      iconColor: ink,
-                      collapsedIconColor: muted,
-                      title: const Text(
+                      iconColor: context.palette.ink,
+                      collapsedIconColor: context.palette.muted,
+                      title: Text(
                         "업체·품목 상세",
                         style: TextStyle(
                           fontSize: AppFontSizes.bodyLarge,
                           fontWeight: FontWeight.w700,
-                          color: ink,
+                          color: context.palette.ink,
                         ),
                       ),
                       children: [
@@ -107,7 +107,7 @@ class SupplierEvidenceDialog extends StatelessWidget {
                 ),
               ),
             ),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             const SupplierEvidenceFooter(),
           ],
         ),

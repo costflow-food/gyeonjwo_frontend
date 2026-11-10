@@ -16,12 +16,12 @@ class OutlinePanel extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: line),
+        color: context.palette.surface,
+        border: Border.all(color: context.palette.line),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x141E3932),
+            color: context.palette.ink.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),

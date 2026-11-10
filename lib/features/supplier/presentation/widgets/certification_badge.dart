@@ -18,8 +18,8 @@ class CertificationBadge extends StatelessWidget {
         Icons.check,
       ),
       CertificationStatus.unconfirmed => (
-        muted,
-        const Color(0xFFEEF2F0),
+        context.palette.muted,
+        context.palette.line,
         Icons.help_outline,
       ),
       CertificationStatus.notMet => (

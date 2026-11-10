@@ -65,9 +65,9 @@ class IntakeSidebarList extends ConsumerWidget {
                     mail.sender,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: AppFontSizes.secondary,
-                      color: muted,
+                      color: context.palette.muted,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -95,9 +95,9 @@ class IntakeSidebarList extends ConsumerWidget {
                       ),
                       Text(
                         received.length > 5 ? received.substring(5) : received,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: AppFontSizes.caption,
-                          color: muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],
@@ -126,7 +126,10 @@ class _Message extends StatelessWidget {
       children: [
         Text(
           text,
-          style: const TextStyle(fontSize: AppFontSizes.secondary, color: muted),
+          style: TextStyle(
+            fontSize: AppFontSizes.secondary,
+            color: context.palette.muted,
+          ),
         ),
         ?action,
       ],

@@ -23,12 +23,12 @@ class ReviewProgressHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '검토 진행',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: ink,
+                  color: context.palette.ink,
                 ),
               ),
               const SizedBox(height: 4),
@@ -36,7 +36,7 @@ class ReviewProgressHeader extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14, color: muted),
+                style: TextStyle(fontSize: 14, color: context.palette.muted),
               ),
             ],
           ),
@@ -44,7 +44,7 @@ class ReviewProgressHeader extends StatelessWidget {
         IconButton(
           tooltip: '검토 진행 닫기',
           onPressed: onClose,
-          icon: const Icon(Icons.close, size: 20, color: muted),
+          icon: Icon(Icons.close, size: 20, color: context.palette.muted),
         ),
       ],
     ),

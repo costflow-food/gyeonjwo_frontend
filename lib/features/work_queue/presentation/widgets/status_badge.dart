@@ -22,8 +22,8 @@ class StatusBadge extends StatelessWidget {
         Icons.schedule,
       ),
       WorkCaseStatus.running => (
-        ink,
-        const Color(0xFFEEF2F0),
+        context.palette.ink,
+        context.palette.line,
         Icons.hourglass_top,
       ),
       WorkCaseStatus.complete => (
@@ -36,7 +36,11 @@ class StatusBadge extends StatelessWidget {
         const Color(0xFFF6EEDC),
         Icons.pause_circle_outline,
       ),
-      WorkCaseStatus.other => (muted, const Color(0xFFEEF2F0), Icons.remove),
+      WorkCaseStatus.other => (
+        context.palette.muted,
+        context.palette.line,
+        Icons.remove,
+      ),
     };
     final label = status == WorkCaseStatus.other
         ? (rawCode ?? status.label)
