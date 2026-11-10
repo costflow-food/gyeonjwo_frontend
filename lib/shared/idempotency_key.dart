@@ -1,3 +1,4 @@
+import "dart:async";
 import "dart:convert";
 import "dart:math";
 
@@ -12,34 +13,57 @@ String newIdempotencyKey() {
 
 /// Idempotency keys a repository keeps per user action.
 ///
-/// Retrying the same body reuses the key, so a retry after a lost response
-/// cannot act twice. Success or a definite server answer frees the key;
-/// `REQUEST_IN_PROGRESS` keeps it so the retry only checks the first request.
+/// Concurrent identical actions share one Future, so double-clicks cannot
+/// issue duplicate HTTP mutations. A different body for the same action must
+/// wait until the first action finishes; it never overwrites the active key.
+/// Retrying the same body after an unknown outcome reuses the key.
 class IdempotencyKeys {
   final _pending = <String, ({String body, String key})>{};
+  final _inFlight = <String, ({String body, Future<dynamic> future})>{};
 
   Future<T> run<T>(
     String action,
     Object? body,
     Future<T> Function(String key) send, {
     required String? Function(Object error) serverCode,
-  }) async {
+  }) {
     final fingerprint = jsonEncode(body);
+    final active = _inFlight[action];
+    if (active != null) {
+      if (active.body != fingerprint) {
+        return Future<T>.error(
+          StateError("An action is already in progress with different data."),
+        );
+      }
+      return active.future as Future<T>;
+    }
+
     final previous = _pending[action];
     final key = previous != null && previous.body == fingerprint
         ? previous.key
         : newIdempotencyKey();
+    final completer = Completer<T>();
+    _inFlight[action] = (body: fingerprint, future: completer.future);
     _pending[action] = (body: fingerprint, key: key);
-    try {
-      final result = await send(key);
-      _pending.remove(action);
-      return result;
-    } catch (error) {
-      final code = serverCode(error);
-      if (code != null && code != "REQUEST_IN_PROGRESS") {
+
+    Future<void> execute() async {
+      try {
+        final result = await send(key);
         _pending.remove(action);
+        completer.complete(result);
+      } catch (error, stackTrace) {
+        final code = serverCode(error);
+        if (code != null && code != "REQUEST_IN_PROGRESS") {
+          _pending.remove(action);
+        }
+        completer.completeError(error, stackTrace);
+      } finally {
+        _inFlight.remove(action);
       }
-      rethrow;
     }
+
+    // Start the request after the in-flight entry is visible to reentrant calls.
+    unawaited(execute());
+    return completer.future;
   }
 }
