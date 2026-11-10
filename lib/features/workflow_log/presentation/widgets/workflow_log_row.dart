@@ -50,12 +50,12 @@ class WorkflowLogRow extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        entry.caseTitle ?? "업무 없음 (접수 단계)",
+                        entry.caseLabel,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: AppFontSizes.body,
                           fontWeight: FontWeight.w700,
-                          color: entry.caseTitle == null
+                          color: entry.caseId == null
                               ? context.palette.muted
                               : context.palette.ink,
                         ),

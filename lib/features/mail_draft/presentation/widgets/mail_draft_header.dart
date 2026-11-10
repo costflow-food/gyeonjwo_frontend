@@ -1,16 +1,10 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
 
 class MailDraftHeader extends StatelessWidget {
-  const MailDraftHeader({
-    super.key,
-    required this.caseId,
-    required this.onClose,
-  });
+  const MailDraftHeader({super.key, required this.onClose});
 
-  final String caseId;
   final VoidCallback onClose;
 
   @override
@@ -20,26 +14,13 @@ class MailDraftHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "메일 초안·발송",
-                  style: TextStyle(
-                    fontSize: AppFontSizes.dialogTitle,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  caseId,
-                  style: TextStyle(
-                    fontSize: AppFontSizes.secondary,
-                    color: context.palette.muted,
-                  ),
-                ),
-              ],
+          const Expanded(
+            child: Text(
+              "메일 초안·발송",
+              style: TextStyle(
+                fontSize: AppFontSizes.dialogTitle,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           IconButton(

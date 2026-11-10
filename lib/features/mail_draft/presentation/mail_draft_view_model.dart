@@ -28,6 +28,9 @@ class MailDraftViewModel extends _$MailDraftViewModel {
   /// Accepted (202) drafts whose API-17 status has not moved yet → polls.
   final Map<String, int> _awaiting = {};
 
+  /// Drafts whose accepted request showed no result within [maxWaitPolls].
+  final Set<String> _timedOut = {};
+
   @override
   Future<List<MailDraft>> build(String caseId) async {
     ref.onDispose(() => _poll?.cancel());
@@ -40,7 +43,10 @@ class MailDraftViewModel extends _$MailDraftViewModel {
     return named;
   }
 
-  void refresh() => ref.invalidateSelf();
+  void refresh() {
+    _timedOut.clear();
+    ref.invalidateSelf();
+  }
 
   Future<MailDraft> revise(MailDraft draft, DraftRevisionInput input) async {
     final revised = await ref
@@ -77,6 +83,7 @@ class MailDraftViewModel extends _$MailDraftViewModel {
     Future<void> Function() request,
   ) async {
     await request();
+    _timedOut.remove(draft.id);
     MailDraft? latest;
     try {
       latest = await ref.read(mailDraftRepositoryProvider).getDraft(draft.id);
@@ -110,6 +117,7 @@ class MailDraftViewModel extends _$MailDraftViewModel {
   MailDraft _named(MailDraft draft) => draft.copyWith(
     supplierName: _names[draft.supplierId],
     awaitingResult: _awaiting.containsKey(draft.id),
+    resultTimedOut: _timedOut.contains(draft.id),
   );
 
   void _replace(String oldId, MailDraft next) {
@@ -149,7 +157,10 @@ class MailDraftViewModel extends _$MailDraftViewModel {
         if (latest != null && latest.status != draft.status) {
           _awaiting.remove(draft.id);
         } else if (attempts + 1 >= maxWaitPolls) {
+          // The wait ends, but the screen says so: the request may not have
+          // been carried out (no send permission, changed settings, ...).
           _awaiting.remove(draft.id);
+          _timedOut.add(draft.id);
         } else {
           _awaiting[draft.id] = attempts + 1;
         }

@@ -60,9 +60,36 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    final mails = _loadedMails();
+    if (mails != null && !_isListed(mails)) {
+      _selectedMailId = mails.firstOrNull?.mailId;
+    }
+  }
+
+  @override
   void dispose() {
     _reason.dispose();
     super.dispose();
+  }
+
+  List<IntakeMail>? _loadedMails() =>
+      ref.read(mailIntakeViewModelProvider).asData?.value.items;
+
+  bool _isListed(List<IntakeMail> mails) =>
+      mails.any((mail) => mail.mailId == _selectedMailId);
+
+  /// 목록은 15초마다 새로 읽지만 열어 둔 메일은 그대로 둡니다. 그 메일이
+  /// 목록에서 빠졌을 때만 남은 첫 메일을 열고, 앞 메일에 입력한 사유와 고른
+  /// 업무를 함께 비웁니다. 버튼은 항상 화면에 보이는 메일에 적용됩니다.
+  void _keepSelection(List<IntakeMail> mails) {
+    if (_busy || _isListed(mails)) return;
+    setState(() {
+      _selectedMailId = mails.firstOrNull?.mailId;
+      _selectedCaseId = null;
+      _reason.clear();
+    });
   }
 
   void _selectMail(String mailId) => setState(() {
@@ -150,6 +177,9 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
         _error = "처리 결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다.";
       });
     }
+    // 처리 중에 미뤄 둔 목록 변화를 반영합니다.
+    final mails = _loadedMails();
+    if (mounted && mails != null) _keepSelection(mails);
   }
 
   @override
@@ -158,9 +188,13 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
     final viewModel = ref.read(mailIntakeViewModelProvider.notifier);
     final page = value.asData?.value;
     final mails = page?.items ?? const <IntakeMail>[];
-    final mail =
-        mails.where((item) => item.mailId == _selectedMailId).firstOrNull ??
-        mails.firstOrNull;
+    ref.listen(mailIntakeViewModelProvider, (previous, next) {
+      final loaded = next.asData?.value.items;
+      if (loaded != null) _keepSelection(loaded);
+    });
+    final mail = mails
+        .where((item) => item.mailId == _selectedMailId)
+        .firstOrNull;
     return Dialog(
       backgroundColor: context.palette.canvas,
       surfaceTintColor: Colors.transparent,

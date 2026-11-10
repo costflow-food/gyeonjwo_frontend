@@ -274,7 +274,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                MailDraftHeader(caseId: widget.caseId, onClose: _close),
+                MailDraftHeader(onClose: _close),
                 Divider(height: 1, color: context.palette.line),
                 Flexible(
                   child: SingleChildScrollView(

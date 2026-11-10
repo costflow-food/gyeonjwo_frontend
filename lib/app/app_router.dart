@@ -14,9 +14,11 @@ import "../features/purchase_review/presentation/purchase_review_view.dart";
 import "../features/supplier/presentation/supplier_view.dart";
 import "../features/workflow_log/presentation/workflow_log_view.dart";
 import "../features/work_queue/presentation/work_queue_view.dart";
+import "not_found_view.dart";
 
 final appRouter = GoRouter(
   initialLocation: '/login',
+  errorBuilder: (context, state) => const NotFoundView(),
   // Screen flow only; MyApp calls refresh() when the session or the Gmail
   // connection phase changes.
   redirect: (context, state) {

@@ -500,7 +500,7 @@ class _SidePanel extends StatelessWidget {
                 ),
               ],
             ),
-            for (final message in [?holdBlocked, ?confirmBlocked])
+            for (final message in {?holdBlocked, ?confirmBlocked})
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(

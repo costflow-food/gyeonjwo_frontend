@@ -111,6 +111,7 @@ class MailDraft {
     this.sentAt,
     this.providerMessageId,
     this.awaitingResult = false,
+    this.resultTimedOut = false,
   });
 
   final String id;
@@ -166,9 +167,17 @@ class MailDraft {
   /// is not visible in API-17 yet.
   final bool awaitingResult;
 
+  /// App-only: the accepted request showed no result within the wait, so it
+  /// may not have been carried out.
+  final bool resultTimedOut;
+
   String get displayName => supplierName ?? recipient;
 
-  MailDraft copyWith({String? supplierName, bool? awaitingResult}) => MailDraft(
+  MailDraft copyWith({
+    String? supplierName,
+    bool? awaitingResult,
+    bool? resultTimedOut,
+  }) => MailDraft(
     id: id,
     caseId: caseId,
     supplierId: supplierId,
@@ -191,6 +200,7 @@ class MailDraft {
     sentAt: sentAt,
     providerMessageId: providerMessageId,
     awaitingResult: awaitingResult ?? this.awaitingResult,
+    resultTimedOut: resultTimedOut ?? this.resultTimedOut,
   );
 
   bool can(String action) => switch (action) {
@@ -224,8 +234,7 @@ class MailDraft {
       "자동 발송이 켜져 있어 서버가 검증한 뒤 자동 발송해요.",
     DraftAction.approveSend when settingsVersion == null =>
       "발송 설정 버전을 확인할 수 없어요. 다시 불러와 주세요.",
-    DraftAction.reconcile when awaitingResult =>
-      "발신함 대조를 접수했어요. 결과를 확인하고 있어요.",
+    DraftAction.reconcile when awaitingResult => "발신함 대조를 접수했어요. 결과를 확인하고 있어요.",
     _ => null,
   };
 }
