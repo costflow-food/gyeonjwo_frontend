@@ -165,6 +165,8 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         final itemName = widget.workCase.itemName;
         final canSelect = set.canSelect;
         final blockedReason = set.blockedReason;
+        // 서버 사정으로 막힌 경우: 목록 위에서 먼저 알리고 후보를 흐리게 보여줍니다.
+        final serverNotice = set.serverBlockedNotice;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -197,6 +199,21 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 ),
               ),
             ],
+            if (serverNotice != null) ...[
+              const SizedBox(height: 12),
+              _Notice(
+                icon: Icons.info_outline,
+                color: const Color(0xFF8A6516),
+                text: serverNotice,
+                action: TextButton(
+                  onPressed: () => ref.invalidate(
+                    caseCandidatesProvider(widget.workCase.id),
+                  ),
+                  style: WorkspaceButtonStyles.text(context),
+                  child: const Text("다시 확인"),
+                ),
+              ),
+            ],
             if (set.unknownFields.isNotEmpty) ...[
               const SizedBox(height: 12),
               _Notice(
@@ -207,17 +224,21 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
             ],
             const SizedBox(height: 12),
             for (final candidate in set.candidates)
-              _CandidateTile(
-                candidate: candidate,
-                selected: selected.contains(candidate.supplierId),
-                enabled: !_busy && canSelect && candidate.selectable,
-                onChanged: (value) => setState(() {
-                  final next = {...selected};
-                  value
-                      ? next.add(candidate.supplierId)
-                      : next.remove(candidate.supplierId);
-                  _selected = next;
-                }),
+              Opacity(
+                // 지금은 어떤 후보도 고를 수 없으면 목록 전체를 흐리게 보입니다.
+                opacity: serverNotice != null ? 0.55 : 1,
+                child: _CandidateTile(
+                  candidate: candidate,
+                  selected: selected.contains(candidate.supplierId),
+                  enabled: !_busy && canSelect && candidate.selectable,
+                  onChanged: (value) => setState(() {
+                    final next = {...selected};
+                    value
+                        ? next.add(candidate.supplierId)
+                        : next.remove(candidate.supplierId);
+                    _selected = next;
+                  }),
+                ),
               ),
             const SizedBox(height: 8),
             Align(
@@ -237,7 +258,9 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                       )
                     : const Icon(Icons.send_outlined, size: 16),
                 label: Text(
-                  selected.isEmpty
+                  serverNotice != null
+                      ? "지금은 요청할 수 없어요"
+                      : selected.isEmpty
                       ? "업체를 골라 주세요"
                       : "선택한 ${selected.length}곳에 견적 요청",
                 ),
@@ -257,7 +280,12 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 ),
               ),
             ],
-            if (!canSelect && blockedReason != null && _error == null) ...[
+            // 위에서 이미 안내한 경우(서버 사정·과거 후보)는 아래에 다시 적지 않습니다.
+            if (!canSelect &&
+                blockedReason != null &&
+                serverNotice == null &&
+                !set.isStale &&
+                _error == null) ...[
               const SizedBox(height: 8),
               Text(
                 blockedReason,
