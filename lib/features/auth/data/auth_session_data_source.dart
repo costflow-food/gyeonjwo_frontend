@@ -3,6 +3,7 @@ import "dart:async";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 
+import "../../../shared/navigation/page_navigation.dart";
 
 part "auth_session_data_source.g.dart";
 
@@ -129,8 +130,11 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
       port: base.port,
       path: base.path,
     ).toString();
-    await _auth.signInWithOAuth(
-      OAuthProvider.google,
+    // Build the URL (and store the PKCE verifier) here, then move this tab
+    // ourselves: signInWithOAuth opens it with window.open(..., "_self",
+    // "noopener"), which recent Chrome ignores and the button never leaves.
+    final response = await _auth.getOAuthSignInUrl(
+      provider: OAuthProvider.google,
       redirectTo: redirectTo,
       scopes: gmailScopes.join(" "),
       queryParams: const {
@@ -140,6 +144,7 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
         "prompt": "consent",
       },
     );
+    navigateCurrentPage(Uri.parse(response.url));
   }
 
   @override
