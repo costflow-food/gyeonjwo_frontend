@@ -25,7 +25,7 @@ class SupplierHeader extends StatelessWidget {
               "거래처",
               style: TextStyle(
                 fontSize: AppFontSizes.pageTitle,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             SizedBox(height: 8),

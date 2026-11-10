@@ -22,22 +22,12 @@ class LoginView extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'PURCHASING WORKSPACE',
-                style: TextStyle(
-                  fontSize: AppFontSizes.secondary,
-                  color: accent,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.6,
-                ),
-              ),
-              SizedBox(height: 24),
-              Text(
                 '흩어진 구매 요청,\n검토의 시작을 한곳에서.',
                 style: TextStyle(
                   fontSize: AppFontSizes.brand,
-                  height: 1.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1.2,
+                  height: 1.4,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.5,
                 ),
               ),
               SizedBox(height: 20),

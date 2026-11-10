@@ -32,7 +32,7 @@ class IntakeMailDetail extends StatelessWidget {
           mail.subject,
           style: const TextStyle(
             fontSize: AppFontSizes.cardTitle,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 6),
@@ -46,7 +46,7 @@ class IntakeMailDetail extends StatelessWidget {
           decoration: BoxDecoration(
             color: canvas,
             border: Border.all(color: line),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +68,7 @@ class IntakeMailDetail extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(color: line),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: SelectableText(
             mail.bodyText,

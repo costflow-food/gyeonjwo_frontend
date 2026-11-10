@@ -17,14 +17,14 @@ class SourceDocumentMetadataRow extends StatelessWidget {
             width: 62,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 11, color: muted),
+              style: const TextStyle(fontSize: 13, color: muted),
             ),
           ),
           Expanded(
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 color: Color(0xFF60636A),
                 height: 1.5,
               ),

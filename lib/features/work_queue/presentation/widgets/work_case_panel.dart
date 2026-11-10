@@ -258,7 +258,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               _error!,
               style: const TextStyle(
                 fontSize: AppFontSizes.body,
-                color: accent,
+                color: danger,
               ),
             ),
           ],
@@ -430,7 +430,7 @@ class _AttachmentTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         border: Border.all(color: selected ? accent : line),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

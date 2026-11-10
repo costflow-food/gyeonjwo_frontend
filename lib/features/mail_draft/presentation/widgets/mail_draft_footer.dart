@@ -60,7 +60,7 @@ class MailDraftFooter extends StatelessWidget {
                   Icon(
                     error != null ? Icons.error_outline : Icons.block,
                     size: 16,
-                    color: error != null ? accent : muted,
+                    color: error != null ? danger : muted,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -68,7 +68,7 @@ class MailDraftFooter extends StatelessWidget {
                       error ?? blocked!,
                       style: TextStyle(
                         fontSize: AppFontSizes.body,
-                        color: error != null ? accent : muted,
+                        color: error != null ? danger : muted,
                       ),
                     ),
                   ),

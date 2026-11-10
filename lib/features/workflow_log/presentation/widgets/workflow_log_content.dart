@@ -74,7 +74,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                       icon: const Icon(
                         Icons.error_outline,
                         size: 15,
-                        color: accent,
+                        color: danger,
                       ),
                       label: const Text(
                         "조회 실패 · 다시 시도",
@@ -84,7 +84,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                 ],
               ),
               const SizedBox(height: 8),
-              const Divider(height: 1, color: Color(0xFF64666B)),
+              const Divider(height: 1, color: Color(0xFF4F6862)),
               WorkflowLogList(
                 data: data,
                 onSelect: (id) {

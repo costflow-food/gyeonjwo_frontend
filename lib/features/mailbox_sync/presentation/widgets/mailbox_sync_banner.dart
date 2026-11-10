@@ -32,7 +32,7 @@ class MailboxSyncBanner extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ColoredBox(
-            color: failed ? blush : line,
+            color: failed ? dangerTint : line,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
@@ -43,7 +43,7 @@ class MailboxSyncBanner extends ConsumerWidget {
                     child: Icon(
                       Icons.mark_email_unread_outlined,
                       size: 16,
-                      color: failed ? accent : ink,
+                      color: failed ? danger : ink,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -54,7 +54,7 @@ class MailboxSyncBanner extends ConsumerWidget {
                           TextSpan(
                             text: "$title  ",
                             style: TextStyle(
-                              color: failed ? accent : ink,
+                              color: failed ? danger : ink,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

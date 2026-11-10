@@ -16,7 +16,7 @@ class NoteLine extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(color: muted, fontSize: 11, height: 1.65),
+            style: const TextStyle(color: muted, fontSize: 13, height: 1.65),
           ),
         ),
       ],

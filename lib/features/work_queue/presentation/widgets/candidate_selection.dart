@@ -268,7 +268,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 textAlign: TextAlign.right,
                 style: const TextStyle(
                   fontSize: AppFontSizes.body,
-                  color: accent,
+                  color: danger,
                 ),
               ),
             ],
@@ -298,12 +298,12 @@ class _CandidateTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: blocked ? const Color(0xFFF7F8FA) : Colors.white,
+        color: blocked ? const Color(0xFFF8FBF9) : Colors.white,
         border: Border.all(color: selected ? accent : line),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         onTap: enabled ? () => onChanged(!selected) : null,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(4, 10, 14, 12),
@@ -384,7 +384,7 @@ class _CandidateTile extends StatelessWidget {
                       const SizedBox(height: 8),
                       _Notice(
                         icon: Icons.warning_amber_rounded,
-                        color: const Color(0xFFBC793C),
+                        color: const Color(0xFF8A6516),
                         text: "주의 · $caution · 자동 발송하지 않고 승인을 기다려요.",
                       ),
                     ],
@@ -404,7 +404,7 @@ class _CandidateTile extends StatelessWidget {
                         "필수 조건을 충족하지 않아 견적 요청 대상으로 고를 수 없어요.",
                         style: TextStyle(
                           fontSize: AppFontSizes.secondary,
-                          color: Color(0xFFBC793C),
+                          color: Color(0xFF8A6516),
                         ),
                       ),
                     ],
@@ -428,22 +428,22 @@ class _CheckChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (check.state) {
       CheckState.met => (
-        const Color(0xFF4B9138),
-        const Color(0xFFE7F5E1),
+        const Color(0xFF00754A),
+        const Color(0xFFE2F4EA),
         Icons.check,
       ),
       CheckState.unmet => (
-        const Color(0xFFBC793C),
-        const Color(0xFFFFF2E2),
+        const Color(0xFF8A6516),
+        const Color(0xFFF6EEDC),
         Icons.close,
       ),
-      CheckState.unknown => (muted, const Color(0xFFF0F1F4), Icons.help_outline),
+      CheckState.unknown => (muted, const Color(0xFFEEF2F0), Icons.help_outline),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -469,14 +469,14 @@ class _Tag extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
     decoration: BoxDecoration(
-      color: const Color(0xFFDCF2FD),
-      borderRadius: BorderRadius.circular(3),
+      color: const Color(0xFFE6EEF6),
+      borderRadius: BorderRadius.circular(999),
     ),
     child: Text(
       text,
       style: const TextStyle(
         fontSize: AppFontSizes.caption,
-        color: Color(0xFF347BC8),
+        color: Color(0xFF2F5E8C),
       ),
     ),
   );
@@ -500,8 +500,8 @@ class _Notice extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     decoration: BoxDecoration(
-      color: const Color(0xFFF7F8FA),
-      borderRadius: BorderRadius.circular(6),
+      color: const Color(0xFFF8FBF9),
+      borderRadius: BorderRadius.circular(12),
     ),
     child: Row(
       children: [

@@ -12,7 +12,7 @@ class SourceDocumentAttachments extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         border: Border.all(color: line),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
@@ -23,7 +23,7 @@ class SourceDocumentAttachments extends StatelessWidget {
               attachments.isEmpty
                   ? '첨부파일 없음'
                   : '${attachments.join(', ')} · 합성 첨부 ${attachments.length}개',
-              style: const TextStyle(fontSize: 11, color: muted, height: 1.5),
+              style: const TextStyle(fontSize: 13, color: muted, height: 1.5),
             ),
           ),
         ],

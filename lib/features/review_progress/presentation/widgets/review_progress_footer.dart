@@ -34,7 +34,7 @@ class ReviewProgressFooter extends StatelessWidget {
               ReviewOutcome.waitingReply => "회신이 오면 업무 큐에서 이어서 볼 수 있어요.",
               _ => "다음 단계는 업무에서 진행해 주세요.",
             },
-            style: const TextStyle(fontSize: 11, color: muted),
+            style: const TextStyle(fontSize: 13, color: muted),
           ),
           if (current != null)
             FilledButton(
@@ -45,11 +45,11 @@ class ReviewProgressFooter extends StatelessWidget {
                 backgroundColor: ink,
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 side: const BorderSide(color: ink),
               ),

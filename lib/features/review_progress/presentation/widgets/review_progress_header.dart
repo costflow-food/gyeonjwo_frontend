@@ -36,7 +36,7 @@ class ReviewProgressHeader extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: muted),
+                style: const TextStyle(fontSize: 14, color: muted),
               ),
             ],
           ),

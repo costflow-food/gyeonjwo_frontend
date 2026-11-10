@@ -27,7 +27,7 @@ class SupplierSectionTitle extends StatelessWidget {
               fontSize: large
                   ? AppFontSizes.documentTitle
                   : AppFontSizes.bodyLarge,
-              fontWeight: large ? FontWeight.w800 : FontWeight.w700,
+              fontWeight: large ? FontWeight.w700 : FontWeight.w700,
             ),
           ),
         ),

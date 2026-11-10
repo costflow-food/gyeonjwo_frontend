@@ -13,18 +13,18 @@ class CertificationBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (certification.status) {
       CertificationStatus.confirmed => (
-        const Color(0xFF4B9138),
-        const Color(0xFFE7F5E1),
+        const Color(0xFF00754A),
+        const Color(0xFFE2F4EA),
         Icons.check,
       ),
       CertificationStatus.unconfirmed => (
         muted,
-        const Color(0xFFF0F1F4),
+        const Color(0xFFEEF2F0),
         Icons.help_outline,
       ),
       CertificationStatus.notMet => (
-        const Color(0xFFBC793C),
-        const Color(0xFFFFF2E2),
+        const Color(0xFF8A6516),
+        const Color(0xFFF6EEDC),
         Icons.warning_amber_rounded,
       ),
     };
@@ -32,7 +32,7 @@ class CertificationBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

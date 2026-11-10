@@ -43,22 +43,22 @@ class SendPolicyBanner extends StatelessWidget {
     final (icon, color, message) = switch (draft.status) {
       DraftStatus.draft when draft.recipientNotRegistered => (
         Icons.warning_amber_rounded,
-        const Color(0xFFBC793C),
+        const Color(0xFF8A6516),
         "받는 주소가 등록된 업체 주소와 달라 발송할 수 없습니다. 거래처 연락처를 확인해 주세요.",
       ),
       DraftStatus.draft when !draft.settingsConfigured => (
         Icons.warning_amber_rounded,
-        const Color(0xFFBC793C),
+        const Color(0xFF8A6516),
         '설정 → 메일 발송 설정을 완료해야 발송할 수 있습니다.',
       ),
       DraftStatus.draft when draft.isStale => (
         Icons.warning_amber_rounded,
-        const Color(0xFFBC793C),
+        const Color(0xFF8A6516),
         "업무 내용이 바뀌어 이 초안은 발송할 수 없습니다.",
       ),
       _ when draft.awaitingResult => (
         Icons.hourglass_top,
-        const Color(0xFF347BC8),
+        const Color(0xFF2F5E8C),
         "요청을 접수했습니다. 결과가 나오면 자동으로 표시됩니다.",
       ),
       DraftStatus.draft when dispatch != null => (
@@ -68,13 +68,13 @@ class SendPolicyBanner extends StatelessWidget {
             : Icons.info_outline,
         dispatch == DraftDispatchState.blockedPolicy ||
                 dispatch == DraftDispatchState.cautionRequired
-            ? const Color(0xFFBC793C)
+            ? const Color(0xFF8A6516)
             : muted,
         "${dispatch.label} · ${dispatch.message}",
       ),
       _ when editing && draft.approvalRequired == false => (
         Icons.warning_amber_rounded,
-        const Color(0xFFBC793C),
+        const Color(0xFF8A6516),
         "저장하면 새 초안으로 다시 검증한 뒤 설정에 따라 자동 발송됩니다.",
       ),
       _ when editing => (
@@ -84,7 +84,7 @@ class SendPolicyBanner extends StatelessWidget {
       ),
       DraftStatus.draft when draft.manualApprovalUnderAutoSend => (
         Icons.warning_amber_rounded,
-        const Color(0xFFBC793C),
+        const Color(0xFF8A6516),
         "이 초안은 자동 발송 대상이 아니에요. 내용을 확인한 뒤 승인 후 발송을 눌러 주세요.",
       ),
       DraftStatus.draft => (
@@ -96,22 +96,22 @@ class SendPolicyBanner extends StatelessWidget {
       ),
       DraftStatus.sending => (
         Icons.outgoing_mail,
-        const Color(0xFF347BC8),
+        const Color(0xFF2F5E8C),
         "발송 중입니다. 결과가 나오면 자동으로 표시됩니다.",
       ),
       DraftStatus.sent => (
         Icons.check_circle_outline,
-        const Color(0xFF4B9138),
+        const Color(0xFF00754A),
         "발송됨 · ${draft.sentAt == null ? "시각 미확인" : formatSeoulDateTime(draft.sentAt!)}",
       ),
       DraftStatus.failed => (
         Icons.error_outline,
-        accent,
+        danger,
         "발송하지 못했습니다. 수신자와 발송 설정을 확인해 주세요.",
       ),
       DraftStatus.unknown => (
         Icons.help_outline,
-        const Color(0xFFBC793C),
+        const Color(0xFF8A6516),
         "발송 여부를 확인 중이에요. 이미 전송됐을 수 있어 발신함 대조 전에는 다시 보내지 않습니다.",
       ),
     };
@@ -120,7 +120,7 @@ class SendPolicyBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: line),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

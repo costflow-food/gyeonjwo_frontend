@@ -43,7 +43,7 @@ class SupplierSearchField extends StatelessWidget {
           ),
           enabledBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(6)),
-            borderSide: BorderSide(color: Color(0xFFB4B7BD)),
+            borderSide: BorderSide(color: Color(0xFFA9B5B1)),
           ),
           focusedBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(6)),

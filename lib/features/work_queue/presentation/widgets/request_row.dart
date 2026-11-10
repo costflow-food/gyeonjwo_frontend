@@ -28,13 +28,19 @@ class RequestRow extends StatelessWidget {
       selected: selected,
       button: true,
       child: Material(
-        color: selected ? blush : Colors.transparent,
-        borderRadius: BorderRadius.circular(7),
+        color: selected ? Colors.white : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: selected
+              ? const BorderSide(color: accent, width: 1.5)
+              : BorderSide.none,
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
+            padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -44,8 +50,8 @@ class RequestRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: AppFontSizes.body,
-                    fontWeight: FontWeight.w600,
-                    color: selected ? accent : ink,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    color: ink,
                     height: 1.4,
                   ),
                 ),

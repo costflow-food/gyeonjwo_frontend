@@ -19,13 +19,13 @@ class PreviewButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
-        backgroundColor: filled ? ink : Colors.transparent,
-        foregroundColor: filled ? Colors.white : ink,
-        side: BorderSide(color: filled ? ink : const Color(0xFFAFB3BA)),
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-        minimumSize: const Size(0, 38),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        backgroundColor: filled ? accent : Colors.transparent,
+        foregroundColor: filled ? Colors.white : accent,
+        side: const BorderSide(color: accent),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        minimumSize: const Size(0, 40),
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
       onPressed: onPressed ?? () {},
       child: Row(

@@ -38,7 +38,7 @@ class SupplierListStatus extends StatelessWidget {
         else if (data.loadFailed)
           TextButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.error_outline, size: 15, color: accent),
+            icon: const Icon(Icons.error_outline, size: 15, color: danger),
             label: const Text(
               "조회 실패 · 다시 시도",
               style: TextStyle(fontSize: AppFontSizes.secondary),

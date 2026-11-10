@@ -40,14 +40,14 @@ class ReviewProgressBody extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: outcome.stopped ? accent : ink,
+                      color: outcome.stopped ? danger : ink,
                     ),
                   ),
                   if (detail != null) ...[
                     const SizedBox(height: 6),
                     Text(
                       detail,
-                      style: const TextStyle(fontSize: 13, height: 1.6),
+                      style: const TextStyle(fontSize: 15, height: 1.6),
                     ),
                   ],
                 ],
@@ -67,7 +67,7 @@ class ReviewProgressBody extends StatelessWidget {
                               : "진행 상황을 확인하지 못해 자동 확인을 멈췄어요."
                         : "진행 상황을 확인하지 못했어요. 잠시 뒤 다시 확인해요.",
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -75,7 +75,7 @@ class ReviewProgressBody extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       failure.message,
-                      style: const TextStyle(fontSize: 12, color: muted),
+                      style: const TextStyle(fontSize: 14, color: muted),
                     ),
                   ],
                   if (state.autoRefreshStopped) ...[
@@ -125,13 +125,13 @@ class ReviewProgressError extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: accent,
+                color: danger,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               current?.message ?? "잠시 뒤 다시 시도해 주세요.",
-              style: const TextStyle(fontSize: 13, height: 1.6),
+              style: const TextStyle(fontSize: 15, height: 1.6),
             ),
             const SizedBox(height: 10),
             Align(
@@ -157,8 +157,8 @@ class _Box extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: const Color(0xFFF7F8FA),
-      borderRadius: BorderRadius.circular(8),
+      color: const Color(0xFFF8FBF9),
+      borderRadius: BorderRadius.circular(16),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +184,7 @@ class _StageRow extends StatelessWidget {
             StageState.done => const Icon(
               Icons.check_circle,
               size: 20,
-              color: Color(0xFF4B9138),
+              color: Color(0xFF00754A),
             ),
             StageState.running => const Padding(
               padding: EdgeInsets.all(2),
@@ -193,7 +193,7 @@ class _StageRow extends StatelessWidget {
             StageState.stopped => const Icon(
               Icons.pause_circle_outline,
               size: 20,
-              color: accent,
+              color: danger,
             ),
             StageState.waiting => const Icon(
               Icons.radio_button_unchecked,
@@ -215,7 +215,7 @@ class _StageRow extends StatelessWidget {
         ),
         if (state == StageState.running) ...[
           const SizedBox(width: 8),
-          const Text("진행 중", style: TextStyle(fontSize: 12, color: muted)),
+          const Text("진행 중", style: TextStyle(fontSize: 14, color: muted)),
         ],
       ],
     ),

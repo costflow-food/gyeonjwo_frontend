@@ -142,13 +142,13 @@ class _ConnectionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: connected ? const Color(0xFFECF6F0) : blush,
+                  color: connected ? const Color(0xFFE3F0EA) : blush,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   preview.icon,
                   size: 24,
-                  color: connected ? const Color(0xFF287451) : accent,
+                  color: connected ? const Color(0xFF00754A) : accent,
                 ),
               ),
               const SizedBox(width: 16),
@@ -156,13 +156,22 @@ class _ConnectionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '03 / 계정 연결',
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: AppFontSizes.secondary,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: blush,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        '03 / 계정 연결',
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: AppFontSizes.caption,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -170,9 +179,9 @@ class _ConnectionCard extends StatelessWidget {
                       preview.title,
                       style: const TextStyle(
                         fontSize: AppFontSizes.pageTitle,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         height: 1.3,
-                        letterSpacing: -1,
+                        letterSpacing: -.5,
                       ),
                     ),
                   ],
@@ -295,7 +304,7 @@ class _ConnectionPermissionRow extends StatelessWidget {
           style: TextStyle(
             fontSize: AppFontSizes.secondary,
             fontWeight: FontWeight.w600,
-            color: enabled ? const Color(0xFF287451) : muted,
+            color: enabled ? const Color(0xFF00754A) : muted,
             height: 1.5,
           ),
         );
@@ -306,7 +315,7 @@ class _ConnectionPermissionRow extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: enabled ? blush : canvas,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, size: 18, color: enabled ? accent : muted),
             ),

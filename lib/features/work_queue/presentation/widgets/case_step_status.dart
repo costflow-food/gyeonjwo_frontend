@@ -104,8 +104,8 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFFF8FBF9),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +115,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                     ? Icons.pause_circle_outline
                     : Icons.info_outline,
                 size: 18,
-                color: workCase.stopped ? accent : muted,
+                color: workCase.stopped ? danger : muted,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -151,7 +151,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                         "이 회신은 검토로 넘어가지 못하고 있어요.",
                         style: TextStyle(
                           fontSize: AppFontSizes.body,
-                          color: accent,
+                          color: danger,
                           height: 1.6,
                         ),
                       ),
@@ -244,7 +244,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
           const SizedBox(height: 12),
           Text(
             _error!,
-            style: const TextStyle(fontSize: AppFontSizes.body, color: accent),
+            style: const TextStyle(fontSize: AppFontSizes.body, color: danger),
           ),
         ],
       ],

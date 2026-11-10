@@ -11,13 +11,13 @@ class IntakeReasonBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (reason) {
       IntakeReason.uncertain => (
-        const Color(0xFFBC793C),
-        const Color(0xFFFFF2E2),
+        const Color(0xFF8A6516),
+        const Color(0xFFF6EEDC),
         Icons.help_outline,
       ),
       IntakeReason.ambiguous => (
-        const Color(0xFF347BC8),
-        const Color(0xFFDCF2FD),
+        const Color(0xFF2F5E8C),
+        const Color(0xFFE6EEF6),
         Icons.call_split,
       ),
     };
@@ -25,7 +25,7 @@ class IntakeReasonBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

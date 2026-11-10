@@ -33,14 +33,3 @@ class ApiServerStatusDataSource implements ServerStatusDataSource {
     return (response.statusCode ?? 0, response.data ?? const {});
   }
 }
-
-/// UI 미리보기와 테스트용 고정 응답.
-class PreviewServerStatusDataSource implements ServerStatusDataSource {
-  const PreviewServerStatusDataSource({this.degradedFeatures = const []});
-
-  final List<String> degradedFeatures;
-
-  @override
-  Future<(int, Map<String, dynamic>)> fetchReady() async =>
-      (200, {"status": "ready", "degraded_features": degradedFeatures});
-}

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,14 +14,12 @@ import "../features/purchase_review/presentation/purchase_review_view.dart";
 import "../features/supplier/presentation/supplier_view.dart";
 import "../features/workflow_log/presentation/workflow_log_view.dart";
 import "../features/work_queue/presentation/work_queue_view.dart";
-import 'ui_preview.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
   // Screen flow only; MyApp calls refresh() when the session or the Gmail
   // connection phase changes.
   redirect: (context, state) {
-    if (kDebugMode && state.uri.path == '/ui-preview') return null;
     final container = ProviderScope.containerOf(context, listen: false);
     final session = container.read(authSessionViewModelProvider).asData?.value;
     final path = state.uri.path;
@@ -36,12 +33,6 @@ final appRouter = GoRouter(
     return authRedirect(session?.status, path, gmailReady: gmailReady);
   },
   routes: [
-    if (kDebugMode)
-      GoRoute(
-        path: '/ui-preview',
-        builder: (context, state) =>
-            UiPreviewApp(parameters: state.uri.queryParameters),
-      ),
     GoRoute(path: '/login', builder: (context, state) => const LoginView()),
     GoRoute(
       path: '/login/permissions',

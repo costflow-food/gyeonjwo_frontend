@@ -34,7 +34,7 @@ class MailDraftTabs extends StatelessWidget {
             button: true,
             child: InkWell(
               onTap: () => onSelect(draft.id),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
                 decoration: BoxDecoration(
@@ -42,7 +42,7 @@ class MailDraftTabs extends StatelessWidget {
                   border: Border.all(
                     color: draft.id == selectedId ? accent : line,
                   ),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

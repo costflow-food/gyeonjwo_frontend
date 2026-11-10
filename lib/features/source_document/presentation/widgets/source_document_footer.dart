@@ -11,7 +11,7 @@ class SourceDocumentFooter extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 28, vertical: 16),
       child: Text(
         '합성 자료 · 실제 외부 연결 없음',
-        style: TextStyle(fontSize: 10, color: muted),
+        style: TextStyle(fontSize: 12, color: muted),
       ),
     );
   }
