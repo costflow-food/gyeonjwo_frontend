@@ -17,9 +17,9 @@ class SupplierEvidenceItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const captionStyle = TextStyle(
+    final captionStyle = TextStyle(
       fontSize: AppFontSizes.caption,
-      color: muted,
+      color: context.palette.muted,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -42,12 +42,15 @@ class SupplierEvidenceItem extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 18),
-        const Text("인증", style: captionStyle),
+        Text("인증", style: captionStyle),
         const SizedBox(height: 6),
         if (item.certifications.isEmpty)
-          const Text(
+          Text(
             "인증 정보 미확인",
-            style: TextStyle(fontSize: AppFontSizes.body, color: muted),
+            style: TextStyle(
+              fontSize: AppFontSizes.body,
+              color: context.palette.muted,
+            ),
           )
         else ...[
           for (final certification in item.certifications)
@@ -62,9 +65,9 @@ class SupplierEvidenceItem extends StatelessWidget {
                     certification.validUntil == null
                         ? "유효기간 미확인"
                         : "${formatIsoDate(certification.validUntil!)}까지",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: AppFontSizes.secondary,
-                      color: muted,
+                      color: context.palette.muted,
                     ),
                   ),
                 ],
@@ -72,14 +75,16 @@ class SupplierEvidenceItem extends StatelessWidget {
             ),
         ],
         const SizedBox(height: 18),
-        const Text("품목 비고", style: captionStyle),
+        Text("품목 비고", style: captionStyle),
         const SizedBox(height: 6),
         SelectableText(
           item.notes ?? "기록된 비고가 없습니다.",
           style: TextStyle(
             fontSize: AppFontSizes.body,
             height: 1.55,
-            color: item.notes == null ? muted : ink,
+            color: item.notes == null
+                ? context.palette.muted
+                : context.palette.ink,
           ),
         ),
         if (item.notes != null) ...[

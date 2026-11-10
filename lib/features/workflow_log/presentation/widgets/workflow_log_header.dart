@@ -16,7 +16,7 @@ class WorkflowLogHeader extends StatelessWidget {
       spacing: 16,
       runSpacing: 16,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -29,7 +29,10 @@ class WorkflowLogHeader extends StatelessWidget {
             SizedBox(height: 8),
             Text(
               "업무별 역할·노드·도구 실행과 발송·설정 변경 이력을 확인합니다.",
-              style: TextStyle(fontSize: AppFontSizes.body, color: muted),
+              style: TextStyle(
+                fontSize: AppFontSizes.body,
+                color: context.palette.muted,
+              ),
             ),
           ],
         ),

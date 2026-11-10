@@ -187,12 +187,12 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
         ),
         actions: [
           TextButton(
-            style: WorkspaceButtonStyles.text,
+            style: WorkspaceButtonStyles.text(context),
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text("취소"),
           ),
           FilledButton(
-            style: WorkspaceButtonStyles.filled,
+            style: WorkspaceButtonStyles.filled(context),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text("보내지 않음"),
           ),
@@ -227,12 +227,12 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
         content: const Text("저장하지 않은 초안 수정은 사라집니다."),
         actions: [
           TextButton(
-            style: WorkspaceButtonStyles.text,
+            style: WorkspaceButtonStyles.text(context),
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text("계속 수정"),
           ),
           FilledButton(
-            style: WorkspaceButtonStyles.filled,
+            style: WorkspaceButtonStyles.filled(context),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text("변경사항 버리기"),
           ),
@@ -255,13 +255,13 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
         if (!didPop) _close();
       },
       child: Dialog(
-        backgroundColor: canvas,
+        backgroundColor: context.palette.canvas,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: line),
+          side: BorderSide(color: context.palette.line),
         ),
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
@@ -275,7 +275,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 MailDraftHeader(caseId: widget.caseId, onClose: _close),
-                const Divider(height: 1, color: line),
+                Divider(height: 1, color: context.palette.line),
                 Flexible(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(28),
@@ -332,7 +332,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                     ),
                   ),
                 ),
-                const Divider(height: 1, color: line),
+                Divider(height: 1, color: context.palette.line),
                 MailDraftFooter(
                   draft: draft,
                   editing: _editing,

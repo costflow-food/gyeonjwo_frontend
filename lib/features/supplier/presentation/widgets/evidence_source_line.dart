@@ -23,7 +23,10 @@ class EvidenceSourceLine extends StatelessWidget {
     if (value == null) {
       return Text(
         "$prefix 출처 미확인",
-        style: const TextStyle(fontSize: AppFontSizes.secondary, color: muted),
+        style: TextStyle(
+          fontSize: AppFontSizes.secondary,
+          color: context.palette.muted,
+        ),
       );
     }
     final text = [
@@ -38,9 +41,9 @@ class EvidenceSourceLine extends StatelessWidget {
       children: [
         Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppFontSizes.secondary,
-            color: muted,
+            color: context.palette.muted,
           ),
         ),
         if (value.sourceMailId != null)

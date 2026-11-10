@@ -46,7 +46,7 @@ class MailDraftFooter extends StatelessWidget {
         current != null &&
         (current.status == DraftStatus.draft ||
             current.status == DraftStatus.failed);
-    final filled = WorkspaceButtonStyles.filled;
+    final filled = WorkspaceButtonStyles.filled(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 14, 28, 16),
       child: Column(
@@ -60,7 +60,7 @@ class MailDraftFooter extends StatelessWidget {
                   Icon(
                     error != null ? Icons.error_outline : Icons.block,
                     size: 16,
-                    color: error != null ? danger : muted,
+                    color: error != null ? danger : context.palette.muted,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -68,7 +68,7 @@ class MailDraftFooter extends StatelessWidget {
                       error ?? blocked!,
                       style: TextStyle(
                         fontSize: AppFontSizes.body,
-                        color: error != null ? danger : muted,
+                        color: error != null ? danger : context.palette.muted,
                       ),
                     ),
                   ),
@@ -84,7 +84,7 @@ class MailDraftFooter extends StatelessWidget {
             children: [
               if (editing) ...[
                 TextButton(
-                  style: WorkspaceButtonStyles.text,
+                  style: WorkspaceButtonStyles.text(context),
                   onPressed: busy ? null : onCancelEdit,
                   child: const Text("편집 취소"),
                 ),
@@ -99,13 +99,13 @@ class MailDraftFooter extends StatelessWidget {
                 ),
               ] else ...[
                 TextButton(
-                  style: WorkspaceButtonStyles.text,
+                  style: WorkspaceButtonStyles.text(context),
                   onPressed: busy ? null : onClose,
                   child: const Text("닫기"),
                 ),
                 if (current != null && current.can(DraftAction.withdraw))
                   TextButton(
-                    style: WorkspaceButtonStyles.text,
+                    style: WorkspaceButtonStyles.text(context),
                     onPressed: busy ? null : onWithdraw,
                     child: const Text("보내지 않음"),
                   ),
@@ -114,14 +114,12 @@ class MailDraftFooter extends StatelessWidget {
                   Tooltip(
                     message: current.disabledReason(DraftAction.edit) ?? "",
                     child: OutlinedButton(
-                      style: WorkspaceButtonStyles.outlined,
+                      style: WorkspaceButtonStyles.outlined(context),
                       onPressed: current.can(DraftAction.edit) && !busy
                           ? onEdit
                           : null,
                       child: Text(
-                        current.status == DraftStatus.failed
-                            ? "수정본 만들기"
-                            : "수정",
+                        current.status == DraftStatus.failed ? "수정본 만들기" : "수정",
                       ),
                     ),
                   ),

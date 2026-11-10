@@ -50,14 +50,14 @@ class SendSettingsFooter extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
-                style: WorkspaceButtonStyles.text,
+                style: WorkspaceButtonStyles.text(context),
                 onPressed: saving ? null : onCancel,
                 child: const Text("취소"),
               ),
               const SizedBox(width: 8),
               FilledButton(
                 onPressed: saving ? null : onSave,
-                style: WorkspaceButtonStyles.filled,
+                style: WorkspaceButtonStyles.filled(context),
                 child: Text(saving ? "저장 중" : "설정 저장"),
               ),
             ],

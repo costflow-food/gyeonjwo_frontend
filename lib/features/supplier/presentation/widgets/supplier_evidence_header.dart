@@ -19,11 +19,11 @@ class SupplierEvidenceHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "거래처·견적 근거",
                   style: TextStyle(
                     fontSize: AppFontSizes.caption,
-                    color: muted,
+                    color: context.palette.muted,
                     letterSpacing: .6,
                   ),
                 ),

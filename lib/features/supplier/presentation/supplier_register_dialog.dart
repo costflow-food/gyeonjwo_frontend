@@ -133,13 +133,13 @@ class _SupplierRegisterDialogState
         if (!didPop) _close();
       },
       child: Dialog(
-        backgroundColor: canvas,
+        backgroundColor: context.palette.canvas,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: line),
+          side: BorderSide(color: context.palette.line),
         ),
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
@@ -152,7 +152,7 @@ class _SupplierRegisterDialogState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SupplierRegisterHeader(onClose: _close),
-                const Divider(height: 1, color: line),
+                Divider(height: 1, color: context.palette.line),
                 Flexible(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(28),
@@ -173,7 +173,7 @@ class _SupplierRegisterDialogState
                     ),
                   ),
                 ),
-                const Divider(height: 1, color: line),
+                Divider(height: 1, color: context.palette.line),
                 SupplierRegisterFooter(
                   error: _error,
                   submitting: _submitting,

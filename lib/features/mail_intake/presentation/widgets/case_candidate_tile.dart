@@ -36,8 +36,12 @@ class CaseCandidateTile extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: selected ? blush : Colors.white,
-            border: Border.all(color: selected ? accent : line),
+            color: selected ? context.palette.blush : context.palette.surface,
+            border: Border.all(
+              color: selected
+                  ? context.palette.accentText
+                  : context.palette.line,
+            ),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -48,7 +52,9 @@ class CaseCandidateTile extends StatelessWidget {
                     ? Icons.radio_button_checked
                     : Icons.radio_button_unchecked,
                 size: 18,
-                color: selected ? accent : muted,
+                color: selected
+                    ? context.palette.accentText
+                    : context.palette.muted,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -65,9 +71,9 @@ class CaseCandidateTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       candidate.caseId,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: AppFontSizes.caption,
-                        color: muted,
+                        color: context.palette.muted,
                       ),
                     ),
                     const SizedBox(height: 6),

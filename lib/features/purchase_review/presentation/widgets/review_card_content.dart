@@ -78,7 +78,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
             child: const Text("취소"),
           ),
           FilledButton(
-            style: WorkspaceButtonStyles.filled,
+            style: WorkspaceButtonStyles.filled(context),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text("확인하고 보관"),
           ),
@@ -112,7 +112,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
                     if (card.createdAt != null)
                       "${formatSeoulDateTime(card.createdAt!)} 저장",
                   ].join(" · "),
-                  style: const TextStyle(fontSize: 13, color: muted),
+                  style: TextStyle(fontSize: 13, color: context.palette.muted),
                 ),
                 const SizedBox(height: 6),
                 const Text(
@@ -177,9 +177,9 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         ],
         const SizedBox(height: 8),
         if (card.plans.isEmpty)
-          const Text(
+          Text(
             "보여 줄 구매안이 없어요.",
-            style: TextStyle(fontSize: 13, color: muted),
+            style: TextStyle(fontSize: 13, color: context.palette.muted),
           )
         else
           PlanBoard(
@@ -231,9 +231,9 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         const _Heading("견적과 근거"),
         const SizedBox(height: 12),
         if (quotes.isEmpty)
-          const Text(
+          Text(
             "이 카드에 연결된 견적이 없어요.",
-            style: TextStyle(fontSize: 13, color: muted),
+            style: TextStyle(fontSize: 13, color: context.palette.muted),
           )
         else
           ResponsiveColumns(
@@ -308,14 +308,14 @@ class _RaiseCard extends StatelessWidget {
     padding: const EdgeInsets.all(24),
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(16),
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [accent, ink],
+        colors: [context.palette.accentText, context.palette.deep],
       ),
-      boxShadow: const [
+      boxShadow: [
         BoxShadow(
-          color: Color(0x2E1E3932),
+          color: context.palette.ink.withValues(alpha: 0.18),
           blurRadius: 16,
           offset: Offset(0, 4),
         ),
@@ -348,7 +348,7 @@ class _RaiseCard extends StatelessWidget {
               if (effectiveFrom != null)
                 "${effectiveFrom!.replaceAll("-", ".")}부터",
             ].join(" · "),
-            style: const TextStyle(fontSize: 14, color: onDeepMuted),
+            style: TextStyle(fontSize: 14, color: context.palette.onDeepMuted),
           ),
         ],
       ),
@@ -382,11 +382,11 @@ class _SidePanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x141E3932),
+            color: context.palette.ink.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -410,15 +410,15 @@ class _SidePanel extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: accent,
+                    color: context.palette.accent,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     "${card.questions.length}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: context.palette.onAccent,
                     ),
                   ),
                 ),
@@ -428,10 +428,10 @@ class _SidePanel extends StatelessWidget {
             for (final question in card.questions)
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
-                    top: BorderSide(color: line),
-                    bottom: BorderSide(color: line),
+                    top: BorderSide(color: context.palette.line),
+                    bottom: BorderSide(color: context.palette.line),
                   ),
                 ),
                 child: Column(
@@ -451,14 +451,20 @@ class _SidePanel extends StatelessWidget {
                         if (question.breakEvenAmount != null)
                           Text(
                             "역전 기준 ${won(question.breakEvenAmount)}",
-                            style: const TextStyle(fontSize: 13, color: muted),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: context.palette.muted,
+                            ),
                           ),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Text(
                       question.reason,
-                      style: const TextStyle(fontSize: 13, color: muted),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.palette.muted,
+                      ),
                     ),
                   ],
                 ),
@@ -470,7 +476,7 @@ class _SidePanel extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    style: WorkspaceButtonStyles.outlined.copyWith(
+                    style: WorkspaceButtonStyles.outlined(context).copyWith(
                       minimumSize: const WidgetStatePropertyAll(
                         Size.fromHeight(48),
                       ),
@@ -483,7 +489,7 @@ class _SidePanel extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: FilledButton(
-                    style: WorkspaceButtonStyles.filled.copyWith(
+                    style: WorkspaceButtonStyles.filled(context).copyWith(
                       minimumSize: const WidgetStatePropertyAll(
                         Size.fromHeight(48),
                       ),
@@ -499,7 +505,7 @@ class _SidePanel extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   message,
-                  style: const TextStyle(fontSize: 12, color: muted),
+                  style: TextStyle(fontSize: 12, color: context.palette.muted),
                 ),
               ),
           ],
@@ -549,7 +555,7 @@ class _HoldDialogState extends State<_HoldDialog> {
           child: const Text("취소"),
         ),
         FilledButton(
-          style: WorkspaceButtonStyles.filled,
+          style: WorkspaceButtonStyles.filled(context),
           onPressed: note.isEmpty
               ? null
               : () => Navigator.of(context).pop(note),
@@ -589,13 +595,13 @@ class _Notice extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: strong ? dangerTint : blush,
+      color: strong ? dangerTint : context.palette.blush,
       borderRadius: BorderRadius.circular(16),
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: strong ? danger : ink),
+        Icon(icon, size: 16, color: strong ? danger : context.palette.ink),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -606,7 +612,7 @@ class _Notice extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: strong ? danger : ink,
+                  color: strong ? danger : context.palette.ink,
                 ),
               ),
               for (final detail in details)

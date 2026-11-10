@@ -36,7 +36,7 @@ class QuoteCard extends StatelessWidget {
               ),
               Text(
                 quote.isIncumbent ? "기존 거래처" : "견적 ${quote.versionNo}번째",
-                style: const TextStyle(fontSize: 13, color: muted),
+                style: TextStyle(fontSize: 13, color: context.palette.muted),
               ),
             ],
           ),
@@ -78,11 +78,11 @@ class QuoteCard extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
                 "비고 · $note",
-                style: const TextStyle(fontSize: 13, color: muted),
+                style: TextStyle(fontSize: 13, color: context.palette.muted),
               ),
             ),
           if (quote.evidence.isNotEmpty) ...[
-            const Divider(color: line, height: 20),
+            Divider(color: context.palette.line, height: 20),
             _EvidenceSection(evidence: quote.evidence),
           ],
         ],
@@ -123,13 +123,17 @@ class _EvidenceSectionState extends State<_EvidenceSection> {
                 const SizedBox(width: 6),
                 Text(
                   "${widget.evidence.length}건",
-                  style: const TextStyle(fontSize: 13, color: muted),
+                  style: TextStyle(fontSize: 13, color: context.palette.muted),
                 ),
                 const Spacer(),
                 AnimatedRotation(
                   turns: _expanded ? .5 : 0,
                   duration: const Duration(milliseconds: 150),
-                  child: const Icon(Icons.expand_more, size: 20, color: muted),
+                  child: Icon(
+                    Icons.expand_more,
+                    size: 20,
+                    color: context.palette.muted,
+                  ),
                 ),
               ],
             ),

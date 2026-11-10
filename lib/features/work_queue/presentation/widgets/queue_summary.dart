@@ -14,14 +14,14 @@ class QueueSummary extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [accent, ink],
+          colors: [context.palette.accentText, context.palette.deep],
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x2E1E3932),
+            color: context.palette.ink.withValues(alpha: 0.18),
             blurRadius: 16,
             offset: Offset(0, 4),
           ),
@@ -32,7 +32,7 @@ class QueueSummary extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 620;
-            const introduction = Column(
+            final introduction = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -42,7 +42,10 @@ class QueueSummary extends StatelessWidget {
                 SizedBox(height: 10),
                 Text(
                   '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수긍하거나 다른 대안을 찾을 수 있어요.',
-                  style: TextStyle(fontSize: 14, color: onDeepMuted),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: context.palette.onDeepMuted,
+                  ),
                 ),
               ],
             );
@@ -51,9 +54,12 @@ class QueueSummary extends StatelessWidget {
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.end,
               children: [
-                const Text(
+                Text(
                   '검토를 기다리는 요청',
-                  style: TextStyle(fontSize: 13, color: onDeepMuted),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.palette.onDeepMuted,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text.rich(
@@ -68,7 +74,10 @@ class QueueSummary extends StatelessWidget {
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
-                      const TextSpan(text: ' 건', style: TextStyle(fontSize: 16)),
+                      const TextSpan(
+                        text: ' 건',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ],
                   ),
                 ),
@@ -83,7 +92,7 @@ class QueueSummary extends StatelessWidget {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Expanded(child: introduction),
+                Expanded(child: introduction),
                 const SizedBox(width: 24),
                 count,
               ],

@@ -142,13 +142,17 @@ class _ConnectionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: connected ? const Color(0xFFE3F0EA) : blush,
+                  color: connected
+                      ? context.palette.blush
+                      : context.palette.blush,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   preview.icon,
                   size: 24,
-                  color: connected ? const Color(0xFF00754A) : accent,
+                  color: connected
+                      ? const Color(0xFF00754A)
+                      : context.palette.accentText,
                 ),
               ),
               const SizedBox(width: 16),
@@ -162,13 +166,13 @@ class _ConnectionCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: blush,
+                        color: context.palette.blush,
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Text(
+                      child: Text(
                         '03 / 계정 연결',
                         style: TextStyle(
-                          color: accent,
+                          color: context.palette.accentText,
                           fontSize: AppFontSizes.caption,
                           fontWeight: FontWeight.w600,
                         ),
@@ -192,18 +196,18 @@ class _ConnectionCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             description,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppFontSizes.bodyLarge,
-              color: muted,
+              color: context.palette.muted,
               height: 1.8,
             ),
           ),
           const SizedBox(height: 16),
           if (phase == GmailConnectionPhase.connecting) ...[
             // Indeterminate: the server does not report progress steps.
-            const LinearProgressIndicator(
-              color: accent,
-              backgroundColor: blush,
+            LinearProgressIndicator(
+              color: context.palette.accent,
+              backgroundColor: context.palette.blush,
               minHeight: 4,
             ),
             const SizedBox(height: 16),
@@ -222,7 +226,7 @@ class _ConnectionCard extends StatelessWidget {
               enabled: loggedIn,
               status: loggedIn ? '로그인 완료' : '확인 필요',
             ),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             _ConnectionPermissionRow(
               icon: Icons.inbox_outlined,
               title: 'Gmail 자동 수신',
@@ -232,7 +236,7 @@ class _ConnectionCard extends StatelessWidget {
               enabled: preview.canRead,
               status: preview.canRead ? '사용 가능' : '사용 불가',
             ),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             _ConnectionPermissionRow(
               icon: Icons.send_outlined,
               title: 'Gmail 발송',
@@ -244,10 +248,7 @@ class _ConnectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (preview.hasConnection || serverNotReady)
-              AuthButton(
-                label: '업무 큐로 이동',
-                onPressed: () => context.go('/'),
-              )
+              AuthButton(label: '업무 큐로 이동', onPressed: () => context.go('/'))
             else if (phase == GmailConnectionPhase.failed && onRetry != null)
               AuthButton(
                 label: '다시 시도하기',
@@ -304,7 +305,7 @@ class _ConnectionPermissionRow extends StatelessWidget {
           style: TextStyle(
             fontSize: AppFontSizes.secondary,
             fontWeight: FontWeight.w600,
-            color: enabled ? const Color(0xFF00754A) : muted,
+            color: enabled ? const Color(0xFF00754A) : context.palette.muted,
             height: 1.5,
           ),
         );
@@ -314,10 +315,16 @@ class _ConnectionPermissionRow extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: enabled ? blush : canvas,
+                color: enabled ? context.palette.blush : context.palette.canvas,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, size: 18, color: enabled ? accent : muted),
+              child: Icon(
+                icon,
+                size: 18,
+                color: enabled
+                    ? context.palette.accentText
+                    : context.palette.muted,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -329,15 +336,17 @@ class _ConnectionPermissionRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: AppFontSizes.bodyLarge,
                       fontWeight: FontWeight.w700,
-                      color: enabled ? ink : muted,
+                      color: enabled
+                          ? context.palette.ink
+                          : context.palette.muted,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: AppFontSizes.body,
-                      color: muted,
+                      color: context.palette.muted,
                       height: 1.5,
                     ),
                   ),

@@ -12,7 +12,7 @@ class GmailReadNotice extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     decoration: BoxDecoration(
-      color: blush,
+      color: context.palette.blush,
       borderRadius: BorderRadius.circular(16),
     ),
     child: Wrap(
@@ -20,10 +20,17 @@ class GmailReadNotice extends StatelessWidget {
       spacing: 12,
       runSpacing: 4,
       children: [
-        const Icon(Icons.mark_email_unread_outlined, size: 18, color: accent),
-        const Text(
+        Icon(
+          Icons.mark_email_unread_outlined,
+          size: 18,
+          color: context.palette.accentText,
+        ),
+        Text(
           "Gmail 읽기 권한이 없어 메일 자동 수신이 꺼져 있어요.",
-          style: TextStyle(fontSize: AppFontSizes.body, color: ink),
+          style: TextStyle(
+            fontSize: AppFontSizes.body,
+            color: context.palette.ink,
+          ),
         ),
         TextButton(
           onPressed: () => context.go("/login/permissions"),

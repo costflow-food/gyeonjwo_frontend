@@ -34,9 +34,9 @@ class SendSettingsHeader extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   caseId == null ? "메일함 기본값" : "업무 설정 · $caseId",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.secondary,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
               ],

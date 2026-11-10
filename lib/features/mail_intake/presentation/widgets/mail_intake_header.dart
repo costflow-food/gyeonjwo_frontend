@@ -38,9 +38,9 @@ class MailIntakeHeader extends StatelessWidget {
                   totalPending == null
                       ? "판단 불가·연결 모호 메일"
                       : "판단 불가·연결 모호 메일 $totalPending건",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.secondary,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
               ],

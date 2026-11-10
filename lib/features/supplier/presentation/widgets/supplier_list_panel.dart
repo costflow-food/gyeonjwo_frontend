@@ -29,7 +29,10 @@ class SupplierListPanel extends StatelessWidget {
                 ? "등록된 거래처 기준자료가 없습니다."
                 : "검색 조건과 일치하는 거래처가 없습니다.",
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: AppFontSizes.body, color: muted),
+            style: TextStyle(
+              fontSize: AppFontSizes.body,
+              color: context.palette.muted,
+            ),
           ),
         ),
       );

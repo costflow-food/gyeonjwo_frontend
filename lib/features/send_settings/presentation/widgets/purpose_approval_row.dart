@@ -59,9 +59,9 @@ class PurposeApprovalRow extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   note,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.caption,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
               ],
@@ -73,7 +73,7 @@ class PurposeApprovalRow extends StatelessWidget {
             style: TextStyle(
               fontSize: AppFontSizes.body,
               fontWeight: FontWeight.w600,
-              color: autoSend ? ink : muted,
+              color: autoSend ? context.palette.ink : context.palette.muted,
             ),
           ),
           const SizedBox(width: 8),
@@ -82,9 +82,9 @@ class PurposeApprovalRow extends StatelessWidget {
             child: Switch(
               value: autoSend,
               activeThumbColor: Colors.white,
-              activeTrackColor: accent,
+              activeTrackColor: context.palette.accent,
               inactiveThumbColor: Colors.white,
-              inactiveTrackColor: line,
+              inactiveTrackColor: context.palette.line,
               trackOutlineColor: const WidgetStatePropertyAll(
                 Colors.transparent,
               ),

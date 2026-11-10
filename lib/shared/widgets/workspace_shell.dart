@@ -27,7 +27,7 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: frame,
+      backgroundColor: context.palette.frame,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -71,7 +71,10 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
                               onPressed: canExpandSidebar
                                   ? () => setState(() => _sidebarOpen = true)
                                   : null,
-                              icon: const Icon(Icons.menu, color: ink),
+                              icon: Icon(
+                                Icons.menu,
+                                color: context.palette.ink,
+                              ),
                             ),
                           ),
                         ),
@@ -85,7 +88,7 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
                           ),
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: panel,
+                              color: context.palette.panel,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: ClipRRect(
@@ -167,7 +170,7 @@ class _TopBar extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .5),
+                    color: context.palette.surface.withValues(alpha: .5),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
@@ -223,7 +226,7 @@ class _NavTab extends StatelessWidget {
     selected: selected,
     button: true,
     child: Material(
-      color: selected ? accent : Colors.transparent,
+      color: selected ? context.palette.accent : Colors.transparent,
       shape: const StadiumBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -233,14 +236,22 @@ class _NavTab extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 17, color: selected ? Colors.white : ink),
+              Icon(
+                icon,
+                size: 17,
+                color: selected
+                    ? context.palette.onAccent
+                    : context.palette.ink,
+              ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: AppFontSizes.navigation,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? Colors.white : ink,
+                  color: selected
+                      ? context.palette.onAccent
+                      : context.palette.ink,
                 ),
               ),
             ],
@@ -295,18 +306,18 @@ class _AccountButton extends ConsumerWidget {
         child: Container(
           width: 44,
           height: 44,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: context.palette.surface,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Color(0x141E3932),
+                color: context.palette.ink.withValues(alpha: 0.08),
                 blurRadius: 8,
                 offset: Offset(0, 2),
               ),
             ],
           ),
-          child: const Icon(Icons.person, size: 20, color: ink),
+          child: Icon(Icons.person, size: 20, color: context.palette.ink),
         ),
       );
 }
