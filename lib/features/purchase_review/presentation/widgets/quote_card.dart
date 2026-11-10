@@ -7,7 +7,7 @@ import "../../domain/purchase_review.dart";
 import "detail_line.dart";
 import "review_format.dart";
 
-const _tax = {"EXCLUDED": "부가세 별도", "INCLUDED": "부가세 포함"};
+const _tax = {"EXCLUDED": "부가세 별도", "INCLUDED": "부가세 포함", "EXEMPT": "면세"};
 const _checkStates = {"STATED": "원문 확인", "MISSING": "원문에 없음", "UNCLEAR": "불명확"};
 
 /// API-13 견적 한 버전과 필드별 원문 근거.

@@ -22,7 +22,7 @@ class SourceDocumentAttachments extends StatelessWidget {
             child: Text(
               attachments.isEmpty
                   ? '첨부파일 없음'
-                  : '${attachments.join(', ')} · 합성 첨부 ${attachments.length}개',
+                  : '${attachments.join(', ')} · 첨부 ${attachments.length}개',
               style: TextStyle(
                 fontSize: 13,
                 color: context.palette.muted,

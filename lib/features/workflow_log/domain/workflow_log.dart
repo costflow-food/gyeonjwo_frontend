@@ -163,6 +163,9 @@ class WorkflowLogEntry {
   final LogOutcome? outcome;
   final String? requestId;
   final String? caseId;
+
+  /// The case's item name. Null while the item is not identified yet, even
+  /// though the case exists.
   final String? caseTitle;
   final int? durationMs;
 
@@ -183,6 +186,11 @@ class WorkflowLogEntry {
   LogEventType? get eventType => LogEventType.fromCode(eventCode);
 
   String get eventLabel => eventType?.label ?? eventCode;
+
+  /// Case name for display. A log written before any case exists and a log of
+  /// a case whose item is not identified yet are different states.
+  String get caseLabel =>
+      caseTitle ?? (caseId == null ? "업무 없음 (접수 단계)" : "품목 미확인 업무");
 
   /// "① 정보 추출 (에이전트)" style; whichever part is known.
   String get actorLabel {

@@ -10,7 +10,7 @@ class SourceDocumentFooter extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 28, vertical: 16),
       child: Text(
-        '합성 자료 · 실제 외부 연결 없음',
+        '연결된 메일함에서 가져온 원문입니다.',
         style: TextStyle(fontSize: 12, color: context.palette.muted),
       ),
     );

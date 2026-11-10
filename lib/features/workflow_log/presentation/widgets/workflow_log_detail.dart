@@ -78,7 +78,7 @@ class WorkflowLogDetail extends StatelessWidget {
             ),
           const SizedBox(height: 18),
           _Field("시각", formatSeoulDateTime(value.createdAt)),
-          _Field("업무", value.caseTitle ?? "업무 생성 전"),
+          _Field("업무", value.caseLabel),
           _Field("주체", value.actorLabel),
           if (value.runStatus != null)
             // Agent run status, shown apart from the case's Complete status.
@@ -112,7 +112,7 @@ class WorkflowLogDetail extends StatelessWidget {
                   OutlinedButton.icon(
                     style: WorkspaceButtonStyles.outlined(context),
                     onPressed: () =>
-                        onFilterCase(caseId, caseTitle: value.caseTitle),
+                        onFilterCase(caseId, caseTitle: value.caseLabel),
                     icon: const Icon(Icons.filter_list, size: 16),
                     label: const Text("이 업무 로그만"),
                   ),
