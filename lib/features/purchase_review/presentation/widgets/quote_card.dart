@@ -83,23 +83,71 @@ class QuoteCard extends StatelessWidget {
             ),
           if (quote.evidence.isNotEmpty) ...[
             const Divider(color: line, height: 20),
-            const Text(
-              "원문 근거",
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            for (final evidence in quote.evidence)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  "${evidence.label} · “${evidence.rawValue ?? "-"}” · "
-                  "${evidence.locationLabel}",
-                  style: const TextStyle(fontSize: 13, height: 1.5),
-                ),
-              ),
+            _EvidenceSection(evidence: quote.evidence),
           ],
         ],
       ),
+    );
+  }
+}
+
+/// 원문 근거 목록. 처음엔 접혀 있고 제목 줄을 누르면 펼쳐집니다.
+class _EvidenceSection extends StatefulWidget {
+  const _EvidenceSection({required this.evidence});
+
+  final List<QuoteEvidence> evidence;
+
+  @override
+  State<_EvidenceSection> createState() => _EvidenceSectionState();
+}
+
+class _EvidenceSectionState extends State<_EvidenceSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                const Text(
+                  "원문 근거",
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  "${widget.evidence.length}건",
+                  style: const TextStyle(fontSize: 13, color: muted),
+                ),
+                const Spacer(),
+                AnimatedRotation(
+                  turns: _expanded ? .5 : 0,
+                  duration: const Duration(milliseconds: 150),
+                  child: const Icon(Icons.expand_more, size: 20, color: muted),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: 8),
+          for (final evidence in widget.evidence)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                "${evidence.label} · “${evidence.rawValue ?? "-"}” · "
+                "${evidence.locationLabel}",
+                style: const TextStyle(fontSize: 13, height: 1.5),
+              ),
+            ),
+        ],
+      ],
     );
   }
 }
