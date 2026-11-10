@@ -1,5 +1,11 @@
 /// Connection result decided by the server after checking the Google token.
-enum GmailConnectionStatus { connected, partial, needsReconnect, failed, notConnected }
+enum GmailConnectionStatus {
+  connected,
+  partial,
+  needsReconnect,
+  failed,
+  notConnected,
+}
 
 /// What the connection screen shows. Derived here, not in the View.
 enum GmailConnectionPhase {
@@ -62,8 +68,6 @@ class GmailCapabilities {
     this.isKnown = true,
   });
 
-  /// UI preview without Supabase settings keeps existing screens usable.
-  static const preview = GmailCapabilities(canRead: true, canSend: true);
   static const none = GmailCapabilities(canRead: false, canSend: false);
 
   /// Server result not loaded yet; features stay off without a warning.

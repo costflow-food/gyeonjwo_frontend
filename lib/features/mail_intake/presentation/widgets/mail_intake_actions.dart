@@ -30,24 +30,19 @@ class MailIntakeActions extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            '시연 데이터 · 새로고침하면 초기화됩니다.',
-            style: TextStyle(fontSize: AppFontSizes.caption, color: muted),
-          ),
-          const SizedBox(height: 8),
           if (error != null) ...[
             Semantics(
               liveRegion: true,
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, size: 16, color: accent),
+                  const Icon(Icons.error_outline, size: 16, color: danger),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       error!,
                       style: const TextStyle(
                         fontSize: AppFontSizes.body,
-                        color: accent,
+                        color: danger,
                       ),
                     ),
                   ),

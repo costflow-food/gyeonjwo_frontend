@@ -76,7 +76,19 @@ class IntakeMail {
   final List<String> attachments;
   final List<CaseCandidate> candidates;
   final int revision;
+
+  /// 기존 업무에 대한 회신으로 보이는 메일. API-23에는 답장 헤더가 없어
+  /// 제목 접두어와 후보의 답장·발송 근거로 추정합니다.
+  bool get looksLikeReply =>
+      _replySubject.hasMatch(subject) ||
+      candidates.any((candidate) => candidate.replyEvidence != null);
 }
+
+/// "RE:", "Re :", "회신:", "답장:" 같은 답장 제목 접두어.
+final _replySubject = RegExp(
+  r"^\s*(re|회신|답장)\s*[:：]",
+  caseSensitive: false,
+);
 
 class IntakePage {
   const IntakePage({
@@ -93,9 +105,12 @@ class IntakePage {
 }
 
 class IntakeFailure implements Exception {
-  const IntakeFailure(this.code, this.message);
+  const IntakeFailure(this.code, this.message, {this.unknownOutcome = false});
   final String code;
   final String message;
+
+  /// No response arrived; the server may or may not have applied the change.
+  final bool unknownOutcome;
 
   @override
   String toString() => "IntakeFailure($code)";

@@ -28,7 +28,7 @@ class SendSettingsHeader extends StatelessWidget {
                   "발송·메일 스타일 설정",
                   style: TextStyle(
                     fontSize: AppFontSizes.dialogTitle,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),

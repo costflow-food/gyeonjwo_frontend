@@ -8,9 +8,12 @@ part of 'workflow_log_data_source.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 @ProviderFor(workflowLogDataSource)
 final workflowLogDataSourceProvider = WorkflowLogDataSourceProvider._();
+
+/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 final class WorkflowLogDataSourceProvider
     extends
@@ -20,6 +23,7 @@ final class WorkflowLogDataSourceProvider
           WorkflowLogDataSource
         >
     with $Provider<WorkflowLogDataSource> {
+  /// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
   WorkflowLogDataSourceProvider._()
     : super(
         from: null,
@@ -55,4 +59,4 @@ final class WorkflowLogDataSourceProvider
 }
 
 String _$workflowLogDataSourceHash() =>
-    r'cd1f8deced91062142764247782a8056d7fd8d40';
+    r'3135d53c0511ec5dd077feb03c47541169431671';

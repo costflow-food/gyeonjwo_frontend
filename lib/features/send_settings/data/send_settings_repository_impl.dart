@@ -1,5 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/idempotency_key.dart";
+
 import "../../mail_draft/domain/mail_draft.dart";
 import "../domain/send_settings.dart";
 import "../domain/send_settings_repository.dart";
@@ -13,9 +15,10 @@ SendSettingsRepository sendSettingsRepository(Ref ref) {
 }
 
 class SendSettingsRepositoryImpl implements SendSettingsRepository {
-  const SendSettingsRepositoryImpl(this._dataSource);
+  SendSettingsRepositoryImpl(this._dataSource);
 
   final SendSettingsDataSource _dataSource;
+  final _keys = IdempotencyKeys();
 
   @override
   Future<SendSettings> getSettings({String? caseId}) => _guard(() async {
@@ -27,32 +30,48 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
   Future<SendSettings> saveSettings(
     SendSettingsUpdate update, {
     String? caseId,
-    required String idempotencyKey,
-  }) => _guard(() async {
-    final response = await _dataSource.saveSettings({
-      "mailbox_ref": "demo-purchase-mailbox",
+  }) {
+    final body = <String, Object?>{
+      // Echo the GET response value; the server has no mailbox alias.
+      "mailbox_ref": update.mailboxRef,
       "case_id": caseId,
       "expected_settings_version": update.expectedSettingsVersion,
       "approval_required_by_purpose": {
         for (final entry in update.approvalByPurpose.entries)
           entry.key.code: entry.value,
       },
-      "allowed_supplier_ids": update.allowedSupplierIds,
       "style": {"tone": update.tone.code, "signature": update.signature},
-      "apply_to": switch (update.applyTo) {
-        ApplyTo.futureDrafts => "FUTURE_DRAFTS",
-        ApplyTo.specifiedDrafts => "SPECIFIED_DRAFTS",
-      },
-      "draft_ids": update.draftIds,
-    }, idempotencyKey: idempotencyKey);
-    return _settings(response["data"] as Map<String, dynamic>);
-  });
+      // The server stores only FUTURE_DRAFTS for now.
+      "apply_to": "FUTURE_DRAFTS",
+      "draft_ids": const <String>[],
+    };
+    return _keys.run(
+      "save:${caseId ?? "mailbox"}",
+      body,
+      (key) => _guard(() async {
+        final response = await _dataSource.saveSettings(
+          body,
+          idempotencyKey: key,
+        );
+        return _settings(response["data"] as Map<String, dynamic>);
+      }),
+      // Keep the key when the outcome is unknown so a retry cannot save twice.
+      serverCode: (error) =>
+          error is SendSettingsFailure && !error.unknownOutcome
+          ? error.code
+          : null,
+    );
+  }
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
       return await request();
     } on SendSettingsApiException catch (error) {
-      throw SendSettingsFailure(error.code, error.message);
+      throw SendSettingsFailure(
+        error.code,
+        error.message,
+        unknownOutcome: error.unknownOutcome,
+      );
     }
   }
 
@@ -71,27 +90,8 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
         for (final purpose in DraftPurpose.values)
           _approval(purpose, effective[purpose.code] as Map<String, dynamic>),
       ]),
-      suppliers: List.unmodifiable([
-        for (final entry in json["allowed_suppliers"] as List)
-          AllowedSupplier(
-            id: entry["supplier_id"] as String,
-            name: entry["name"] as String,
-            email: entry["email"] as String?,
-            allowed: entry["allowed"] as bool,
-          ),
-      ]),
       tone: MailTone.fromCode(style["tone"] as String),
       signature: style["signature"] as String? ?? "",
-      pendingDrafts: List.unmodifiable([
-        for (final entry in json["pending_drafts"] as List)
-          PendingDraft(
-            draftId: entry["draft_id"] as String,
-            purpose: DraftPurpose.fromCode(entry["purpose"] as String),
-            supplierName: entry["supplier_name"] as String,
-            recipient: entry["recipient"] as String,
-            status: DraftStatus.fromCode(entry["status"] as String),
-          ),
-      ]),
     );
   }
 

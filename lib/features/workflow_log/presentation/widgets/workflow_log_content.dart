@@ -14,15 +14,11 @@ class WorkflowLogContent extends StatefulWidget {
   const WorkflowLogContent({
     super.key,
     required this.data,
-    required this.search,
     required this.viewModel,
-    required this.onReset,
   });
 
   final WorkflowLogState data;
-  final TextEditingController search;
   final WorkflowLogViewModel viewModel;
-  final VoidCallback onReset;
 
   @override
   State<WorkflowLogContent> createState() => _WorkflowLogContentState();
@@ -78,7 +74,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                       icon: const Icon(
                         Icons.error_outline,
                         size: 15,
-                        color: accent,
+                        color: danger,
                       ),
                       label: const Text(
                         "조회 실패 · 다시 시도",
@@ -88,7 +84,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                 ],
               ),
               const SizedBox(height: 8),
-              const Divider(height: 1, color: Color(0xFF64666B)),
+              const Divider(height: 1, color: Color(0xFF4F6862)),
               WorkflowLogList(
                 data: data,
                 onSelect: (id) {
@@ -100,16 +96,17 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
             ],
           ),
         );
-        final detail = WorkflowLogDetail(entry: data.selected);
+        final detail = WorkflowLogDetail(
+          entry: data.selected,
+          caseFiltered: data.filter.caseId != null,
+          onFilterCase: viewModel.filterCase,
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             WorkflowLogFilters(
               filter: data.filter,
-              search: widget.search,
-              onSearch: viewModel.searchCase,
-              onChanged: viewModel.applyFilter,
-              onReset: widget.onReset,
+              onClearCase: () => viewModel.filterCase(null),
             ),
             const SizedBox(height: 16),
             LayoutBuilder(

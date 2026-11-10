@@ -28,7 +28,7 @@ class SupplierDetailContent extends StatelessWidget {
               supplier.name,
               style: const TextStyle(
                 fontSize: AppFontSizes.heading,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             SupplierSourceBadge(supplier.sourceType),

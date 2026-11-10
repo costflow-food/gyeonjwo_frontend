@@ -18,7 +18,7 @@ class SettingsSectionTitle extends StatelessWidget {
           title,
           style: const TextStyle(
             fontSize: AppFontSizes.bodyLarge,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 4),

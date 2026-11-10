@@ -23,28 +23,26 @@ class WorkflowLogRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final meta = [
       formatSeoulDateTime(entry.createdAt),
-      entry.actor.label,
-      entry.eventType.label,
+      entry.actor?.label ?? entry.actorLabel,
+      entry.eventLabel,
       if (entry.durationMs != null) formatDuration(entry.durationMs!),
     ].join(" · ");
     return Semantics(
       selected: selected,
       button: true,
       child: Material(
-        color: selected ? blush : Colors.transparent,
+        color: selected ? Colors.white : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: selected
+              ? const BorderSide(color: accent, width: 1.5)
+              : BorderSide.none,
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: selected ? accent : Colors.transparent,
-                  width: 3,
-                ),
-                bottom: const BorderSide(color: line),
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -61,18 +59,22 @@ class WorkflowLogRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    LogOutcomeBadge(entry.outcome),
+                    if (entry.outcome != null) ...[
+                      const SizedBox(width: 8),
+                      LogOutcomeBadge(entry.outcome!),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  entry.summary,
-                  style: const TextStyle(
-                    fontSize: AppFontSizes.body,
-                    height: 1.45,
+                if (entry.summary.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    entry.summary,
+                    style: const TextStyle(
+                      fontSize: AppFontSizes.body,
+                      height: 1.45,
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 5),
                 Text(
                   meta,

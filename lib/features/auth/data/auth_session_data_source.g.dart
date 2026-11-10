@@ -55,4 +55,4 @@ final class AuthSessionDataSourceProvider
 }
 
 String _$authSessionDataSourceHash() =>
-    r'5376534a9823f99f0aa2ab3bd0f4fd2eba818f3c';
+    r'475e0b7e6317a50e25fbef844ab01863702f04c2';

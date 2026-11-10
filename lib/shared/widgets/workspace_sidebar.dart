@@ -3,313 +3,177 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../app_font_sizes.dart';
-import '../../features/auth/presentation/widgets/sign_out_action.dart';
+import '../../features/mail_intake/presentation/mail_intake_view_model.dart';
+import '../../features/mail_intake/presentation/widgets/intake_sidebar_list.dart';
+import '../../features/work_queue/presentation/widgets/queue_group_list.dart';
+import '../../features/work_queue/presentation/work_queue_view_model.dart';
 import '../workspace_colors.dart';
-import 'brand_logo.dart';
 
+/// 왼쪽 업무 큐. 로고·메뉴·계정은 위쪽 메뉴 줄에 있습니다.
 class WorkspaceSidebar extends StatelessWidget {
   const WorkspaceSidebar({super.key, required this.onCollapse});
   final VoidCallback onCollapse;
 
   @override
   Widget build(BuildContext context) {
-    final path = GoRouterState.of(context).uri.path;
-    final isAccount = path == '/account';
-    final isSuppliers = path == '/suppliers';
-    final isLogs = path == '/logs';
     return Material(
-      color: canvas,
-      child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 22),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Expanded(child: BrandLogo()),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                tooltip: '사이드바 접기',
-                                onPressed: onCollapse,
-                                icon: const Icon(Icons.chevron_left, size: 20),
-                                style: IconButton.styleFrom(
-                                  minimumSize: const Size(36, 36),
-                                  maximumSize: const Size(36, 36),
-                                  padding: const EdgeInsets.all(6),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  side: const BorderSide(color: line),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'PURCHASING WORKSPACE',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: muted,
-                              letterSpacing: 1.1,
-                            ),
-                          ),
-                          const SizedBox(height: 36),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.layers_outlined,
-                                  size: 17,
-                                  color: muted,
-                                ),
-                                SizedBox(width: 9),
-                                Expanded(
-                                  child: Text(
-                                    '구매 검토',
-                                    style: TextStyle(
-                                      color: muted,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            minLeadingWidth: 18,
-                            selected: !isAccount && !isSuppliers && !isLogs,
-                            selectedColor: accent,
-                            selectedTileColor: blush,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(7),
-                            ),
-                            leading: const Icon(Icons.inbox_outlined, size: 19),
-                            title: const Text(
-                              '업무 큐',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: const Text(
-                                '6',
-                                style: TextStyle(
-                                  color: accent,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                            onTap: () {
-                              context.go('/');
-                            },
-                          ),
-                          const SizedBox(height: 4),
-                          ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            minLeadingWidth: 18,
-                            selected: isLogs,
-                            selectedColor: accent,
-                            selectedTileColor: blush,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(7),
-                            ),
-                            leading: const Icon(
-                              Icons.receipt_long_outlined,
-                              size: 19,
-                            ),
-                            title: const Text(
-                              '실행 로그',
-                              style: TextStyle(
-                                fontSize: AppFontSizes.navigation,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            onTap: () => context.go('/logs'),
-                          ),
-                          const SizedBox(height: 4),
-                          ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            minLeadingWidth: 18,
-                            selected: isSuppliers,
-                            selectedColor: accent,
-                            selectedTileColor: blush,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(7),
-                            ),
-                            leading: const Icon(
-                              Icons.storefront_outlined,
-                              size: 19,
-                            ),
-                            title: const Text(
-                              '거래처',
-                              style: TextStyle(
-                                fontSize: AppFontSizes.navigation,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            onTap: () => context.go('/suppliers'),
-                          ),
-                          const SizedBox(height: 32),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Divider(color: line),
-                          const SizedBox(height: 14),
-                          const Text(
-                            '판단에 필요한 근거를 한곳에.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          for (final (index, text) in [
-                            '요청 내용 확인',
-                            '구매 근거와 거래처 비교',
-                            '비용 영향 검토',
-                          ].indexed)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 11),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${index + 1}',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: muted,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      text,
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        color: muted,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          const SizedBox(height: 14),
-                          const Divider(color: line),
-                          const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () => context.go('/account'),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isAccount ? blush : null,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 18,
-                                    backgroundColor: canvas,
-                                    foregroundColor: muted,
-                                    child: Icon(Icons.person_outline, size: 20),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '구매담당자',
-                                          style: TextStyle(
-                                            fontSize: AppFontSizes.body,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        SizedBox(height: 5),
-                                        Text(
-                                          '계정 설정',
-                                          style: TextStyle(
-                                            fontSize: AppFontSizes.secondary,
-                                            color: muted,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Icon(
-                                    Icons.settings_outlined,
-                                    size: 16,
-                                    color: muted,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Consumer(
-                            builder: (context, ref, _) => TextButton.icon(
-                              onPressed: () => signOutAndLeave(context, ref),
-                              icon: const Icon(Icons.logout, size: 16),
-                              label: const Text(
-                                '로그아웃',
-                                style: TextStyle(fontSize: AppFontSizes.button),
-                              ),
-                              style: TextButton.styleFrom(
-                                foregroundColor: muted,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Consumer(
+                  builder: (context, ref, _) => IconButton(
+                    tooltip: '목록 새로고침',
+                    onPressed: () {
+                      ref.read(workQueueViewModelProvider.notifier).refresh();
+                      ref.read(mailIntakeViewModelProvider.notifier).refresh();
+                    },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    color: muted,
+                    visualDensity: VisualDensity.compact,
                   ),
                 ),
-              ),
-            );
-          },
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: '업무 큐 접기',
+                  onPressed: onCollapse,
+                  icon: const Icon(Icons.chevron_left, size: 20, color: ink),
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(36, 36),
+                    maximumSize: const Size(36, 36),
+                    padding: const EdgeInsets.all(6),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    backgroundColor: Colors.white.withValues(alpha: .5),
+                    shape: const CircleBorder(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Expanded(child: _SidebarTabs()),
+          ],
         ),
       ),
     );
   }
+}
+
+/// 업무 큐 | 접수 확인. 탭을 누르거나 옆으로 밀어 넘깁니다(설정 화면과 같은 방식).
+class _SidebarTabs extends ConsumerStatefulWidget {
+  const _SidebarTabs();
+
+  @override
+  ConsumerState<_SidebarTabs> createState() => _SidebarTabsState();
+}
+
+class _SidebarTabsState extends ConsumerState<_SidebarTabs>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabs = TabController(length: 2, vsync: this);
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final queue = ref.watch(workQueueViewModelProvider);
+    final intake = ref.watch(mailIntakeViewModelProvider);
+    // All cases matching the search, whichever status tab is open.
+    final queueCount = queue.hasValue ? queue.requireValue.counts.total : null;
+    final intakeCount = intake.hasValue
+        ? intake.requireValue.totalPending
+        : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Each tab takes half the width; counts sit in their own badge.
+        TabBar(
+          controller: _tabs,
+          labelColor: ink,
+          unselectedLabelColor: muted,
+          indicatorColor: accent,
+          indicatorWeight: 3,
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: const Color(0x331E3932),
+          labelPadding: EdgeInsets.zero,
+          labelStyle: const TextStyle(
+            fontSize: AppFontSizes.body,
+            fontWeight: FontWeight.w700,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: AppFontSizes.body,
+            fontWeight: FontWeight.w500,
+          ),
+          // Tapping 업무 큐 again goes back to the first screen.
+          onTap: (index) {
+            if (index == 0 && !_tabs.indexIsChanging) {
+              goToQueueHome(context, ref);
+            }
+          },
+          tabs: [
+            _CountTab(label: '업무 큐', count: queueCount),
+            _CountTab(label: '접수 확인', count: intakeCount),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: TabBarView(
+            controller: _tabs,
+            children: const [QueueGroupList(), IntakeSidebarList()],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CountTab extends StatelessWidget {
+  const _CountTab({required this.label, required this.count});
+
+  final String label;
+  final int? count;
+
+  @override
+  Widget build(BuildContext context) => Tab(
+    height: 40,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        if (count != null && count! > 0) ...[
+          const SizedBox(width: 5),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: AppFontSizes.caption,
+                fontWeight: FontWeight.w600,
+                color: muted,
+              ),
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+/// 첫 화면(업무 큐 요약)으로: 선택한 업무를 닫고 업무 큐로 이동합니다.
+void goToQueueHome(BuildContext context, WidgetRef ref) {
+  ref.read(workQueueViewModelProvider.notifier).select(null);
+  if (GoRouterState.of(context).uri.path != '/') context.go('/');
 }

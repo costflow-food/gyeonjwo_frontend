@@ -1,4 +1,4 @@
-/// 화면용 원문 계약. 실제 메일/PDF 연결 전에는 합성 자료만 표시합니다.
+/// 화면용 원문 계약. 실제 앱은 API-25 메일 원문을, UI 미리보기는 합성 자료를 씁니다.
 class SourceDocument {
   const SourceDocument({
     required this.title,

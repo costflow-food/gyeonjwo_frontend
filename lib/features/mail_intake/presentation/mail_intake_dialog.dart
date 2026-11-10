@@ -1,11 +1,10 @@
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/idempotency_key.dart";
 import "../../../shared/widgets/async_content.dart";
+import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../../shared/workspace_colors.dart";
 import "../domain/intake_mail.dart";
 import "mail_intake_view_model.dart";
@@ -18,19 +17,22 @@ import "widgets/mail_intake_header.dart";
 ///
 /// Advertising and other non-business mail never reaches the queue; only
 /// mails the classifier could not settle appear here.
-Future<void> showMailIntakeDialog(BuildContext context) {
+Future<void> showMailIntakeDialog(BuildContext context, {String? mailId}) {
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: const MailIntakeDialog(),
+      child: MailIntakeDialog(initialMailId: mailId),
     ),
   );
 }
 
 class MailIntakeDialog extends ConsumerStatefulWidget {
-  const MailIntakeDialog({super.key});
+  const MailIntakeDialog({super.key, this.initialMailId});
+
+  /// The mail picked in the sidebar; opens with it selected.
+  final String? initialMailId;
 
   @override
   ConsumerState<MailIntakeDialog> createState() => _MailIntakeDialogState();
@@ -52,11 +54,10 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
   }
 
   final _reason = TextEditingController();
-  String? _selectedMailId;
+  late String? _selectedMailId = widget.initialMailId;
   String? _selectedCaseId;
   bool _busy = false;
   String? _error;
-  (String, String)? _pendingKey;
 
   @override
   void dispose() {
@@ -71,14 +72,47 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
     _reason.clear();
   });
 
+  /// 회신으로 보이는 메일을 새 업무로 만들면 원래 업무와 Work ID가 갈라지고,
+  /// 나중에 원래 업무에 다시 연결할 수 없습니다(E2E S5-11). 한 번 더 묻습니다.
+  Future<bool> _confirmCreateFromReply() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("회신 메일을 새 업무로 만들까요?"),
+        content: const Text(
+          "이 메일은 보낸 견적 요청이나 추가 확인에 대한 회신일 수 있어요. "
+          "새 업무로 접수하면 원래 업무와 따로 진행되고, 나중에 원래 업무에 연결할 수 없어요.\n\n"
+          "공급사가 보낸 새 인상 안내라면 새 업무로 접수해 주세요.",
+        ),
+        actions: [
+          TextButton(
+            style: WorkspaceButtonStyles.text,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("취소"),
+          ),
+          FilledButton(
+            style: WorkspaceButtonStyles.filled,
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text("새 업무로 접수"),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
   Future<void> _resolve(IntakeMail mail, IntakeResolution resolution) async {
     if (_busy) return;
+    if (resolution == IntakeResolution.createCase &&
+        mail.looksLikeReply &&
+        !await _confirmCreateFromReply()) {
+      return;
+    }
+    if (!mounted || _busy) return;
     final target = resolution == IntakeResolution.linkCase
         ? _selectedCaseId
         : null;
     final reason = _reason.text.trim().isEmpty ? null : _reason.text.trim();
-    final body = jsonEncode([mail.mailId, resolution.code, target, reason]);
-    if (_pendingKey?.$2 != body) _pendingKey = (newIdempotencyKey(), body);
     setState(() {
       _busy = true;
       _error = null;
@@ -86,15 +120,8 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
     try {
       await ref
           .read(mailIntakeViewModelProvider.notifier)
-          .resolve(
-            mail,
-            resolution,
-            targetCaseId: target,
-            reason: reason,
-            idempotencyKey: _pendingKey!.$1,
-          );
+          .resolve(mail, resolution, targetCaseId: target, reason: reason);
       if (!mounted) return;
-      _pendingKey = null;
       final message = switch (resolution) {
         IntakeResolution.nonBusiness => "비업무로 확인했습니다.",
         IntakeResolution.createCase => "새 업무로 접수했습니다. 업무 큐에서 대기 상태로 확인할 수 있어요.",
@@ -110,10 +137,11 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
       });
     } on IntakeFailure catch (failure) {
       if (!mounted) return;
-      _pendingKey = null;
       setState(() {
         _busy = false;
-        _error = failure.message;
+        _error = failure.unknownOutcome
+            ? "처리 결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."
+            : failure.message;
       });
     } catch (_) {
       if (!mounted) return;

@@ -8,9 +8,12 @@ part of 'purchase_review_data_source.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 @ProviderFor(purchaseReviewDataSource)
 final purchaseReviewDataSourceProvider = PurchaseReviewDataSourceProvider._();
+
+/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 final class PurchaseReviewDataSourceProvider
     extends
@@ -20,6 +23,7 @@ final class PurchaseReviewDataSourceProvider
           PurchaseReviewDataSource
         >
     with $Provider<PurchaseReviewDataSource> {
+  /// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
   PurchaseReviewDataSourceProvider._()
     : super(
         from: null,
@@ -55,4 +59,4 @@ final class PurchaseReviewDataSourceProvider
 }
 
 String _$purchaseReviewDataSourceHash() =>
-    r'6b53544f80004437a13a631b88942f9049687798';
+    r'a877de7e7f46da07fa8bd20cf653cd3eb2c9a1f6';

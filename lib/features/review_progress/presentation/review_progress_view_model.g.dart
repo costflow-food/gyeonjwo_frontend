@@ -8,19 +8,40 @@ part of 'review_progress_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// API-03 progress of one case after START or RESUME was accepted.
+///
+/// While the server is working it re-reads every [pollInterval], and at
+/// once when Supabase Realtime says a case changed. It stops asking when
+/// the case waits for the buyer or a reply, when the app is hidden
+/// ([pause]), and when the dialog closes (auto-dispose). The server keeps
+/// working either way.
 
 @ProviderFor(ReviewProgressViewModel)
 final reviewProgressViewModelProvider = ReviewProgressViewModelFamily._();
 
+/// API-03 progress of one case after START or RESUME was accepted.
+///
+/// While the server is working it re-reads every [pollInterval], and at
+/// once when Supabase Realtime says a case changed. It stops asking when
+/// the case waits for the buyer or a reply, when the app is hidden
+/// ([pause]), and when the dialog closes (auto-dispose). The server keeps
+/// working either way.
 final class ReviewProgressViewModelProvider
-    extends $AsyncNotifierProvider<ReviewProgressViewModel, ReviewPhase> {
+    extends $AsyncNotifierProvider<ReviewProgressViewModel, ReviewProgress> {
+  /// API-03 progress of one case after START or RESUME was accepted.
+  ///
+  /// While the server is working it re-reads every [pollInterval], and at
+  /// once when Supabase Realtime says a case changed. It stops asking when
+  /// the case waits for the buyer or a reply, when the app is hidden
+  /// ([pause]), and when the dialog closes (auto-dispose). The server keeps
+  /// working either way.
   ReviewProgressViewModelProvider._({
     required ReviewProgressViewModelFamily super.from,
     required String super.argument,
   }) : super(
          retry: _noRetry,
          name: r'reviewProgressViewModelProvider',
-         isAutoDispose: false,
+         isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -52,15 +73,23 @@ final class ReviewProgressViewModelProvider
 }
 
 String _$reviewProgressViewModelHash() =>
-    r'f59b3a30c1c960911725633a0e595b66cd80b643';
+    r'4adee4b25a67da45ff5a6a05c9efdfbb15e46930';
+
+/// API-03 progress of one case after START or RESUME was accepted.
+///
+/// While the server is working it re-reads every [pollInterval], and at
+/// once when Supabase Realtime says a case changed. It stops asking when
+/// the case waits for the buyer or a reply, when the app is hidden
+/// ([pause]), and when the dialog closes (auto-dispose). The server keeps
+/// working either way.
 
 final class ReviewProgressViewModelFamily extends $Family
     with
         $ClassFamilyOverride<
           ReviewProgressViewModel,
-          AsyncValue<ReviewPhase>,
-          ReviewPhase,
-          FutureOr<ReviewPhase>,
+          AsyncValue<ReviewProgress>,
+          ReviewProgress,
+          FutureOr<ReviewProgress>,
           String
         > {
   ReviewProgressViewModelFamily._()
@@ -69,30 +98,47 @@ final class ReviewProgressViewModelFamily extends $Family
         name: r'reviewProgressViewModelProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: false,
+        isAutoDispose: true,
       );
 
-  ReviewProgressViewModelProvider call(String requestId) =>
-      ReviewProgressViewModelProvider._(argument: requestId, from: this);
+  /// API-03 progress of one case after START or RESUME was accepted.
+  ///
+  /// While the server is working it re-reads every [pollInterval], and at
+  /// once when Supabase Realtime says a case changed. It stops asking when
+  /// the case waits for the buyer or a reply, when the app is hidden
+  /// ([pause]), and when the dialog closes (auto-dispose). The server keeps
+  /// working either way.
+
+  ReviewProgressViewModelProvider call(String caseId) =>
+      ReviewProgressViewModelProvider._(argument: caseId, from: this);
 
   @override
   String toString() => r'reviewProgressViewModelProvider';
 }
 
-abstract class _$ReviewProgressViewModel extends $AsyncNotifier<ReviewPhase> {
-  late final _$args = ref.$arg as String;
-  String get requestId => _$args;
+/// API-03 progress of one case after START or RESUME was accepted.
+///
+/// While the server is working it re-reads every [pollInterval], and at
+/// once when Supabase Realtime says a case changed. It stops asking when
+/// the case waits for the buyer or a reply, when the app is hidden
+/// ([pause]), and when the dialog closes (auto-dispose). The server keeps
+/// working either way.
 
-  FutureOr<ReviewPhase> build(String requestId);
+abstract class _$ReviewProgressViewModel
+    extends $AsyncNotifier<ReviewProgress> {
+  late final _$args = ref.$arg as String;
+  String get caseId => _$args;
+
+  FutureOr<ReviewProgress> build(String caseId);
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<ReviewPhase>, ReviewPhase>;
+    final ref = this.ref as $Ref<AsyncValue<ReviewProgress>, ReviewProgress>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<ReviewPhase>, ReviewPhase>,
-              AsyncValue<ReviewPhase>,
+              AnyNotifier<AsyncValue<ReviewProgress>, ReviewProgress>,
+              AsyncValue<ReviewProgress>,
               Object?,
               Object?
             >;

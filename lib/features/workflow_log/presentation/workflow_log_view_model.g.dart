@@ -8,15 +8,15 @@ part of 'workflow_log_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// SCR-010 filters, selection, and cursor paging.
+/// SCR-010 filters, selection, and cursor paging (API-28).
 
 @ProviderFor(WorkflowLogViewModel)
 final workflowLogViewModelProvider = WorkflowLogViewModelProvider._();
 
-/// SCR-010 filters, selection, and cursor paging.
+/// SCR-010 filters, selection, and cursor paging (API-28).
 final class WorkflowLogViewModelProvider
     extends $AsyncNotifierProvider<WorkflowLogViewModel, WorkflowLogState> {
-  /// SCR-010 filters, selection, and cursor paging.
+  /// SCR-010 filters, selection, and cursor paging (API-28).
   WorkflowLogViewModelProvider._()
     : super(
         from: null,
@@ -37,9 +37,9 @@ final class WorkflowLogViewModelProvider
 }
 
 String _$workflowLogViewModelHash() =>
-    r'fd7494147d643c562dd7fcdc38d52b2a56b432ac';
+    r'd9bc2002f7335629a8c3eb47b899c97d4fb76bd2';
 
-/// SCR-010 filters, selection, and cursor paging.
+/// SCR-010 filters, selection, and cursor paging (API-28).
 
 abstract class _$WorkflowLogViewModel extends $AsyncNotifier<WorkflowLogState> {
   FutureOr<WorkflowLogState> build();

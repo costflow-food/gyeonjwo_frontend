@@ -31,7 +31,7 @@ class MailDraftBody extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: line),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -41,7 +41,10 @@ class MailDraftBody extends StatelessWidget {
             const Divider(color: line, height: 24),
             SelectableText(
               draft.body,
-              style: const TextStyle(fontSize: AppFontSizes.bodyLarge, height: 1.6),
+              style: const TextStyle(
+                fontSize: AppFontSizes.bodyLarge,
+                height: 1.6,
+              ),
             ),
           ],
         ),
@@ -68,7 +71,8 @@ class MailDraftBody extends StatelessWidget {
           keyboardType: TextInputType.emailAddress,
           decoration: decoration("받는 사람"),
           validator: (value) =>
-              RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$").hasMatch(value?.trim() ?? "")
+              RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+                  .hasMatch(value?.trim() ?? "")
               ? null
               : "이메일 형식을 확인해 주세요.",
         ),
@@ -94,10 +98,7 @@ class MailDraftBody extends StatelessWidget {
         TextFormField(
           controller: editReason,
           style: style,
-          decoration: decoration(
-            "수정 사유",
-            hint: "예: 수신자 주소 정정, 표현 수정",
-          ),
+          decoration: decoration("수정 사유", hint: "예: 수신자 주소 정정, 표현 수정"),
         ),
       ],
     );

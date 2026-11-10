@@ -1,10 +1,8 @@
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/idempotency_key.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/workspace_colors.dart";
 import "../../../shared/widgets/workspace_button_styles.dart";
@@ -12,7 +10,6 @@ import "../../send_settings/presentation/send_settings_dialog.dart";
 import "../domain/mail_draft.dart";
 import "mail_draft_view_model.dart";
 import "widgets/mail_draft_body.dart";
-import "widgets/mail_draft_evidence.dart";
 import "widgets/mail_draft_footer.dart";
 import "widgets/mail_draft_header.dart";
 import "widgets/mail_draft_tabs.dart";
@@ -22,10 +19,12 @@ import "widgets/send_policy_banner.dart";
 ///
 /// Opening or closing never sends. With approval OFF the server sends on its
 /// own, so this dialog only shows the scope and the result.
+/// [dispatchStates] are the API-12 results right after a candidate selection.
 Future<void> showMailDraftDialog(
   BuildContext context, {
   required String caseId,
   String? draftId,
+  Map<String, DraftDispatchState> dispatchStates = const {},
 }) {
   return showDialog<void>(
     context: context,
@@ -33,16 +32,28 @@ Future<void> showMailDraftDialog(
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: MailDraftDialog(caseId: caseId, initialDraftId: draftId),
+      child: MailDraftDialog(
+        caseId: caseId,
+        initialDraftId: draftId,
+        dispatchStates: dispatchStates,
+      ),
     ),
   );
 }
 
 class MailDraftDialog extends ConsumerStatefulWidget {
-  const MailDraftDialog({super.key, required this.caseId, this.initialDraftId});
+  const MailDraftDialog({
+    super.key,
+    required this.caseId,
+    this.initialDraftId,
+    this.dispatchStates = const {},
+  });
 
   final String caseId;
   final String? initialDraftId;
+
+  /// draft_id → API-12 dispatch_state.
+  final Map<String, DraftDispatchState> dispatchStates;
 
   @override
   ConsumerState<MailDraftDialog> createState() => _MailDraftDialogState();
@@ -60,9 +71,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
   bool _busy = false;
   String? _error;
 
-  // Key per action and body, so a retry after a timeout cannot send twice.
-  final Map<String, (String, String)> _pendingKeys = {};
-
   @override
   void dispose() {
     _recipient.dispose();
@@ -75,15 +83,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
   MailDraft? _selected(List<MailDraft> drafts) =>
       drafts.where((draft) => draft.id == _selectedId).firstOrNull ??
       drafts.firstOrNull;
-
-  String _keyFor(String action, Object body) {
-    final hash = jsonEncode(body);
-    final previous = _pendingKeys[action];
-    if (previous != null && previous.$2 == hash) return previous.$1;
-    final key = newIdempotencyKey();
-    _pendingKeys[action] = (key, hash);
-    return key;
-  }
 
   bool get _dirty =>
       _editing &&
@@ -110,19 +109,14 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _error = null;
   });
 
-  Future<void> _run(
-    String action,
-    Object body,
-    Future<MailDraft> Function(String key) request,
-  ) async {
+  Future<void> _run(Future<MailDraft> Function() request) async {
     if (_busy) return;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      final result = await request(_keyFor(action, body));
-      _pendingKeys.remove(action);
+      final result = await request();
       if (!mounted) return;
       setState(() {
         _busy = false;
@@ -131,17 +125,18 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       });
     } on MailDraftFailure catch (failure) {
       if (!mounted) return;
-      if (failure.code != "REQUEST_IN_PROGRESS") _pendingKeys.remove(action);
-      if (failure.code == "DRAFT_CHANGED") {
+      if (failure.draftChanged) {
         ref.read(mailDraftViewModelProvider(widget.caseId).notifier).refresh();
       }
       setState(() {
         _busy = false;
-        _error = failure.message;
+        _error = failure.unknownOutcome
+            ? "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."
+            : failure.message;
       });
     } catch (_) {
       if (!mounted) return;
-      // Unknown outcome: keep the key and let the user check with a retry.
+      // Unknown outcome: the repository keeps the key, so a retry only checks.
       setState(() {
         _busy = false;
         _error = "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다.";
@@ -162,30 +157,61 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     final viewModel = ref.read(
       mailDraftViewModelProvider(widget.caseId).notifier,
     );
-    _run("revise:${draft.id}", [
-      input.recipient,
-      input.subject,
-      input.body,
-      input.editReason,
-    ], (key) => viewModel.revise(draft, input, idempotencyKey: key));
+    _run(() => viewModel.revise(draft, input));
   }
 
   void _approve(MailDraft draft) {
     final viewModel = ref.read(
       mailDraftViewModelProvider(widget.caseId).notifier,
     );
-    _run("approve:${draft.id}", [
-      draft.snapshotHash,
-    ], (key) => viewModel.approve(draft, idempotencyKey: key));
+    _run(() => viewModel.approve(draft));
   }
 
   void _reconcile(MailDraft draft) {
     final viewModel = ref.read(
       mailDraftViewModelProvider(widget.caseId).notifier,
     );
-    _run("reconcile:${draft.id}", [
-      draft.id,
-    ], (key) => viewModel.reconcile(draft, idempotencyKey: key));
+    _run(() => viewModel.reconcile(draft));
+  }
+
+  /// X-2: an unsent draft otherwise blocks the next selection and the review.
+  Future<void> _withdraw(MailDraft draft) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("이 초안을 보내지 않을까요?"),
+        content: Text(
+          "${draft.displayName}에게 이 초안을 보내지 않고 닫습니다. 되돌릴 수 없으며, "
+          "다시 보내려면 새 초안이 필요합니다. 보내지 않은 초안이 남아 있으면 "
+          "다음 후보 선택이나 검토 완료로 넘어갈 수 없습니다.",
+        ),
+        actions: [
+          TextButton(
+            style: WorkspaceButtonStyles.text,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("취소"),
+          ),
+          FilledButton(
+            style: WorkspaceButtonStyles.filled,
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text("보내지 않음"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final viewModel = ref.read(
+      mailDraftViewModelProvider(widget.caseId).notifier,
+    );
+    _run(() => viewModel.withdraw(draft, reason: "담당자가 보내지 않기로 함"));
+  }
+
+  /// The mailbox default (설정 → 메일 발송 설정). A save reloads the drafts.
+  Future<void> _openSettings() async {
+    final saved = await showSendSettingsDialog(context);
+    if (saved == true && mounted) {
+      ref.read(mailDraftViewModelProvider(widget.caseId).notifier).refresh();
+    }
   }
 
   Future<void> _close() async {
@@ -214,13 +240,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       ),
     );
     if (discard == true && mounted) Navigator.of(context).pop();
-  }
-
-  Future<void> _openSettings() async {
-    await showSendSettingsDialog(context, caseId: widget.caseId);
-    if (mounted) {
-      ref.read(mailDraftViewModelProvider(widget.caseId).notifier).refresh();
-    }
   }
 
   @override
@@ -255,11 +274,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                MailDraftHeader(
-                  caseId: widget.caseId,
-                  onClose: _close,
-                  onOpenSettings: _editing ? null : _openSettings,
-                ),
+                MailDraftHeader(caseId: widget.caseId, onClose: _close),
                 const Divider(height: 1, color: line),
                 Flexible(
                   child: SingleChildScrollView(
@@ -284,6 +299,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                                     ignoring: _editing,
                                     child: MailDraftTabs(
                                       drafts: drafts,
+                                      dispatchStates: widget.dispatchStates,
                                       selectedId: draft.id,
                                       onSelect: (id) => setState(() {
                                         _selectedId = id;
@@ -295,6 +311,11 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                                   SendPolicyBanner(
                                     draft: draft,
                                     editing: _editing,
+                                    dispatchState:
+                                        widget.dispatchStates[draft.id],
+                                    onOpenSettings: _editing
+                                        ? null
+                                        : _openSettings,
                                   ),
                                   const SizedBox(height: 16),
                                   MailDraftBody(
@@ -305,8 +326,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                                     body: _body,
                                     editReason: _editReason,
                                   ),
-                                  const SizedBox(height: 20),
-                                  MailDraftEvidence(evidence: draft.evidence),
                                 ],
                               ),
                             ),
@@ -324,6 +343,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
                   onSaveRevision: () => _saveRevision(draft!),
                   onApprove: () => _approve(draft!),
                   onReconcile: () => _reconcile(draft!),
+                  onWithdraw: () => _withdraw(draft!),
                   onClose: _close,
                 ),
               ],

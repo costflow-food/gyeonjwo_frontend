@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/workspace_colors.dart';
@@ -32,95 +31,83 @@ class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
       final message = error is AuthFailure
           ? error.message
           : 'Google 로그인을 시작하지 못했어요. 다시 시도해 주세요.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isConfigured =
-        ref.watch(authSessionViewModelProvider).asData?.value.isConfigured ??
-        false;
     return AuthLayout(
-    backPath: '/login',
-    maxWidth: 1280,
-    compact: true,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const AuthHeading(
-          step: '02 / 연결 안내',
-          title: '연결 전에 확인해 주세요',
-          description: '견줘를 시작할 때 Google 로그인과 Gmail 권한을 함께 요청해요. 어떤 용도로 쓰이는지 먼저 확인하세요.',
-        ),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final columns =
-                constraints.maxWidth >= 1000 &&
-                MediaQuery.textScalerOf(context).scale(AppFontSizes.body) <=
-                    AppFontSizes.body * 1.5;
-            if (columns) {
-              return const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backPath: '/login',
+      maxWidth: 1280,
+      compact: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AuthHeading(
+            step: '02 / 연결 안내',
+            title: '연결 전에 확인해 주세요',
+            description: '견줘를 시작할 때 Google 로그인과 Gmail 권한을 함께 요청해요. 어떤 용도로 쓰이는지 먼저 확인하세요.',
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns =
+                  constraints.maxWidth >= 1000 &&
+                  MediaQuery.textScalerOf(context).scale(AppFontSizes.body) <=
+                      AppFontSizes.body * 1.5;
+              if (columns) {
+                return const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _RequestedPermissions()),
+                    SizedBox(width: 24),
+                    Expanded(child: _DataProcessing()),
+                  ],
+                );
+              }
+              return const Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: _RequestedPermissions()),
-                  SizedBox(width: 24),
-                  Expanded(child: _DataProcessing()),
+                  _RequestedPermissions(),
+                  SizedBox(height: 20),
+                  _DataProcessing(),
                 ],
               );
-            }
-            return const Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _RequestedPermissions(),
-                SizedBox(height: 20),
-                _DataProcessing(),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 20),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final notice = Text(
-              isConfigured
-                  ? '계속하면 Google 계정 선택·권한 동의 화면으로 이동해요.\n읽기·발송 권한은 Google 화면에서 각각 선택할 수 있어요.'
-                  : '지금은 실제 동의를 받거나 권한을 요청하지 않습니다.\nSupabase 설정 없이 실행한 미리보기입니다.',
-              style: const TextStyle(
-                fontSize: AppFontSizes.secondary,
-                color: muted,
-                height: 1.8,
-              ),
-            );
-            final next = AuthButton(
-              label: !isConfigured
-                  ? '연결 상태 미리보기'
-                  : _starting
-                  ? 'Google로 이동 중…'
-                  : 'Google로 계속하기',
-              onPressed: !isConfigured
-                  ? () => context.go('/login/connection')
-                  : _starting
-                  ? () {}
-                  : _continueWithGoogle,
-            );
-            if (constraints.maxWidth >= 800) {
-              return Row(
-                children: [
-                  Expanded(child: notice),
-                  const SizedBox(width: 24),
-                  SizedBox(width: 280, child: next),
-                ],
+            },
+          ),
+          const SizedBox(height: 20),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final notice = Text(
+                '계속하면 Google 계정 선택·권한 동의 화면으로 이동해요.\n읽기·발송 권한은 Google 화면에서 각각 선택할 수 있어요.',
+                style: const TextStyle(
+                  fontSize: AppFontSizes.secondary,
+                  color: muted,
+                  height: 1.8,
+                ),
               );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [notice, const SizedBox(height: 16), next],
-            );
-          },
-        ),
-      ],
-    ),
+              final next = AuthButton(
+                label: _starting ? 'Google로 이동 중…' : 'Google로 계속하기',
+                onPressed: _starting ? () {} : _continueWithGoogle,
+              );
+              if (constraints.maxWidth >= 800) {
+                return Row(
+                  children: [
+                    Expanded(child: notice),
+                    const SizedBox(width: 24),
+                    SizedBox(width: 280, child: next),
+                  ],
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [notice, const SizedBox(height: 16), next],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

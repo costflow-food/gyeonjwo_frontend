@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/app_config.dart';
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/widgets/brand_logo.dart';
 import '../../../shared/workspace_colors.dart';
@@ -23,6 +22,7 @@ class AuthLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: canvas,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
@@ -31,8 +31,13 @@ class AuthLayout extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: maxWidth + 64),
+                    padding: EdgeInsets.all(compact ? 20 : 32),
+                    decoration: BoxDecoration(
+                      color: frame,
+                      borderRadius: BorderRadius.circular(32),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -43,17 +48,6 @@ class AuthLayout extends StatelessWidget {
                           runSpacing: 16,
                           children: [
                             const SizedBox(width: 132, child: BrandLogo()),
-                            // Shown only when running without Supabase settings.
-                            if (!AppConfig.isAuthConfigured)
-                              const Chip(
-                                avatar: Icon(
-                                  Icons.design_services_outlined,
-                                  size: 16,
-                                ),
-                                label: Text('UI 미리보기 · 실제 계정 연결 전'),
-                                backgroundColor: Colors.white,
-                                side: BorderSide(color: line),
-                              ),
                           ],
                         ),
                         SizedBox(height: compact ? 12 : 32),
@@ -75,10 +69,9 @@ class AuthLayout extends StatelessWidget {
                           ),
                           child: child,
                         ),
-                        SizedBox(height: compact ? 8 : 32),
-                        const Divider(color: line),
+                        SizedBox(height: compact ? 4 : 16),
                         Padding(
-                          padding: EdgeInsets.only(top: compact ? 8 : 16),
+                          padding: const EdgeInsets.only(left: 4),
                           child: const Text(
                             '견줘 · 근거를 모아, 더 선명한 구매 검토.',
                             style: TextStyle(
@@ -112,8 +105,10 @@ class AuthCard extends StatelessWidget {
         EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 22 : 36),
     decoration: BoxDecoration(
       color: Colors.white,
-      border: Border.all(color: line),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: const [
+        BoxShadow(color: Color(0x1F1E3932), blurRadius: 16, offset: Offset(0, 4)),
+      ],
     ),
     child: child,
   );
@@ -134,13 +129,19 @@ class AuthHeading extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        step,
-        style: const TextStyle(
-          color: accent,
-          fontSize: AppFontSizes.secondary,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1,
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: blush,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          step,
+          style: const TextStyle(
+            color: accent,
+            fontSize: AppFontSizes.caption,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       const SizedBox(height: 16),
@@ -148,9 +149,9 @@ class AuthHeading extends StatelessWidget {
         title,
         style: const TextStyle(
           fontSize: AppFontSizes.pageTitle,
-          fontWeight: FontWeight.w800,
-          height: 1.35,
-          letterSpacing: -1,
+          fontWeight: FontWeight.w700,
+          height: 1.3,
+          letterSpacing: -.5,
         ),
       ),
       const SizedBox(height: 12),
@@ -191,8 +192,8 @@ class AuthInfoTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: enabled ? blush : canvas,
-            borderRadius: BorderRadius.circular(10),
+            color: enabled ? Colors.white : canvas,
+            shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 20, color: enabled ? accent : muted),
         ),
@@ -225,7 +226,7 @@ class AuthInfoTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: AppFontSizes.secondary,
                     fontWeight: FontWeight.w600,
-                    color: enabled ? const Color(0xFF287451) : muted,
+                    color: enabled ? const Color(0xFF00754A) : muted,
                   ),
                 ),
               ],
@@ -246,9 +247,9 @@ class AuthNotice extends StatelessWidget {
     width: double.infinity,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: canvas,
+      color: panel,
       border: Border.all(color: line),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(16),
     ),
     child: Text(
       text,
@@ -280,8 +281,8 @@ class AuthButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: accent,
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        shape: const StadiumBorder(),
       ),
       child: Wrap(
         alignment: WrapAlignment.center,

@@ -24,19 +24,14 @@ class SendSettingsViewModel extends _$SendSettingsViewModel {
 
   void refresh() => ref.invalidateSelf();
 
-  Future<SendSettings> save(
-    SendSettingsUpdate update, {
-    required String idempotencyKey,
-  }) async {
+  Future<SendSettings> save(SendSettingsUpdate update) async {
     final saved = await ref
         .read(sendSettingsRepositoryProvider)
-        .saveSettings(update, caseId: _caseId, idempotencyKey: idempotencyKey);
+        .saveSettings(update, caseId: _caseId);
     if (ref.mounted) state = AsyncData(saved);
-    if (ref.mounted &&
-        _caseId != null &&
-        update.applyTo == ApplyTo.specifiedDrafts) {
-      ref.invalidate(mailDraftViewModelProvider(_caseId!));
-    }
+    // Draft send policy follows the settings ("발송 설정 필요" can clear),
+    // and a mailbox save affects every case.
+    if (ref.mounted) ref.invalidate(mailDraftViewModelProvider);
     // Case scopes inherit from the mailbox, so stale copies must reload.
     if (ref.mounted) ref.invalidate(sendSettingsViewModelProvider);
     return saved;

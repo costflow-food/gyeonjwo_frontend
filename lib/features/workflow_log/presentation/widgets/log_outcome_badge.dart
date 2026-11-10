@@ -13,18 +13,14 @@ class LogOutcomeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (outcome) {
       LogOutcome.success => (
-        const Color(0xFF4B9138),
-        const Color(0xFFE7F5E1),
+        const Color(0xFF00754A),
+        const Color(0xFFE2F4EA),
         Icons.check,
       ),
-      LogOutcome.failure => (
-        accent,
-        blush,
-        Icons.error_outline,
-      ),
+      LogOutcome.failure => (danger, dangerTint, Icons.error_outline),
       LogOutcome.waiting => (
-        const Color(0xFFBC793C),
-        const Color(0xFFFFF2E2),
+        const Color(0xFF8A6516),
+        const Color(0xFFF6EEDC),
         Icons.schedule,
       ),
     };
@@ -32,7 +28,7 @@ class LogOutcomeBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -13,8 +13,18 @@ import "log_outcome_badge.dart";
 
 /// References behind one entry and links to the related case, mail, or draft.
 class WorkflowLogDetail extends StatelessWidget {
-  const WorkflowLogDetail({super.key, required this.entry});
+  const WorkflowLogDetail({
+    super.key,
+    required this.entry,
+    required this.caseFiltered,
+    required this.onFilterCase,
+  });
+
   final WorkflowLogEntry? entry;
+
+  /// The list already shows only one case's logs.
+  final bool caseFiltered;
+  final void Function(String caseId, {String? caseTitle}) onFilterCase;
 
   @override
   Widget build(BuildContext context) {
@@ -45,27 +55,28 @@ class WorkflowLogDetail extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                value.eventType.label,
+                value.eventLabel,
                 style: const TextStyle(
                   fontSize: AppFontSizes.cardTitle,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              LogOutcomeBadge(value.outcome),
+              if (value.outcome != null) LogOutcomeBadge(value.outcome!),
             ],
           ),
           const SizedBox(height: 8),
-          SelectableText(
-            value.summary,
-            style: const TextStyle(
-              fontSize: AppFontSizes.bodyLarge,
-              height: 1.5,
+          if (value.summary.isNotEmpty)
+            SelectableText(
+              value.summary,
+              style: const TextStyle(
+                fontSize: AppFontSizes.bodyLarge,
+                height: 1.5,
+              ),
             ),
-          ),
           const SizedBox(height: 18),
           _Field("시각", formatSeoulDateTime(value.createdAt)),
           _Field("업무", value.caseTitle ?? "업무 생성 전"),
-          _Field("주체", "${value.actor.label} (${value.component.label})"),
+          _Field("주체", value.actorLabel),
           if (value.runStatus != null)
             // Agent run status, shown apart from the case's Complete status.
             _Field("역할 실행 상태", value.runStatus!),
@@ -85,7 +96,7 @@ class WorkflowLogDetail extends StatelessWidget {
             "사용한 근거",
             value.evidenceRefs.isEmpty ? "없음" : value.evidenceRefs.join(", "),
           ),
-          _Field("request_id", value.requestId),
+          if (value.requestId != null) _Field("request_id", value.requestId!),
           if (caseId != null || mailId != null || draftId != null) ...[
             const SizedBox(height: 14),
             const Divider(color: line),
@@ -94,10 +105,18 @@ class WorkflowLogDetail extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
+                if (caseId != null && !caseFiltered)
+                  OutlinedButton.icon(
+                    style: WorkspaceButtonStyles.outlined,
+                    onPressed: () =>
+                        onFilterCase(caseId, caseTitle: value.caseTitle),
+                    icon: const Icon(Icons.filter_list, size: 16),
+                    label: const Text("이 업무 로그만"),
+                  ),
                 if (caseId != null)
                   OutlinedButton.icon(
                     style: WorkspaceButtonStyles.outlined,
-                    onPressed: () => context.go("/review?requestId=$caseId"),
+                    onPressed: () => context.go("/cases/$caseId"),
                     icon: const Icon(Icons.open_in_new, size: 16),
                     label: const Text("업무 보기"),
                   ),

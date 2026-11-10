@@ -1,248 +1,207 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
 
-import "../../../shared/workspace_colors.dart";
-import "../../../shared/widgets/workspace_shell.dart";
+import "../../../shared/app_font_sizes.dart";
 import "../../../shared/widgets/outline_panel.dart";
-import "../../../shared/widgets/preview_button.dart";
-import "../../../shared/widgets/note_line.dart";
-
-import '../../auth/presentation/gmail_connection_view_model.dart';
-import '../../mail_intake/presentation/widgets/intake_entry_button.dart';
-import '../../send_settings/presentation/send_settings_dialog.dart';
-import 'widgets/gmail_read_notice.dart';
-import 'widgets/queue_summary.dart';
-import 'widgets/queue_toolbar.dart';
-import 'widgets/request_row.dart';
+import "../../../shared/widgets/workspace_shell.dart";
+import "../../../shared/workspace_colors.dart";
+import "../../auth/presentation/gmail_connection_view_model.dart";
+import "../domain/work_case.dart";
+import "widgets/gmail_read_notice.dart";
+import "widgets/queue_group_list.dart";
+import "widgets/queue_summary.dart";
+import "widgets/work_case_panel.dart";
 import "work_queue_view_model.dart";
-import "../../../shared/widgets/async_content.dart";
-import "../domain/work_queue_state.dart";
 
-class WorkQueueView extends ConsumerWidget {
-  const WorkQueueView({super.key});
+/// 메인 화면. 사이드바의 품목별 업무 큐에서 고른 업무의 원문과 처리 선택을 보여 줍니다.
+///
+/// [caseId]는 `/cases/{id}` 주소의 업무입니다. 주소가 선택의 기준이라
+/// 새로고침·링크로 같은 업무를 다시 엽니다.
+class WorkQueueView extends ConsumerStatefulWidget {
+  const WorkQueueView({super.key, this.caseId});
+
+  final String? caseId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WorkQueueView> createState() => _WorkQueueViewState();
+}
+
+class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
+  /// 이보다 좁으면 사이드바가 펼쳐지지 않으니 메인에 업무 큐를 직접 보여 줍니다.
+  static const _inlineQueueWidth = 480.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncSelection();
+  }
+
+  @override
+  void didUpdateWidget(WorkQueueView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.caseId != widget.caseId) _syncSelection();
+  }
+
+  /// The sidebar highlight follows the address. Not during build.
+  void _syncSelection() => Future.microtask(() {
+    if (mounted) {
+      ref.read(workQueueViewModelProvider.notifier).select(widget.caseId);
+    }
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final value = ref.watch(workQueueViewModelProvider);
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
     final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
+    final data = value.hasValue ? value.requireValue : null;
+    final caseId = widget.caseId;
+    final listed = caseId == null
+        ? null
+        : data?.items.where((workCase) => workCase.id == caseId).firstOrNull;
     return WorkspaceShell(
-      child: AsyncContent<WorkQueueState>(
-        value: value,
-        onRetry: viewModel.refresh,
-        builder: (data) => _WorkQueueContent(
-          data: data,
-          viewModel: viewModel,
-          readDenied: readDenied,
+      child: LayoutBuilder(
+        builder: (context, constraints) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Outside the list state so it shows even when loading fails.
+            if (readDenied) ...[
+              const GmailReadNotice(),
+              const SizedBox(height: 16),
+            ],
+            if (listed != null)
+              WorkCasePanel(key: ValueKey(listed.id), workCase: listed)
+            // Not in this tab, search, or page: read the case itself.
+            else if (caseId != null && (data != null || value.hasError))
+              _CaseDetail(caseId: caseId)
+            else if (caseId != null)
+              const Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else ...[
+              QueueSummary(
+                waitingCount: data?.allWaiting ?? data?.counts.waiting ?? 0,
+              ),
+              const SizedBox(height: 24),
+              if (constraints.maxWidth < _inlineQueueWidth)
+                const OutlinePanel(
+                  padding: EdgeInsets.all(12),
+                  child: QueueGroupList(shrinkWrap: true),
+                )
+              else
+                _Guidance(
+                  failed: value.hasError && data == null,
+                  onRetry: viewModel.refresh,
+                ),
+            ],
+          ],
         ),
       ),
     );
   }
 }
 
-class _WorkQueueContent extends StatelessWidget {
-  const _WorkQueueContent({
-    required this.data,
-    required this.viewModel,
-    required this.readDenied,
-  });
+/// API-02 업무. 목록이 바뀌면 다시 읽어 같은 업무를 보여 줍니다.
+class _CaseDetail extends ConsumerWidget {
+  const _CaseDetail({required this.caseId});
 
-  final WorkQueueState data;
-  final WorkQueueViewModel viewModel;
-  final bool readDenied;
+  final String caseId;
 
   @override
-  Widget build(BuildContext context) {
-    final hasRequests = data.visibleRequests.isNotEmpty;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 8,
-            runSpacing: 8,
+  Widget build(BuildContext context, WidgetRef ref) {
+    // A queue reload (realtime change, a finished step) means this case may
+    // have changed too.
+    ref.listen(workQueueViewModelProvider, (previous, next) {
+      // A selection change keeps the same items; only a reload replaces them.
+      final items = next.asData?.value.items;
+      if (items != null && items != previous?.asData?.value.items) {
+        ref.invalidate(caseDetailProvider(caseId));
+      }
+    });
+    final value = ref.watch(caseDetailProvider(caseId));
+    return value.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(40),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => OutlinePanel(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
             children: [
-              // SCR-009 entry; hidden when no mail needs an intake decision.
-              const IntakeEntryButton(),
-              // SCR-008 for the mailbox default.
-              PreviewButton(
-                "발송 설정",
-                icon: Icons.tune,
-                onPressed: () => showSendSettingsDialog(context),
+              const Icon(Icons.error_outline, size: 32, color: muted),
+              const SizedBox(height: 12),
+              Text(
+                error is WorkQueueFailure
+                    ? error.message
+                    : "업무를 불러오지 못했어요.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.bodyLarge,
+                  color: muted,
+                ),
               ),
-              PreviewButton(
-                "목록 새로고침",
-                icon: Icons.refresh,
-                onPressed: viewModel.refresh,
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => ref.invalidate(caseDetailProvider(caseId)),
+                    child: const Text("다시 시도"),
+                  ),
+                  TextButton(
+                    onPressed: () => context.go("/"),
+                    child: const Text("업무 큐로"),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        if (readDenied) ...[const GmailReadNotice(), const SizedBox(height: 16)],
-        QueueSummary(waitingCount: data.countFor("검토 대기")),
-        const SizedBox(height: 28),
-        OutlinePanel(
-          padding: const EdgeInsets.all(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final table =
-                  constraints.maxWidth >= 680 &&
-                  MediaQuery.textScalerOf(context).scale(12) <= 18;
-              return Column(
-                children: [
-                  QueueToolbar(
-                    data: data,
-                    onStatusChanged: viewModel.selectStatus,
-                    onSearchChanged: viewModel.search,
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1, color: Color(0xFF64666B)),
-                  if (table)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 6,
-                            child: Text(
-                              '요청 문서',
-                              style: TextStyle(fontSize: 12, color: muted),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '상태',
-                              style: TextStyle(fontSize: 12, color: muted),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '수신 일시',
-                              style: TextStyle(fontSize: 12, color: muted),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 100,
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                '작업',
-                                style: TextStyle(fontSize: 12, color: muted),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  for (final row in data.visibleRequests)
-                    RequestRow(row, table: table),
-                  if (data.visibleRequests.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text("표시할 요청이 없습니다."),
-                    ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 16,
-                    runSpacing: 12,
-                    children: [
-                      Text(
-                        "총 ${data.visibleRequests.length}건 · 최신 수신순",
-                        style: TextStyle(fontSize: 11, color: muted),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Semantics(
-                            label: '이전 페이지',
-                            button: true,
-                            enabled: false,
-                            child: Icon(
-                              Icons.chevron_left,
-                              size: 18,
-                              color: hasRequests
-                                  ? const Color(0xFFBCC0C6)
-                                  : const Color(0xFFDADCE2),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Semantics(
-                            label: hasRequests ? '현재 페이지 1' : '페이지 없음',
-                            excludeSemantics: true,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 11,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                color: hasRequests ? blush : line,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Text(
-                                hasRequests ? '1' : '—',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: hasRequests ? accent : muted,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Semantics(
-                            label: '다음 페이지',
-                            button: true,
-                            enabled: false,
-                            child: Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                              color: hasRequests
-                                  ? const Color(0xFFBCC0C6)
-                                  : const Color(0xFFDADCE2),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(4, 20, 4, 32),
-          child: NoteLine(
-            '실행 전에는 요청 문서의 제목과 원문을 확인합니다. 상세 분석은 실행한 요청에 한해 시작되며, 원문 메일은 변경하지 않습니다.',
-          ),
-        ),
-        const Divider(color: line),
-        const SizedBox(height: 12),
-        const Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          spacing: 16,
-          runSpacing: 8,
-          children: [
-            Text(
-              '견줘 · 근거를 모아, 더 선명한 구매 검토.',
-              style: TextStyle(fontSize: 10, color: muted),
-            ),
-            Text(
-              'HTML DESIGN PROTOTYPE · 2026',
-              style: TextStyle(fontSize: 9, color: muted),
-            ),
-          ],
-        ),
-      ],
+      ),
+      data: (workCase) =>
+          WorkCasePanel(key: ValueKey(workCase.id), workCase: workCase),
     );
   }
+}
+
+class _Guidance extends StatelessWidget {
+  const _Guidance({required this.failed, required this.onRetry});
+
+  final bool failed;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => OutlinePanel(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          Icon(
+            failed ? Icons.error_outline : Icons.mark_email_read_outlined,
+            size: 32,
+            color: muted,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            failed
+                ? "업무 큐를 불러오지 못했어요."
+                : "왼쪽 업무 큐에서 품목별 업무를 선택하면\n메일 원문과 첨부파일을 볼 수 있어요.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: AppFontSizes.bodyLarge,
+              color: muted,
+              height: 1.7,
+            ),
+          ),
+          if (failed) ...[
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onRetry, child: const Text("다시 시도")),
+          ],
+        ],
+      ),
+    ),
+  );
 }

@@ -13,7 +13,7 @@ class GmailReadNotice extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     decoration: BoxDecoration(
       color: blush,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(16),
     ),
     child: Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,

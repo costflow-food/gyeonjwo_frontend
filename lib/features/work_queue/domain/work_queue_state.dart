@@ -1,60 +1,108 @@
-import "request_item.dart";
-import "../../review_progress/domain/review_phase.dart";
+import "work_case.dart";
 
 class WorkQueueState {
-  WorkQueueState({
-    required List<RequestItem> requests,
-    this.selectedStatus = "전체",
+  const WorkQueueState({
+    required this.items,
+    required this.counts,
+    this.nextCursor,
+    this.status,
     this.query = "",
-  }) : requests = List.unmodifiable(requests);
+    this.selectedId,
+    this.loadingMore = false,
+    this.allWaiting,
+  });
 
-  factory WorkQueueState.fromRequests({
-    required List<RequestItem> requests,
-    required Map<String, ReviewPhase> progress,
-    String selectedStatus = "전체",
-    String query = "",
-  }) => WorkQueueState(
-    requests: [
-      for (final request in requests)
-        switch (progress[request.id] ?? ReviewPhase.idle) {
-          ReviewPhase.idle => request,
-          ReviewPhase.running => request.copyWith(
-            status: "검토 중",
-            action: "진행 보기",
+  /// 검색어에 맞는 업무 전체(모든 탭). 탭은 이 목록을 화면에서 거릅니다.
+  final List<WorkCase> items;
+  final WorkQueueCounts counts;
+
+  /// 페이지 상한을 넘어 아직 받지 않은 업무가 있을 때만 값이 있습니다.
+  final String? nextCursor;
+
+  /// null은 전체 탭입니다.
+  final WorkCaseStatus? status;
+  final String query;
+  final String? selectedId;
+  final bool loadingMore;
+
+  /// 검색과 무관한 대기 건수(첫 화면 요약용). 검색 중에는 마지막으로 본
+  /// 검색 없는 값을 유지합니다. 아직 모르면 null.
+  final int? allWaiting;
+
+  /// 지금 탭에 보이는 업무. [WorkCaseStatus.tab] 기준입니다.
+  List<WorkCase> get visibleItems => status == null
+      ? items
+      : [
+          for (final workCase in items)
+            if (workCase.status.tab == status) workCase,
+        ];
+
+  /// 지금 탭의 품목별 그룹. 가장 최근 메일이 온 품목이 먼저, 품목 미확인은
+  /// 맨 뒤입니다.
+  List<WorkCaseGroup> get groups {
+    final byItem = <String?, List<WorkCase>>{};
+    for (final workCase in visibleItems) {
+      final name = workCase.itemName?.trim();
+      byItem
+          .putIfAbsent(name == null || name.isEmpty ? null : name, () => [])
+          .add(workCase);
+    }
+    final groups = [
+      for (final entry in byItem.entries)
+        WorkCaseGroup(
+          itemName: entry.key,
+          cases: List.unmodifiable(
+            entry.value..sort((a, b) => b.receivedAt.compareTo(a.receivedAt)),
           ),
-          ReviewPhase.completed => request.copyWith(
-            status: "완료",
-            action: "결과 보기",
-          ),
-          ReviewPhase.failed => request.copyWith(
-            status: "검토 필요",
-            action: "다시 시도",
-          ),
-        },
-    ],
-    selectedStatus: selectedStatus,
+        ),
+    ];
+    groups.sort((a, b) {
+      if (a.itemName == null) return 1;
+      if (b.itemName == null) return -1;
+      return b.cases.first.receivedAt.compareTo(a.cases.first.receivedAt);
+    });
+    return List.unmodifiable(groups);
+  }
+
+  WorkCase? get selected =>
+      items.where((workCase) => workCase.id == selectedId).firstOrNull;
+
+  WorkQueueState select(String? id) => WorkQueueState(
+    items: items,
+    counts: counts,
+    nextCursor: nextCursor,
+    status: status,
     query: query,
+    selectedId: id,
+    loadingMore: loadingMore,
+    allWaiting: allWaiting,
   );
 
-  final List<RequestItem> requests;
-  final String selectedStatus;
-  final String query;
+  /// 탭만 바꿉니다. 목록은 그대로라 다시 조회하지 않습니다.
+  WorkQueueState withStatus(WorkCaseStatus? tab) => WorkQueueState(
+    items: items,
+    counts: counts,
+    nextCursor: nextCursor,
+    status: tab,
+    query: query,
+    selectedId: selectedId,
+    loadingMore: loadingMore,
+    allWaiting: allWaiting,
+  );
 
-  int countFor(String status) => status == "전체"
-      ? requests.length
-      : requests.where((request) => request.status == status).length;
-
-  List<RequestItem> get visibleRequests {
-    final keyword = query.trim().toLowerCase();
-    return requests
-        .where((request) {
-          final matchesStatus =
-              selectedStatus == "전체" || request.status == selectedStatus;
-          final matchesQuery =
-              request.title.toLowerCase().contains(keyword) ||
-              request.supplier.toLowerCase().contains(keyword);
-          return matchesStatus && matchesQuery;
-        })
-        .toList(growable: false);
-  }
+  WorkQueueState withMore({
+    required List<WorkCase> items,
+    required String? nextCursor,
+    required bool loadingMore,
+    WorkQueueCounts? counts,
+  }) => WorkQueueState(
+    items: items,
+    counts: counts ?? this.counts,
+    nextCursor: nextCursor,
+    status: status,
+    query: query,
+    selectedId: selectedId,
+    loadingMore: loadingMore,
+    allWaiting: allWaiting,
+  );
 }

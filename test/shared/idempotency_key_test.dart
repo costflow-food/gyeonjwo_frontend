@@ -1,0 +1,121 @@
+import "dart:async";
+
+import "package:flutter_test/flutter_test.dart";
+import "package:gyeonjwo_frontend/shared/idempotency_key.dart";
+
+void main() {
+  group("IdempotencyKeys", () {
+    test("coalesces concurrent identical mutations", () async {
+      final keys = IdempotencyKeys();
+      final gate = Completer<int>();
+      var calls = 0;
+
+      Future<int> send(String key) {
+        calls++;
+        return gate.future;
+      }
+
+      final first = keys.run<int>(
+        "case:start",
+        {"revision": 1},
+        send,
+        serverCode: (_) => null,
+      );
+      final second = keys.run<int>(
+        "case:start",
+        {"revision": 1},
+        send,
+        serverCode: (_) => null,
+      );
+
+      expect(identical(first, second), isTrue);
+      expect(calls, 1);
+      gate.complete(202);
+      expect(await first, 202);
+      expect(await second, 202);
+    });
+
+    test("rejects a changed body while a mutation is running", () async {
+      final keys = IdempotencyKeys();
+      final gate = Completer<void>();
+      final first = keys.run<void>(
+        "case:start",
+        {"revision": 1},
+        (_) => gate.future,
+        serverCode: (_) => null,
+      );
+
+      await expectLater(
+        keys.run<void>(
+          "case:start",
+          {"revision": 2},
+          (_) async {},
+          serverCode: (_) => null,
+        ),
+        throwsStateError,
+      );
+
+      gate.complete();
+      await first;
+    });
+
+    test("reuses the same key when an uncertain request is retried", () async {
+      final keys = IdempotencyKeys();
+      final usedKeys = <String>[];
+
+      Future<void> send(String key) async {
+        usedKeys.add(key);
+        if (usedKeys.length == 1) throw TimeoutException("lost response");
+      }
+
+      await expectLater(
+        keys.run<void>(
+          "case:start",
+          {"revision": 1},
+          send,
+          serverCode: (_) => null,
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+      await keys.run<void>(
+        "case:start",
+        {"revision": 1},
+        send,
+        serverCode: (_) => null,
+      );
+
+      expect(usedKeys, hasLength(2));
+      expect(usedKeys[0], usedKeys[1]);
+    });
+
+    test("a definitive server rejection releases the old key", () async {
+      final keys = IdempotencyKeys();
+      final usedKeys = <String>[];
+      var attempts = 0;
+
+      Future<void> send(String key) async {
+        usedKeys.add(key);
+        if (attempts++ == 0) throw StateError("rejected");
+      }
+
+      await expectLater(
+        keys.run<void>(
+          "case:start",
+          {"revision": 1},
+          send,
+          serverCode: (_) => "REVISION_CONFLICT",
+        ),
+        throwsStateError,
+      );
+      await keys.run<void>(
+        "case:start",
+        {"revision": 1},
+        send,
+        serverCode: (_) => "REVISION_CONFLICT",
+      );
+
+      expect(usedKeys, hasLength(2));
+      expect(usedKeys[0], isNot(usedKeys[1]));
+    });
+  });
+}

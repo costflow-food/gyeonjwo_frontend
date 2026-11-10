@@ -1,5 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/idempotency_key.dart";
+
 import "../domain/supplier.dart";
 import "../domain/supplier_repository.dart";
 import "supplier_data_source.dart";
@@ -12,9 +14,10 @@ SupplierRepository supplierRepository(Ref ref) {
 }
 
 class SupplierRepositoryImpl implements SupplierRepository {
-  const SupplierRepositoryImpl(this._dataSource);
+  SupplierRepositoryImpl(this._dataSource);
 
   final SupplierDataSource _dataSource;
+  final _keys = IdempotencyKeys();
 
   @override
   Future<SupplierPage> getSuppliers({String query = "", String? cursor}) =>
@@ -49,7 +52,7 @@ class SupplierRepositoryImpl implements SupplierRepository {
         final data = response["data"] as Map<String, dynamic>;
         List<PriceRecord> records(String key, String dateKey) {
           final list = [
-            for (final entry in data[key] as List)
+            for (final entry in data[key] as List? ?? const [])
               _priceRecord(entry as Map<String, dynamic>, dateKey),
           ]..sort((a, b) => (b.date ?? "").compareTo(a.date ?? ""));
           return List.unmodifiable(list);
@@ -62,16 +65,43 @@ class SupplierRepositoryImpl implements SupplierRepository {
       });
 
   @override
-  Future<SupplierDetail> registerSupplier(
-    SupplierDraft draft, {
-    required String idempotencyKey,
-  }) => _guard(() async {
-    final response = await _dataSource.createSupplier(
-      draft.toJson(),
-      idempotencyKey: idempotencyKey,
+  Future<SupplierDetail> registerSupplier(SupplierDraft draft) {
+    final body = _draftJson(draft);
+    return _keys.run(
+      "register",
+      body,
+      (key) => _guard(() async {
+        final response = await _dataSource.createSupplier(
+          body,
+          idempotencyKey: key,
+        );
+        return _detail(response["data"] as Map<String, dynamic>);
+      }),
+      serverCode: (error) => error is SupplierFailure ? error.code : null,
     );
-    return _detail(response["data"] as Map<String, dynamic>);
-  });
+  }
+
+  static Map<String, Object?> _draftJson(SupplierDraft draft) => {
+    "name": draft.name,
+    "business_registration_no": draft.businessRegistrationNo,
+    "contact_email": draft.contactEmail,
+    "contact": {"name": draft.contactName, "phone": draft.contactPhone},
+    "location": draft.location,
+    "evidence": {"memo": draft.evidenceMemo},
+    "items": [
+      for (final item in draft.items)
+        {
+          "item_name": item.itemName,
+          "specification": item.specification,
+          "unit": item.unit,
+          "units_per_box": item.unitsPerBox,
+          "weight_per_box": item.weightPerBox,
+          "origin": item.origin,
+          "certifications": item.certifications,
+          "notes": item.notes,
+        },
+    ],
+  };
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
@@ -90,7 +120,7 @@ class SupplierRepositoryImpl implements SupplierRepository {
     name: json["name"] as String,
     sourceType: SupplierSourceType.fromCode(json["source_type"] as String),
     itemNames: List.unmodifiable(
-      (json["item_names"] as List).cast<String>(),
+      (json["item_names"] as List? ?? const []).cast<String>(),
     ),
     contactEmail: json["contact_email"] as String?,
     location: json["location"] as String?,
@@ -111,7 +141,7 @@ class SupplierRepositoryImpl implements SupplierRepository {
       location: json["location"] as String?,
       evidence: _evidence(json["evidence"]),
       items: List.unmodifiable([
-        for (final entry in json["items"] as List)
+        for (final entry in json["items"] as List? ?? const [])
           _item(entry as Map<String, dynamic>),
       ]),
     );
@@ -155,6 +185,13 @@ class SupplierRepositoryImpl implements SupplierRepository {
     );
   }
 
+  /// API-31 `source_type` when the server sends no display label.
+  static const _sourceTypeLabels = {
+    "MAIL_QUOTE": "메일 견적",
+    "RECEIPT": "영수증",
+    "USER_CONFIRMATION": "구매담당자 확인",
+  };
+
   static PriceRecord _priceRecord(Map<String, dynamic> json, String dateKey) =>
       PriceRecord(
         unitPrice: json["unit_price"] as String,
@@ -162,7 +199,10 @@ class SupplierRepositoryImpl implements SupplierRepository {
         date: json[dateKey] as String?,
         quantity: json["quantity"] as String?,
         conditions: json["conditions"] as String?,
-        sourceLabel: json["source_label"] as String? ?? "출처 미확인",
+        sourceLabel:
+            json["source_label"] as String? ??
+            _sourceTypeLabels[json["source_type"]] ??
+            "출처 미확인",
         sourceMailId: json["source_mail_id"] as String?,
       );
 

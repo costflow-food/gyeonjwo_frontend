@@ -72,85 +72,35 @@ extension GmailConnectionPhaseCopy on GmailConnectionPhase {
 }
 
 class AuthConnectionView extends ConsumerWidget {
-  const AuthConnectionView({super.key, this.previewPhase});
-
-  /// `?state=` preview, used only when Supabase settings are absent.
-  final GmailConnectionPhase? previewPhase;
+  const AuthConnectionView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authSessionViewModelProvider).asData?.value;
-    final isPreview = session == null || !session.isConfigured;
-    final Widget content;
-    if (isPreview) {
-      content = _PreviewConnection(
-        phase: previewPhase ?? GmailConnectionPhase.connecting,
-      );
-    } else {
-      final connection = ref.watch(gmailConnectionViewModelProvider);
-      // A retry keeps the previous error while loading; show it only after.
-      final failure = connection.isLoading ? null : connection.authFailure;
-      content = _ConnectionCard(
-        phase: connection.connectionPhase,
-        email: connection.asData?.value.email ?? session.email,
-        failure: failure,
-        // Sign-in succeeds before the server connection; show it separately.
-        signedIn: session.isSignedIn,
-        // Only an unknown outcome is retried; other failures need re-consent.
-        onRetry: failure == null || failure.retryable
-            ? ref.read(gmailConnectionViewModelProvider.notifier).retry
-            : null,
-      );
-    }
+    final connection = ref.watch(gmailConnectionViewModelProvider);
+    // A retry keeps the previous error while loading; show it only after.
+    final failure = connection.isLoading ? null : connection.authFailure;
     return AuthLayout(
       backPath: '/login/permissions',
       compact: true,
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 680),
-          child: content,
+          child: _ConnectionCard(
+            phase: connection.connectionPhase,
+            email: connection.asData?.value.email ?? session?.email,
+            failure: failure,
+            // Sign-in succeeds before the server connection; show it separately.
+            signedIn: session?.isSignedIn ?? false,
+            // Only an unknown outcome is retried; other failures need re-consent.
+            onRetry: failure == null || failure.retryable
+                ? ref.read(gmailConnectionViewModelProvider.notifier).retry
+                : null,
+          ),
         ),
       ),
     );
   }
-}
-
-class _PreviewConnection extends StatelessWidget {
-  const _PreviewConnection({required this.phase});
-  final GmailConnectionPhase phase;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _ConnectionCard(phase: phase, isPreview: true),
-      const SizedBox(height: 16),
-      const Text(
-        '화면 상태 미리보기',
-        style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
-      ),
-      const SizedBox(height: 8),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final value in GmailConnectionPhase.values)
-            ChoiceChip(
-              label: Text(value.label),
-              selected: value == phase,
-              selectedColor: blush,
-              onSelected: (_) =>
-                  context.go('/login/connection?state=${value.name}'),
-            ),
-        ],
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'Supabase 설정 없이 실행한 미리보기입니다. 실제 로그인·메일 수신·발송은 실행되지 않습니다.',
-        style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
-      ),
-    ],
-  );
 }
 
 class _ConnectionCard extends StatelessWidget {
@@ -159,7 +109,6 @@ class _ConnectionCard extends StatelessWidget {
     this.email,
     this.failure,
     this.onRetry,
-    this.isPreview = false,
     this.signedIn = false,
   });
 
@@ -170,7 +119,6 @@ class _ConnectionCard extends StatelessWidget {
   /// Re-sends a pending grant or reloads the server state. Null means the
   /// user has to go through Google consent again.
   final VoidCallback? onRetry;
-  final bool isPreview;
 
   /// Supabase session exists, even if the Gmail connection failed.
   final bool signedIn;
@@ -194,13 +142,13 @@ class _ConnectionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: connected ? const Color(0xFFECF6F0) : blush,
+                  color: connected ? const Color(0xFFE3F0EA) : blush,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   preview.icon,
                   size: 24,
-                  color: connected ? const Color(0xFF287451) : accent,
+                  color: connected ? const Color(0xFF00754A) : accent,
                 ),
               ),
               const SizedBox(width: 16),
@@ -208,13 +156,22 @@ class _ConnectionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '03 / 계정 연결',
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: AppFontSizes.secondary,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: blush,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        '03 / 계정 연결',
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: AppFontSizes.caption,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -222,9 +179,9 @@ class _ConnectionCard extends StatelessWidget {
                       preview.title,
                       style: const TextStyle(
                         fontSize: AppFontSizes.pageTitle,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         height: 1.3,
-                        letterSpacing: -1,
+                        letterSpacing: -.5,
                       ),
                     ),
                   ],
@@ -251,9 +208,7 @@ class _ConnectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             AuthNotice(
-              text: isPreview
-                  ? '연결 중 화면 예시입니다. 현재 서버 요청은 진행되지 않으며, 아래에서 다른 상태를 선택해 확인할 수 있어요.'
-                  : '견줘 서버가 Google 권한을 확인하고 메일 자동 수신을 준비하고 있어요. 결과가 나올 때까지 이 창을 닫지 말아 주세요.',
+              text: '견줘 서버가 Google 권한을 확인하고 메일 자동 수신을 준비하고 있어요. 결과가 나올 때까지 이 창을 닫지 말아 주세요.',
             ),
           ] else ...[
             _ConnectionPermissionRow(
@@ -261,8 +216,6 @@ class _ConnectionCard extends StatelessWidget {
               title: '견줘 로그인',
               description: !loggedIn
                   ? '계정 연결 상태를 다시 확인해야 해요.'
-                  : isPreview
-                  ? 'Google 계정 인증 완료 상태의 예시예요.'
                   : email == null
                   ? 'Google 계정 인증을 마쳤어요.'
                   : '$email 계정으로 로그인했어요.',
@@ -292,7 +245,7 @@ class _ConnectionCard extends StatelessWidget {
             const SizedBox(height: 16),
             if (preview.hasConnection || serverNotReady)
               AuthButton(
-                label: isPreview ? '업무 큐 미리보기' : '업무 큐로 이동',
+                label: '업무 큐로 이동',
                 onPressed: () => context.go('/'),
               )
             else if (phase == GmailConnectionPhase.failed && onRetry != null)
@@ -303,9 +256,7 @@ class _ConnectionCard extends StatelessWidget {
               )
             else
               AuthButton(
-                label: phase == GmailConnectionPhase.failed && isPreview
-                    ? '다시 시도하기'
-                    : '다시 연결하기',
+                label: '다시 연결하기',
                 onPressed: () => context.go('/login/permissions'),
                 icon: Icons.refresh,
               ),
@@ -353,7 +304,7 @@ class _ConnectionPermissionRow extends StatelessWidget {
           style: TextStyle(
             fontSize: AppFontSizes.secondary,
             fontWeight: FontWeight.w600,
-            color: enabled ? const Color(0xFF287451) : muted,
+            color: enabled ? const Color(0xFF00754A) : muted,
             height: 1.5,
           ),
         );
@@ -364,7 +315,7 @@ class _ConnectionPermissionRow extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: enabled ? blush : canvas,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, size: 18, color: enabled ? accent : muted),
             ),

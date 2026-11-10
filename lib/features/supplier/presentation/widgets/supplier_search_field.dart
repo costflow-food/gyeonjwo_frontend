@@ -24,10 +24,7 @@ class SupplierSearchField extends StatelessWidget {
         style: const TextStyle(fontSize: AppFontSizes.body),
         decoration: InputDecoration(
           hintText: "업체명, 품목, 담당자, 지역 검색",
-          hintStyle: const TextStyle(
-            fontSize: AppFontSizes.body,
-            color: muted,
-          ),
+          hintStyle: const TextStyle(fontSize: AppFontSizes.body, color: muted),
           prefixIcon: const Icon(Icons.search, size: 19),
           suffixIcon: value.text.isEmpty
               ? null
@@ -46,7 +43,7 @@ class SupplierSearchField extends StatelessWidget {
           ),
           enabledBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(6)),
-            borderSide: BorderSide(color: Color(0xFFB4B7BD)),
+            borderSide: BorderSide(color: Color(0xFFA9B5B1)),
           ),
           focusedBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(6)),

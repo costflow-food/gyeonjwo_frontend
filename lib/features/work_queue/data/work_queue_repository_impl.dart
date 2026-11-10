@@ -1,10 +1,16 @@
+import "dart:typed_data";
+
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
-import "../domain/request_item.dart";
+import "../../../shared/idempotency_key.dart";
+
+import "../../mail_draft/domain/mail_draft.dart";
+import "../domain/candidate.dart";
+import "../domain/work_case.dart";
 import "../domain/work_queue_repository.dart";
 import "work_queue_data_source.dart";
 
-part 'work_queue_repository_impl.g.dart';
+part "work_queue_repository_impl.g.dart";
 
 @Riverpod(keepAlive: true)
 WorkQueueRepository workQueueRepository(Ref ref) {
@@ -12,27 +18,315 @@ WorkQueueRepository workQueueRepository(Ref ref) {
 }
 
 class WorkQueueRepositoryImpl implements WorkQueueRepository {
-  const WorkQueueRepositoryImpl(this._dataSource);
+  WorkQueueRepositoryImpl(this._dataSource);
 
   final WorkQueueDataSource _dataSource;
+  final _keys = IdempotencyKeys();
 
   @override
-  Future<List<RequestItem>> getRequests() async {
-    final response = await _dataSource.fetchRequests();
-    return List.unmodifiable(
-      (response["requests"] as List).map((entry) {
-        final json = entry as Map<String, dynamic>;
-        return RequestItem(
-          id: json["id"] as String,
-          title: json["title"] as String,
-          supplier: json["supplier"] as String,
-          attachments: json["attachments"] as int,
-          status: json["status"] as String,
-          date: json["date"] as String,
-          time: json["time"] as String,
-          action: json["action"] as String,
+  Future<WorkQueuePage> getCases({
+    WorkCaseStatus? status,
+    String query = "",
+    String? cursor,
+    int? limit,
+  }) => _guard(() async {
+    final response = await _dataSource.fetchCases(
+      status: status == null || status == WorkCaseStatus.other
+          ? null
+          : status.code,
+      query: query,
+      cursor: cursor,
+      limit: limit,
+    );
+    final data = response["data"] as Map<String, dynamic>;
+    final counts = data["counts"] as Map<String, dynamic>;
+    return WorkQueuePage(
+      items: List.unmodifiable([
+        for (final entry in data["items"] as List)
+          _case(entry as Map<String, dynamic>),
+      ]),
+      counts: WorkQueueCounts(
+        waiting: counts["Waiting"] as int? ?? 0,
+        running: counts["Running"] as int? ?? 0,
+        complete: counts["Complete"] as int? ?? 0,
+        total: counts["total"] as int? ?? 0,
+      ),
+      nextCursor: data["next_cursor"] as String?,
+    );
+  });
+
+  @override
+  Future<OriginalMail> getOriginalMail(String mailId) => _guard(() async {
+    final response = await _dataSource.fetchOriginalMail(mailId);
+    final json = response["data"] as Map<String, dynamic>;
+    return OriginalMail(
+      id: json["mail_id"] as String,
+      subject: json["subject"] as String,
+      sender: json["sender"] as String,
+      recipients: List.unmodifiable(
+        (json["recipients"] as List).cast<String>(),
+      ),
+      receivedAt: json["received_at"] as String,
+      bodyText: json["body_text"] as String,
+      attachments: List.unmodifiable([
+        for (final entry in json["attachments"] as List)
+          MailAttachment(
+            id: entry["attachment_id"] as String,
+            filename: entry["filename"] as String,
+            mimeType: entry["mime_type"] as String,
+            sizeBytes: entry["size_bytes"] as int,
+          ),
+      ]),
+    );
+  });
+
+  @override
+  Future<Uint8List> getAttachmentContent(String mailId, String attachmentId) =>
+      _guard(() => _dataSource.fetchAttachmentContent(mailId, attachmentId));
+
+  @override
+  Future<void> acceptIncrease(WorkCase workCase) {
+    final body = <String, Object?>{"expected_revision": workCase.inputRevision};
+    return _keys.run(
+      "accept:${workCase.id}",
+      body,
+      (key) => _guard(
+        () =>
+            _dataSource.acceptIncrease(workCase.id, body, idempotencyKey: key),
+      ),
+      serverCode: _serverCode,
+    );
+  }
+
+  @override
+  Future<void> start(WorkCase workCase) {
+    final body = <String, Object?>{"expected_revision": workCase.inputRevision};
+    return _keys.run(
+      "start:${workCase.id}",
+      body,
+      (key) => _guard(
+        () => _dataSource.start(workCase.id, body, idempotencyKey: key),
+      ),
+      serverCode: _serverCode,
+    );
+  }
+
+  /// API-02 has no title, sender, or step text, so the mail (API-25)
+  /// supplies them and the step text follows the server's labels.
+  @override
+  Future<WorkCase> getCase(String caseId) => _guard(() async {
+    final response = await _dataSource.fetchCase(caseId);
+    final json = response["data"] as Map<String, dynamic>;
+    final mail = await getOriginalMail(json["initial_mail_id"] as String);
+    final statusCode = json["status"] as String;
+    final step = json["processing_step"] as String;
+    return WorkCase(
+      id: json["case_id"] as String,
+      initialMailId: json["initial_mail_id"] as String,
+      title: mail.subject,
+      sender: mail.sender,
+      itemName: json["item_name"] as String?,
+      receivedAt: mail.receivedAt,
+      status: WorkCaseStatus.fromCode(statusCode),
+      statusCode: statusCode,
+      processingStep: step,
+      stepMessage: processingStepLabel(
+        step,
+        inputRevision: json["input_revision"] as int,
+      ),
+      inputRevision: json["input_revision"] as int,
+      attachmentCount: mail.attachments.length,
+      allowedActions: List.unmodifiable(
+        (json["allowed_actions"] as List? ?? const []).cast<String>(),
+      ),
+      disabledActions: List.unmodifiable([
+        for (final entry in json["disabled_actions"] as List? ?? const [])
+          DisabledWorkCaseAction(
+            action: entry["action"] as String,
+            reasonCode: entry["reason_code"] as String,
+            message: entry["message"] as String,
+          ),
+      ]),
+    );
+  });
+
+  @override
+  Future<void> resume(WorkCase workCase) {
+    // The reason follows the step: hold, failure, or a finished review.
+    final body = <String, Object?>{
+      "expected_revision": workCase.inputRevision,
+      "reason": workCase.resumeReason.code,
+    };
+    return _keys.run(
+      "resume:${workCase.id}",
+      body,
+      (key) => _guard(
+        () => _dataSource.resume(workCase.id, body, idempotencyKey: key),
+      ),
+      serverCode: _serverCode,
+    );
+  }
+
+  @override
+  Future<CandidateSet> getCandidates(String caseId) => _guard(() async {
+    final response = await _dataSource.fetchCandidates(caseId);
+    final json = response["data"] as Map<String, dynamic>;
+    return CandidateSet(
+      id: json["candidate_set_id"] as String,
+      revision: json["revision"] as int,
+      selectedSupplierIds: List.unmodifiable(
+        (json["selected_supplier_ids"] as List? ?? const []).cast<String>(),
+      ),
+      isStale: json["is_stale"] as bool? ?? false,
+      unknownFields: List.unmodifiable(
+        (json["unknown_fields"] as List? ?? const []).cast<String>(),
+      ),
+      allowedActions: List.unmodifiable(
+        (json["allowed_actions"] as List? ?? const []).cast<String>(),
+      ),
+      disabledActions: List.unmodifiable([
+        for (final entry in json["disabled_actions"] as List? ?? const [])
+          DisabledWorkCaseAction(
+            action: entry["action"] as String,
+            reasonCode: entry["reason_code"] as String,
+            message: entry["message"] as String,
+          ),
+      ]),
+      candidates: List.unmodifiable([
+        for (final entry in json["items"] as List)
+          Candidate(
+            supplierId: entry["supplier_id"] as String,
+            name: entry["name"] as String,
+            contactEmail: entry["contact_email"] as String?,
+            handlingEvidence: entry["handling_evidence"] as String? ?? "",
+            reason: entry["reason"] as String? ?? "",
+            caution: (entry["caution"] as Map<String, dynamic>?)?["reason"]
+                as String?,
+            unknownFields: List.unmodifiable(
+              (entry["unknown_fields"] as List? ?? const []).cast<String>(),
+            ),
+            preferenceScore: entry["preference_score"] as int?,
+            webCandidate: entry["is_web_candidate"] as bool? ?? false,
+            checks: List.unmodifiable([
+              for (final check in entry["checks"] as List? ?? const [])
+                CandidateCheck(
+                  label: check["label"] as String,
+                  state: CheckState.fromCode(check["status"] as String),
+                  required: check["required"] as bool? ?? true,
+                ),
+            ]),
+          ),
+      ]),
+    );
+  });
+
+  @override
+  Future<List<SelectedDraft>> selectCandidates(
+    WorkCase workCase,
+    CandidateSet candidates,
+    List<String> supplierIds,
+  ) {
+    final body = <String, Object?>{
+      "expected_revision": workCase.inputRevision,
+      "candidate_set_id": candidates.id,
+      "selected_supplier_ids": [...supplierIds]..sort(),
+    };
+    return _keys.run(
+      "select:${workCase.id}",
+      body,
+      (key) => _guard(() async {
+        final response = await _dataSource.selectCandidates(
+          workCase.id,
+          body,
+          idempotencyKey: key,
         );
+        final data = response["data"] as Map<String, dynamic>;
+        return List<SelectedDraft>.unmodifiable([
+          for (final entry in data["drafts"] as List? ?? const [])
+            SelectedDraft(
+              draftId: entry["draft_id"] as String,
+              supplierId: entry["supplier_id"] as String,
+              dispatchState: DraftDispatchState.fromCode(
+                entry["dispatch_state"] as String?,
+              ),
+            ),
+        ]);
       }),
+      serverCode: _serverCode,
+    );
+  }
+
+  /// A lost response keeps the key so a retry only checks the first request.
+  static String? _serverCode(Object error) =>
+      error is WorkQueueFailure && !error.unknownOutcome ? error.code : null;
+
+  Future<T> _guard<T>(Future<T> Function() request) async {
+    try {
+      return await request();
+    } on WorkQueueApiException catch (error) {
+      throw WorkQueueFailure(
+        error.code,
+        error.message,
+        unknownOutcome: error.unknownOutcome,
+      );
+    }
+  }
+
+  static HoldReason? _hold(Object? json) => json is Map<String, dynamic>
+      ? HoldReason(
+          code: json["code"] as String,
+          message: json["message"] as String,
+        )
+      : null;
+
+  static ReplySummary? _replies(Object? json) => json is Map<String, dynamic>
+      ? ReplySummary(
+          requested: json["requested_supplier_count"] as int? ?? 0,
+          responded: json["responded_supplier_count"] as int? ?? 0,
+        )
+      : null;
+
+  static WorkCase _case(Map<String, dynamic> json) {
+    final statusCode = json["status"] as String;
+    final step = json["step_detail"] as Map<String, dynamic>?;
+    return WorkCase(
+      id: json["case_id"] as String,
+      initialMailId: json["initial_mail_id"] as String,
+      title: json["title"] as String,
+      sender: json["sender"] as String,
+      senderName: json["sender_name"] as String?,
+      itemName: json["item_name"] as String?,
+      receivedAt: json["received_at"] as String,
+      status: WorkCaseStatus.fromCode(statusCode),
+      statusCode: statusCode,
+      processingStep: json["processing_step"] as String,
+      // The server labels every EXTRACTING as the first extraction; after a
+      // linked reply (input_revision > 1) it is reading the reply instead.
+      stepMessage:
+          isReplyExtraction(
+            json["processing_step"] as String,
+            json["input_revision"] as int,
+          )
+          ? processingStepLabel(
+              json["processing_step"] as String,
+              inputRevision: json["input_revision"] as int,
+            )
+          : step?["message"] as String? ?? "",
+      inputRevision: json["input_revision"] as int,
+      attachmentCount: json["attachment_count"] as int? ?? 0,
+      hold: _hold(json["hold"]),
+      replySummary: _replies(json["reply_summary"]),
+      allowedActions: List.unmodifiable(
+        (json["allowed_actions"] as List? ?? const []).cast<String>(),
+      ),
+      disabledActions: List.unmodifiable([
+        for (final entry in json["disabled_actions"] as List? ?? const [])
+          DisabledWorkCaseAction(
+            action: entry["action"] as String,
+            reasonCode: entry["reason_code"] as String,
+            message: entry["message"] as String,
+          ),
+      ]),
     );
   }
 }

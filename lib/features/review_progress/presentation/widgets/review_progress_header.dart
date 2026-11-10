@@ -6,10 +6,12 @@ import "../../../../shared/workspace_colors.dart";
 class ReviewProgressHeader extends StatelessWidget {
   const ReviewProgressHeader({
     super.key,
-    required this.supplier,
+    required this.title,
     required this.onClose,
   });
-  final String supplier;
+
+  /// 업무 제목(메일 제목 또는 요청자).
+  final String title;
   final VoidCallback onClose;
 
   @override
@@ -31,8 +33,10 @@ class ReviewProgressHeader extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '디자인 시연 · $supplier',
-                style: const TextStyle(fontSize: 12, color: muted),
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, color: muted),
               ),
             ],
           ),

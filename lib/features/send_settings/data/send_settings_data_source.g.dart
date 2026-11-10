@@ -8,9 +8,12 @@ part of 'send_settings_data_source.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 앱은 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 @ProviderFor(sendSettingsDataSource)
 final sendSettingsDataSourceProvider = SendSettingsDataSourceProvider._();
+
+/// 앱은 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 final class SendSettingsDataSourceProvider
     extends
@@ -20,6 +23,7 @@ final class SendSettingsDataSourceProvider
           SendSettingsDataSource
         >
     with $Provider<SendSettingsDataSource> {
+  /// 앱은 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
   SendSettingsDataSourceProvider._()
     : super(
         from: null,
@@ -55,4 +59,4 @@ final class SendSettingsDataSourceProvider
 }
 
 String _$sendSettingsDataSourceHash() =>
-    r'8a2ed3d067afce435ec92a953896b104c88b4325';
+    r'0c364fca51ccfa5f9e2dbc80cb8938fd1cf68323';

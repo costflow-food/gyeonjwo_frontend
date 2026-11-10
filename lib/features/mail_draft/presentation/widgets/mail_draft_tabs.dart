@@ -12,9 +12,13 @@ class MailDraftTabs extends StatelessWidget {
     required this.drafts,
     required this.selectedId,
     required this.onSelect,
+    this.dispatchStates = const {},
   });
 
   final List<MailDraft> drafts;
+
+  /// draft_id → API-12 dispatch_state, right after a candidate selection.
+  final Map<String, DraftDispatchState> dispatchStates;
   final String? selectedId;
   final ValueChanged<String> onSelect;
 
@@ -30,7 +34,7 @@ class MailDraftTabs extends StatelessWidget {
             button: true,
             child: InkWell(
               onTap: () => onSelect(draft.id),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
                 decoration: BoxDecoration(
@@ -38,13 +42,13 @@ class MailDraftTabs extends StatelessWidget {
                   border: Border.all(
                     color: draft.id == selectedId ? accent : line,
                   ),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "${draft.supplierName} · ${draft.purpose.label}",
+                      "${draft.displayName} · ${draft.purpose.label}",
                       style: const TextStyle(
                         fontSize: AppFontSizes.body,
                         fontWeight: FontWeight.w700,
@@ -52,6 +56,17 @@ class MailDraftTabs extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     DraftStatusBadge(draft.status),
+                    if (dispatchStates[draft.id] case final dispatch?
+                        when draft.status == DraftStatus.draft) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        dispatch.label,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.caption,
+                          color: muted,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

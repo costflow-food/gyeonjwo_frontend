@@ -51,11 +51,7 @@ class PriceHistorySection extends ConsumerWidget {
                   if (constraints.maxWidth < 620) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        quotes,
-                        const SizedBox(height: 16),
-                        purchases,
-                      ],
+                      children: [quotes, const SizedBox(height: 16), purchases],
                     );
                   }
                   return Row(

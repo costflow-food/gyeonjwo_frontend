@@ -9,7 +9,12 @@ abstract final class AppConfig {
   );
   static const apiBaseUrl = String.fromEnvironment("API_BASE_URL");
 
-  /// Without Supabase settings the app keeps the existing preview behavior.
-  static bool get isAuthConfigured =>
-      supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
+  /// Values the app cannot run without.
+  static List<String> get missingKeys => [
+    if (supabaseUrl.isEmpty) "SUPABASE_URL",
+    if (supabasePublishableKey.isEmpty) "SUPABASE_PUBLISHABLE_KEY",
+    if (apiBaseUrl.isEmpty) "API_BASE_URL",
+  ];
+
+  static bool get isConfigured => missingKeys.isEmpty;
 }

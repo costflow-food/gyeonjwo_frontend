@@ -11,21 +11,21 @@ class DraftStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (status) {
-      DraftStatus.draft => (ink, const Color(0xFFF0F1F4), Icons.edit_note),
+      DraftStatus.draft => (ink, const Color(0xFFEEF2F0), Icons.edit_note),
       DraftStatus.sending => (
-        const Color(0xFF347BC8),
-        const Color(0xFFDCF2FD),
+        const Color(0xFF2F5E8C),
+        const Color(0xFFE6EEF6),
         Icons.outgoing_mail,
       ),
       DraftStatus.sent => (
-        const Color(0xFF4B9138),
-        const Color(0xFFE7F5E1),
+        const Color(0xFF00754A),
+        const Color(0xFFE2F4EA),
         Icons.check,
       ),
-      DraftStatus.failed => (accent, blush, Icons.error_outline),
+      DraftStatus.failed => (danger, dangerTint, Icons.error_outline),
       DraftStatus.unknown => (
-        const Color(0xFFBC793C),
-        const Color(0xFFFFF2E2),
+        const Color(0xFF8A6516),
+        const Color(0xFFF6EEDC),
         Icons.help_outline,
       ),
     };
@@ -33,7 +33,7 @@ class DraftStatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

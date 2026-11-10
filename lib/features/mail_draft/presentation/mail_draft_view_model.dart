@@ -2,6 +2,7 @@ import "dart:async";
 
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../work_queue/data/work_queue_repository_impl.dart";
 import "../data/mail_draft_repository_impl.dart";
 import "../domain/mail_draft.dart";
 
@@ -9,13 +10,23 @@ part "mail_draft_view_model.g.dart";
 
 Duration? _noRetry(int retryCount, Object error) => null;
 
-/// SCR-007 drafts of one case. Polls while a send is in progress.
-@Riverpod(keepAlive: true, retry: _noRetry)
+/// SCR-007 drafts of one case. While a draft is sending, or an accepted
+/// approval or reconcile has no visible result yet, re-reads it with API-17.
+@Riverpod(retry: _noRetry)
 class MailDraftViewModel extends _$MailDraftViewModel {
   /// 08 suggests about 3 seconds for progress polling.
   static const pollInterval = Duration(seconds: 3);
 
+  /// Stop waiting for an accepted request after about a minute.
+  static const maxWaitPolls = 20;
+
   Timer? _poll;
+
+  /// supplier_id → name from the API-11 candidates.
+  Map<String, String> _names = const {};
+
+  /// Accepted (202) drafts whose API-17 status has not moved yet → polls.
+  final Map<String, int> _awaiting = {};
 
   @override
   Future<List<MailDraft>> build(String caseId) async {
@@ -23,45 +34,83 @@ class MailDraftViewModel extends _$MailDraftViewModel {
     final drafts = await ref
         .watch(mailDraftRepositoryProvider)
         .getDrafts(caseId);
-    _schedulePoll(drafts);
-    return drafts;
+    _names = await _supplierNames(caseId);
+    final named = List<MailDraft>.unmodifiable(drafts.map(_named));
+    _schedulePoll(named);
+    return named;
   }
 
   void refresh() => ref.invalidateSelf();
 
-  Future<MailDraft> revise(
-    MailDraft draft,
-    DraftRevisionInput input, {
-    required String idempotencyKey,
-  }) async {
+  Future<MailDraft> revise(MailDraft draft, DraftRevisionInput input) async {
     final revised = await ref
         .read(mailDraftRepositoryProvider)
-        .createRevision(draft, input, idempotencyKey: idempotencyKey);
-    _replace(draft.id, revised);
-    return revised;
+        .createRevision(draft, input);
+    final next = _named(revised);
+    _replace(draft.id, next);
+    return next;
   }
 
-  Future<MailDraft> approve(
-    MailDraft draft, {
-    required String idempotencyKey,
-  }) async {
-    final sending = await ref
-        .read(mailDraftRepositoryProvider)
-        .approveAndSend(draft, idempotencyKey: idempotencyKey);
-    _replace(draft.id, sending);
-    return sending;
+  /// API-19, then API-17 for the result.
+  Future<MailDraft> approve(MailDraft draft) => _submit(
+    draft,
+    () => ref.read(mailDraftRepositoryProvider).approveAndSend(draft),
+  );
+
+  /// API-20, then API-17 for the result.
+  Future<MailDraft> reconcile(MailDraft draft) => _submit(
+    draft,
+    () => ref.read(mailDraftRepositoryProvider).reconcile(draft),
+  );
+
+  /// Closes an unsent draft, then API-17 for its new status.
+  Future<MailDraft> withdraw(MailDraft draft, {required String reason}) =>
+      _submit(
+        draft,
+        () => ref
+            .read(mailDraftRepositoryProvider)
+            .withdraw(draft, reason: reason),
+      );
+
+  Future<MailDraft> _submit(
+    MailDraft draft,
+    Future<void> Function() request,
+  ) async {
+    await request();
+    MailDraft? latest;
+    try {
+      latest = await ref.read(mailDraftRepositoryProvider).getDraft(draft.id);
+    } catch (_) {
+      // Accepted; polling reads the result.
+    }
+    if (latest == null || latest.status == draft.status) {
+      _awaiting[draft.id] = 0;
+    }
+    final next = _named(latest ?? draft);
+    _replace(draft.id, next);
+    return next;
   }
 
-  Future<MailDraft> reconcile(
-    MailDraft draft, {
-    required String idempotencyKey,
-  }) async {
-    final checked = await ref
-        .read(mailDraftRepositoryProvider)
-        .reconcile(draft, idempotencyKey: idempotencyKey);
-    _replace(draft.id, checked);
-    return checked;
+  /// Supplier names are not in API-16; the candidate list has them.
+  Future<Map<String, String>> _supplierNames(String caseId) async {
+    try {
+      final set = await ref
+          .read(workQueueRepositoryProvider)
+          .getCandidates(caseId);
+      return {
+        for (final candidate in set.candidates)
+          candidate.supplierId: candidate.name,
+      };
+    } catch (_) {
+      // Not ready or unavailable: the recipient address is shown instead.
+      return const {};
+    }
   }
+
+  MailDraft _named(MailDraft draft) => draft.copyWith(
+    supplierName: _names[draft.supplierId],
+    awaitingResult: _awaiting.containsKey(draft.id),
+  );
 
   void _replace(String oldId, MailDraft next) {
     if (!ref.mounted) return;
@@ -74,11 +123,40 @@ class MailDraftViewModel extends _$MailDraftViewModel {
     _schedulePoll(drafts);
   }
 
+  bool _watching(MailDraft draft) =>
+      draft.status == DraftStatus.sending || _awaiting.containsKey(draft.id);
+
   void _schedulePoll(List<MailDraft> drafts) {
     _poll?.cancel();
-    if (!drafts.any((draft) => draft.status == DraftStatus.sending)) return;
-    _poll = Timer(pollInterval, () {
-      if (ref.mounted) ref.invalidateSelf();
-    });
+    if (!drafts.any(_watching)) return;
+    _poll = Timer(pollInterval, _pollOnce);
+  }
+
+  Future<void> _pollOnce() async {
+    final current = state.asData?.value;
+    if (!ref.mounted || current == null) return;
+    final repository = ref.read(mailDraftRepositoryProvider);
+    for (final draft in current.where(_watching)) {
+      MailDraft? latest;
+      try {
+        latest = await repository.getDraft(draft.id);
+      } catch (_) {
+        // Try again on the next poll.
+      }
+      if (!ref.mounted) return;
+      final attempts = _awaiting[draft.id];
+      if (attempts != null) {
+        if (latest != null && latest.status != draft.status) {
+          _awaiting.remove(draft.id);
+        } else if (attempts + 1 >= maxWaitPolls) {
+          _awaiting.remove(draft.id);
+        } else {
+          _awaiting[draft.id] = attempts + 1;
+        }
+      }
+      _replace(draft.id, _named(latest ?? draft));
+    }
+    final drafts = state.asData?.value;
+    if (ref.mounted && drafts != null) _schedulePoll(drafts);
   }
 }

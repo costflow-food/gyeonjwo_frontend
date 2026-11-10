@@ -30,7 +30,7 @@ class MailIntakeHeader extends StatelessWidget {
                   "접수·연결 확인",
                   style: TextStyle(
                     fontSize: AppFontSizes.dialogTitle,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),

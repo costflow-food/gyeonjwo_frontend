@@ -1,10 +1,8 @@
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/idempotency_key.dart";
 import "../../../shared/app_font_sizes.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/workspace_colors.dart";
@@ -12,8 +10,6 @@ import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../mail_draft/domain/mail_draft.dart";
 import "../domain/send_settings.dart";
 import "send_settings_view_model.dart";
-import "widgets/allowed_supplier_list.dart";
-import "widgets/apply_scope_section.dart";
 import "widgets/mail_style_section.dart";
 import "widgets/purpose_approval_row.dart";
 import "widgets/send_settings_footer.dart";
@@ -37,8 +33,11 @@ Future<bool?> showSendSettingsDialog(BuildContext context, {String? caseId}) {
 }
 
 class SendSettingsDialog extends ConsumerStatefulWidget {
-  const SendSettingsDialog({super.key, this.caseId});
+  const SendSettingsDialog({super.key, this.caseId, this.embedded = false});
   final String? caseId;
+
+  /// 설정 페이지 탭 안에 바로 표시: 팝업 틀·닫기 없이, 저장해도 화면에 남습니다.
+  final bool embedded;
 
   @override
   ConsumerState<SendSettingsDialog> createState() => _SendSettingsDialogState();
@@ -48,19 +47,44 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
   final _signature = TextEditingController();
 
   // Local edits, seeded from the loaded version.
+  String? _mailboxRef;
   int? _loadedVersion;
   Map<DraftPurpose, bool?> _approval = {};
-  Set<String> _allowed = {};
   MailTone _tone = MailTone.formal;
-  ApplyTo _applyTo = ApplyTo.futureDrafts;
-  Set<String> _draftIds = {};
   bool _dirty = false;
 
   bool _saving = false;
   String? _error;
-  (String, String)? _pendingKey;
 
   String get _scope => sendSettingsScope(widget.caseId);
+
+  // False only during initState, where a rebuild is already coming.
+  bool _listening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Seed outside build: writing the signature controller during build
+    // would rebuild its TextField mid-frame.
+    ref.listenManual<AsyncValue<SendSettings>>(
+      sendSettingsViewModelProvider(_scope),
+      (_, next) {
+        final settings = next.asData?.value;
+        // Seed only from settled data, never from the stale value shown
+        // while a refresh after SETTINGS_CHANGED is still loading.
+        if (settings == null || next.isLoading || _loadedVersion != null) {
+          return;
+        }
+        if (_listening) {
+          setState(() => _seed(settings));
+        } else {
+          _seed(settings);
+        }
+      },
+      fireImmediately: true,
+    );
+    _listening = true;
+  }
 
   @override
   void dispose() {
@@ -69,19 +93,14 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
   }
 
   void _seed(SendSettings settings) {
+    _mailboxRef = settings.mailboxRef;
     _loadedVersion = settings.settingsVersion;
     _approval = {
       for (final approval in settings.approvals)
         approval.purpose: approval.ownValue,
     };
-    _allowed = {
-      for (final supplier in settings.suppliers)
-        if (supplier.allowed) supplier.id,
-    };
     _tone = settings.tone;
     _signature.text = settings.signature;
-    _applyTo = ApplyTo.futureDrafts;
-    _draftIds = {};
     _dirty = false;
   }
 
@@ -92,49 +111,64 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
 
   Future<void> _save() async {
     final version = _loadedVersion;
-    if (_saving || version == null) return;
+    final mailboxRef = _mailboxRef;
+    final loaded = ref
+        .read(sendSettingsViewModelProvider(_scope))
+        .asData
+        ?.value;
+    if (_saving || version == null || mailboxRef == null || loaded == null) {
+      return;
+    }
+    // The mailbox default stores the team default (auto-send off) for any
+    // purpose still unset; a case keeps null so it inherits the mailbox.
+    final approval = {
+      for (final entry in _approval.entries)
+        entry.key: widget.caseId == null ? entry.value ?? true : entry.value,
+    };
     final update = SendSettingsUpdate(
+      mailboxRef: mailboxRef,
       expectedSettingsVersion: version,
-      approvalByPurpose: Map.unmodifiable(_approval),
-      allowedSupplierIds: List.unmodifiable(_allowed),
+      approvalByPurpose: Map.unmodifiable(approval),
       tone: _tone,
       signature: _signature.text.trim(),
-      applyTo: _applyTo,
-      draftIds: _applyTo == ApplyTo.specifiedDrafts
-          ? List.unmodifiable(_draftIds)
-          : const [],
     );
-    final body = jsonEncode([
-      version,
-      {for (final entry in _approval.entries) entry.key.code: entry.value},
-      _allowed.toList()..sort(),
-      _tone.code,
-      update.signature,
-      _applyTo.name,
-      update.draftIds,
-    ]);
-    if (_pendingKey?.$2 != body) _pendingKey = (newIdempotencyKey(), body);
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
-      await ref
+      final saved = await ref
           .read(sendSettingsViewModelProvider(_scope).notifier)
-          .save(update, idempotencyKey: _pendingKey!.$1);
+          .save(update);
       if (!mounted) return;
+      if (widget.embedded) {
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했어요.")));
+        // Show the saved version right away.
+        setState(() {
+          _saving = false;
+          _seed(saved);
+        });
+        return;
+      }
       Navigator.of(context).pop(true);
     } on SendSettingsFailure catch (failure) {
       if (!mounted) return;
-      _pendingKey = null;
-      if (failure.code == "SETTINGS_CHANGED") {
-        // Show the newer version; the user decides again from there.
+      if (failure.settingsChanged) {
+        // Show the newer version; the listener re-seeds once it settles.
         _loadedVersion = null;
         ref.read(sendSettingsViewModelProvider(_scope).notifier).refresh();
       }
       setState(() {
         _saving = false;
-        _error = failure.message;
+        _error = switch (failure) {
+          SendSettingsFailure(unknownOutcome: true) =>
+            "저장 결과를 확인하지 못했습니다. 다시 저장하면 같은 요청으로 확인합니다.",
+          SendSettingsFailure(settingsChanged: true) =>
+            "다른 곳에서 설정이 바뀌어 최신 설정을 불러왔습니다. 확인한 뒤 다시 저장해 주세요.",
+          _ => failure.message,
+        };
       });
     } catch (_) {
       if (!mounted) return;
@@ -143,6 +177,21 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
         _error = "저장 결과를 확인하지 못했습니다. 다시 저장하면 같은 요청으로 확인합니다.";
       });
     }
+  }
+
+  /// Embedded: drop unsaved edits and show the saved values again.
+  void _discard() {
+    final value = ref.read(sendSettingsViewModelProvider(_scope));
+    final settings = value.asData?.value;
+    setState(() {
+      _error = null;
+      if (settings != null && !value.isLoading) {
+        _seed(settings);
+      } else {
+        // The listener seeds once the reload settles.
+        _loadedVersion = null;
+      }
+    });
   }
 
   Future<void> _close() async {
@@ -178,10 +227,35 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     final provider = sendSettingsViewModelProvider(_scope);
     final value = ref.watch(provider);
     final settings = value.asData?.value;
-    // Seed only from settled data, never from the stale value shown while
-    // a refresh after SETTINGS_CHANGED is still loading.
-    if (settings != null && !value.isLoading && _loadedVersion == null) {
-      _seed(settings);
+    final failure = value.error;
+    final content = failure is SendSettingsFailure && !value.isLoading
+        ? _loadError(failure, ref.read(provider.notifier).refresh)
+        : AsyncContent<SendSettings>(
+            value: value,
+            onRetry: ref.read(provider.notifier).refresh,
+            builder: (settings) =>
+                AbsorbPointer(absorbing: _saving, child: _body(settings)),
+          );
+    final footer = SendSettingsFooter(
+      error: _error,
+      saving: _saving,
+      onCancel: widget.embedded ? _discard : _close,
+      onSave: settings == null || _loadedVersion == null ? null : _save,
+    );
+    if (widget.embedded) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Same inset as the footer.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: content,
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: line),
+          footer,
+        ],
+      );
     }
     return PopScope(
       canPop: !_dirty && !_saving,
@@ -209,23 +283,11 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(28),
-                  child: AsyncContent<SendSettings>(
-                    value: value,
-                    onRetry: ref.read(provider.notifier).refresh,
-                    builder: (settings) => AbsorbPointer(
-                      absorbing: _saving,
-                      child: _body(settings),
-                    ),
-                  ),
+                  child: content,
                 ),
               ),
               const Divider(height: 1, color: line),
-              SendSettingsFooter(
-                error: _error,
-                saving: _saving,
-                onCancel: _close,
-                onSave: settings == null ? null : _save,
-              ),
+              footer,
             ],
           ),
         ),
@@ -233,32 +295,37 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     );
   }
 
+  /// Shows the server's reason, e.g. no connected mailbox.
+  Widget _loadError(SendSettingsFailure failure, VoidCallback onRetry) =>
+      Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(failure.message, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onRetry, child: const Text("다시 시도")),
+          ],
+        ),
+      );
+
   Widget _body(SendSettings settings) {
-    final automatic = settings.approvals.any(
-      (approval) =>
-          _approval[approval.purpose] == false ||
-          (_approval[approval.purpose] == null &&
-              settings.isCaseScope &&
-              approval.effectiveValue == false),
-    );
-    final suppliers = AllowedSupplierList(
-      suppliers: settings.suppliers,
-      allowedIds: _allowed,
-      onToggle: (id, allowed) =>
-          _edit(() => allowed ? _allowed.add(id) : _allowed.remove(id)),
-    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!settings.configured) ...[
-          SettingsMissingBanner(missingItems: settings.missingItems),
+          SettingsMissingBanner(
+            missingItems: settings.missingItems,
+            caseScope: settings.isCaseScope,
+          ),
           const SizedBox(height: 20),
         ],
         SettingsSectionTitle(
-          "목적별 승인",
+          "목적별 자동 발송",
           settings.isCaseScope
-              ? "이 업무에 적용할 값을 고르거나 메일함 기본값을 따릅니다."
-              : "승인 ON은 담당자가 승인한 초안만, OFF는 허용 범위 안에서 자동 발송합니다.",
+              ? "이 업무에만 적용됩니다. 바꾸지 않은 항목은 메일함 기본값을 따릅니다."
+              : "켜면 후보 선택에서 고른 업체의 등록된 주소로 자동 발송하고, 끄면 담당자가 승인한 초안만 발송합니다. "
+                    "기본값은 꺼짐이며, 바꾼 설정은 앞으로 만드는 초안부터 적용됩니다.",
         ),
         const SizedBox(height: 14),
         for (final approval in settings.approvals)
@@ -270,30 +337,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
                 _edit(() => _approval[approval.purpose] = next),
           ),
         const SizedBox(height: 12),
-        if (automatic) ...[
-          SettingsSectionTitle(
-            '자동 발송 허용 업체 · ${_allowed.length}곳',
-            '선택한 업체의 등록된 수신자에게만 자동 발송합니다.',
-          ),
-          const SizedBox(height: 8),
-          suppliers,
-        ] else
-          ExpansionTile(
-            iconColor: ink,
-            collapsedIconColor: muted,
-            shape: const Border(),
-            collapsedShape: const Border(),
-            tilePadding: EdgeInsets.zero,
-            title: Text(
-              '자동 발송 허용 업체 · ${_allowed.length}곳',
-              style: const TextStyle(
-                fontSize: AppFontSizes.bodyLarge,
-                fontWeight: FontWeight.w700,
-                color: ink,
-              ),
-            ),
-            children: [suppliers],
-          ),
         ExpansionTile(
           iconColor: ink,
           collapsedIconColor: muted,
@@ -316,37 +359,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
               signature: _signature,
               onToneChanged: (tone) => _edit(() => _tone = tone),
               onSignatureChanged: (_) => _edit(() {}),
-            ),
-          ],
-        ),
-        ExpansionTile(
-          iconColor: ink,
-          collapsedIconColor: muted,
-          shape: const Border(),
-          collapsedShape: const Border(),
-          tilePadding: EdgeInsets.zero,
-          title: const Text(
-            '적용 대상',
-            style: TextStyle(
-              fontSize: AppFontSizes.bodyLarge,
-              fontWeight: FontWeight.w700,
-              color: ink,
-            ),
-          ),
-          subtitle: Text(
-            _applyTo == ApplyTo.futureDrafts
-                ? '앞으로 생성할 초안'
-                : '선택한 기존 초안 ${_draftIds.length}건에도 적용',
-          ),
-          children: [
-            ApplyScopeSection(
-              applyTo: _applyTo,
-              drafts: settings.pendingDrafts,
-              selectedDraftIds: _draftIds,
-              onApplyToChanged: (applyTo) => _edit(() => _applyTo = applyTo),
-              onToggleDraft: (id, selected) => _edit(
-                () => selected ? _draftIds.add(id) : _draftIds.remove(id),
-              ),
             ),
           ],
         ),

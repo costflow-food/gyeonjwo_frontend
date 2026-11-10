@@ -16,8 +16,8 @@ class BrandLogo extends StatelessWidget {
             '견줘',
             style: TextStyle(
               fontSize: 30,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -2,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.5,
             ),
           ),
         ),

@@ -1,0 +1,365 @@
+import "dart:async";
+
+import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
+
+import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/workspace_colors.dart";
+import "../../domain/work_case.dart";
+import "../../domain/work_queue_state.dart";
+import "../work_queue_view_model.dart";
+import "request_row.dart";
+
+/// 품목별 업무 큐 그룹. 업무를 누르면 메인 화면에 원문이 열립니다.
+class QueueGroupList extends ConsumerStatefulWidget {
+  const QueueGroupList({super.key, this.shrinkWrap = false});
+
+  /// 스크롤 영역 안(좁은 화면의 메인)에 넣을 때 true.
+  final bool shrinkWrap;
+
+  @override
+  ConsumerState<QueueGroupList> createState() => _QueueGroupListState();
+}
+
+class _QueueGroupListState extends ConsumerState<QueueGroupList> {
+  // Groups the user folded. Keyed by item name; null is "품목 미확인".
+  final _collapsed = <String?>{};
+
+  late final _search = TextEditingController(
+    text: ref.read(workQueueViewModelProvider).value?.query ?? "",
+  );
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _search.dispose();
+    super.dispose();
+  }
+
+  /// One request after typing pauses, not one per key.
+  void _onSearchChanged(String text) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        ref.read(workQueueViewModelProvider.notifier).setQuery(text);
+      }
+    });
+  }
+
+  /// The address drives the selection (KAN-144), from any screen.
+  void _open(WorkCase workCase) => context.go("/cases/${workCase.id}");
+
+  @override
+  Widget build(BuildContext context) {
+    final value = ref.watch(workQueueViewModelProvider);
+    final viewModel = ref.read(workQueueViewModelProvider.notifier);
+    final filters = _QueueFilters(
+      search: _search,
+      onSearchChanged: _onSearchChanged,
+      status: value.value?.status,
+      counts: value.value?.counts,
+      loading: value.isLoading && value.hasValue,
+      onStatus: viewModel.setStatus,
+    );
+    final list = _list(value, viewModel);
+    if (widget.shrinkWrap) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [filters, list],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        filters,
+        Expanded(child: list),
+      ],
+    );
+  }
+
+  Widget _list(AsyncValue<WorkQueueState> value, WorkQueueViewModel viewModel) {
+    if (!value.hasValue) {
+      if (value.hasError) {
+        return _Message(
+          "업무 큐를 불러오지 못했어요.",
+          action: TextButton(
+            onPressed: viewModel.refresh,
+            child: const Text("다시 시도"),
+          ),
+        );
+      }
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    final data = value.requireValue;
+    final groups = data.groups;
+    if (groups.isEmpty) {
+      return _Message(
+        data.status == null && data.query.isEmpty
+            ? "아직 도착한 업무가 없어요."
+            : "조건에 맞는 업무가 없어요.",
+      );
+    }
+    return ListView(
+      shrinkWrap: widget.shrinkWrap,
+      physics: widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null,
+      padding: EdgeInsets.zero,
+      children: [
+        for (final group in groups) ...[
+          _GroupHeader(
+            group: group,
+            collapsed: _collapsed.contains(group.itemName),
+            onToggle: () => setState(() {
+              if (!_collapsed.remove(group.itemName)) {
+                _collapsed.add(group.itemName);
+              }
+            }),
+          ),
+          if (!_collapsed.contains(group.itemName))
+            for (final workCase in group.cases)
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 2),
+                child: RequestRow(
+                  workCase,
+                  selected: workCase.id == data.selectedId,
+                  onTap: () => _open(workCase),
+                ),
+              ),
+          const SizedBox(height: 8),
+        ],
+        if (data.nextCursor != null)
+          _LoadMore(data: data, viewModel: viewModel),
+      ],
+    );
+  }
+}
+
+class _GroupHeader extends StatelessWidget {
+  const _GroupHeader({
+    required this.group,
+    required this.collapsed,
+    required this.onToggle,
+  });
+
+  final WorkCaseGroup group;
+  final bool collapsed;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onToggle,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Row(
+          children: [
+            Icon(
+              collapsed ? Icons.chevron_right : Icons.expand_more,
+              size: 18,
+              color: muted,
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                group.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.bodyLarge,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (group.waitingCount > 0)
+              Tooltip(
+                message: "검토를 기다리는 업무",
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: blush,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Text(
+                    "${group.waitingCount}",
+                    style: const TextStyle(
+                      fontSize: AppFontSizes.caption,
+                      color: accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(width: 6),
+            Text(
+              "${group.cases.length}",
+              semanticsLabel: "${group.cases.length}건",
+              style: const TextStyle(
+                fontSize: AppFontSizes.secondary,
+                color: muted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 검색창과 상태 탭(전체·대기·진행 중·완료). 건수는 서버 counts 그대로입니다.
+/// 보류(Pending) 업무는 전체에서만 보입니다.
+class _QueueFilters extends StatelessWidget {
+  const _QueueFilters({
+    required this.search,
+    required this.onSearchChanged,
+    required this.status,
+    required this.counts,
+    required this.loading,
+    required this.onStatus,
+  });
+
+  final TextEditingController search;
+  final ValueChanged<String> onSearchChanged;
+  final WorkCaseStatus? status;
+  final WorkQueueCounts? counts;
+  final bool loading;
+  final ValueChanged<WorkCaseStatus?> onStatus;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: search,
+          onChanged: onSearchChanged,
+          style: const TextStyle(fontSize: AppFontSizes.body),
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: "제목·보낸 사람 검색",
+            hintStyle: const TextStyle(
+              fontSize: AppFontSizes.body,
+              color: muted,
+            ),
+            prefixIcon: const Icon(Icons.search, size: 18, color: muted),
+            prefixIconConstraints: const BoxConstraints(minWidth: 36),
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(22),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(22),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            for (final option in const <WorkCaseStatus?>[
+              null,
+              ...WorkCaseStatus.tabs,
+            ])
+              ChoiceChip(
+                label: Text(
+                  "${option?.label ?? "전체"}"
+                  "${counts == null ? "" : " ${counts!.countFor(option)}"}",
+                ),
+                labelStyle: TextStyle(
+                  fontSize: AppFontSizes.caption,
+                  fontWeight: option == status
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  color: option == status ? Colors.white : ink,
+                ),
+                selected: option == status,
+                showCheckmark: false,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                selectedColor: accent,
+                backgroundColor: Colors.transparent,
+                shape: const StadiumBorder(),
+                side: BorderSide(
+                  color: option == status ? accent : const Color(0x471E3932),
+                ),
+                onSelected: (_) => onStatus(option),
+              ),
+          ],
+        ),
+        SizedBox(
+          height: 2,
+          child: loading
+              ? const LinearProgressIndicator(minHeight: 2, color: accent)
+              : null,
+        ),
+      ],
+    ),
+  );
+}
+
+class _LoadMore extends StatelessWidget {
+  const _LoadMore({required this.data, required this.viewModel});
+
+  final WorkQueueState data;
+  final WorkQueueViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: TextButton.icon(
+      onPressed: data.loadingMore ? null : viewModel.loadMore,
+      icon: data.loadingMore
+          ? const SizedBox.square(
+              dimension: 12,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.expand_more, size: 16),
+      label: const Text(
+        "더 불러오기",
+        style: TextStyle(fontSize: AppFontSizes.secondary),
+      ),
+      style: TextButton.styleFrom(foregroundColor: muted),
+    ),
+  );
+}
+
+class _Message extends StatelessWidget {
+  const _Message(this.text, {this.action});
+
+  final String text;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: AppFontSizes.secondary,
+            color: muted,
+          ),
+        ),
+        ?action,
+      ],
+    ),
+  );
+}
