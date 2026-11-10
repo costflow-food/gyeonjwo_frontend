@@ -11,7 +11,15 @@ class NoteLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.info_outline, size: 14, color: context.palette.muted),
+        // 첫 줄 높이(13 × 1.65 ≈ 21.5)의 가운데에 아이콘(14)을 맞춥니다.
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Icon(
+            Icons.info_outline,
+            size: 14,
+            color: context.palette.muted,
+          ),
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

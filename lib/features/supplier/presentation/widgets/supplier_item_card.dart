@@ -72,18 +72,21 @@ class SupplierItemCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 16,
-            runSpacing: 12,
+          // 한 줄에 하나씩 세로로 쌓아, 가로로 흩어져 생기던 빈 공간을 없앱니다.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
             children: [
-              SupplierFact("단위", item.unit, width: 90),
-              SupplierFact("박스당 수량", item.unitsPerBox, width: 90),
-              SupplierFact(
-                "박스당 중량",
-                item.weightPerBox == null ? null : "${item.weightPerBox}kg",
-                width: 90,
-              ),
-              SupplierFact("원산지", item.origin, width: 150),
+              for (final (label, value) in [
+                ("단위", item.unit),
+                ("박스당 수량", item.unitsPerBox),
+                (
+                  "박스당 중량",
+                  item.weightPerBox == null ? null : "${item.weightPerBox}kg",
+                ),
+                ("원산지", item.origin),
+              ])
+                SupplierFact(label, value, width: double.infinity),
             ],
           ),
           const SizedBox(height: 14),

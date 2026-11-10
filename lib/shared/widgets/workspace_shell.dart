@@ -273,6 +273,8 @@ class _AccountButton extends ConsumerWidget {
       PopupMenuButton<_AccountMenu>(
         tooltip: '계정 메뉴',
         position: PopupMenuPosition.under,
+        // 눌림·hover 효과를 동그란 버튼 모양에 맞춰 사각 배경이 보이지 않게 합니다.
+        borderRadius: BorderRadius.circular(22),
         onSelected: (choice) {
           switch (choice) {
             case _AccountMenu.settings:

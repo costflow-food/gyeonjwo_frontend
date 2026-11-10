@@ -37,15 +37,19 @@ class SupplierDetailContent extends StatelessWidget {
         const SizedBox(height: 20),
         const SupplierSectionTitle("업체 정보"),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 20,
-          runSpacing: 16,
+        // 한 줄에 하나씩 세로로 쌓아, 가로로 흩어져 생기던 빈 공간을 없앱니다.
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 16,
           children: [
-            SupplierFact("사업자번호", supplier.businessRegistrationNo),
-            SupplierFact("담당자", supplier.contact.name),
-            SupplierFact("이메일", supplier.contactEmail, width: 240),
-            SupplierFact("전화", supplier.contact.phone),
-            SupplierFact("위치", supplier.location),
+            for (final (label, value) in [
+              ("사업자번호", supplier.businessRegistrationNo),
+              ("담당자", supplier.contact.name),
+              ("이메일", supplier.contactEmail),
+              ("전화", supplier.contact.phone),
+              ("위치", supplier.location),
+            ])
+              SupplierFact(label, value, width: double.infinity),
           ],
         ),
         const SizedBox(height: 16),
