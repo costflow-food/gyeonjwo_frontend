@@ -33,13 +33,13 @@ class SourceDocumentDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = sourceDocumentViewModelProvider(requestId);
     return Dialog(
-      backgroundColor: canvas,
+      backgroundColor: context.palette.canvas,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.all(20),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: line),
+        side: BorderSide(color: context.palette.line),
       ),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
@@ -49,7 +49,7 @@ class SourceDocumentDialog extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SourceDocumentHeader(),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(28),
@@ -70,7 +70,7 @@ class SourceDocumentDialog extends ConsumerWidget {
                     ),
               ),
             ),
-            const Divider(height: 1, color: line),
+            Divider(height: 1, color: context.palette.line),
             const SourceDocumentFooter(),
           ],
         ),

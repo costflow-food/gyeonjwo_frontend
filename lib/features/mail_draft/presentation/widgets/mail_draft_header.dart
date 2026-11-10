@@ -34,9 +34,9 @@ class MailDraftHeader extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   caseId,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.secondary,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
               ],

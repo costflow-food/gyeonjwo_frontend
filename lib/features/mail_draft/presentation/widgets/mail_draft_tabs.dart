@@ -38,9 +38,13 @@ class MailDraftTabs extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
                 decoration: BoxDecoration(
-                  color: draft.id == selectedId ? blush : Colors.white,
+                  color: draft.id == selectedId
+                      ? context.palette.blush
+                      : context.palette.surface,
                   border: Border.all(
-                    color: draft.id == selectedId ? accent : line,
+                    color: draft.id == selectedId
+                        ? context.palette.accentText
+                        : context.palette.line,
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -61,9 +65,9 @@ class MailDraftTabs extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         dispatch.label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: AppFontSizes.caption,
-                          color: muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],

@@ -12,7 +12,7 @@ class SourceDocumentBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE3ECE7)),
+        border: Border.all(color: context.palette.line),
         borderRadius: BorderRadius.circular(16),
       ),
       child: SelectionArea(
@@ -30,11 +30,11 @@ class SourceDocumentBody extends StatelessWidget {
             for (final paragraph in document.paragraphs) ...[
               const SizedBox(height: 24),
               Text.rich(
-                TextSpan(children: _highlight(paragraph)),
-                style: const TextStyle(
+                TextSpan(children: _highlight(context, paragraph)),
+                style: TextStyle(
                   fontSize: 14,
                   height: 2,
-                  color: Color(0xFF72757A),
+                  color: context.palette.muted,
                 ),
               ),
             ],
@@ -44,7 +44,7 @@ class SourceDocumentBody extends StatelessWidget {
     );
   }
 
-  List<TextSpan> _highlight(String text) {
+  List<TextSpan> _highlight(BuildContext context, String text) {
     if (document.highlights.isEmpty) return [TextSpan(text: text)];
     final pattern = RegExp(document.highlights.map(RegExp.escape).join('|'));
     final spans = <TextSpan>[];
@@ -54,9 +54,9 @@ class SourceDocumentBody extends StatelessWidget {
       spans.add(
         TextSpan(
           text: match.group(0),
-          style: const TextStyle(
-            backgroundColor: Color(0xFFE3ECE7),
-            color: ink,
+          style: TextStyle(
+            backgroundColor: context.palette.line,
+            color: context.palette.ink,
             decoration: TextDecoration.underline,
           ),
         ),

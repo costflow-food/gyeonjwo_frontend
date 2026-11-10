@@ -24,7 +24,10 @@ class IntakeMailDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const caption = TextStyle(fontSize: AppFontSizes.caption, color: muted);
+    final caption = TextStyle(
+      fontSize: AppFontSizes.caption,
+      color: context.palette.muted,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -44,8 +47,8 @@ class IntakeMailDetail extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: canvas,
-            border: Border.all(color: line),
+            color: context.palette.canvas,
+            border: Border.all(color: context.palette.line),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -61,13 +64,13 @@ class IntakeMailDetail extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        const Text("원문", style: caption),
+        Text("원문", style: caption),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: line),
+            color: context.palette.surface,
+            border: Border.all(color: context.palette.line),
             borderRadius: BorderRadius.circular(16),
           ),
           child: SelectableText(

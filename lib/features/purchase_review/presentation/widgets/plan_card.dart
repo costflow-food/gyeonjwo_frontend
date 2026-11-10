@@ -33,26 +33,29 @@ class PlanCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [deepLight, ink],
+          colors: [context.palette.deepLight, context.palette.deep],
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x2E1E3932),
+            color: context.palette.ink.withValues(alpha: 0.18),
             blurRadius: 16,
             offset: Offset(0, 4),
           ),
         ],
       ),
       foregroundDecoration: lowest
-          ? const BoxDecoration(
+          ? BoxDecoration(
               borderRadius: BorderRadius.all(Radius.circular(16)),
               gradient: RadialGradient(
                 center: Alignment(.85, 1),
                 radius: 1.1,
-                colors: [Color(0x6BCBA258), Color(0x00CBA258)],
+                colors: [
+                  context.palette.gold.withValues(alpha: 0.42),
+                  context.palette.gold.withValues(alpha: 0.0),
+                ],
               ),
             )
           : null,
@@ -73,9 +76,9 @@ class PlanCard extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   note,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: onDeepMuted,
+                    color: context.palette.onDeepMuted,
                     height: 1.5,
                   ),
                 ),
@@ -118,10 +121,10 @@ class PlanCard extends StatelessWidget {
             else if (difference != null)
               Text(
                 "+$difference",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: onDeepMuted,
+                  color: context.palette.onDeepMuted,
                 ),
               ),
             if (allocations.isNotEmpty) ...[
@@ -146,7 +149,7 @@ class _StatusChip extends StatelessWidget {
     final (label, background, foreground, border) = lowest
         ? (
             "${plan.validationLabel} · 가장 낮음",
-            gold,
+            context.palette.gold,
             const Color(0xFF1E1E1E),
             null,
           )

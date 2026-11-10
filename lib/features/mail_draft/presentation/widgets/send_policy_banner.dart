@@ -69,7 +69,7 @@ class SendPolicyBanner extends StatelessWidget {
         dispatch == DraftDispatchState.blockedPolicy ||
                 dispatch == DraftDispatchState.cautionRequired
             ? const Color(0xFF8A6516)
-            : muted,
+            : context.palette.muted,
         "${dispatch.label} · ${dispatch.message}",
       ),
       _ when editing && draft.approvalRequired == false => (
@@ -79,7 +79,7 @@ class SendPolicyBanner extends StatelessWidget {
       ),
       _ when editing => (
         Icons.info_outline,
-        muted,
+        context.palette.muted,
         "저장하면 새 초안이 됩니다. 이전 승인은 이어지지 않습니다.",
       ),
       DraftStatus.draft when draft.manualApprovalUnderAutoSend => (
@@ -89,7 +89,7 @@ class SendPolicyBanner extends StatelessWidget {
       ),
       DraftStatus.draft => (
         Icons.info_outline,
-        muted,
+        context.palette.muted,
         draft.approvalRequired == true
             ? "내용을 확인한 뒤 승인 후 발송을 눌러 주세요."
             : "별도 버튼 없이 서버가 자동 발송합니다.",
@@ -118,8 +118,8 @@ class SendPolicyBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: line),
+        color: context.palette.surface,
+        border: Border.all(color: context.palette.line),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -147,7 +147,7 @@ class SendPolicyBanner extends StatelessWidget {
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     onPressed: onOpenSettings,
-                    style: WorkspaceButtonStyles.outlined,
+                    style: WorkspaceButtonStyles.outlined(context),
                     icon: const Icon(Icons.tune, size: 16),
                     label: const Text("메일 발송 설정 열기"),
                   ),

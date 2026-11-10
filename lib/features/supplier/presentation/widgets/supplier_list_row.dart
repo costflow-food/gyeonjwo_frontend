@@ -31,11 +31,11 @@ class SupplierListRow extends StatelessWidget {
       button: true,
       label: "${supplier.name} 거래처",
       child: Material(
-        color: selected ? Colors.white : Colors.transparent,
+        color: selected ? context.palette.surface : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: selected
-              ? const BorderSide(color: accent, width: 1.5)
+              ? BorderSide(color: context.palette.accentText, width: 1.5)
               : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
@@ -66,18 +66,18 @@ class SupplierListRow extends StatelessWidget {
                 Text(
                   subtitle,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.secondary,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
                 const SizedBox(height: 8),
                 if (items.isEmpty)
-                  const Text(
+                  Text(
                     "취급 품목 미등록",
                     style: TextStyle(
                       fontSize: AppFontSizes.secondary,
-                      color: muted,
+                      color: context.palette.muted,
                     ),
                   )
                 else
@@ -109,9 +109,9 @@ class _ItemChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        border: Border.all(color: line),
+        border: Border.all(color: context.palette.line),
         borderRadius: BorderRadius.circular(999),
-        color: Colors.white,
+        color: context.palette.surface,
       ),
       child: Text(
         label,

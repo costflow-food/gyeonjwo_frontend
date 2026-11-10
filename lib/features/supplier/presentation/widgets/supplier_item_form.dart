@@ -25,8 +25,8 @@ class SupplierItemForm extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 10, 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: line),
+        color: context.palette.surface,
+        border: Border.all(color: context.palette.line),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

@@ -25,7 +25,10 @@ class WorkflowLogList extends StatelessWidget {
         child: Center(
           child: Text(
             data.filter.isEmpty ? "아직 기록된 실행 로그가 없습니다." : "조건과 일치하는 로그가 없습니다.",
-            style: const TextStyle(fontSize: AppFontSizes.body, color: muted),
+            style: TextStyle(
+              fontSize: AppFontSizes.body,
+              color: context.palette.muted,
+            ),
           ),
         ),
       );

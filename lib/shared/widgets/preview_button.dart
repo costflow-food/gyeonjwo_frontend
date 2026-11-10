@@ -19,9 +19,13 @@ class PreviewButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
-        backgroundColor: filled ? accent : Colors.transparent,
-        foregroundColor: filled ? Colors.white : accent,
-        side: const BorderSide(color: accent),
+        backgroundColor: filled ? context.palette.accent : Colors.transparent,
+        foregroundColor: filled
+            ? context.palette.onAccent
+            : context.palette.accentText,
+        side: BorderSide(
+          color: filled ? context.palette.accent : context.palette.accentText,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         minimumSize: const Size(0, 40),
         shape: const StadiumBorder(),

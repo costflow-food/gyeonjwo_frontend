@@ -23,16 +23,19 @@ class PriceRecordTile extends StatelessWidget {
     final date = record.date == null
         ? "날짜 미확인"
         : "${formatIsoDate(record.date!)} $dateSuffix";
-    const captionStyle = TextStyle(
+    final captionStyle = TextStyle(
       fontSize: AppFontSizes.caption,
-      color: muted,
+      color: context.palette.muted,
     );
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.only(left: 10),
       decoration: BoxDecoration(
         border: Border(
-          left: BorderSide(color: latest ? accent : line, width: 2),
+          left: BorderSide(
+            color: latest ? context.palette.accentText : context.palette.line,
+            width: 2,
+          ),
         ),
       ),
       child: Column(
@@ -50,11 +53,11 @@ class PriceRecordTile extends StatelessWidget {
                 ),
               ),
               if (latest)
-                const Text(
+                Text(
                   "최신",
                   style: TextStyle(
                     fontSize: AppFontSizes.caption,
-                    color: accent,
+                    color: context.palette.accentText,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -73,9 +76,9 @@ class PriceRecordTile extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               record.conditions!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppFontSizes.secondary,
-                color: muted,
+                color: context.palette.muted,
               ),
             ),
           ],

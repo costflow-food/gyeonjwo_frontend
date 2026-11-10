@@ -64,7 +64,7 @@ class _SupplierContentState extends State<SupplierContent> {
               const SizedBox(height: 12),
               SupplierListStatus(data: data, onRetry: viewModel.refresh),
               const SizedBox(height: 8),
-              const Divider(height: 1, color: Color(0xFF4F6862)),
+              Divider(height: 1, color: context.palette.muted),
               SupplierListPanel(
                 data: data,
                 onSelect: (id) {
@@ -78,7 +78,7 @@ class _SupplierContentState extends State<SupplierContent> {
         );
         final selectedId = data.selectedId;
         final detail = selectedId == null
-            ? const OutlinePanel(
+            ? OutlinePanel(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(
@@ -86,7 +86,7 @@ class _SupplierContentState extends State<SupplierContent> {
                       "거래처를 선택하면 상세 정보를 볼 수 있어요.",
                       style: TextStyle(
                         fontSize: AppFontSizes.body,
-                        color: muted,
+                        color: context.palette.muted,
                       ),
                     ),
                   ),
@@ -122,7 +122,9 @@ class _SupplierContentState extends State<SupplierContent> {
                       onPressed: () => _scrollTo(_listKey),
                       icon: const Icon(Icons.arrow_back, size: 16),
                       label: const Text("목록으로"),
-                      style: TextButton.styleFrom(foregroundColor: ink),
+                      style: TextButton.styleFrom(
+                        foregroundColor: context.palette.ink,
+                      ),
                     ),
                   ),
                 detail,

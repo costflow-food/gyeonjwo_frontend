@@ -100,12 +100,12 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            style: WorkspaceButtonStyles.text,
+            style: WorkspaceButtonStyles.text(context),
             child: const Text("취소"),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: WorkspaceButtonStyles.filled,
+            style: WorkspaceButtonStyles.filled(context),
             child: const Text("수긍하기"),
           ),
         ],
@@ -188,9 +188,9 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
                   workCase.itemName == null
                       ? "품목 미확인"
                       : "${workCase.itemName} 품목",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.secondary,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
               ),
@@ -223,7 +223,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
             ),
           ),
           const SizedBox(height: 24),
-          const Divider(height: 1, color: line),
+          Divider(height: 1, color: context.palette.line),
           const SizedBox(height: 20),
           // Blocked candidates are still shown, read-only, with the reason.
           if (workCase.can(WorkCaseAction.selectCandidates) ||
@@ -245,7 +245,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
-                style: WorkspaceButtonStyles.filled,
+                style: WorkspaceButtonStyles.filled(context),
                 onPressed: () => context.go("/cases/${workCase.id}/review"),
                 icon: const Icon(Icons.fact_check_outlined, size: 16),
                 label: const Text("검토 카드 보기"),
@@ -333,14 +333,16 @@ class _MailContent extends StatelessWidget {
         _MetaRow(label: "받는 사람", value: mail.recipients.join(", ")),
         _MetaRow(label: "받은 시각", value: formatSeoulDateTime(mail.receivedAt)),
         const SizedBox(height: 16),
-        const Divider(height: 1, color: line),
+        Divider(height: 1, color: context.palette.line),
         const SizedBox(height: 16),
         SelectableText(
           mail.bodyText.isEmpty ? "(본문 없음)" : mail.bodyText,
           style: TextStyle(
             fontSize: AppFontSizes.bodyLarge,
             height: 1.8,
-            color: mail.bodyText.isEmpty ? muted : ink,
+            color: mail.bodyText.isEmpty
+                ? context.palette.muted
+                : context.palette.ink,
           ),
         ),
         const SizedBox(height: 20),
@@ -353,9 +355,12 @@ class _MailContent extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         if (mail.attachments.isEmpty)
-          const Text(
+          Text(
             "첨부파일이 없어요.",
-            style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
+            style: TextStyle(
+              fontSize: AppFontSizes.secondary,
+              color: context.palette.muted,
+            ),
           )
         else
           Wrap(
@@ -393,7 +398,10 @@ class _MetaRow extends StatelessWidget {
           width: 64,
           child: Text(
             label,
-            style: const TextStyle(fontSize: AppFontSizes.body, color: muted),
+            style: TextStyle(
+              fontSize: AppFontSizes.body,
+              color: context.palette.muted,
+            ),
           ),
         ),
         Expanded(
@@ -429,7 +437,9 @@ class _AttachmentTile extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 280),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        border: Border.all(color: selected ? accent : line),
+        border: Border.all(
+          color: selected ? context.palette.accentText : context.palette.line,
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -440,7 +450,9 @@ class _AttachmentTile extends StatelessWidget {
                 ? Icons.picture_as_pdf_outlined
                 : Icons.download_outlined,
             size: 20,
-            color: selected ? accent : muted,
+            color: selected
+                ? context.palette.accentText
+                : context.palette.muted,
           ),
           const SizedBox(width: 10),
           Flexible(
@@ -459,9 +471,9 @@ class _AttachmentTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   "$extension · ${_size(attachment.sizeBytes)}",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.caption,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
               ],
@@ -507,7 +519,7 @@ class _MailError extends StatelessWidget {
         const SizedBox(height: 12),
         OutlinedButton(
           onPressed: onRetry,
-          style: WorkspaceButtonStyles.outlined,
+          style: WorkspaceButtonStyles.outlined(context),
           child: const Text("다시 시도"),
         ),
       ],
@@ -537,7 +549,7 @@ class _Decision extends StatelessWidget {
     final accept = _Choice(
       button: OutlinedButton(
         onPressed: canAccept && !busy ? onAccept : null,
-        style: WorkspaceButtonStyles.outlined,
+        style: WorkspaceButtonStyles.outlined(context),
         child: const Text("수긍하기"),
       ),
       caption: canAccept
@@ -548,7 +560,7 @@ class _Decision extends StatelessWidget {
     final start = _Choice(
       button: FilledButton.icon(
         onPressed: canStart && !busy ? onStart : null,
-        style: WorkspaceButtonStyles.filled,
+        style: WorkspaceButtonStyles.filled(context),
         icon: const Icon(Icons.travel_explore, size: 16),
         label: const Text("다른 대안 찾기"),
       ),
@@ -588,7 +600,7 @@ class _Decision extends StatelessWidget {
         ),
         if (busy) ...[
           const SizedBox(height: 12),
-          const LinearProgressIndicator(minHeight: 2, color: accent),
+          LinearProgressIndicator(minHeight: 2, color: context.palette.accent),
         ],
       ],
     );
@@ -609,9 +621,9 @@ class _Choice extends StatelessWidget {
       const SizedBox(height: 6),
       Text(
         caption,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: AppFontSizes.secondary,
-          color: muted,
+          color: context.palette.muted,
           height: 1.5,
         ),
       ),

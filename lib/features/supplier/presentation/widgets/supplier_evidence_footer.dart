@@ -13,10 +13,13 @@ class SupplierEvidenceFooter extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(28, 14, 28, 14),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
               "가격별 적용일·조건·출처를 확인하세요.",
-              style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
+              style: TextStyle(
+                fontSize: AppFontSizes.secondary,
+                color: context.palette.muted,
+              ),
             ),
           ),
           const SizedBox(width: 12),

@@ -28,7 +28,7 @@ class MailStyleSection extends StatelessWidget {
       children: [
         SegmentedButton<MailTone>(
           showSelectedIcon: false,
-          style: WorkspaceButtonStyles.segmented,
+          style: WorkspaceButtonStyles.segmented(context),
           segments: [
             for (final option in MailTone.values)
               ButtonSegment(value: option, label: Text(option.label)),

@@ -79,19 +79,19 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
       if (mounted) setState(() => _busy = false);
       if (drafts.isNotEmpty && navigatorContext.mounted) {
         // Open on the supplier that needs the buyer first.
-        final first = ([...drafts]..sort(
-                (a, b) => (a.dispatchState?.priority ?? 9).compareTo(
-                  b.dispatchState?.priority ?? 9,
-                ),
-              ))
-            .first;
+        final first =
+            ([...drafts]..sort(
+                  (a, b) => (a.dispatchState?.priority ?? 9).compareTo(
+                    b.dispatchState?.priority ?? 9,
+                  ),
+                ))
+                .first;
         await showMailDraftDialog(
           navigatorContext,
           caseId: widget.workCase.id,
           draftId: first.draftId,
           dispatchStates: {
-            for (final draft in drafts)
-              draft.draftId: ?draft.dispatchState,
+            for (final draft in drafts) draft.draftId: ?draft.dispatchState,
           },
         );
       }
@@ -132,7 +132,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
       error: (error, _) {
         if (error is WorkQueueFailure && error.code == "CANDIDATES_NOT_READY") {
           _retryLater();
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Row(
               children: [
@@ -143,7 +143,10 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 SizedBox(width: 10),
                 Text(
                   "에이전트가 견적 요청 후보를 찾고 있어요.",
-                  style: TextStyle(fontSize: AppFontSizes.body, color: muted),
+                  style: TextStyle(
+                    fontSize: AppFontSizes.body,
+                    color: context.palette.muted,
+                  ),
                 ),
               ],
             ),
@@ -151,7 +154,10 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         }
         return Text(
           error is WorkQueueFailure ? error.message : "후보 목록을 불러오지 못했어요.",
-          style: const TextStyle(fontSize: AppFontSizes.body, color: muted),
+          style: TextStyle(
+            fontSize: AppFontSizes.body,
+            color: context.palette.muted,
+          ),
         );
       },
       data: (set) {
@@ -170,9 +176,12 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               "에이전트가 이 품목을 취급하는 업체를 찾았어요. 견적을 요청할 업체를 골라 주세요.",
-              style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
+              style: TextStyle(
+                fontSize: AppFontSizes.secondary,
+                color: context.palette.muted,
+              ),
             ),
             if (set.isStale) ...[
               const SizedBox(height: 12),
@@ -183,7 +192,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                   onPressed: () => ref.invalidate(
                     caseCandidatesProvider(widget.workCase.id),
                   ),
-                  style: WorkspaceButtonStyles.text,
+                  style: WorkspaceButtonStyles.text(context),
                   child: const Text("다시 불러오기"),
                 ),
               ),
@@ -217,7 +226,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 onPressed: selected.isEmpty || _busy || !canSelect
                     ? null
                     : () => _submit(set),
-                style: WorkspaceButtonStyles.filled,
+                style: WorkspaceButtonStyles.filled(context),
                 icon: _busy
                     ? const SizedBox.square(
                         dimension: 14,
@@ -240,11 +249,9 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
               Align(
                 alignment: Alignment.centerRight,
                 child: OutlinedButton.icon(
-                  onPressed: () => showMailDraftDialog(
-                    context,
-                    caseId: widget.workCase.id,
-                  ),
-                  style: WorkspaceButtonStyles.outlined,
+                  onPressed: () =>
+                      showMailDraftDialog(context, caseId: widget.workCase.id),
+                  style: WorkspaceButtonStyles.outlined(context),
                   icon: const Icon(Icons.mail_outline, size: 16),
                   label: const Text("메일 초안 보기"),
                 ),
@@ -255,9 +262,9 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
               Text(
                 blockedReason,
                 textAlign: TextAlign.right,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: AppFontSizes.secondary,
-                  color: muted,
+                  color: context.palette.muted,
                 ),
               ),
             ],
@@ -298,8 +305,10 @@ class _CandidateTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: blocked ? const Color(0xFFF8FBF9) : Colors.white,
-        border: Border.all(color: selected ? accent : line),
+        color: blocked ? context.palette.panel : context.palette.surface,
+        border: Border.all(
+          color: selected ? context.palette.accentText : context.palette.line,
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
@@ -312,8 +321,11 @@ class _CandidateTile extends StatelessWidget {
             children: [
               Checkbox(
                 value: selected,
-                activeColor: accent,
-                onChanged: enabled ? (value) => onChanged(value ?? false) : null,
+                activeColor: context.palette.accent,
+                checkColor: context.palette.onAccent,
+                onChanged: enabled
+                    ? (value) => onChanged(value ?? false)
+                    : null,
               ),
               const SizedBox(width: 4),
               Expanded(
@@ -331,7 +343,9 @@ class _CandidateTile extends StatelessWidget {
                           style: TextStyle(
                             fontSize: AppFontSizes.bodyLarge,
                             fontWeight: FontWeight.w700,
-                            color: blocked ? muted : ink,
+                            color: blocked
+                                ? context.palette.muted
+                                : context.palette.ink,
                           ),
                         ),
                         if (candidate.webCandidate)
@@ -339,9 +353,9 @@ class _CandidateTile extends StatelessWidget {
                         if (candidate.preferenceScore != null)
                           Text(
                             "선호 ${candidate.preferenceScore}점",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: AppFontSizes.caption,
-                              color: muted,
+                              color: context.palette.muted,
                             ),
                           ),
                       ],
@@ -349,9 +363,9 @@ class _CandidateTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       candidate.contactEmail ?? "연락처 없음 · 견적 요청 불가",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: AppFontSizes.secondary,
-                        color: muted,
+                        color: context.palette.muted,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -363,9 +377,9 @@ class _CandidateTile extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         "추천 이유 · ${candidate.reason}",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: AppFontSizes.secondary,
-                          color: muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],
@@ -392,9 +406,9 @@ class _CandidateTile extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         "확인 못 한 항목 · ${candidate.unknownFields.map(unknownFieldLabel).join(", ")}",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: AppFontSizes.secondary,
-                          color: muted,
+                          color: context.palette.muted,
                         ),
                       ),
                     ],
@@ -437,7 +451,11 @@ class _CheckChip extends StatelessWidget {
         const Color(0xFFF6EEDC),
         Icons.close,
       ),
-      CheckState.unknown => (muted, const Color(0xFFEEF2F0), Icons.help_outline),
+      CheckState.unknown => (
+        context.palette.muted,
+        context.palette.line,
+        Icons.help_outline,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -487,30 +505,33 @@ class _Notice extends StatelessWidget {
   const _Notice({
     required this.icon,
     required this.text,
-    this.color = muted,
+    this.color,
     this.action,
   });
 
   final IconData icon;
   final String text;
-  final Color color;
+  final Color? color;
   final Widget? action;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     decoration: BoxDecoration(
-      color: const Color(0xFFF8FBF9),
+      color: context.palette.panel,
       borderRadius: BorderRadius.circular(12),
     ),
     child: Row(
       children: [
-        Icon(icon, size: 15, color: color),
+        Icon(icon, size: 15, color: color ?? context.palette.muted),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
-            style: TextStyle(fontSize: AppFontSizes.secondary, color: color),
+            style: TextStyle(
+              fontSize: AppFontSizes.secondary,
+              color: color ?? context.palette.muted,
+            ),
           ),
         ),
         ?action,

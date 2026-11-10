@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:google_fonts/google_fonts.dart";
+import "package:shared_preferences/shared_preferences.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 
 import "app/app_config.dart";
@@ -9,113 +10,117 @@ import "features/auth/data/auth_session_data_source.dart";
 import "features/auth/data/provider_token_free_local_storage.dart";
 import "features/auth/presentation/auth_session_view_model.dart";
 import "features/auth/presentation/gmail_connection_view_model.dart";
+import "shared/theme/workspace_theme.dart";
 import "shared/workspace_colors.dart";
 
-final appTheme = _buildTheme();
-
-ThemeData _buildTheme() {
+ThemeData buildAppTheme(WorkspacePalette p) {
   final base = ThemeData(
+    extensions: [p],
     colorScheme: ColorScheme.fromSeed(
-      seedColor: accent,
-      primary: accent,
+      seedColor: p.accent,
+      brightness: p.brightness,
+      primary: p.accent,
+      onPrimary: p.onAccent,
       error: danger,
-      surface: Colors.white,
+      surface: p.surface,
+      onSurface: p.ink,
     ),
-    scaffoldBackgroundColor: canvas,
+    scaffoldBackgroundColor: p.canvas,
     useMaterial3: true,
     // IBM Plex Sans KR for Hangul, Latin and numbers alike.
     fontFamily: GoogleFonts.ibmPlexSansKr().fontFamily,
   );
   return base.copyWith(
     textTheme: GoogleFonts.ibmPlexSansKrTextTheme(base.textTheme)
-        .apply(bodyColor: ink, displayColor: ink),
-    dividerColor: line,
-    dividerTheme: const DividerThemeData(color: line, space: 1),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(color: accent),
+        .apply(bodyColor: p.ink, displayColor: p.ink),
+    dividerColor: p.line,
+    dividerTheme: DividerThemeData(color: p.line, space: 1),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: p.accent),
     dialogTheme: DialogThemeData(
-      backgroundColor: Colors.white,
+      backgroundColor: p.surface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      titleTextStyle: const TextStyle(
+      titleTextStyle: TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        color: ink,
+        color: p.ink,
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: p.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: line),
+        borderSide: BorderSide(color: p.line),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: line),
+        borderSide: BorderSide(color: p.line),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: accent, width: 1.5),
+        borderSide: BorderSide(color: p.accent, width: 1.5),
       ),
-      labelStyle: const TextStyle(color: muted),
-      hintStyle: const TextStyle(color: muted),
+      labelStyle: TextStyle(color: p.muted),
+      hintStyle: TextStyle(color: p.muted),
     ),
-    tabBarTheme: const TabBarThemeData(
-      labelColor: ink,
-      unselectedLabelColor: muted,
-      indicatorColor: accent,
-      dividerColor: line,
+    tabBarTheme: TabBarThemeData(
+      labelColor: p.ink,
+      unselectedLabelColor: p.muted,
+      indicatorColor: p.accent,
+      dividerColor: p.line,
     ),
     chipTheme: ChipThemeData(
       shape: const StadiumBorder(),
-      side: const BorderSide(color: line),
-      selectedColor: accent,
-      backgroundColor: Colors.white,
-      labelStyle: const TextStyle(color: ink),
+      side: BorderSide(color: p.line),
+      selectedColor: p.accent,
+      backgroundColor: p.surface,
+      labelStyle: TextStyle(color: p.ink),
     ),
     switchTheme: SwitchThemeData(
       thumbColor: const WidgetStatePropertyAll(Colors.white),
       trackColor: WidgetStateProperty.resolveWith(
-        (states) => states.contains(WidgetState.selected) ? accent : line,
+        (states) => states.contains(WidgetState.selected) ? p.accent : p.line,
       ),
       trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
     ),
     popupMenuTheme: PopupMenuThemeData(
-      color: Colors.white,
+      color: p.surface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
-        color: ink,
+        color: p.deep,
         borderRadius: BorderRadius.circular(12),
       ),
       textStyle: const TextStyle(color: Colors.white, fontSize: 13),
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: ink,
+      backgroundColor: p.deep,
+      contentTextStyle: const TextStyle(color: Colors.white),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: accent,
-        foregroundColor: Colors.white,
+        backgroundColor: p.accent,
+        foregroundColor: p.onAccent,
         shape: const StadiumBorder(),
         minimumSize: const Size(0, 40),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: accent,
-        side: const BorderSide(color: accent),
+        foregroundColor: p.accentText,
+        side: BorderSide(color: p.accentText),
         shape: const StadiumBorder(),
         minimumSize: const Size(0, 40),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: accent),
+      style: TextButton.styleFrom(foregroundColor: p.accentText),
     ),
   );
 }
@@ -138,7 +143,13 @@ Future<void> main() async {
     ),
   );
   await OAuthRedirectGrant.captureFrom(Supabase.instance.client.auth);
-  runApp(const ProviderScope(child: MyApp()));
+  final preferences = await SharedPreferences.getInstance();
+  runApp(
+    ProviderScope(
+      overrides: [sharedPreferencesProvider.overrideWithValue(preferences)],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerWidget {
@@ -156,7 +167,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: '견줘',
       debugShowCheckedModeBanner: false,
-      theme: appTheme,
+      theme: buildAppTheme(ref.watch(activePaletteProvider)),
       routerConfig: appRouter,
     );
   }
@@ -172,7 +183,7 @@ class MissingConfigApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: '견줘',
     debugShowCheckedModeBanner: false,
-    theme: appTheme,
+    theme: buildAppTheme(WorkspacePalette.houseGreen),
     home: Scaffold(
       body: Center(
         child: ConstrainedBox(

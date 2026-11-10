@@ -27,22 +27,19 @@ class ReviewProgressFooter extends StatelessWidget {
         spacing: 16,
         runSpacing: 12,
         children: [
-          Text(
-            switch (current) {
-              null => "창을 닫아도 검토는 서버에서 계속돼요.",
-              ReviewOutcome(stopped: true) => "멈춘 이유는 업무에서 확인할 수 있어요.",
-              ReviewOutcome.waitingReply => "회신이 오면 업무 큐에서 이어서 볼 수 있어요.",
-              _ => "다음 단계는 업무에서 진행해 주세요.",
-            },
-            style: const TextStyle(fontSize: 13, color: muted),
-          ),
+          Text(switch (current) {
+            null => "창을 닫아도 검토는 서버에서 계속돼요.",
+            ReviewOutcome(stopped: true) => "멈춘 이유는 업무에서 확인할 수 있어요.",
+            ReviewOutcome.waitingReply => "회신이 오면 업무 큐에서 이어서 볼 수 있어요.",
+            _ => "다음 단계는 업무에서 진행해 주세요.",
+          }, style: TextStyle(fontSize: 13, color: context.palette.muted)),
           if (current != null)
             FilledButton(
               onPressed: onViewCase,
               style: FilledButton.styleFrom(
                 fixedSize: Size(144 * scale, 44 * scale),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                backgroundColor: ink,
+                backgroundColor: context.palette.deep,
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(
                   fontSize: 15,
@@ -51,7 +48,7 @@ class ReviewProgressFooter extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                side: const BorderSide(color: ink),
+                side: BorderSide(color: context.palette.ink),
               ),
               child: const Text('업무 보기'),
             ),

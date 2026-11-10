@@ -37,10 +37,13 @@ class SupplierFormField extends StatelessWidget {
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(fontSize: AppFontSizes.body),
-        hintStyle: const TextStyle(fontSize: AppFontSizes.body, color: muted),
+        hintStyle: TextStyle(
+          fontSize: AppFontSizes.body,
+          color: context.palette.muted,
+        ),
         isDense: true,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.palette.surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 14,
@@ -48,13 +51,15 @@ class SupplierFormField extends StatelessWidget {
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(6)),
         ),
-        enabledBorder: const OutlineInputBorder(
+        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(6)),
-          borderSide: BorderSide(color: Color(0xFFA9B5B1)),
+          borderSide: BorderSide(
+            color: context.palette.muted.withValues(alpha: .45),
+          ),
         ),
-        focusedBorder: const OutlineInputBorder(
+        focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(6)),
-          borderSide: BorderSide(color: ink),
+          borderSide: BorderSide(color: context.palette.ink),
         ),
       ),
     );

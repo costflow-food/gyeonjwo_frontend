@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
+import '../../../shared/theme/theme_picker.dart';
 import '../../../shared/widgets/workspace_shell.dart';
 import '../../../shared/workspace_colors.dart';
 import '../../send_settings/presentation/send_settings_dialog.dart';
@@ -13,7 +14,7 @@ import 'auth_session_view_model.dart';
 import 'gmail_connection_view_model.dart';
 import 'widgets/auth_failure_message.dart';
 
-/// 설정: 권한 | 메일 발송 설정. 탭을 누르거나 옆으로 밀어 넘깁니다.
+/// 설정: 권한 | 메일 발송 설정 | 화면 테마. 탭을 누르거나 옆으로 밀어 넘깁니다.
 class AccountView extends StatefulWidget {
   const AccountView({super.key});
 
@@ -23,7 +24,7 @@ class AccountView extends StatefulWidget {
 
 class _AccountViewState extends State<AccountView>
     with SingleTickerProviderStateMixin {
-  static const _pages = ['권한', '메일 발송 설정'];
+  static const _pages = ['권한', '메일 발송 설정', '화면 테마'];
 
   late final TabController _tabs = TabController(
     length: _pages.length,
@@ -72,10 +73,10 @@ class _AccountViewState extends State<AccountView>
                 controller: _tabs,
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
-                labelColor: accent,
-                unselectedLabelColor: muted,
-                indicatorColor: accent,
-                dividerColor: line,
+                labelColor: context.palette.accentText,
+                unselectedLabelColor: context.palette.muted,
+                indicatorColor: context.palette.accent,
+                dividerColor: context.palette.line,
                 labelStyle: const TextStyle(
                   fontSize: AppFontSizes.navigation,
                   fontWeight: FontWeight.w700,
@@ -94,6 +95,7 @@ class _AccountViewState extends State<AccountView>
                       for (final (index, page) in const [
                         _PermissionsPage(),
                         _SendSettingsPage(),
+                        _ThemePage(),
                       ].indexed)
                         Visibility(
                           visible: index == _index,
@@ -139,10 +141,9 @@ class _PermissionsPage extends ConsumerWidget {
           AuthInfoTile(
             icon: Icons.person_outline,
             title: '구매담당자',
-            description:
-                session?.email ?? 'Google 계정 정보는 로그인 후 표시됩니다.',
+            description: session?.email ?? 'Google 계정 정보는 로그인 후 표시됩니다.',
           ),
-          const Divider(color: line),
+          Divider(color: context.palette.line),
           AuthInfoTile(
             icon: Icons.link_outlined,
             title: 'Google 계정 연결',
@@ -194,4 +195,11 @@ class _SendSettingsPage extends StatelessWidget {
     padding: EdgeInsets.only(top: 24),
     child: SendSettingsDialog(embedded: true),
   );
+}
+
+class _ThemePage extends StatelessWidget {
+  const _ThemePage();
+
+  @override
+  Widget build(BuildContext context) => const AuthCard(child: ThemePicker());
 }

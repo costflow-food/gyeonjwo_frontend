@@ -57,8 +57,10 @@ class SupplierRegisterFooter extends StatelessWidget {
               FilledButton.icon(
                 onPressed: submitting ? null : onSubmit,
                 style: FilledButton.styleFrom(
-                  backgroundColor: ink,
-                  disabledBackgroundColor: ink.withValues(alpha: .7),
+                  backgroundColor: context.palette.deep,
+                  disabledBackgroundColor: context.palette.deep.withValues(
+                    alpha: .7,
+                  ),
                   disabledForegroundColor: Colors.white,
                 ),
                 icon: submitting

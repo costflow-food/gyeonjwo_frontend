@@ -11,7 +11,11 @@ class DraftStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, background, icon) = switch (status) {
-      DraftStatus.draft => (ink, const Color(0xFFEEF2F0), Icons.edit_note),
+      DraftStatus.draft => (
+        context.palette.ink,
+        context.palette.line,
+        Icons.edit_note,
+      ),
       DraftStatus.sending => (
         const Color(0xFF2F5E8C),
         const Color(0xFFE6EEF6),

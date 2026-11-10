@@ -40,15 +40,18 @@ class SupplierItemFormList extends StatelessWidget {
                 "품목 추가",
                 style: TextStyle(fontSize: AppFontSizes.buttonSmall),
               ),
-              style: TextButton.styleFrom(foregroundColor: ink),
+              style: TextButton.styleFrom(foregroundColor: context.palette.ink),
             ),
           ],
         ),
         const SizedBox(height: 12),
         if (items.isEmpty)
-          const Text(
+          Text(
             "취급 품목 없이 등록하면 후보 선정의 취급 근거로 쓰이지 않습니다.",
-            style: TextStyle(fontSize: AppFontSizes.secondary, color: muted),
+            style: TextStyle(
+              fontSize: AppFontSizes.secondary,
+              color: context.palette.muted,
+            ),
           ),
         for (final (index, item) in items.indexed) ...[
           // ObjectKey keeps each item's fields attached after a removal.

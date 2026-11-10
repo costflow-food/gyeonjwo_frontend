@@ -7,11 +7,15 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    final palette = context.palette;
+    return Row(
       children: [
-        CustomPaint(size: Size(34, 38), painter: _BrandMark()),
-        SizedBox(width: 10),
-        Expanded(
+        CustomPaint(
+          size: const Size(34, 38),
+          painter: _BrandMark(palette.ink, palette.accent),
+        ),
+        const SizedBox(width: 10),
+        const Expanded(
           child: Text(
             '견줘',
             style: TextStyle(
@@ -27,7 +31,9 @@ class BrandLogo extends StatelessWidget {
 }
 
 class _BrandMark extends CustomPainter {
-  const _BrandMark();
+  const _BrandMark(this.ink, this.dot);
+
+  final Color ink, dot;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -53,9 +59,10 @@ class _BrandMark extends CustomPainter {
         ..lineTo(17, 33),
       paint,
     );
-    canvas.drawCircle(const Offset(29, 4), 3, Paint()..color = accent);
+    canvas.drawCircle(const Offset(29, 4), 3, Paint()..color = dot);
   }
 
   @override
-  bool shouldRepaint(_BrandMark oldDelegate) => false;
+  bool shouldRepaint(_BrandMark oldDelegate) =>
+      oldDelegate.ink != ink || oldDelegate.dot != dot;
 }

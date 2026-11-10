@@ -31,11 +31,11 @@ class WorkflowLogRow extends StatelessWidget {
       selected: selected,
       button: true,
       child: Material(
-        color: selected ? Colors.white : Colors.transparent,
+        color: selected ? context.palette.surface : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: selected
-              ? const BorderSide(color: accent, width: 1.5)
+              ? BorderSide(color: context.palette.accentText, width: 1.5)
               : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
@@ -55,7 +55,9 @@ class WorkflowLogRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: AppFontSizes.body,
                           fontWeight: FontWeight.w700,
-                          color: entry.caseTitle == null ? muted : ink,
+                          color: entry.caseTitle == null
+                              ? context.palette.muted
+                              : context.palette.ink,
                         ),
                       ),
                     ),
@@ -78,9 +80,9 @@ class WorkflowLogRow extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   meta,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppFontSizes.caption,
-                    color: muted,
+                    color: context.palette.muted,
                   ),
                 ),
               ],
