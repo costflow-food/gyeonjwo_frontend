@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/widgets/sign_out_action.dart';
-import '../../features/mailbox_sync/presentation/widgets/mailbox_sync_banner.dart';
-import '../../features/server_status/presentation/widgets/server_status_banner.dart';
 import '../app_font_sizes.dart';
 import '../workspace_colors.dart';
 import 'brand_logo.dart';
@@ -95,8 +93,6 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  const ServerStatusBanner(),
-                                  const MailboxSyncBanner(),
                                   Expanded(child: _body()),
                                 ],
                               ),
