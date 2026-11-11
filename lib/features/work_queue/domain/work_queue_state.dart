@@ -95,6 +95,7 @@ class WorkQueueState {
     required String? nextCursor,
     required bool loadingMore,
     WorkQueueCounts? counts,
+    int? allWaiting,
   }) => WorkQueueState(
     items: items,
     counts: counts ?? this.counts,
@@ -103,6 +104,6 @@ class WorkQueueState {
     query: query,
     selectedId: selectedId,
     loadingMore: loadingMore,
-    allWaiting: allWaiting,
+    allWaiting: allWaiting ?? this.allWaiting,
   );
 }

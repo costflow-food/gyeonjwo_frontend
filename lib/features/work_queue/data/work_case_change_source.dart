@@ -7,13 +7,26 @@ part "work_case_change_source.g.dart";
 
 /// Supabase Realtime "work_cases changed" signal.
 ///
-/// It carries no data on purpose: listeners re-read the queue through
-/// API-01, so mail bodies and DTOs still come only from the server API.
-/// The owner_read RLS policy limits insert/update events to the owner.
+/// It carries only the case id on purpose: listeners re-read that case
+/// (API-02) or the queue (API-01), so DTOs still come only from the server
+/// API. The owner_read RLS policy limits insert/update events to the owner.
 abstract interface class WorkCaseChangeSource {
-  /// Emits an increasing number on every change, and once after each
-  /// (re)connect because changes may have been missed while disconnected.
-  Stream<int> watch();
+  /// Emits on every change, and once after each (re)connect because changes
+  /// may have been missed while disconnected.
+  Stream<WorkCaseChange> watch();
+}
+
+enum WorkCaseChangeKind { resync, inserted, updated, deleted }
+
+class WorkCaseChange {
+  const WorkCaseChange(this.sequence, this.kind, [this.caseId]);
+
+  /// Increases with every signal.
+  final int sequence;
+  final WorkCaseChangeKind kind;
+
+  /// null for [WorkCaseChangeKind.resync]: anything may have changed.
+  final String? caseId;
 }
 
 @Riverpod(keepAlive: true)
@@ -26,11 +39,11 @@ class SupabaseWorkCaseChangeSource implements WorkCaseChangeSource {
   final SupabaseClient _client;
 
   @override
-  Stream<int> watch() {
+  Stream<WorkCaseChange> watch() {
     var count = 0;
     RealtimeChannel? channel;
-    late final StreamController<int> controller;
-    controller = StreamController<int>(
+    late final StreamController<WorkCaseChange> controller;
+    controller = StreamController<WorkCaseChange>(
       onListen: () {
         channel = _client
             .channel("work-cases-changes")
@@ -38,12 +51,14 @@ class SupabaseWorkCaseChangeSource implements WorkCaseChangeSource {
               event: PostgresChangeEvent.all,
               schema: "public",
               table: "work_cases",
-              // The row payload is ignored; data comes from the API.
-              callback: (_) => controller.add(++count),
+              // Only the id is read; data comes from the API.
+              callback: (payload) => controller.add(_change(++count, payload)),
             )
             .subscribe((status, _) {
               if (status == RealtimeSubscribeStatus.subscribed) {
-                controller.add(++count);
+                controller.add(
+                  WorkCaseChange(++count, WorkCaseChangeKind.resync),
+                );
               }
             });
       },
@@ -54,5 +69,24 @@ class SupabaseWorkCaseChangeSource implements WorkCaseChangeSource {
       },
     );
     return controller.stream;
+  }
+
+  /// A delete event carries only the primary key (`id`) in the old record.
+  static WorkCaseChange _change(int sequence, PostgresChangePayload payload) {
+    final (kind, record) = switch (payload.eventType) {
+      PostgresChangeEvent.insert => (
+        WorkCaseChangeKind.inserted,
+        payload.newRecord,
+      ),
+      PostgresChangeEvent.delete => (
+        WorkCaseChangeKind.deleted,
+        payload.oldRecord,
+      ),
+      _ => (WorkCaseChangeKind.updated, payload.newRecord),
+    };
+    final id = record["id"];
+    return id is String
+        ? WorkCaseChange(sequence, kind, id)
+        : WorkCaseChange(sequence, WorkCaseChangeKind.resync);
   }
 }

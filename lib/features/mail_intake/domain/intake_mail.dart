@@ -85,23 +85,31 @@ class IntakeMail {
 }
 
 /// "RE:", "Re :", "회신:", "답장:" 같은 답장 제목 접두어.
-final _replySubject = RegExp(
-  r"^\s*(re|회신|답장)\s*[:：]",
-  caseSensitive: false,
-);
+final _replySubject = RegExp(r"^\s*(re|회신|답장)\s*[:：]", caseSensitive: false);
 
 class IntakePage {
   const IntakePage({
     required this.items,
     required this.totalPending,
     this.nextCursor,
+    this.loadingMore = false,
   });
 
   final List<IntakeMail> items;
 
   /// Same count as API-01 intake_pending.
   final int totalPending;
+
+  /// Set while more mails wait on the server ("더 불러오기").
   final String? nextCursor;
+  final bool loadingMore;
+
+  IntakePage withLoadingMore(bool loading) => IntakePage(
+    items: items,
+    totalPending: totalPending,
+    nextCursor: nextCursor,
+    loadingMore: loading,
+  );
 }
 
 class IntakeFailure implements Exception {

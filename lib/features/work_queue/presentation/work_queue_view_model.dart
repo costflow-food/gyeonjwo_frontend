@@ -3,6 +3,7 @@ import "dart:typed_data";
 
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/app_visibility.dart";
 import "../../auth/presentation/auth_session_view_model.dart";
 import "../../mail_draft/data/mail_draft_repository_impl.dart";
 import "../../review_progress/data/review_progress_repository_impl.dart";
@@ -23,8 +24,13 @@ Duration? _noRetry(int retryCount, Object error) => null;
 @Riverpod(keepAlive: true, retry: _noRetry)
 class WorkQueueViewModel extends _$WorkQueueViewModel {
   /// Fallback when Realtime is down or misses a change (08 §11: 15 seconds).
-  /// Any reload restarts it, so it only fires after a quiet interval.
+  /// Any reload restarts it, so it only fires after a quiet interval. It
+  /// waits while the browser tab is hidden.
   static const pollInterval = Duration(seconds: 15);
+
+  /// Changed cases re-read one by one (API-02) per burst; past this the
+  /// whole queue is cheaper to re-read.
+  static const maxCaseReads = 5;
 
   String? _selectedId;
   Timer? _refreshTimer;
@@ -48,6 +54,21 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   /// not change counts), for the home summary.
   int? _allWaiting;
 
+  /// Bumped by every read that replaces or extends the list (load, poll,
+  /// load more, changed cases). A response is applied only while its
+  /// generation is still the newest, so a late response, such as one for
+  /// the previous search, never overwrites a newer list.
+  int _generation = 0;
+
+  /// Realtime changes not applied yet: case id to "deleted". [_reloadAll]
+  /// asks for a whole re-read instead (reconnect, a new case).
+  final _changed = <String, bool>{};
+  bool _reloadAll = false;
+  bool _readingChanges = false;
+
+  /// A poll came due while the tab was hidden; it runs when the tab shows.
+  bool _pollWaiting = false;
+
   @override
   Future<WorkQueueState> build() async {
     ref.onDispose(() {
@@ -55,16 +76,28 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       _poll?.cancel();
     });
     _extended = false;
+    // This load covers every change signalled so far.
+    _changed.clear();
+    _reloadAll = false;
+    _generation++;
     // Supabase says a case changed (new mail, AI step, deletion): re-read
-    // the queue so only the widgets showing that case update.
+    // only that case so only the widgets showing it update.
     ref.listen(workCaseChangesProvider, (_, next) {
-      if (next.hasValue) _refreshSoon();
+      final change = next.value;
+      if (change != null) _onChange(change);
+    });
+    ref.listen(appVisibleProvider, (_, visible) {
+      if (visible) _catchUp();
     });
     try {
       return _fromPage(await _fetchAll(ref.watch(workQueueRepositoryProvider)));
     } finally {
       // Also after a failed first load, so the queue recovers by itself (S1-7).
       _schedulePoll();
+      // Changes that arrived while this load was running.
+      if ((_changed.isNotEmpty || _reloadAll) && ref.read(appVisibleProvider)) {
+        _readChangesSoon();
+      }
     }
   }
 
@@ -143,11 +176,15 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   }
 
   /// Replaces the list without a loading state, so the queue does not
-  /// flash. Uses the open search and keeps the open tab; a result for a
-  /// search the user has since changed is dropped. Skipped while signed out
-  /// or after load more; a failure keeps what is shown and the next poll
-  /// tries again. After a failed load it keeps trying until the list shows.
+  /// flash. Uses the open search and keeps the open tab. Skipped while
+  /// signed out or after load more, and waits while the tab is hidden; a
+  /// failure keeps what is shown and the next poll tries again. After a
+  /// failed load it keeps trying until the list shows.
   Future<void> _pollNow() async {
+    if (!ref.read(appVisibleProvider)) {
+      _pollWaiting = true;
+      return;
+    }
     final signedIn =
         ref.read(authSessionViewModelProvider).asData?.value.isSignedIn ??
         false;
@@ -157,29 +194,220 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     final failed = state.hasError && !state.isLoading;
     if (signedIn &&
         (failed || (current != null && !_extended && !current.loadingMore))) {
-      final query = _query;
+      final generation = ++_generation;
+      // A whole re-read covers every change signalled so far.
+      final covered = Map.of(_changed);
+      final reloadAll = _reloadAll;
+      _changed.clear();
+      _reloadAll = false;
+      var applied = false;
+      var dropped = false;
       try {
         final page = await _fetchAll(ref.read(workQueueRepositoryProvider));
         if (!ref.mounted) return;
-        if (!_extended &&
-            query == _query &&
-            (state.hasValue || state.hasError) &&
-            !state.isLoading) {
-          state = AsyncData(_fromPage(page));
-        }
+        applied = generation == _generation;
+        dropped = !applied;
+        if (applied) state = AsyncData(_fromPage(page));
       } catch (_) {
         if (!ref.mounted) return;
+      }
+      if (!applied) {
+        // Not shown: those changes still need a read. After a failure the
+        // next poll covers them.
+        for (final entry in covered.entries) {
+          _changed.putIfAbsent(entry.key, () => entry.value);
+        }
+        _reloadAll = _reloadAll || reloadAll;
+        if (dropped && (_changed.isNotEmpty || _reloadAll)) _readChangesSoon();
       }
     }
     if (ref.mounted) _schedulePoll();
   }
 
-  /// One reload for a burst of changes (e.g. one mail touching several rows).
-  void _refreshSoon() {
+  /// The tab shows again: run the poll that came due, or the changes that
+  /// arrived while it was hidden.
+  void _catchUp() {
+    if (_pollWaiting) {
+      _pollWaiting = false;
+      // Takes the pending changes along unless it is skipped.
+      _pollNow();
+    }
+    if (_reloadAll || _changed.isNotEmpty) _readChangesSoon();
+  }
+
+  void _onChange(WorkCaseChange change) {
+    final caseId = change.caseId;
+    if (caseId == null || change.kind == WorkCaseChangeKind.inserted) {
+      // A new case needs its title, sender and place in the search: API-01.
+      _reloadAll = true;
+    } else {
+      _changed[caseId] = change.kind == WorkCaseChangeKind.deleted;
+    }
+    // A hidden tab reads nothing; [_catchUp] runs these when it shows.
+    if (ref.read(appVisibleProvider)) _readChangesSoon();
+  }
+
+  /// One read for a burst of changes (e.g. one mail touching several rows).
+  void _readChangesSoon() {
     _refreshTimer?.cancel();
     _refreshTimer = Timer(const Duration(milliseconds: 300), () {
-      if (ref.mounted) ref.invalidateSelf();
+      if (ref.mounted) _readChanges();
     });
+  }
+
+  /// Re-reads only the changed cases (API-02) and swaps them into the list;
+  /// a deleted case leaves it. Falls back to re-reading the whole queue for
+  /// a new case, a reconnect, many changes, a linked reply (its reply
+  /// summary is only in API-01), or a failed read.
+  Future<void> _readChanges() async {
+    // A running read, load or load more schedules these when it ends.
+    if (_readingChanges || state.isLoading) return;
+    final current = state.hasValue ? state.requireValue : null;
+    if (current?.loadingMore ?? false) return;
+    if (_reloadAll || current == null || _changed.length > maxCaseReads) {
+      ref.invalidateSelf();
+      return;
+    }
+    final changed = Map.of(_changed);
+    _changed.clear();
+    final listed = {
+      for (final workCase in current.items) workCase.id: workCase,
+    };
+    final wholeList = current.nextCursor == null && _query.isEmpty;
+    final reads = <WorkCase>[];
+    final deleted = <String>{};
+    for (final MapEntry(key: id, value: gone) in changed.entries) {
+      final workCase = listed[id];
+      if (workCase == null) {
+        // Missing from a list that holds every case: it may have come back
+        // (restored), which only API-01 can place. Otherwise it is outside
+        // this search or past the loaded pages.
+        if (!gone && wholeList) {
+          ref.invalidateSelf();
+          return;
+        }
+      } else if (gone) {
+        deleted.add(id);
+      } else {
+        reads.add(workCase);
+      }
+    }
+    if (reads.isEmpty && deleted.isEmpty) return;
+    final generation = ++_generation;
+    _readingChanges = true;
+    List<WorkCase?>? fresh;
+    try {
+      final repository = ref.read(workQueueRepositoryProvider);
+      fresh = await Future.wait([
+        for (final workCase in reads) repository.refreshCase(workCase),
+      ]);
+    } catch (_) {
+      // Handled below: a whole re-read, unless a newer read won.
+    } finally {
+      _readingChanges = false;
+    }
+    if (!ref.mounted) return;
+    if (generation != _generation) {
+      // A newer read won. Keep these cases for the next round; reading
+      // them again is cheap and never stale.
+      for (final entry in changed.entries) {
+        _changed.putIfAbsent(entry.key, () => entry.value);
+      }
+      _readChangesSoon();
+      return;
+    }
+    if (fresh == null) {
+      ref.invalidateSelf();
+      return;
+    }
+    final replaced = <String, WorkCase>{};
+    for (var index = 0; index < reads.length; index++) {
+      final before = reads[index];
+      final after = fresh[index];
+      if (after == null) {
+        deleted.add(before.id); // Archived: it leaves the queue.
+      } else if (after.inputRevision != before.inputRevision) {
+        ref.invalidateSelf();
+        return;
+      } else {
+        replaced[before.id] = after;
+      }
+    }
+    _apply(current, replaced, deleted);
+    if (_changed.isNotEmpty || _reloadAll) _readChangesSoon();
+    _schedulePoll();
+  }
+
+  /// Swaps the re-read cases into the list as it is now (the tab may have
+  /// changed meanwhile) and drops the deleted ones.
+  void _apply(
+    WorkQueueState read,
+    Map<String, WorkCase> replaced,
+    Set<String> deleted,
+  ) {
+    final current = state.value ?? read;
+    final items = List<WorkCase>.unmodifiable([
+      for (final workCase in current.items)
+        if (!deleted.contains(workCase.id)) replaced[workCase.id] ?? workCase,
+    ]);
+    final counts = current.nextCursor == null
+        ? WorkQueueCounts.fromCases(items)
+        : _shift(current.counts, [
+            for (final workCase in current.items)
+              if (deleted.contains(workCase.id))
+                (workCase, null)
+              else if (replaced[workCase.id] case final after?)
+                (workCase, after),
+          ]);
+    if (_query.isEmpty) _allWaiting = counts.waiting;
+    if (deleted.contains(_selectedId)) _selectedId = null;
+    state = AsyncData(
+      WorkQueueState(
+        items: items,
+        counts: counts,
+        nextCursor: current.nextCursor,
+        status: _status,
+        query: current.query,
+        selectedId: _selectedId,
+        allWaiting: _allWaiting,
+      ),
+    );
+  }
+
+  /// Server counts moved by the cases that changed tabs or left, for a
+  /// list that does not hold every case.
+  static WorkQueueCounts _shift(
+    WorkQueueCounts counts,
+    List<(WorkCase, WorkCase?)> changes,
+  ) {
+    var waiting = counts.waiting;
+    var running = counts.running;
+    var complete = counts.complete;
+    var total = counts.total;
+    void add(WorkCase workCase, int delta) {
+      total += delta;
+      switch (workCase.status.tab) {
+        case WorkCaseStatus.waiting:
+          waiting += delta;
+        case WorkCaseStatus.running:
+          running += delta;
+        case WorkCaseStatus.complete:
+          complete += delta;
+        default:
+          break;
+      }
+    }
+
+    for (final (before, after) in changes) {
+      add(before, -1);
+      if (after != null) add(after, 1);
+    }
+    return WorkQueueCounts(
+      waiting: waiting,
+      running: running,
+      complete: complete,
+      total: total,
+    );
   }
 
   void select(String? caseId) {
@@ -189,9 +417,12 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   }
 
   Future<void> loadMore() async {
-    final current = state.hasValue ? state.requireValue : null;
+    final current = state.hasValue && !state.isLoading
+        ? state.requireValue
+        : null;
     final cursor = current?.nextCursor;
     if (current == null || cursor == null || current.loadingMore) return;
+    final generation = ++_generation;
     _extended = true;
     state = AsyncData(
       current.withMore(
@@ -204,7 +435,8 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       final page = await ref
           .read(workQueueRepositoryProvider)
           .getCases(query: _query, cursor: cursor, limit: pageSize);
-      if (!ref.mounted) return;
+      // A newer load (e.g. another search) replaced the list meanwhile.
+      if (!ref.mounted || generation != _generation) return;
       final items = List<WorkCase>.unmodifiable([
         ...current.items,
         ...page.items,
@@ -220,11 +452,18 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
               nextCursor: page.nextCursor,
               loadingMore: false,
               counts: counts,
+              allWaiting: _allWaiting,
             ),
       );
     } catch (_) {
       // Keep what is shown; the user can press load more again.
-      if (ref.mounted) state = AsyncData(current.withStatus(_status));
+      if (ref.mounted && generation == _generation) {
+        state = AsyncData(current.withStatus(_status));
+      }
+    }
+    // Changes that arrived while the page was loading.
+    if (ref.mounted && (_changed.isNotEmpty || _reloadAll)) {
+      _readChangesSoon();
     }
   }
 
@@ -307,7 +546,7 @@ Future<Uint8List> attachmentContent(
 
 /// Realtime change signal while signed in; nothing when signed out.
 @Riverpod(keepAlive: true)
-Stream<int> workCaseChanges(Ref ref) {
+Stream<WorkCaseChange> workCaseChanges(Ref ref) {
   // AuthSession compares by status and email, so token refreshes do not
   // resubscribe.
   final signedIn =
