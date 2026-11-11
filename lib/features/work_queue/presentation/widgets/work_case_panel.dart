@@ -208,8 +208,6 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       data: (mail) => _MailContent(
         mail: mail,
         compact: true,
-        // Once the review runs, the step comes first and the mail folds.
-        collapsed: !notStarted && !atCandidates,
         openAttachmentId: null,
         onOpen: (attachment) => _openAttachmentPage(mail.id, attachment),
         onDownload: (attachment) => _download(mail.id, attachment),
@@ -434,14 +432,10 @@ class _MailContent extends StatelessWidget {
     required this.onOpen,
     required this.onDownload,
     this.compact = false,
-    this.collapsed = false,
   });
 
   /// Phone: smaller title, folded body, attachments in one sliding row.
   final bool compact;
-
-  /// Phone, after the review started: only the subject and sender.
-  final bool collapsed;
 
   final OriginalMail mail;
   final String? openAttachmentId;
@@ -451,7 +445,6 @@ class _MailContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (compact && collapsed) return _CollapsedMail(mail: mail, full: this);
     final tiles = [
       for (final attachment in mail.attachments)
         _AttachmentTile(
@@ -524,67 +517,6 @@ class _MailContent extends StatelessWidget {
           )
         else
           Wrap(spacing: 8, runSpacing: 8, children: tiles),
-      ],
-    );
-  }
-}
-
-/// Phone, after the review started: subject and sender; the rest on demand.
-class _CollapsedMail extends StatefulWidget {
-  const _CollapsedMail({required this.mail, required this.full});
-
-  final OriginalMail mail;
-  final _MailContent full;
-
-  @override
-  State<_CollapsedMail> createState() => _CollapsedMailState();
-}
-
-class _CollapsedMailState extends State<_CollapsedMail> {
-  bool _open = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final full = widget.full;
-    if (_open) {
-      return _MailContent(
-        mail: widget.mail,
-        compact: true,
-        openAttachmentId: full.openAttachmentId,
-        onOpen: full.onOpen,
-        onDownload: full.onDownload,
-      );
-    }
-    final mail = widget.mail;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          mail.subject,
-          style: const TextStyle(
-            fontSize: AppFontSizes.cardTitle,
-            fontWeight: FontWeight.w700,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          "${mail.sender} · ${formatSeoulDateTime(mail.receivedAt)}",
-          style: TextStyle(
-            fontSize: AppFontSizes.secondary,
-            color: context.palette.muted,
-          ),
-        ),
-        TextButton(
-          onPressed: () => setState(() => _open = true),
-          style: WorkspaceButtonStyles.text(context)
-              .copyWith(padding: const WidgetStatePropertyAll(EdgeInsets.zero)),
-          child: Text(
-            mail.attachments.isEmpty
-                ? "원문 보기"
-                : "원문 보기 · 첨부 ${mail.attachments.length}",
-          ),
-        ),
       ],
     );
   }
