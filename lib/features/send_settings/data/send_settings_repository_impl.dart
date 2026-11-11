@@ -1,6 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/idempotency_key.dart";
+import "../../../shared/network/api_request.dart";
 
 import "../../mail_draft/domain/mail_draft.dart";
 import "../domain/send_settings.dart";
@@ -57,20 +58,19 @@ class SendSettingsRepositoryImpl implements SendSettingsRepository {
       }),
       // Keep the key when the outcome is unknown so a retry cannot save twice.
       serverCode: (error) =>
-          error is SendSettingsFailure && !error.unknownOutcome
-          ? error.code
-          : null,
+          error is SendSettingsFailure && !error.retryable ? error.code : null,
     );
   }
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
       return await request();
-    } on SendSettingsApiException catch (error) {
+    } on ApiException catch (error) {
       throw SendSettingsFailure(
         error.code,
         error.message,
         unknownOutcome: error.unknownOutcome,
+        retryable: error.retryable,
       );
     }
   }

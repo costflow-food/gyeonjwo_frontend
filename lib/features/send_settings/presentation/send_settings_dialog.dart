@@ -158,6 +158,9 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
         // Show the newer version; the listener re-seeds once it settles.
         _loadedVersion = null;
         ref.read(sendSettingsViewModelProvider(_scope).notifier).refresh();
+      } else if (failure.retryable) {
+        // It may have been saved; read it again but keep the edits.
+        ref.read(sendSettingsViewModelProvider(_scope).notifier).refresh();
       }
       setState(() {
         _saving = false;

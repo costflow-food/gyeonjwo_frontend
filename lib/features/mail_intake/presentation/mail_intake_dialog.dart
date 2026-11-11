@@ -164,6 +164,10 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
       });
     } on IntakeFailure catch (failure) {
       if (!mounted) return;
+      // A retryable failure may still have gone through; read it again.
+      if (failure.retryable) {
+        ref.read(mailIntakeViewModelProvider.notifier).refresh();
+      }
       setState(() {
         _busy = false;
         _error = failure.unknownOutcome

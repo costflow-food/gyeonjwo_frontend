@@ -135,6 +135,11 @@ class ApiAccountConnectionDataSource implements AccountConnectionDataSource {
         retryable: true,
       );
     }
-    return AuthFailure(AuthFailureCode.serverRejected, serverCode: serverCode);
+    return AuthFailure(
+      AuthFailureCode.serverRejected,
+      serverCode: serverCode,
+      retryable:
+          errorBody is Map<String, dynamic> && errorBody["retryable"] == true,
+    );
   }
 }

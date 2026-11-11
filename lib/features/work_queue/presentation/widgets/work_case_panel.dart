@@ -150,7 +150,8 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       return true;
     } on WorkQueueFailure catch (failure) {
       if (!mounted) return false;
-      if (failure.caseChanged) _viewModel.refresh();
+      // A retryable failure may still have gone through; read it again.
+      if (failure.caseChanged || failure.retryable) _viewModel.refresh();
       setState(() {
         _busy = false;
         _error = failure.unknownOutcome
