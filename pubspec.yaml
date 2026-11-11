@@ -41,6 +41,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/branding/logo.png
     - assets/branding/google/g-logo.png
 
   fonts:
