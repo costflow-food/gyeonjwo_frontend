@@ -100,7 +100,7 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
   });
 
   /// 회신으로 보이는 메일을 새 업무로 만들면 원래 업무와 Work ID가 갈라지고,
-  /// 나중에 원래 업무에 다시 연결할 수 없습니다(E2E S5-11). 한 번 더 묻습니다.
+  /// 나중에 원래 업무에 다시 연결할 수 없습니다. 한 번 더 묻습니다.
   Future<bool> _confirmCreateFromReply() async {
     final confirmed = await showDialog<bool>(
       context: context,

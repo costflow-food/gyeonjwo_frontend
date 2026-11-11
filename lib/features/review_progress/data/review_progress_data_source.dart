@@ -7,7 +7,6 @@ import "../../work_queue/data/work_queue_data_source.dart";
 
 part "review_progress_data_source.g.dart";
 
-/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 @Riverpod(keepAlive: true)
 ReviewProgressDataSource reviewProgressDataSource(Ref ref) =>
     ApiReviewProgressDataSource(

@@ -26,7 +26,7 @@ enum ServerFeature {
 /// 서버가 지금 무엇을 할 수 있는지(`GET /ready`).
 ///
 /// 서버에 닿지 못했거나 응답을 이해하지 못하면 [unknown]으로 두고 아무것도 안내하지
-/// 않습니다. `/health`의 mail_sending_enabled는 BE에서 없어져 읽지 않습니다.
+/// 않습니다.
 class ServerStatus {
   const ServerStatus({this.notReady = false, this.degraded});
 

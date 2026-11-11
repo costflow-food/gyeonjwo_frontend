@@ -1,102 +1,99 @@
 # 견줘 Flutter 프론트엔드
 
-실제 API를 사용하는 MVVM 구조입니다.
+견줘 서버 API를 쓰는 Flutter Web 앱입니다. Chrome을 기준으로 개발·검증합니다.
 
-## 개발 대상
+## 실행
 
-Chrome에서 실행하는 Flutter Web을 기준으로 개발·검증합니다. 실행은 `flutter run -d chrome`, 배포용 빌드는 `flutter build web --release`를 사용합니다.
+`config/dart_defines.example.json`을 복사해 `config/dart_defines.local.json`을 만들고 값을 채웁니다. `*.local.json`은 Git에 올리지 않습니다.
 
-사용하지 않는 `android/`, `ios/`, `macos/`, `windows/` 네이티브 프로젝트를 정리했습니다. `web/`은 버전 관리하며, 테스트 소스인 `test/`는 로컬에 보관하고 Git 추적에서 제외합니다. React 비교 구현은 `feature/react-frontend` 브랜치에 보관하며, 로컬에 남는 React 의존성과 빌드·테스트 생성물은 공용 `.gitignore`로 제외합니다.
+| 키 | 값 |
+| --- | --- |
+| `SUPABASE_URL` | Supabase 프로젝트 주소 |
+| `SUPABASE_PUBLISHABLE_KEY` | Supabase publishable 키 |
+| `API_BASE_URL` | 견줘 API 서버 주소 |
 
-## 데이터 흐름
+```sh
+flutter pub get
+flutter run -d chrome --dart-define-from-file=config/dart_defines.local.json
+flutter analyze
+```
 
-View → ViewModel → Repository → DataSource 순서로 요청하고, 응답은 반대 방향으로 전달합니다.
+공개해도 되는 값만 넣습니다(`lib/app/app_config.dart`). 값이 빠지면 앱은 실행 설정 안내 화면을 띄웁니다.
+
+## 폴더 구조
+
+```
+lib/
+  main.dart        앱 시작, Supabase 초기화, 테마 적용
+  app/             설정값(app_config), 라우팅(app_router), 없는 경로 화면
+  features/        기능별 data / domain / presentation
+  shared/          여러 기능이 함께 쓰는 코드
+```
+
+### features
+
+| 폴더 | 내용 |
+| --- | --- |
+| `auth` | Google 로그인, Gmail 연결, 설정 화면(`/account`) |
+| `work_queue` | 업무 큐(`/`, `/cases/:caseId`), 원문·첨부, 후보 선택 |
+| `review_progress` | 검토 진행 팝업 |
+| `purchase_review` | 검토 카드(`/cases/:caseId/review`) |
+| `mail_draft` | 메일 초안·발송 모달 |
+| `send_settings` | 발송·메일 스타일 설정 모달 |
+| `mail_intake` | 접수·연결 확인 모달 |
+| `supplier` | 거래처 조회(`/suppliers`)와 근거·가격 이력 모달 |
+| `source_document` | 원문·근거 보기 모달 |
+| `workflow_log` | 실행 로그(`/logs`) |
+| `server_status` | 서버 준비 상태(`GET /ready`) |
+
+각 기능은 View → ViewModel → Repository → DataSource 순서로 요청합니다.
 
 | 위치 | 책임 |
 | --- | --- |
-| `features/기능/data/*_data_source.dart` | 실제 API 호출 |
-| `features/기능/data/*_repository_impl.dart` | JSON 응답을 앱 모델로 변환 |
-| `features/기능/domain/` | 앱 모델과 Repository 인터페이스 |
-| `features/기능/presentation/*_view_model.dart` | Riverpod 상태, 조회·새로고침·검색·필터 |
-| `features/기능/presentation/*_view.dart` | 로딩·오류·데이터에 따른 화면 표시 |
-| `features/기능/presentation/widgets/` | 해당 기능의 화면 구성 요소 |
-| `shared/widgets/` | 여러 기능이 사용하는 공용 위젯 |
+| `data/*_data_source.dart` | API 호출 |
+| `data/*_repository_impl.dart` | JSON 응답을 앱 모델로 변환 |
+| `domain/` | 앱 모델, Repository 인터페이스, 화면 규칙 |
+| `presentation/*_view_model.dart` | Riverpod 상태 |
+| `presentation/*_view.dart`, `*_dialog.dart` | 화면과 모달 |
+| `presentation/widgets/` | 해당 기능 전용 위젯 |
 
-`domain` 모델은 화면과 앱에서 사용하는 임시 데이터 계약이며, DB 테이블이나 ER 설계를 확정하는 모델은 아닙니다. 현재는 단순 조회이므로 별도의 UseCase는 두지 않습니다.
+### shared
 
-## 현재 동작
+| 위치 | 내용 |
+| --- | --- |
+| `network/` | 공용 Dio 클라이언트, 인증 GET 요청 |
+| `theme/` | 테마·다크 모드 선택 상태와 설정 화면의 테마 선택기 |
+| `widgets/` | 앱 틀(사이드바·셸)과 공용 위젯, 버튼 스타일 |
+| `workspace_colors.dart` | 테마 팔레트와 다크 버전 |
+| `app_font_sizes.dart` | 글자 크기 단계 |
+| `formatters.dart`, `idempotency_key.dart` | 숫자·날짜 표시, 멱등 키 |
+| `file_save/`, `navigation/` | 웹 전용 파일 다운로드·브라우저 주소 이동(다른 플랫폼에서는 `UnsupportedError`) |
 
-- Repository가 응답을 `RequestItem`, `PurchaseReview`, `SupplierQuote`로 변환합니다.
-- ViewModel은 `AsyncNotifier`로 로딩·오류·성공 상태를 관리합니다.
-- 업무 큐는 서버 응답을 기준으로 건수를 집계하며 상태와 제목·거래처로 필터링합니다.
-- 목록 새로고침과 오류 화면의 다시 시도는 DataSource를 다시 호출합니다.
-- 실행·진행 보기·다시 시도는 `showReviewProgressDialog()`로 현재 화면 위에 진행 창을 엽니다. 원문·중단 사유도 `showDialog()`를 사용합니다. 진행 창용 경로와 업무 큐 배경 재생성은 없습니다.
-- 진행 ViewModel은 기존 상세 결과 조회 `Future`를 기다립니다. 결과 조회가 성공해야 완료되고, 실패하면 오류와 수동 재시도를 제공합니다. 2초 간격의 가짜 단계 타이머는 사용하지 않습니다.
-- 진행 창을 닫아도 요청별 조회와 결과 캐시는 유지됩니다. 결과 보기 버튼은 팝업을 닫고 같은 요청의 `/review?requestId=...`로 이동합니다.
-- 업무 큐 ViewModel은 진행 상태를 구독하고 `domain/work_queue_state.dart`의 규칙으로 요청 상태·버튼·건수·검색·필터를 구성합니다. View는 완성된 상태를 표시합니다.
-- 목록 원본은 `workQueueRequestsProvider`가 보관하므로 진행 상태 변화가 목록 API 재호출을 일으키지 않습니다. 새로고침은 목록을 다시 조회하며 검색·필터와 진행 상태를 유지합니다.
-- 상세 ViewModel은 요청 ID별로 분리되고 앱 실행 중 유지됩니다. 화면을 오가도 같은 요청의 결과를 재사용하며, 앱을 종료하거나 브라우저를 새로고침하면 사라집니다.
-- 알 수 없는 요청 ID는 다른 요청의 결과로 대체하지 않고 오류로 처리합니다.
-- SCR-004 원문·근거 보기는 `features/source_document/`에 구현되어 있습니다. 거래처 근거·가격 이력과 실행 로그 상세의 원문 보기에서 열립니다. 업무 큐의 원문·첨부는 업무 패널이 API-25·26으로 직접 표시합니다.
-- 실제 앱은 메일 ID로 API-25 원문을 조회해 제목·발신자·수신자·수신 시각·본문·첨부 파일명을 표시합니다. 원문을 열기만 해서는 추출·OCR이 실행되지 않습니다.
-- SCR-011 거래처 조회는 `/suppliers`(사이드 메뉴 "거래처")이며 `features/supplier/`에 있습니다. 06 스키마의 suppliers·supplier_items와 08 API-29·30을 기준으로 검색·이름순 목록·상세(업체 정보·취급 품목·인증·비고·기준자료 출처)를 보여줍니다.
-- 거래처 화면은 조회 전용입니다. 등록 진입은 제공하지 않으며 등록 관련 코드는 후속 범위 검토를 위해 보존합니다. 좁은 창에서는 거래처를 선택하면 상세로 이동하고 "목록으로" 버튼으로 검색·목록에 돌아갑니다.
-- 품목의 "근거·가격 이력"은 SCR-005 거래처·견적 근거 모달을 엽니다. API-31 형식으로 참고 견적(메일)과 실거래(증빙)를 나눠 표시하고, 원문 메일이 있으면 SCR-004를 위에 엽니다. 업무별 체크리스트·현재 견적 조건은 업무 상세 맥락에서 연결할 대상입니다.
-- 근거 모달은 가격 이력·출처를 먼저 표시하고, 중복되는 업체·품목 상세는 접어서 제공합니다.
-- SCR-010 실행 로그는 `/logs`(사이드 메뉴 "실행 로그")이며 `features/workflow_log/`에 있습니다. API-28 형식으로 업무·기간·역할/노드·이벤트·결과·발송 방식을 필터링하고, 상세에서 근거·견적/설정 버전·도구 결과 참조·request_id와 관련 업무·원문·초안으로 이동합니다.
-- SCR-007 메일 초안·발송 모달은 `features/mail_draft/`에 있고 업무 상세의 "메일 초안"과 실행 로그의 "초안 보기"에서 엽니다. 업체별 초안 상태를 따로 보여주며, 자동 발송 꺼짐은 "승인 후 발송", 자동 발송 켜짐은 승인 버튼 없이 자동 발송 범위와 결과만 표시합니다. 수정은 새 초안(API-18)이고, 발송 확인 중(UNKNOWN)은 수정·재발송을 막고 발신함 대조(API-20)만 제공합니다.
-- SCR-008 발송·메일 스타일 설정 모달은 `features/send_settings/`에 있고 업무 큐의 "발송 설정"(메일함 기본값)과 메일 초안 모달의 "발송 설정"(업무 설정)에서 엽니다. 견적 요청·추가 확인·역제안마다 자동 발송을 켜고 끕니다(켜짐=`approval_required: false`, 꺼짐=`true`). 메일함에 저장된 값이 없으면 기본값 꺼짐으로 표시하고 저장할 때 꺼짐으로 기록합니다. 업무 설정에서 바꾸지 않은 항목은 `null`로 보내 메일함 기본값을 따릅니다. 적용 대상은 앞으로 생성할 초안 또는 선택한 기존 초안이고, 발송 중·발송됨·확인 중 초안은 고를 수 없습니다.
-- SCR-009 접수·연결 확인 모달은 `features/mail_intake/`에 있고 업무 큐의 "접수 확인 n건"에서 엽니다(대기 메일이 없으면 버튼을 숨깁니다). 비업무로 확인·새 업무로 접수·선택한 업무에 연결 중 하나를 고르며, 새 업무는 대기 상태로만 만들고 분석을 시작하지 않습니다.
-- 새 업무 접수는 큐에 대기 행과 원문만 추가하며 분석을 시작하지 않습니다. 접수 목록과 업무 큐를 함께 갱신합니다.
-- 발송 설정은 목적별 승인과 자동 발송 대상을 우선 표시하고 문안·서명·기존 초안 적용은 펼쳐서 편집합니다. 실행 로그는 업무·기간을 기본 필터로, 나머지는 상세 필터로 제공합니다. 좁은 창의 로그·접수 항목 선택은 상세로 스크롤하고 "목록으로"로 복귀합니다.
-- 새 모달의 버튼은 `shared/widgets/workspace_button_styles.dart`로 기존 모서리·색·글자 크기를 공유하며, 비활성·처리 중 동작은 각 버튼에 유지합니다.
+## 테마
 
-## 폴더와 상태 컨벤션
-
-- 기능 전용 UI는 `features/기능/presentation/widgets/`에 둡니다. 구매 검토 본문과 진행 팝업도 이 기준을 따릅니다.
-- 공용 UI는 `shared/widgets/`에 둡니다. 화면 번호별로 기능 코드를 별도 분류하지 않습니다.
-- Provider는 `@Riverpod` 코드 생성으로 선언합니다. 진행 상태도 요청 ID별 Provider이며 `keepAlive: true`로 유지합니다.
-- Notifier는 조회와 상태 갱신을 조정하고, 검색·필터·요청 상태 조합 규칙은 domain에서 처리합니다.
-- 현재 진행 창은 합성 상세 응답의 조회 완료를 표시합니다. 실제 서버의 단계별 분석 진행·분석 중단 이벤트는 해당 API가 정해진 뒤 연결합니다.
-
-## 인증·Gmail 연결
-
-인증·Gmail 연결은 **KAN-19 프론트 작업 완료, 서버 연동 대기** 상태입니다. Supabase Auth Google 로그인과 Gmail 연결 코드는 `features/auth/`에 있습니다. Supabase 설정 없이 실행하면 실행 설정 안내 화면이 나옵니다.
-
-## 실제 API 연결
-
-1. 각 기능의 DataSource 인터페이스를 구현하는 실제 API 클래스를 추가합니다.
-2. `workQueueDataSourceProvider`, `purchaseReviewDataSourceProvider`가 실제 API 구현을 반환하도록 바꿉니다.
-3. 응답 형식이 달라지면 Repository의 변환 코드와 필요한 앱 모델을 수정합니다.
-
-상태 관리와 화면은 DataSource 구현을 직접 참조하지 않으므로, 앱 모델이 유지되는 한 수정할 필요가 없습니다. DB 접근 방식과 인증은 서버 계약 확정 후 연결합니다.
+`shared/workspace_colors.dart`에 팔레트가 있고, 목록의 첫 번째가 기본값입니다. 다크 모드는 고른 팔레트에서 다크 버전을 만들어 씁니다. 설정 화면(`/account`)의 "화면 테마" 탭에서 고르며, 고른 값은 브라우저에 저장됩니다.
 
 ## Provider 코드 생성
 
-Provider는 `@Riverpod` 어노테이션으로 선언합니다. 함수는 의존성을 제공하고,
-ViewModel 클래스는 `_$WorkQueueViewModel` 같은 생성 클래스를 상속합니다.
-기존 Provider 이름과 `ref.watch` / `ref.read` 사용법은 유지합니다.
-
-`@Riverpod(keepAlive: true)`는 화면을 나가도 상태가 유지되도록 하는 설정입니다.
-기본 `@riverpod`는 자동 폐기되므로 기존 수명을 보존하려고 이 설정을 사용했습니다.
-상세의 `build(String requestId)` 인자로 요청별 Provider가 생성됩니다.
-ViewModel의 `retry: _noRetry`는 자동 재시도를 끄며, 버튼의 수동 재조회는 유지합니다.
-
-선언이나 `build` 인자를 바꾼 뒤 앱 폴더에서 다시 생성하세요.
+Provider는 `@Riverpod`로 선언합니다. 선언이나 `build` 인자를 바꾸면 다시 생성합니다.
 
 ```sh
 dart run build_runner build
 ```
 
-`part '*.g.dart'`로 연결된 생성 파일은 직접 수정하지 않습니다.
-저장소 방침에 따라 생성 파일도 소스와 함께 버전 관리합니다.
+`*.g.dart`는 직접 고치지 않고, 소스와 함께 커밋합니다.
 
-## 실행 및 검증
+## 테스트
+
+`test/`는 `.gitignore`에 들어 있지만 일부 테스트 파일은 저장소에 포함돼 있습니다.
 
 ```sh
-flutter run -d chrome
-flutter analyze
-flutter test  # 로컬 test/ 폴더가 있는 환경에서 실행
+flutter test
 ```
 
-기존 반응형 화면 테스트에 더해 로딩 대기, 검색·상태 필터 조합, 오류 후 재시도, 요청별 결과 유지, 선택한 요청의 상세 이동을 검증하는 테스트가 있습니다.
+## 배포
+
+`.github/workflows/deploy-web.yml`이 `dev` → `main` PR이 머지되면 `flutter build web --release`로 빌드해 Vercel 프로덕션에 올립니다. Vercel은 GitHub 저장소와 연결하지 않고 이 워크플로만 배포합니다. 필요한 값은 저장소 Actions 설정에 둡니다.
+
+- Secrets: `VERCEL_TOKEN`
+- Variables: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `API_BASE_URL`(https), `VERCEL_PROJECT`(선택)

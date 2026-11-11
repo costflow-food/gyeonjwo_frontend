@@ -132,7 +132,7 @@ class MailDraft {
   /// Opaque version from the server; sent back unchanged on approval.
   final String? settingsVersion;
 
-  /// KAN-167 S4-4 (API-16·17). Null on servers that do not send it yet.
+  /// API-16·17. Null on servers that do not send it yet.
   /// With approval OFF, a draft the server will not auto-send (chosen before
   /// the settings were saved, or a caution supplier) still needs approval.
   final bool? approvalAvailable;
@@ -215,7 +215,7 @@ class MailDraft {
           !awaitingResult,
     DraftAction.reconcile => status == DraftStatus.unknown && !awaitingResult,
     DraftAction.withdraw => status == DraftStatus.draft && !awaitingResult,
-    // API-18 (revisions) does not exist on the server yet.
+    // Edit (API-18) is not offered in the app.
     _ => false,
   };
 

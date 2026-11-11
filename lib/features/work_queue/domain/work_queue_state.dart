@@ -78,7 +78,7 @@ class WorkQueueState {
     allWaiting: allWaiting,
   );
 
-  /// 탭만 바꿉니다. 목록은 그대로라 다시 조회하지 않습니다.
+  /// 탭만 바꿉니다.
   WorkQueueState withStatus(WorkCaseStatus? tab) => WorkQueueState(
     items: items,
     counts: counts,

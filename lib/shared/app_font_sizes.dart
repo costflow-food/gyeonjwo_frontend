@@ -1,5 +1,4 @@
 /// 글자 크기만 관리합니다. 단위는 Flutter 논리 픽셀이며 사용자 글자 배율은 별도로 적용됩니다.
-/// 하우스 그린 시안의 글자 단계입니다(본문 14). 아이콘·여백·반응형 기준값은 여기에 포함하지 않습니다.
 abstract final class AppFontSizes {
   // 본문과 보조 설명. 같은 역할은 여러 화면에서 함께 바뀝니다.
   static const double body = 14;
@@ -8,13 +7,13 @@ abstract final class AppFontSizes {
   static const double caption = 12;
   static const double captionSmall = 11;
 
-  // 버튼은 기존 12 / 11 / 13 크기를 구분합니다. 버튼만 바꾸려면 여기서 조절하세요.
+  // 버튼. 버튼만 바꾸려면 여기서 조절하세요.
   static const double button = body;
   static const double buttonSmall = secondary;
   static const double buttonLarge = bodyLarge;
   static const double navigation = 14;
 
-  // 제목. 기존에 조금씩 달랐던 크기를 보존한 공통 크기 단계입니다.
+  // 제목.
   static const double pageTitle = 32;
   static const double heading = 24;
   static const double sectionTitle = 22;

@@ -174,7 +174,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.reconcile(draft));
   }
 
-  /// X-2: an unsent draft otherwise blocks the next selection and the review.
+  /// An unsent draft otherwise blocks the next selection and the review.
   Future<void> _withdraw(MailDraft draft) async {
     final confirmed = await showDialog<bool>(
       context: context,

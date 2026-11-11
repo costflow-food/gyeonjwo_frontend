@@ -1,4 +1,4 @@
-/// API-01 업무 큐 상태. 서버 값 그대로 쓰고 화면에서 새 상태를 만들지 않습니다.
+/// API-01 업무 큐 상태.
 enum WorkCaseStatus {
   waiting("Waiting", "대기"),
   running("Running", "진행 중"),
@@ -45,7 +45,7 @@ abstract final class WorkCaseAction {
   static const resume = "RESUME";
 }
 
-/// API-07 재개 사유. 단계마다 서버가 받는 사유가 다릅니다(S2-11).
+/// API-07 재개 사유. 단계마다 서버가 받는 사유가 다릅니다.
 enum ResumeReason {
   resumeHold("RESUME_HOLD", "다시 추출", "보류 사유를 확인했다면 요청 정보 확인부터 다시 실행해요."),
   retryFailed("RETRY_FAILED", "다시 시도", "오류가 난 처리를 다시 실행해요."),
@@ -110,14 +110,13 @@ String processingStepLabel(String step, {int inputRevision = 1}) =>
     ? "거래처 회신 확인 중"
     : _stepLabels[step] ?? "처리 상태 확인";
 
-/// 서버 hold가 없을 때만 쓰는 임시 문구. 현재 서버는 ON_HOLD에만 hold를 보내므로
-/// NEEDS_INFO에 hold가 오기 전까지(KAN-124) error.code로 문구를 고릅니다.
+/// 서버 hold 문구가 없을 때 error.code로 고르는 대체 문구.
 const _fallbackStopMessages = {
   "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
   "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 해요.",
 };
 
-/// 거래처가 없어 멈춘 코드. 거래처 등록으로 원인을 풀 수 있습니다(KAN-129).
+/// 거래처가 없어 멈춘 코드. 거래처 등록으로 원인을 풀 수 있습니다.
 const supplierMissingStopCodes = {
   "NO_SUITABLE_CANDIDATES",
   "NO_REGISTERED_SUPPLIER_EVIDENCE",
@@ -135,7 +134,7 @@ class HoldReason {
   final String message;
 }
 
-/// API-03 저장된 진행 단계. 검토 진행 팝업(KAN-142)과 보류 안내(FE-4)가 함께 씁니다.
+/// API-03 저장된 진행 단계. 검토 진행 팝업과 보류 안내가 함께 씁니다.
 class CaseProgress {
   const CaseProgress({
     required this.caseId,
@@ -161,7 +160,9 @@ class CaseProgress {
               message: hold["message"] as String,
             )
           : null,
-      errorCode: error is Map<String, dynamic> ? error["code"] as String? : null,
+      errorCode: error is Map<String, dynamic>
+          ? error["code"] as String?
+          : null,
     );
   }
 
@@ -277,8 +278,7 @@ class WorkCase {
       processingStep == ProcessingStep.candidates;
 
   /// 멈춘 이유를 API-03에서 다시 확인할 단계.
-  bool get stopped =>
-      onHold || processingStep == ProcessingStep.needsInfo;
+  bool get stopped => onHold || processingStep == ProcessingStep.needsInfo;
 
   /// 이 업무에서 재개할 때 보낼 사유.
   ResumeReason get resumeReason => ResumeReason.forStep(processingStep);
@@ -368,8 +368,7 @@ class MailAttachment {
   final int sizeBytes;
 
   bool get isPdf =>
-      mimeType == "application/pdf" ||
-      filename.toLowerCase().endsWith(".pdf");
+      mimeType == "application/pdf" || filename.toLowerCase().endsWith(".pdf");
 }
 
 /// API-25 원문. 추출·OCR 결과가 아닌 저장된 메일 그대로입니다.
