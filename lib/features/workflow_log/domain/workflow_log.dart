@@ -1,7 +1,3 @@
-/// Temporary app models for SCR-010; independent of the workflow_logs schema.
-library;
-
-/// Who produced the entry. Agent runs and case status are different things.
 enum LogComponent {
   agent("AGENT", "에이전트"),
   node("NODE", "노드"),
@@ -37,7 +33,6 @@ enum LogActor {
   final String label;
   final List<String> aliases;
 
-  /// Null for a code this app does not know yet; the raw code is shown.
   static LogActor? fromCode(String? code) => values
       .where((value) => value.code == code || value.aliases.contains(code))
       .firstOrNull;
@@ -87,7 +82,6 @@ enum LogEventType {
   final String code;
   final String label;
 
-  /// Null for a code this app does not know yet; the raw code is shown.
   static LogEventType? fromCode(String? code) =>
       values.where((value) => value.code == code).firstOrNull;
 }
@@ -101,7 +95,6 @@ enum LogOutcome {
   final String code;
   final String label;
 
-  /// Null for a code this app does not know yet; the raw code is shown.
   static LogOutcome? fromCode(String? code) =>
       values.where((value) => value.code == code).firstOrNull;
 }
@@ -155,7 +148,6 @@ class WorkflowLogEntry {
   final String? actorCode;
   final String eventCode;
 
-  /// Short user-facing result. Never a private model reasoning trace.
   final String summary;
 
   /// Null when the server does not report a result for the event.

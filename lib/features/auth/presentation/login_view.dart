@@ -67,7 +67,6 @@ class LoginView extends ConsumerWidget {
                   AuthNotice(text: redirectFailure.message),
                   const SizedBox(height: 16),
                 ],
-                // Consent guidance comes first; Google opens from that screen.
                 GoogleSignInButton(
                   onPressed: () => context.go('/login/permissions'),
                 ),

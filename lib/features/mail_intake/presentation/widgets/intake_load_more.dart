@@ -3,7 +3,6 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// "더 불러오기" under the intake list while more mails wait on the server.
 class IntakeLoadMore extends StatelessWidget {
   const IntakeLoadMore({
     super.key,

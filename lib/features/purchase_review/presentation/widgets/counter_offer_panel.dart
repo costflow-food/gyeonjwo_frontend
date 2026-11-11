@@ -5,7 +5,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/purchase_review.dart";
 import "review_format.dart";
 
-/// ⑤ 역제안: 목표 단가를 크게, 제안 가능 범위와 메일 초안을 그 아래에. 발송은 메일 초안에서 따로 승인합니다.
 class CounterOfferPanel extends StatelessWidget {
   const CounterOfferPanel({
     super.key,

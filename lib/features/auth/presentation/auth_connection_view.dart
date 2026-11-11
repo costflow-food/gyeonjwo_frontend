@@ -90,7 +90,6 @@ class AuthConnectionView extends ConsumerWidget {
             phase: connection.connectionPhase,
             email: connection.asData?.value.email ?? session?.email,
             failure: failure,
-            // Sign-in succeeds before the server connection; show it separately.
             signedIn: session?.isSignedIn ?? false,
             // Only an unknown outcome is retried; other failures need re-consent.
             onRetry: failure == null || failure.retryable
@@ -120,7 +119,6 @@ class _ConnectionCard extends StatelessWidget {
   /// user has to go through Google consent again.
   final VoidCallback? onRetry;
 
-  /// Supabase session exists, even if the Gmail connection failed.
   final bool signedIn;
 
   @override
@@ -204,7 +202,6 @@ class _ConnectionCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (phase == GmailConnectionPhase.connecting) ...[
-            // Indeterminate: the server does not report progress steps.
             LinearProgressIndicator(
               color: context.palette.accent,
               backgroundColor: context.palette.blush,

@@ -2,7 +2,6 @@ import "../../work_queue/domain/work_case.dart";
 import "review_phase.dart";
 import "review_progress_repository.dart";
 
-/// 검토 진행 팝업이 보여 줄 마지막 진행 상태와 자동 확인 상태.
 class ReviewProgress {
   const ReviewProgress({
     required this.progress,
@@ -13,7 +12,6 @@ class ReviewProgress {
 
   final CaseProgress progress;
 
-  /// 이 팝업에서 마지막으로 본 처리 중 단계.
   final ReviewStage? lastRunning;
 
   /// 최근 다시 확인에 실패함. 화면은 마지막으로 받은 단계를 그대로 둡니다.
@@ -32,7 +30,6 @@ class ReviewProgress {
     lastRunning: lastRunning,
   );
 
-  /// 멈춘 이유. 서버 hold 문구가 우선이고, 없으면 오류 코드의 임시 문구입니다.
   String? get detail => stopReasonMessage(progress.hold, progress.errorCode);
 
   ReviewProgress withRefreshFailure(

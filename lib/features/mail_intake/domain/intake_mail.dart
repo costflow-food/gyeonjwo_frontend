@@ -1,7 +1,3 @@
-/// Temporary app models for SCR-009; independent of the mail_messages schema.
-library;
-
-/// Only mails the classifier could not settle reach this screen.
 enum IntakeReason {
   uncertain("UNCERTAIN", "업무 여부 판단 불가"),
   ambiguous("AMBIGUOUS", "연결할 업무가 여럿");
@@ -25,7 +21,6 @@ enum IntakeResolution {
   final String code;
 }
 
-/// An existing case the mail might belong to, with what differs.
 class CaseCandidate {
   const CaseCandidate({
     required this.caseId,
@@ -44,7 +39,6 @@ class CaseCandidate {
   final String? conditions;
   final String? difference;
 
-  /// Reply headers or an earlier send that point to this case.
   final String? replyEvidence;
 }
 
@@ -71,7 +65,6 @@ class IntakeMail {
   final String bodyText;
   final IntakeReason reason;
 
-  /// Classifier's short reason. Not a model reasoning trace.
   final String reasonDetail;
   final List<String> attachments;
   final List<CaseCandidate> candidates;
@@ -97,7 +90,6 @@ class IntakePage {
 
   final List<IntakeMail> items;
 
-  /// Same count as API-01 intake_pending.
   final int totalPending;
 
   /// Set while more mails wait on the server ("더 불러오기").

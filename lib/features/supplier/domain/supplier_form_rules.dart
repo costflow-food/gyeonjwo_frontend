@@ -1,5 +1,3 @@
-/// Normalization and validation for the register form. The server checks
-/// again; these only give immediate feedback.
 abstract final class SupplierFormRules {
   static const nameMaxLength = 100;
 

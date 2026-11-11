@@ -6,7 +6,6 @@ import "../supplier_view_model.dart";
 import "supplier_detail_content.dart";
 import "supplier_load_error.dart";
 
-/// SCR-011 detail area (API-30), loaded per selected supplier.
 class SupplierDetailPanel extends ConsumerWidget {
   const SupplierDetailPanel({super.key, required this.supplierId});
   final String supplierId;

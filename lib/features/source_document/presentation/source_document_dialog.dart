@@ -24,7 +24,6 @@ Future<void> showSourceDocument(
   );
 }
 
-/// SCR-004: 원문·근거 보기. 닫으면 호출한 화면의 상태와 스크롤을 유지합니다.
 class SourceDocumentDialog extends ConsumerWidget {
   const SourceDocumentDialog({super.key, required this.requestId});
   final String requestId;

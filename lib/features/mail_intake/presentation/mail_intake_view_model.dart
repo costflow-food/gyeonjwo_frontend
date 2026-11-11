@@ -52,7 +52,7 @@ class MailIntakeViewModel extends _$MailIntakeViewModel {
     try {
       return await _fetch(ref.watch(mailIntakeRepositoryProvider));
     } finally {
-      // Also after a failed first load, so the list recovers by itself (S1-7).
+      // Also after a failed first load, so the list recovers by itself.
       _schedulePoll();
     }
   }
@@ -84,7 +84,6 @@ class MailIntakeViewModel extends _$MailIntakeViewModel {
     return next.where((mail) => !ids.contains(mail.mailId));
   }
 
-  /// "더 불러오기". A failure keeps what is shown; the user can press again.
   Future<void> loadMore() async {
     final current = state.hasValue && !state.isLoading
         ? state.requireValue

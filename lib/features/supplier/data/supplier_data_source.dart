@@ -43,7 +43,6 @@ class SupplierApiException implements Exception {
   final Map<String, dynamic> body;
 }
 
-/// API-29~31 조회. 조회만 하며 거래처를 바꾸지 않습니다.
 class ApiSupplierDataSource implements SupplierDataSource {
   const ApiSupplierDataSource(this._dio, this._accessToken);
 

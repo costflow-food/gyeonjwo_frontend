@@ -4,7 +4,6 @@ import "package:go_router/go_router.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// Shown when Gmail read permission is missing; automatic receiving is off.
 class GmailReadNotice extends StatelessWidget {
   const GmailReadNotice({super.key});
 

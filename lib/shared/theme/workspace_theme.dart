@@ -40,7 +40,6 @@ class WorkspaceDarkMode extends _$WorkspaceDarkMode {
   }
 }
 
-/// 화면에 실제로 쓰는 팔레트: 고른 테마에 라이트/다크를 적용합니다.
 @Riverpod(keepAlive: true)
 WorkspacePalette activePalette(Ref ref) {
   final palette = ref.watch(workspaceThemeProvider);

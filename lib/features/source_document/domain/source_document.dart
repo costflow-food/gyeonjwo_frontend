@@ -1,4 +1,3 @@
-/// 화면용 원문 계약. API-25 메일 원문을 담습니다.
 class SourceDocument {
   const SourceDocument({
     required this.title,

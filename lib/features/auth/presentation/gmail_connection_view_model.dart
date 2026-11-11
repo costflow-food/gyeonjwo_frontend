@@ -11,10 +11,6 @@ part "gmail_connection_view_model.g.dart";
 // Never retry automatically: a retry may resend Google tokens.
 Duration? _noRetry(int retryCount, Object error) => null;
 
-/// Server-confirmed Gmail connection for the signed-in user.
-///
-/// Right after the OAuth redirect it sends the Google tokens once and waits
-/// for the server result. Otherwise it reads the connection the server keeps.
 @Riverpod(keepAlive: true, retry: _noRetry)
 class GmailConnectionViewModel extends _$GmailConnectionViewModel {
   @override
@@ -32,13 +28,9 @@ class GmailConnectionViewModel extends _$GmailConnectionViewModel {
         : repository.connectGmail(grant);
   }
 
-  /// Re-sends a pending grant (same idempotency key if the outcome was
-  /// unknown) or reloads the server state.
   void retry() => ref.invalidateSelf();
 }
 
-/// Mail features the UI may enable. Disabling here is a convenience only;
-/// the server rejects requests without the matching Google permission.
 @Riverpod(keepAlive: true)
 GmailCapabilities gmailCapabilities(Ref ref) {
   final session = ref.watch(authSessionViewModelProvider).asData?.value;
@@ -53,7 +45,6 @@ GmailCapabilities gmailCapabilities(Ref ref) {
   );
 }
 
-/// Screen phase for a connection request, decided outside the View.
 extension GmailConnectionState on AsyncValue<GmailConnection> {
   AuthFailure? get authFailure =>
       hasError && error is AuthFailure ? error as AuthFailure : null;

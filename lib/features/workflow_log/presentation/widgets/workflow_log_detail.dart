@@ -11,7 +11,6 @@ import "../../../source_document/presentation/source_document_dialog.dart";
 import "../../domain/workflow_log.dart";
 import "log_outcome_badge.dart";
 
-/// References behind one entry and links to the related case, mail, or draft.
 class WorkflowLogDetail extends StatelessWidget {
   const WorkflowLogDetail({
     super.key,

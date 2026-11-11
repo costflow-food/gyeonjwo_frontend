@@ -9,7 +9,6 @@ import "supplier_view_model.dart";
 import "widgets/supplier_content.dart";
 import "widgets/supplier_header.dart";
 
-/// SCR-011 거래처 기준자료 검색과 조회.
 class SupplierView extends ConsumerStatefulWidget {
   const SupplierView({super.key});
 

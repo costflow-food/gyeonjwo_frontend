@@ -1,6 +1,3 @@
-/// SCR-007 models for API-16·17·19·20.
-library;
-
 enum DraftPurpose {
   rfq("RFQ", "견적 요청"),
   clarification("CLARIFICATION", "추가 확인"),
@@ -47,13 +44,11 @@ abstract final class DraftAction {
   static const withdraw = "WITHDRAW_DRAFT";
 }
 
-/// API-16·17 approval_block_reason.
 abstract final class DraftBlockReason {
   static const settingsRequired = "SEND_SETTINGS_REQUIRED";
   static const recipientNotRegistered = "RECIPIENT_NOT_REGISTERED";
 }
 
-/// API-12 drafts[].dispatch_state: what happened to each selected supplier.
 enum DraftDispatchState {
   waitingApproval("WAITING_APPROVAL", "승인 대기", "승인 후 발송을 눌러야 발송돼요."),
   autoQueued("AUTO_QUEUED", "자동 발송 대기", "자동 발송이 켜져 있어 서버가 자동 발송해요."),
@@ -132,7 +127,6 @@ class MailDraft {
   /// Opaque version from the server; sent back unchanged on approval.
   final String? settingsVersion;
 
-  /// API-16·17. Null on servers that do not send it yet.
   /// With approval OFF, a draft the server will not auto-send (chosen before
   /// the settings were saved, or a caution supplier) still needs approval.
   final bool? approvalAvailable;
@@ -148,7 +142,6 @@ class MailDraft {
   bool get recipientNotRegistered =>
       blockReason == DraftBlockReason.recipientNotRegistered;
 
-  /// Approval OFF, yet this draft waits for a manual approval.
   bool get manualApprovalUnderAutoSend =>
       approvalRequired == false && approvalAvailable == true;
 
@@ -207,8 +200,6 @@ class MailDraft {
     DraftAction.approveSend =>
       status == DraftStatus.draft &&
           settingsConfigured &&
-          // The server decides when it sends approval_available; older
-          // servers only allow approval with the setting ON.
           (approvalAvailable ?? approvalRequired == true) &&
           settingsVersion != null &&
           !isStale &&
@@ -271,7 +262,6 @@ class MailDraftFailure implements Exception {
   /// 남기고 상태를 다시 읽습니다. [unknownOutcome]이면 늘 참입니다.
   final bool retryable;
 
-  /// The draft, its case, or the settings changed; reload before deciding.
   bool get draftChanged => const {
     "DRAFT_CHANGED",
     "REVISION_CONFLICT",

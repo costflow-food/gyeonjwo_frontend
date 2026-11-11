@@ -10,7 +10,6 @@ part "auth_session_view_model.g.dart";
 
 Duration? _noRetry(int retryCount, Object error) => null;
 
-/// Sign-in state for route guards, the sidebar and the account screen.
 @Riverpod(keepAlive: true, retry: _noRetry)
 class AuthSessionViewModel extends _$AuthSessionViewModel {
   @override
@@ -25,7 +24,6 @@ class AuthSessionViewModel extends _$AuthSessionViewModel {
     return repository.currentSession();
   }
 
-  /// Leaves the app for Google's account and consent screens.
   Future<void> signInWithGoogle() =>
       ref.read(authRepositoryProvider).signInWithGoogle();
 
@@ -36,7 +34,6 @@ class AuthSessionViewModel extends _$AuthSessionViewModel {
   }
 }
 
-/// OAuth error returned on the redirect URL, read once per page load.
 @Riverpod(keepAlive: true)
 AuthFailure? authRedirectFailure(Ref ref) =>
     ref.watch(authRepositoryProvider).takeRedirectFailure();

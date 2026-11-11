@@ -1,6 +1,5 @@
 import "../../mail_draft/domain/mail_draft.dart";
 
-/// Temporary app models for SCR-008; independent of mail_send_settings.
 enum SettingSource {
   caseLevel("CASE", "이 업무 설정"),
   mailbox("MAILBOX", "메일함 기본값");
@@ -110,7 +109,6 @@ class SendSettingsFailure implements Exception {
   /// 남기고 상태를 다시 읽습니다. [unknownOutcome]이면 늘 참입니다.
   final bool retryable;
 
-  /// Someone saved a newer version; reload before deciding again.
   bool get settingsChanged => code == "SETTINGS_CHANGED";
 
   @override

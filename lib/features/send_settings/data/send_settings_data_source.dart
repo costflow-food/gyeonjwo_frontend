@@ -54,7 +54,6 @@ class ApiSendSettingsDataSource implements SendSettingsDataSource {
     idempotencyKey: idempotencyKey,
   );
 
-  /// 세션 갱신·429 대기·오류 변환은 [sendApiRequest]가 맡습니다.
   Future<T> _send<T>(
     Future<Response<T>> Function(Map<String, String> headers) request, {
     String? idempotencyKey,

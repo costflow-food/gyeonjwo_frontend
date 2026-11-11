@@ -15,11 +15,6 @@ import "widgets/mail_draft_header.dart";
 import "widgets/mail_draft_tabs.dart";
 import "widgets/send_policy_banner.dart";
 
-/// SCR-007 메일 초안·발송 모달을 엽니다.
-///
-/// Opening or closing never sends. With approval OFF the server sends on its
-/// own, so this dialog only shows the scope and the result.
-/// [dispatchStates] are the API-12 results right after a candidate selection.
 Future<void> showMailDraftDialog(
   BuildContext context, {
   required String caseId,
@@ -175,7 +170,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.reconcile(draft));
   }
 
-  /// An unsent draft otherwise blocks the next selection and the review.
   Future<void> _withdraw(MailDraft draft) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -207,7 +201,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.withdraw(draft, reason: "담당자가 보내지 않기로 함"));
   }
 
-  /// The mailbox default (설정 → 메일 발송 설정). A save reloads the drafts.
   Future<void> _openSettings() async {
     final saved = await showSendSettingsDialog(context);
     if (saved == true && mounted) {

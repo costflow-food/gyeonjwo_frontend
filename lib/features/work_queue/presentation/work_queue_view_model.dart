@@ -18,9 +18,6 @@ part "work_queue_view_model.g.dart";
 
 Duration? _noRetry(int retryCount, Object error) => null;
 
-/// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
-///
-/// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
 @Riverpod(keepAlive: true, retry: _noRetry)
 class WorkQueueViewModel extends _$WorkQueueViewModel {
   /// Fallback when Realtime is down or misses a change (08 §11: 15 seconds).
@@ -92,7 +89,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     try {
       return _fromPage(await _fetchAll(ref.watch(workQueueRepositoryProvider)));
     } finally {
-      // Also after a failed first load, so the queue recovers by itself (S1-7).
+      // Also after a failed first load, so the queue recovers by itself.
       _schedulePoll();
       // Changes that arrived while this load was running.
       if ((_changed.isNotEmpty || _reloadAll) && ref.read(appVisibleProvider)) {
@@ -476,8 +473,6 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.invalidateSelf();
   }
 
-  /// API-12. 고른 업체로 견적 요청 초안을 만들고 목록을 다시 불러옵니다.
-  /// 업체별 발송 상태(drafts[].dispatch_state)를 돌려줍니다.
   Future<List<SelectedDraft>> selectCandidates(
     WorkCase workCase,
     CandidateSet candidates,
@@ -501,7 +496,6 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.invalidateSelf();
   }
 
-  /// API-04. 접수(202)만 확인하고 목록을 다시 불러 진행 상태를 보여 줍니다.
   Future<void> start(WorkCase workCase) async {
     await ref.read(workQueueRepositoryProvider).start(workCase);
     if (ref.mounted) ref.invalidateSelf();
@@ -529,7 +523,6 @@ Future<bool> caseHasDrafts(Ref ref, String caseId) async =>
 Future<CandidateSet> caseCandidates(Ref ref, String caseId) =>
     ref.watch(workQueueRepositoryProvider).getCandidates(caseId);
 
-/// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
 @Riverpod(retry: _noRetry)
 Future<OriginalMail> originalMail(Ref ref, String mailId) =>
     ref.watch(workQueueRepositoryProvider).getOriginalMail(mailId);
@@ -544,7 +537,6 @@ Future<Uint8List> attachmentContent(
     .watch(workQueueRepositoryProvider)
     .getAttachmentContent(mailId, attachmentId);
 
-/// Realtime change signal while signed in; nothing when signed out.
 @Riverpod(keepAlive: true)
 Stream<WorkCaseChange> workCaseChanges(Ref ref) {
   // AuthSession compares by status and email, so token refreshes do not

@@ -17,8 +17,6 @@ import "candidate_selection.dart";
 import "case_step_status.dart";
 import "status_badge.dart";
 
-/// 선택한 업무의 원문(제목·본문·첨부)과, 아직 실행하지 않은 업무의 두 가지 선택.
-/// PDF 첨부가 있으면 본문 옆(좁으면 아래)에 뷰어를 띄웁니다.
 class WorkCasePanel extends ConsumerStatefulWidget {
   const WorkCasePanel({super.key, required this.workCase});
 
@@ -313,7 +311,6 @@ class _MailContent extends StatelessWidget {
   final String? openAttachmentId;
   final ValueChanged<MailAttachment> onOpen;
 
-  /// PDF가 아닌 첨부: 미리 보기 대신 내려받습니다.
   final ValueChanged<MailAttachment> onDownload;
 
   @override
@@ -426,7 +423,6 @@ class _AttachmentTile extends StatelessWidget {
   final MailAttachment attachment;
   final bool selected;
 
-  /// PDF는 뷰어로 열고, 다른 형식은 내려받습니다.
   final VoidCallback onTap;
 
   @override
@@ -528,8 +524,6 @@ class _MailError extends StatelessWidget {
   );
 }
 
-/// 아직 실행하지 않은 업무: 수용하기 / 다른 대안 찾기.
-/// 버튼은 서버가 허용한 행동(allowed_actions)일 때만 누를 수 있습니다.
 class _Decision extends StatelessWidget {
   const _Decision({
     required this.workCase,

@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Divides the available content width and lets items grow vertically.
 class ResponsiveColumns extends StatelessWidget {
   const ResponsiveColumns({
     super.key,

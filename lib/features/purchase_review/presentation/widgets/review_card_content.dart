@@ -15,7 +15,6 @@ import "plan_board.dart";
 import "quote_card.dart";
 import "review_format.dart";
 
-/// SCR-002 검토 카드: 구매안·역제안·확인 항목·근거 견적과 판단(API-15).
 class ReviewCardContent extends ConsumerStatefulWidget {
   const ReviewCardContent({super.key, required this.review});
 
@@ -268,7 +267,6 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
   }
 }
 
-/// 인상 요청: 역제안 대상 업체가 올린 단가(인상 전 → 요청).
 class _RaiseCard extends StatelessWidget {
   const _RaiseCard({
     required this.supplierName,
@@ -356,7 +354,6 @@ class _RaiseCard extends StatelessWidget {
   );
 }
 
-/// 역제안 · 확인할 항목 · 보류/확인하고 보관.
 class _SidePanel extends StatelessWidget {
   const _SidePanel({
     required this.card,

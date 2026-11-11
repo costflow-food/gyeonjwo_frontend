@@ -10,6 +10,5 @@ class WorkflowLogFilter {
 
   bool get isEmpty => caseId == null;
 
-  /// Query parameters in the 08 snake_case form.
   Map<String, String> toQuery() => {"case_id": ?caseId};
 }

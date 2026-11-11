@@ -11,8 +11,6 @@ import "../../domain/candidate.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
-/// 09 SCR-002 후보·요청: 에이전트가 고른 후보 중 견적을 요청할 업체를 고릅니다.
-/// 필수 조건을 어긴 후보와 연락처가 없는 후보는 고를 수 없습니다.
 class CandidateSelection extends ConsumerStatefulWidget {
   const CandidateSelection({super.key, required this.workCase});
 
@@ -226,7 +224,6 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
             const SizedBox(height: 12),
             for (final candidate in set.candidates)
               Opacity(
-                // 지금은 어떤 후보도 고를 수 없으면 목록 전체를 흐리게 보입니다.
                 opacity: serverNotice != null ? 0.55 : 1,
                 child: _CandidateTile(
                   candidate: candidate,
@@ -529,7 +526,6 @@ class _Tag extends StatelessWidget {
   );
 }
 
-/// One-line notice inside the candidate list.
 class _Notice extends StatelessWidget {
   const _Notice({
     required this.icon,

@@ -6,7 +6,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/workflow_log.dart";
 import "log_outcome_badge.dart";
 
-/// Time, case, actor, action, short result, and duration.
 class WorkflowLogRow extends StatelessWidget {
   const WorkflowLogRow({
     super.key,

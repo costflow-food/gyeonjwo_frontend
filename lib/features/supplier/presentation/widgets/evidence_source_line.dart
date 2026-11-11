@@ -6,7 +6,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/supplier.dart";
 import "source_mail_button.dart";
 
-/// Source label and check time, with the original mail when one exists.
 class EvidenceSourceLine extends StatelessWidget {
   const EvidenceSourceLine({
     super.key,

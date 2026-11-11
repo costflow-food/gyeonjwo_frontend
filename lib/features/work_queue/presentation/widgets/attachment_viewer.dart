@@ -18,7 +18,6 @@ final pdfDocumentViewProvider =
           (bytes, sourceName) => PdfViewer.data(bytes, sourceName: sourceName),
     );
 
-/// 메일 본문 옆에 띄우는 첨부 PDF 뷰어(API-26).
 class AttachmentViewer extends ConsumerWidget {
   const AttachmentViewer({
     super.key,

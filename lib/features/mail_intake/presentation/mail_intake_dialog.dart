@@ -14,10 +14,6 @@ import "widgets/intake_mail_row.dart";
 import "widgets/mail_intake_actions.dart";
 import "widgets/mail_intake_header.dart";
 
-/// SCR-009 접수·연결 확인 모달을 엽니다.
-///
-/// Advertising and other non-business mail never reaches the queue; only
-/// mails the classifier could not settle appear here.
 Future<void> showMailIntakeDialog(BuildContext context, {String? mailId}) {
   return showDialog<void>(
     context: context,
@@ -32,7 +28,6 @@ Future<void> showMailIntakeDialog(BuildContext context, {String? mailId}) {
 class MailIntakeDialog extends ConsumerStatefulWidget {
   const MailIntakeDialog({super.key, this.initialMailId});
 
-  /// The mail picked in the sidebar; opens with it selected.
   final String? initialMailId;
 
   @override

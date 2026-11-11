@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/review_phase.dart";
 
-/// What happens next, and the way to the case once the server stops.
 class ReviewProgressFooter extends StatelessWidget {
   const ReviewProgressFooter({
     super.key,

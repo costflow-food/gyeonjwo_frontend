@@ -10,7 +10,6 @@ import "supplier_list_panel.dart";
 import "supplier_list_status.dart";
 import "supplier_search_field.dart";
 
-/// List and detail side by side when wide, stacked when narrow.
 class SupplierContent extends StatefulWidget {
   const SupplierContent({
     super.key,

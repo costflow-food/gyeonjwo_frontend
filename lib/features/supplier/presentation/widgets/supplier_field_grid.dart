@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 
-/// Two columns when wide, one when narrow.
 class SupplierFieldGrid extends StatelessWidget {
   const SupplierFieldGrid({super.key, required this.children});
   final List<Widget> children;

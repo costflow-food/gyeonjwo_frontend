@@ -11,10 +11,6 @@ import "widgets/supplier_evidence_header.dart";
 import "widgets/supplier_evidence_item.dart";
 import "widgets/supplier_evidence_supplier.dart";
 
-/// SCR-005 거래처·견적 근거 모달을 엽니다 (거래처 조회 맥락).
-///
-/// Case-specific checklists and current quote terms belong to the SCR-002
-/// context and are not shown here.
 Future<void> showSupplierEvidenceDialog(
   BuildContext context, {
   required SupplierDetail supplier,

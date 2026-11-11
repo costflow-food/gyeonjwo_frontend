@@ -1,5 +1,3 @@
-/// Temporary app models for supplier screens; independent of the DB schema.
-///
 /// Based on 06 suppliers/supplier_items and 08 API-29~31. Money and quantities
 /// keep the server Decimal strings; null is shown as "미확인".
 library;
@@ -44,7 +42,6 @@ class SupplierContact {
   final String? phone;
 }
 
-/// The source and time the screen needs from evidence_jsonb fields.
 class SourceEvidence {
   const SourceEvidence({
     required this.label,
@@ -58,11 +55,9 @@ class SourceEvidence {
   final String? checkedAt;
   final String? memo;
 
-  /// Original mail, opened in SCR-004 when present.
   final String? sourceMailId;
 }
 
-/// One API-29 list row.
 class SupplierSummary {
   const SupplierSummary({
     required this.id,
@@ -158,14 +153,12 @@ class SupplierItem {
   final String? origin;
   final List<Certification> certifications;
 
-  /// Free-text memo; never an exclusion or scoring rule.
   final String? notes;
   final SourceEvidence? notesEvidence;
   final ReferenceQuote? latestReferenceQuote;
   final LastPurchase? lastPurchase;
 }
 
-/// API-30 detail.
 class SupplierDetail {
   const SupplierDetail({
     required this.id,
@@ -190,7 +183,6 @@ class SupplierDetail {
   final List<SupplierItem> items;
 }
 
-/// Item entered on the register form. The server sets standardized_item_key.
 class SupplierItemDraft {
   const SupplierItemDraft({
     required this.itemName,
@@ -213,7 +205,6 @@ class SupplierItemDraft {
   final String? notes;
 }
 
-/// Register request. The server records source_type as REGISTERED.
 class SupplierDraft {
   const SupplierDraft({
     required this.name,
@@ -254,7 +245,6 @@ class PriceRecord {
   /// Quote effective date or purchase date (YYYY-MM-DD); null if unknown.
   final String? date;
 
-  /// Purchased quantity, or null.
   final String? quantity;
 
   /// Summary of spec, quantity tier, delivery and other terms.
@@ -279,7 +269,6 @@ class PriceHistory {
   PriceRecord? get lastActualPurchase => actualPurchases.firstOrNull;
 }
 
-/// `code` and `message` from the 08 error response.
 class SupplierFailure implements Exception {
   const SupplierFailure(this.code, this.message);
   final String code;
