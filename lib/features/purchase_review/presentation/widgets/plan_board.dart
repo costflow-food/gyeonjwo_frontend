@@ -11,11 +11,15 @@ class PlanBoard extends StatelessWidget {
     required this.card,
     required this.busy,
     required this.onSelect,
+    this.carousel = false,
   });
 
   final ReviewCard card;
   final bool busy;
   final ValueChanged<ResponsePlan> onSelect;
+
+  /// Phone: one plan at a time, swiped sideways.
+  final bool carousel;
 
   static const _gap = 12.0;
   static const _minColumnWidth = 190.0;
@@ -29,7 +33,7 @@ class PlanBoard extends StatelessWidget {
       builder: (context, constraints) {
         final columnWidth =
             (constraints.maxWidth - _gap * (plans.length - 1)) / plans.length;
-        final grid = columnWidth >= _minColumnWidth;
+        final grid = !carousel && columnWidth >= _minColumnWidth;
         Widget cardFor(ResponsePlan plan) => PlanCard(
           plan: plan,
           lowest: _isLowest(plan, lowestTotal),
@@ -50,6 +54,40 @@ class PlanBoard extends StatelessWidget {
                     ),
                 ],
         );
+        if (carousel) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _PlanCarousel(
+                // A peek of the next plan shows there is more to swipe.
+                itemWidth: plans.length == 1
+                    ? constraints.maxWidth
+                    : constraints.maxWidth * .86,
+                children: [
+                  for (final plan in plans)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        cardFor(plan),
+                        const SizedBox(height: 8),
+                        _SelectButton(
+                          plan: plan,
+                          card: card,
+                          busy: busy,
+                          lowest: _isLowest(plan, lowestTotal),
+                          onSelect: () => onSelect(plan),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              for (final question in card.questions) ...[
+                const SizedBox(height: 12),
+                _ExcludedNotice(question: question),
+              ],
+            ],
+          );
+        }
         if (!grid) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -480,4 +518,131 @@ class _SelectButton extends StatelessWidget {
         ? Tooltip(message: reason, child: button)
         : button;
   }
+}
+
+/// Plans side by side, snapping one at a time, with page dots underneath.
+class _PlanCarousel extends StatefulWidget {
+  const _PlanCarousel({required this.itemWidth, required this.children});
+
+  final double itemWidth;
+  final List<Widget> children;
+
+  @override
+  State<_PlanCarousel> createState() => _PlanCarouselState();
+}
+
+class _PlanCarouselState extends State<_PlanCarousel> {
+  static const _gap = 10.0;
+  final _controller = ScrollController();
+  int _page = 0;
+
+  double get _extent => widget.itemWidth + _gap;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final page = (_controller.offset / _extent).round();
+      if (page != _page) setState(() => _page = page);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final count = widget.children.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SingleChildScrollView(
+          controller: _controller,
+          scrollDirection: Axis.horizontal,
+          physics: _SnapPhysics(extent: _extent),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final (index, child) in widget.children.indexed) ...[
+                if (index > 0) const SizedBox(width: _gap),
+                SizedBox(width: widget.itemWidth, child: child),
+              ],
+            ],
+          ),
+        ),
+        if (count > 1) ...[
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var index = 0; index < count; index++)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: index == _page ? 18 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: index == _page
+                        ? context.palette.accent
+                        : context.palette.line,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Settles on the nearest card, like a page view with narrower pages.
+class _SnapPhysics extends ScrollPhysics {
+  const _SnapPhysics({required this.extent, super.parent});
+
+  final double extent;
+
+  @override
+  _SnapPhysics applyTo(ScrollPhysics? ancestor) =>
+      _SnapPhysics(extent: extent, parent: buildParent(ancestor));
+
+  double _target(ScrollMetrics position, Tolerance tolerance, double velocity) {
+    var page = position.pixels / extent;
+    if (velocity < -tolerance.velocity) {
+      page -= .5;
+    } else if (velocity > tolerance.velocity) {
+      page += .5;
+    }
+    return (page.roundToDouble() * extent).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+  }
+
+  @override
+  Simulation? createBallisticSimulation(
+    ScrollMetrics position,
+    double velocity,
+  ) {
+    if ((velocity <= 0 && position.pixels <= position.minScrollExtent) ||
+        (velocity >= 0 && position.pixels >= position.maxScrollExtent)) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+    final tolerance = toleranceFor(position);
+    final target = _target(position, tolerance, velocity);
+    if (target == position.pixels) return null;
+    return ScrollSpringSimulation(
+      spring,
+      position.pixels,
+      target,
+      velocity,
+      tolerance: tolerance,
+    );
+  }
+
+  @override
+  bool get allowImplicitScrolling => false;
 }

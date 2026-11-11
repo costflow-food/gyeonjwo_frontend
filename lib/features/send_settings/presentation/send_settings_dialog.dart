@@ -16,6 +16,7 @@ import "widgets/send_settings_footer.dart";
 import "widgets/send_settings_header.dart";
 import "widgets/settings_missing_banner.dart";
 import "widgets/settings_section_title.dart";
+import "../../../shared/widgets/workspace_dialog.dart";
 
 /// SCR-008 발송·메일 스타일 설정 모달을 엽니다. Returns true after a save.
 ///
@@ -260,34 +261,23 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _close();
       },
-      child: Dialog(
-        backgroundColor: context.palette.canvas,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        insetPadding: const EdgeInsets.all(20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: context.palette.line),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SendSettingsHeader(caseId: widget.caseId, onClose: _close),
-              Divider(height: 1, color: context.palette.line),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(28),
-                  child: content,
-                ),
+      child: WorkspaceDialog(
+        maxWidth: 760,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SendSettingsHeader(caseId: widget.caseId, onClose: _close),
+            Divider(height: 1, color: context.palette.line),
+            DialogScrollArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(28),
+                child: content,
               ),
-              Divider(height: 1, color: context.palette.line),
-              footer,
-            ],
-          ),
+            ),
+            Divider(height: 1, color: context.palette.line),
+            footer,
+          ],
         ),
       ),
     );

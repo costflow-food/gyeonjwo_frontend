@@ -11,7 +11,11 @@ class WorkflowLogList extends StatelessWidget {
     required this.data,
     required this.onSelect,
     required this.onLoadMore,
+    this.showSelection = true,
   });
+
+  /// False on a phone, where the detail opens on its own screen.
+  final bool showSelection;
 
   final WorkflowLogState data;
   final ValueChanged<String> onSelect;
@@ -39,7 +43,7 @@ class WorkflowLogList extends StatelessWidget {
         for (final entry in data.entries)
           WorkflowLogRow(
             entry: entry,
-            selected: entry.id == data.selectedId,
+            selected: showSelection && entry.id == data.selectedId,
             onTap: () => onSelect(entry.id),
           ),
         if (data.hasMore)

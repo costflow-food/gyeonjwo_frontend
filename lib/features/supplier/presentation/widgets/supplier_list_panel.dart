@@ -11,7 +11,11 @@ class SupplierListPanel extends StatelessWidget {
     required this.data,
     required this.onSelect,
     required this.onLoadMore,
+    this.showSelection = true,
   });
+
+  /// False on a phone, where the detail opens on its own screen.
+  final bool showSelection;
 
   final SupplierListState data;
   final ValueChanged<String> onSelect;
@@ -42,7 +46,7 @@ class SupplierListPanel extends StatelessWidget {
         for (final supplier in data.suppliers)
           SupplierListRow(
             supplier: supplier,
-            selected: supplier.id == data.selectedId,
+            selected: showSelection && supplier.id == data.selectedId,
             onTap: () => onSelect(supplier.id),
           ),
         if (data.hasMore)

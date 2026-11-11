@@ -6,6 +6,7 @@ import '../../../app/app_config.dart';
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/formatters.dart';
 import '../../../shared/theme/theme_picker.dart';
+import '../../../shared/widgets/mobile_scaffold.dart';
 import '../../../shared/widgets/workspace_shell.dart';
 import '../../../shared/workspace_colors.dart';
 import '../../mailbox_sync/domain/mailbox_sync_status.dart';
@@ -19,6 +20,7 @@ import 'auth_layout.dart';
 import 'auth_session_view_model.dart';
 import 'gmail_connection_view_model.dart';
 import 'widgets/auth_failure_message.dart';
+import 'widgets/sign_out_action.dart';
 
 class AccountView extends StatefulWidget {
   const AccountView({super.key});
@@ -66,14 +68,17 @@ class _AccountViewState extends State<AccountView>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                '설정',
-                style: TextStyle(
-                  fontSize: AppFontSizes.pageTitle,
-                  fontWeight: FontWeight.w700,
+              // On a phone the app bar already says 계정 설정.
+              if (!isCompactLayout(context)) ...[
+                const Text(
+                  '설정',
+                  style: TextStyle(
+                    fontSize: AppFontSizes.pageTitle,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
+              ],
               TabBar(
                 controller: _tabs,
                 isScrollable: true,
@@ -197,6 +202,24 @@ class _PermissionsPage extends ConsumerWidget {
                 : '다시 연결하기',
             onPressed: () => context.go('/login/permissions'),
           ),
+          // On a phone there is no account menu; sign out lives here.
+          if (isCompactLayout(context)) ...[
+            const SizedBox(height: 10),
+            OutlinedButton(
+              onPressed: () => signOutAndLeave(context, ref),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: danger,
+                side: const BorderSide(color: danger),
+                minimumSize: const Size.fromHeight(48),
+                shape: const StadiumBorder(),
+                textStyle: const TextStyle(
+                  fontSize: AppFontSizes.buttonLarge,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              child: const Text('로그아웃'),
+            ),
+          ],
         ],
       ),
     );

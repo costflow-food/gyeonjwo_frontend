@@ -9,7 +9,10 @@ import "../mail_intake_view_model.dart";
 import "intake_load_more.dart";
 
 class IntakeSidebarList extends ConsumerWidget {
-  const IntakeSidebarList({super.key});
+  const IntakeSidebarList({super.key, this.shrinkWrap = false});
+
+  /// Inside a scrolling page (the phone home), with each row on a card.
+  final bool shrinkWrap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,9 +37,11 @@ class IntakeSidebarList extends ConsumerWidget {
     if (mails.isEmpty) return const _Message("확인할 메일이 없습니다.");
     final more = page.nextCursor != null;
     return ListView.separated(
+      shrinkWrap: shrinkWrap,
+      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
       padding: EdgeInsets.zero,
       itemCount: mails.length + (more ? 1 : 0),
-      separatorBuilder: (_, _) => const SizedBox(height: 2),
+      separatorBuilder: (_, _) => SizedBox(height: shrinkWrap ? 8 : 2),
       itemBuilder: (context, index) {
         if (index == mails.length) {
           return IntakeLoadMore(
@@ -47,13 +52,15 @@ class IntakeSidebarList extends ConsumerWidget {
         final mail = mails[index];
         final received = formatSeoulDateTime(mail.receivedAt);
         return Material(
-          color: Colors.transparent,
+          color: shrinkWrap ? context.palette.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () => showMailIntakeDialog(context, mailId: mail.mailId),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
+              padding: shrinkWrap
+                  ? const EdgeInsets.fromLTRB(14, 12, 12, 12)
+                  : const EdgeInsets.fromLTRB(10, 10, 8, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

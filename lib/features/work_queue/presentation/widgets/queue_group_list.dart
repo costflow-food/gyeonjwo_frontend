@@ -122,10 +122,13 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
           if (!_collapsed.contains(group.itemName))
             for (final workCase in group.cases)
               Padding(
-                padding: const EdgeInsets.only(left: 8, bottom: 2),
+                padding: widget.shrinkWrap
+                    ? const EdgeInsets.only(bottom: 8)
+                    : const EdgeInsets.only(left: 8, bottom: 2),
                 child: RequestRow(
                   workCase,
                   selected: workCase.id == data.selectedId,
+                  card: widget.shrinkWrap,
                   onTap: () => _open(workCase),
                 ),
               ),

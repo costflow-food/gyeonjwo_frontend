@@ -3,11 +3,13 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../shared/app_font_sizes.dart";
+import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/outline_panel.dart";
 import "../../../shared/widgets/workspace_shell.dart";
 import "../../../shared/workspace_colors.dart";
 import "../../auth/presentation/gmail_connection_view_model.dart";
 import "../domain/work_case.dart";
+import "mobile/mobile_work_queue_home.dart";
 import "widgets/gmail_read_notice.dart";
 import "widgets/queue_group_list.dart";
 import "widgets/queue_summary.dart";
@@ -60,6 +62,17 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
     final listed = caseId == null
         ? null
         : data?.items.where((workCase) => workCase.id == caseId).firstOrNull;
+    if (isCompactLayout(context)) {
+      if (caseId == null) return const MobileWorkQueueHome();
+      if (listed != null) {
+        return WorkCasePanel(key: ValueKey(listed.id), workCase: listed);
+      }
+      if (data != null || value.hasError) return _CaseDetail(caseId: caseId);
+      return MobilePageScaffold(
+        onBack: () => context.go("/"),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     return WorkspaceShell(
       child: LayoutBuilder(
         builder: (context, constraints) => Column(
@@ -120,41 +133,62 @@ class _CaseDetail extends ConsumerWidget {
       }
     });
     final value = ref.watch(caseDetailProvider(caseId));
+    final compact = isCompactLayout(context);
+    // On a phone the loaded case is a screen of its own; the other states
+    // get the same back button.
+    Widget page(Widget body) => compact
+        ? MobilePageScaffold(
+            onBack: () => context.go("/"),
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: body,
+            ),
+          )
+        : body;
     return value.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(40),
-        child: Center(child: CircularProgressIndicator()),
+      loading: () => page(
+        const Padding(
+          padding: EdgeInsets.all(40),
+          child: Center(child: CircularProgressIndicator()),
+        ),
       ),
-      error: (error, _) => OutlinePanel(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 32),
-          child: Column(
-            children: [
-              Icon(Icons.error_outline, size: 32, color: context.palette.muted),
-              const SizedBox(height: 12),
-              Text(
-                error is WorkQueueFailure ? error.message : "업무를 불러오지 못했습니다.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: AppFontSizes.bodyLarge,
+      error: (error, _) => page(
+        OutlinePanel(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 32,
                   color: context.palette.muted,
                 ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => ref.invalidate(caseDetailProvider(caseId)),
-                    child: const Text("다시 시도"),
+                const SizedBox(height: 12),
+                Text(
+                  error is WorkQueueFailure ? error.message : "업무를 불러오지 못했습니다.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.bodyLarge,
+                    color: context.palette.muted,
                   ),
-                  TextButton(
-                    onPressed: () => context.go("/"),
-                    child: const Text("업무 큐로"),
-                  ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () =>
+                          ref.invalidate(caseDetailProvider(caseId)),
+                      child: const Text("다시 시도"),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go("/"),
+                      child: const Text("업무 큐로"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
