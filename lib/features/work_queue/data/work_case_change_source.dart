@@ -21,7 +21,6 @@ enum WorkCaseChangeKind { resync, inserted, updated, deleted }
 class WorkCaseChange {
   const WorkCaseChange(this.sequence, this.kind, [this.caseId]);
 
-  /// Increases with every signal.
   final int sequence;
   final WorkCaseChangeKind kind;
 
@@ -51,7 +50,6 @@ class SupabaseWorkCaseChangeSource implements WorkCaseChangeSource {
               event: PostgresChangeEvent.all,
               schema: "public",
               table: "work_cases",
-              // Only the id is read; data comes from the API.
               callback: (payload) => controller.add(_change(++count, payload)),
             )
             .subscribe((status, _) {

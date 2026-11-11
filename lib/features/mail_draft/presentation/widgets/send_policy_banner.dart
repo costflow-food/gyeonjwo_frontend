@@ -6,7 +6,6 @@ import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/mail_draft.dart";
 
-/// What will happen to this draft under the current send setting and status.
 class SendPolicyBanner extends StatelessWidget {
   const SendPolicyBanner({
     super.key,
@@ -19,11 +18,8 @@ class SendPolicyBanner extends StatelessWidget {
   final MailDraft draft;
   final bool editing;
 
-  /// API-12 result for this draft right after a candidate selection.
   final DraftDispatchState? dispatchState;
 
-  /// Opens the mailbox send settings (설정 → 메일 발송 설정) when the draft
-  /// waits on them. Send settings are per purpose for the whole mailbox only.
   final VoidCallback? onOpenSettings;
 
   @override

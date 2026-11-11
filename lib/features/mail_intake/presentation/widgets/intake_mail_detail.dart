@@ -7,7 +7,6 @@ import "../../domain/intake_mail.dart";
 import "case_candidate_tile.dart";
 import "intake_reason_badge.dart";
 
-/// Original text, the classifier's reason, and possible case groups.
 class IntakeMailDetail extends StatelessWidget {
   const IntakeMailDetail({
     super.key,

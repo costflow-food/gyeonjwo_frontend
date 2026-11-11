@@ -6,7 +6,6 @@ import "../shared/widgets/brand_logo.dart";
 import "../shared/widgets/workspace_button_styles.dart";
 import "../shared/workspace_colors.dart";
 
-/// 등록되지 않은 주소로 들어왔을 때의 화면.
 class NotFoundView extends StatelessWidget {
   const NotFoundView({super.key});
 

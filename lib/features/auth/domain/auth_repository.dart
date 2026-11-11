@@ -17,12 +17,9 @@ abstract interface class AuthRepository {
   /// OAuth error carried back on the redirect URL. Returned once per page load.
   AuthFailure? takeRedirectFailure();
 
-  /// Tokens from this page's OAuth redirect that the server has not accepted.
   GoogleProviderGrant? pendingGoogleGrant();
 
-  /// Sends the grant over HTTPS and waits for the server's connection result.
   Future<GmailConnection> connectGmail(GoogleProviderGrant grant);
 
-  /// Current connection kept by the server, e.g. after a page reload.
   Future<GmailConnection> fetchGmailConnection();
 }

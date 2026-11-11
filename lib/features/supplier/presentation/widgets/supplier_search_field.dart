@@ -3,7 +3,6 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// Server-side search input with a clear button.
 class SupplierSearchField extends StatelessWidget {
   const SupplierSearchField({
     super.key,

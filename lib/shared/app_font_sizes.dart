@@ -7,7 +7,7 @@ abstract final class AppFontSizes {
   static const double caption = 12;
   static const double captionSmall = 11;
 
-  // 버튼. 버튼만 바꾸려면 여기서 조절하세요.
+  // 버튼.
   static const double button = body;
   static const double buttonSmall = secondary;
   static const double buttonLarge = bodyLarge;

@@ -4,7 +4,6 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/mail_draft.dart";
 
-/// Recipient, subject, and text. Editable only while [editing].
 class MailDraftBody extends StatelessWidget {
   const MailDraftBody({
     super.key,

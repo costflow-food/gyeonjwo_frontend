@@ -8,8 +8,6 @@ import "../mail_intake_dialog.dart";
 import "../mail_intake_view_model.dart";
 import "intake_load_more.dart";
 
-/// 사이드바 접수 확인 탭: 분류기가 업무 여부·연결을 정하지 못한 메일.
-/// 누르면 그 메일을 선택한 채로 접수 확인 창(SCR-009)이 열립니다.
 class IntakeSidebarList extends ConsumerWidget {
   const IntakeSidebarList({super.key});
 

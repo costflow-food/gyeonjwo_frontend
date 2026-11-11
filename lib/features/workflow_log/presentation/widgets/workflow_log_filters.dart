@@ -3,7 +3,6 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../domain/workflow_log_filter.dart";
 
-/// The case the list is narrowed to; removing the chip shows every case.
 class WorkflowLogFilters extends StatelessWidget {
   const WorkflowLogFilters({
     super.key,

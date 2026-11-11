@@ -14,7 +14,6 @@ MailboxSyncDataSource mailboxSyncDataSource(Ref ref) =>
       ref.watch(authSessionDataSourceProvider).freshAccessToken,
     );
 
-/// API-32 메일함 수신 상태. 조회만 하며 메일을 가져오게 하지 않습니다.
 abstract interface class MailboxSyncDataSource {
   Future<Map<String, dynamic>> fetchSyncStatus();
 }

@@ -5,8 +5,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../domain/mail_draft.dart";
 
-/// Buttons follow the draft status and send policy the server returns.
-/// Labels match the real effect.
 class MailDraftFooter extends StatelessWidget {
   const MailDraftFooter({
     super.key,

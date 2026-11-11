@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import "../../../../shared/workspace_colors.dart";
 
-/// 업무 큐 첫 화면: 진한 초록 카드에 안내와 검토를 기다리는 요청 수.
 class QueueSummary extends StatelessWidget {
   const QueueSummary({super.key, required this.waitingCount});
 

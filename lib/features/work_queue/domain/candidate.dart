@@ -1,7 +1,6 @@
 import "../../mail_draft/domain/mail_draft.dart";
 import "work_case.dart";
 
-/// API-11 후보 세트. 조건 충족 여부는 MET·UNMET·UNKNOWN입니다.
 enum CheckState {
   met("MET", "충족"),
   unmet("UNMET", "불충족"),
@@ -17,7 +16,6 @@ enum CheckState {
   );
 }
 
-/// 필수 조건 또는 선호 조건 한 줄.
 class CandidateCheck {
   const CandidateCheck({
     required this.label,
@@ -64,16 +62,13 @@ class Candidate {
   final String name;
   final String? contactEmail;
 
-  /// 이 품목을 취급한다고 본 근거(거래 이력·등록 품목 등).
   final String handlingEvidence;
 
-  /// 에이전트가 이 후보를 고른 이유.
   final String reason;
 
   /// 주의 사유. 있으면 자동 발송하지 않고 승인을 기다립니다.
   final String? caution;
 
-  /// 이 후보에서 확인하지 못한 항목의 키.
   final List<String> unknownFields;
   final List<CandidateCheck> checks;
 
@@ -112,7 +107,6 @@ class CandidateSet {
   /// 업무 입력이 바뀌어 이 후보는 과거 후보입니다. 고를 수 없습니다.
   final bool isStale;
 
-  /// 업무 전체에서 확인하지 못한 항목의 키.
   final List<String> unknownFields;
   final List<String> allowedActions;
   final List<DisabledWorkCaseAction> disabledActions;
@@ -145,7 +139,6 @@ class CandidateSet {
   }
 }
 
-/// API-12 drafts[]: the RFQ draft made for one selected supplier.
 class SelectedDraft {
   const SelectedDraft({
     required this.draftId,

@@ -8,7 +8,6 @@ import 'auth_layout.dart';
 import 'auth_session_view_model.dart';
 import 'widgets/auth_failure_message.dart';
 
-/// Consent guidance shown before Google's own account and consent screens.
 class AuthPermissionsView extends ConsumerStatefulWidget {
   const AuthPermissionsView({super.key});
 
@@ -23,7 +22,6 @@ class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
   Future<void> _continueWithGoogle() async {
     setState(() => _starting = true);
     try {
-      // On web the page navigates to Google and comes back with the result.
       await ref.read(authSessionViewModelProvider.notifier).signInWithGoogle();
     } catch (error) {
       if (!mounted) return;

@@ -10,7 +10,6 @@ import "package:supabase_flutter/supabase_flutter.dart";
 class ProviderTokenFreeLocalStorage extends LocalStorage {
   ProviderTokenFreeLocalStorage(this._delegate);
 
-  /// Uses the same storage key as the default Supabase Flutter storage.
   factory ProviderTokenFreeLocalStorage.forSupabaseUrl(String supabaseUrl) =>
       ProviderTokenFreeLocalStorage(
         SharedPreferencesLocalStorage(

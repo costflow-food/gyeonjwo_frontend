@@ -4,7 +4,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/purchase_review.dart";
 import "review_format.dart";
 
-/// ④ 구매안 한 개: 진한 카드에 이름·상태·설명·총액. 업체별 배정과 선택 버튼은 [PlanBoard]가 둡니다.
 class PlanCard extends StatelessWidget {
   const PlanCard({
     super.key,
@@ -16,13 +15,11 @@ class PlanCard extends StatelessWidget {
 
   final ResponsePlan plan;
 
-  /// 확정 가능한 안 중 총액이 가장 낮음. 금색으로 강조합니다.
   final bool lowest;
 
   /// 가장 낮은 안과의 차이(원). 계산할 수 없으면 null.
   final String? difference;
 
-  /// 좁은 화면에서 표 대신 카드 안에 보여 줄 업체별 배정.
   final List<Widget> allocations;
 
   @override

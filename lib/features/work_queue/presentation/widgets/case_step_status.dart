@@ -11,8 +11,6 @@ import "../../../supplier/presentation/supplier_register_dialog.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
-/// 이미 실행한 업무의 현재 단계. 멈춘 업무는 서버가 알려 준 이유와,
-/// 서버가 허용하면 '다시 추출'(API-07)을 보여 줍니다.
 class CaseStepStatus extends ConsumerStatefulWidget {
   const CaseStepStatus({super.key, required this.workCase});
 

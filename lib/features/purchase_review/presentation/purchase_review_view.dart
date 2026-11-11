@@ -9,7 +9,6 @@ import "../domain/purchase_review.dart";
 import "purchase_review_view_model.dart";
 import "widgets/review_card_content.dart";
 
-/// `/cases/{case_id}/review`: 업무 한 건의 저장 검토 카드.
 class PurchaseReviewView extends ConsumerWidget {
   const PurchaseReviewView({super.key, required this.caseId});
 

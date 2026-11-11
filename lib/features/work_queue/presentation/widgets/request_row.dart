@@ -6,7 +6,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/work_case.dart";
 import "status_badge.dart";
 
-/// 사이드바 품목 그룹 안의 업무(메일) 한 건.
 class RequestRow extends StatelessWidget {
   const RequestRow(
     this.data, {

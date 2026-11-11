@@ -27,7 +27,6 @@ ThemeData buildAppTheme(WorkspacePalette p) {
     ),
     scaffoldBackgroundColor: p.canvas,
     useMaterial3: true,
-    // IBM Plex Sans KR for Hangul, Latin and numbers alike.
     fontFamily: GoogleFonts.ibmPlexSansKr().fontFamily,
   );
   return base.copyWith(
@@ -157,9 +156,7 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Re-run route guards whenever sign-in state changes.
     ref.listen(authSessionViewModelProvider, (_, _) => appRouter.refresh());
-    // Leave the connection screen as soon as the server confirms Gmail.
     ref.listen(
       gmailConnectionViewModelProvider.select((value) => value.connectionPhase),
       (_, _) => appRouter.refresh(),
@@ -173,7 +170,6 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-/// Shown when the run settings are missing.
 class MissingConfigApp extends StatelessWidget {
   const MissingConfigApp({super.key, required this.missingKeys});
 

@@ -1,4 +1,3 @@
-/// Connection result decided by the server after checking the Google token.
 enum GmailConnectionStatus {
   connected,
   partial,
@@ -7,7 +6,6 @@ enum GmailConnectionStatus {
   notConnected,
 }
 
-/// What the connection screen shows. Derived here, not in the View.
 enum GmailConnectionPhase {
   connecting,
   connected,
@@ -33,13 +31,10 @@ class GmailConnection {
   final GmailConnectionStatus status;
   final String? email;
 
-  /// Server-verified `gmail.readonly` grant.
   final bool canRead;
 
-  /// Server-verified `gmail.send` grant. Separate from send approval settings.
   final bool canSend;
 
-  /// Whether the server started automatic Gmail receiving.
   final bool watchStarted;
 
   bool get hasConnection =>
@@ -60,7 +55,6 @@ class GmailConnection {
   };
 }
 
-/// Mail features the UI may enable. The server re-checks every request.
 class GmailCapabilities {
   const GmailCapabilities({
     required this.canRead,

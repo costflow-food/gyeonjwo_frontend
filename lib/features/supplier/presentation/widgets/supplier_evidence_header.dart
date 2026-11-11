@@ -3,7 +3,6 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// Dialog label, supplier and item title, and close button.
 class SupplierEvidenceHeader extends StatelessWidget {
   const SupplierEvidenceHeader({super.key, required this.title});
   final String title;

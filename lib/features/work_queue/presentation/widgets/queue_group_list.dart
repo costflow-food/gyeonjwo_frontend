@@ -11,7 +11,6 @@ import "../../domain/work_queue_state.dart";
 import "../work_queue_view_model.dart";
 import "request_row.dart";
 
-/// 품목별 업무 큐 그룹. 업무를 누르면 메인 화면에 원문이 열립니다.
 class QueueGroupList extends ConsumerStatefulWidget {
   const QueueGroupList({super.key, this.shrinkWrap = false});
 
@@ -216,7 +215,6 @@ class _GroupHeader extends StatelessWidget {
 
 /// 검색창과 상태 탭(전체·대기·진행 중·완료). 목록을 다 받았으면 받은 업무로
 /// 건수를 다시 세고, 서버에 더 남아 있으면 서버 counts를 씁니다.
-/// 보류(Pending) 업무는 전체에서만 보입니다.
 class _QueueFilters extends StatelessWidget {
   const _QueueFilters({
     required this.search,

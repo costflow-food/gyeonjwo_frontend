@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import "../../../../shared/workspace_colors.dart";
 
-/// Title, request label, and close button.
 class ReviewProgressHeader extends StatelessWidget {
   const ReviewProgressHeader({
     super.key,
@@ -10,7 +9,6 @@ class ReviewProgressHeader extends StatelessWidget {
     required this.onClose,
   });
 
-  /// 업무 제목(메일 제목 또는 요청자).
   final String title;
   final VoidCallback onClose;
 

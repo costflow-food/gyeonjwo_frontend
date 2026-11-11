@@ -1,4 +1,3 @@
-/// API-32 메일함 수신 상태. 토큰·커서 같은 값은 서버가 주지 않습니다.
 class MailboxSyncStatus {
   const MailboxSyncStatus({
     required this.status,
@@ -6,7 +5,6 @@ class MailboxSyncStatus {
     this.lastError,
   });
 
-  /// `data`. 연결된 메일함이 없으면 status가 NOT_CONNECTED입니다.
   factory MailboxSyncStatus.fromJson(Map<String, dynamic> json) =>
       MailboxSyncStatus(
         status: json["status"] as String? ?? "",
@@ -29,7 +27,6 @@ class MailboxSyncStatus {
 
   bool get connected => status != "NOT_CONNECTED";
 
-  /// 서버가 수신 실패를 기록함.
   bool get failed => connected && (status == "ERROR" || lastError != null);
 
   /// 실패 기록은 없지만 한동안 메일함을 읽지 못함. 서버가 실패를 기록하지

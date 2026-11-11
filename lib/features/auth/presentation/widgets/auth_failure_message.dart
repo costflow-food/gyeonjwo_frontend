@@ -1,7 +1,6 @@
 import "../../domain/auth_failure.dart";
 
 extension AuthFailureMessage on AuthFailure {
-  /// User-facing text. Never includes tokens or raw server responses.
   String get message => switch (code) {
     AuthFailureCode.notConfigured => "견줘 연결 설정이 아직 준비되지 않았어요. 관리자에게 문의해 주세요.",
     AuthFailureCode.insecureServer => "안전한 HTTPS 서버 주소가 아니어서 연결 정보를 보내지 않았어요.",

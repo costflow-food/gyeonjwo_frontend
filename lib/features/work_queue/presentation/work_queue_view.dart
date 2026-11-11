@@ -103,7 +103,6 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
   }
 }
 
-/// API-02 업무. 목록이 바뀌면 다시 읽어 같은 업무를 보여 줍니다.
 class _CaseDetail extends ConsumerWidget {
   const _CaseDetail({required this.caseId});
 

@@ -6,7 +6,6 @@ import "../widgets/workspace_button_styles.dart";
 import "../workspace_colors.dart";
 import "workspace_theme.dart";
 
-/// 설정 > 화면 테마: 색 묶음을 견본으로 보여 주고, 누르면 바로 바꿉니다.
 class ThemePicker extends ConsumerWidget {
   const ThemePicker({super.key});
 
@@ -112,7 +111,6 @@ class _ThemeTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 판 위에 진한 카드와 포인트·금색을 얹은 작은 견본.
                 Container(
                   height: 64,
                   color: palette.frame,

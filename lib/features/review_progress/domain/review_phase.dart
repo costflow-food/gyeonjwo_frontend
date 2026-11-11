@@ -1,6 +1,5 @@
 import "../../work_queue/domain/work_case.dart";
 
-/// 검토 진행 팝업의 단계. API-03 processing_step을 화면 단계로 묶습니다.
 enum ReviewStage {
   extracting("요청 정보 추출"),
   findingCandidates("견적 요청 후보 찾기"),
@@ -24,7 +23,6 @@ const _running = {
   "BUILDING_COUNTER_OFFER": ReviewStage.preparingCard,
 };
 
-/// 멈춘 단계: 구매담당자가 확인하거나, 거래처 회신을 기다립니다.
 enum ReviewOutcome {
   chooseCandidates(
     "견적을 요청할 업체를 골라 주세요.",
@@ -51,7 +49,6 @@ enum ReviewOutcome {
   /// 정상적으로 멈춘 경우 마친 마지막 단계.
   final ReviewStage? reached;
 
-  /// 문제가 있어 멈춘 결과. 화면에서 강조합니다.
   final bool stopped;
 }
 

@@ -9,8 +9,6 @@ import "evidence_source_line.dart";
 import "supplier_fact.dart";
 import "supplier_section_title.dart";
 
-/// Item terms, certifications with validity, and the free-text note.
-/// The note is a memo; it never excludes a candidate on its own.
 class SupplierEvidenceItem extends StatelessWidget {
   const SupplierEvidenceItem({super.key, required this.item});
   final SupplierItem item;

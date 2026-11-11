@@ -6,7 +6,6 @@ import "supplier_fact.dart";
 import "supplier_section_title.dart";
 import "supplier_source_badge.dart";
 
-/// Contact, location, and where the reference data came from.
 class SupplierEvidenceSupplier extends StatelessWidget {
   const SupplierEvidenceSupplier({super.key, required this.supplier});
   final SupplierDetail supplier;

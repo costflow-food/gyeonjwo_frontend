@@ -8,7 +8,6 @@ import '../workspace_colors.dart';
 import 'brand_logo.dart';
 import 'workspace_sidebar.dart';
 
-/// 위쪽 메뉴 줄 + 왼쪽 업무 큐 + 가운데 작업 판. 메뉴를 위로 올려 좌우 폭을 넓게 씁니다.
 class WorkspaceShell extends StatefulWidget {
   const WorkspaceShell({super.key, required this.child});
   final Widget child;
@@ -135,7 +134,6 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
   );
 }
 
-/// 로고 · 업무 큐/거래처/실행 로그 · 계정 메뉴.
 class _TopBar extends ConsumerWidget {
   const _TopBar();
 
@@ -264,7 +262,6 @@ class _NavTab extends StatelessWidget {
 
 enum _AccountMenu { settings, signOut }
 
-/// 오른쪽 끝 계정 버튼: 설정·로그아웃.
 class _AccountButton extends ConsumerWidget {
   const _AccountButton();
 

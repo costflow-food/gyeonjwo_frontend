@@ -10,7 +10,6 @@ import "review_format.dart";
 const _tax = {"EXCLUDED": "부가세 별도", "INCLUDED": "부가세 포함", "EXEMPT": "면세"};
 const _checkStates = {"STATED": "원문 확인", "MISSING": "원문에 없음", "UNCLEAR": "불명확"};
 
-/// API-13 견적 한 버전과 필드별 원문 근거.
 class QuoteCard extends StatelessWidget {
   const QuoteCard({super.key, required this.quote});
 
@@ -91,7 +90,6 @@ class QuoteCard extends StatelessWidget {
   }
 }
 
-/// 원문 근거 목록. 처음엔 접혀 있고 제목 줄을 누르면 펼쳐집니다.
 class _EvidenceSection extends StatefulWidget {
   const _EvidenceSection({required this.evidence});
 

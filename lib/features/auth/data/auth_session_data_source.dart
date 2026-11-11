@@ -7,7 +7,6 @@ import "../../../shared/navigation/page_navigation.dart";
 
 part "auth_session_data_source.g.dart";
 
-/// Gmail scopes requested in the same Google consent as sign-in.
 const gmailScopes = [
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.send",
@@ -50,8 +49,6 @@ abstract final class OAuthRedirectGrant {
 
 @Riverpod(keepAlive: true)
 AuthSessionDataSource authSessionDataSource(Ref ref) =>
-    // main() initializes Supabase before runApp and refuses to start without
-    // its settings, so there is no unconfigured mode.
     SupabaseAuthSessionDataSource(Supabase.instance.client.auth);
 
 /// Session values as a JSON-like map, mirroring the other DataSources.
@@ -123,7 +120,6 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
   @override
   Future<void> signInWithGoogle() async {
     final base = Uri.base;
-    // Return to the app root; the route guard opens the connection screen.
     final redirectTo = Uri(
       scheme: base.scheme,
       host: base.host,

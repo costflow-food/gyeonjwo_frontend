@@ -9,7 +9,6 @@ import '../../features/work_queue/presentation/widgets/queue_group_list.dart';
 import '../../features/work_queue/presentation/work_queue_view_model.dart';
 import '../workspace_colors.dart';
 
-/// 왼쪽 업무 큐. 로고·메뉴·계정은 위쪽 메뉴 줄에 있습니다.
 class WorkspaceSidebar extends StatelessWidget {
   const WorkspaceSidebar({super.key, required this.onCollapse});
   final VoidCallback onCollapse;
@@ -69,7 +68,6 @@ class WorkspaceSidebar extends StatelessWidget {
   }
 }
 
-/// 업무 큐 | 접수 확인. 탭을 누르거나 옆으로 밀어 넘깁니다(설정 화면과 같은 방식).
 class _SidebarTabs extends ConsumerStatefulWidget {
   const _SidebarTabs();
 
@@ -99,7 +97,6 @@ class _SidebarTabsState extends ConsumerState<_SidebarTabs>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Each tab takes half the width; counts sit in their own badge.
         TabBar(
           controller: _tabs,
           labelColor: context.palette.ink,

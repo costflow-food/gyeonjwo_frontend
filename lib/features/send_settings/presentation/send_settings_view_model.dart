@@ -13,7 +13,6 @@ const mailboxSettingsScope = "";
 
 String sendSettingsScope(String? caseId) => caseId ?? mailboxSettingsScope;
 
-/// SCR-008 effective settings for the mailbox or one case.
 @Riverpod(keepAlive: true, retry: _noRetry)
 class SendSettingsViewModel extends _$SendSettingsViewModel {
   String? get _caseId => scope == mailboxSettingsScope ? null : scope;

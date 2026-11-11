@@ -5,7 +5,6 @@ import "../../domain/review_phase.dart";
 import "../../domain/review_progress_repository.dart";
 import "../../domain/review_progress_state.dart";
 
-/// The pipeline steps from API-03, and why it stopped once it did.
 class ReviewProgressBody extends StatelessWidget {
   const ReviewProgressBody({
     super.key,
@@ -101,7 +100,6 @@ class ReviewProgressBody extends StatelessWidget {
   }
 }
 
-/// The first check failed, so there is no step to show yet.
 class ReviewProgressError extends StatelessWidget {
   const ReviewProgressError({
     super.key,

@@ -6,7 +6,6 @@ import "price_column.dart";
 import "supplier_load_error.dart";
 import "supplier_section_title.dart";
 
-/// API-31 history. Mail quotes and actual purchases are separate columns.
 class PriceHistorySection extends ConsumerWidget {
   const PriceHistorySection({super.key, required this.supplierItemId});
   final String supplierItemId;

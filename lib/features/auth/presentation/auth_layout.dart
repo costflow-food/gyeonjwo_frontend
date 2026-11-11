@@ -188,7 +188,6 @@ class AuthInfoTile extends StatelessWidget {
   final bool enabled;
   final String? status;
 
-  /// 기본은 켜져 있으면 초록, 꺼져 있으면 흐린 색입니다.
   final Color? statusColor;
 
   @override

@@ -4,7 +4,6 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/supplier_list_state.dart";
 
-/// Result count plus search progress or a retry after a failed search.
 class SupplierListStatus extends StatelessWidget {
   const SupplierListStatus({
     super.key,

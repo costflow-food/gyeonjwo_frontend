@@ -4,7 +4,6 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../domain/send_settings.dart";
 
-/// Tone and signature. Changes apply to new drafts, never to sent mail.
 class MailStyleSection extends StatelessWidget {
   const MailStyleSection({
     super.key,

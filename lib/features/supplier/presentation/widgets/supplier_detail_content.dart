@@ -37,7 +37,6 @@ class SupplierDetailContent extends StatelessWidget {
         const SizedBox(height: 20),
         const SupplierSectionTitle("업체 정보"),
         const SizedBox(height: 12),
-        // 한 줄에 하나씩 세로로 쌓아, 가로로 흩어져 생기던 빈 공간을 없앱니다.
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 16,
