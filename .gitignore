@@ -33,8 +33,7 @@ migrate_working_dir/
 app.*.symbols
 app.*.map.json
 
-# Unused Flutter platforms; Chrome uses the tracked web/ directory.
-/android/
+# Unused Flutter platforms; web/ and android/ are tracked.
 /ios/
 /macos/
 /windows/

@@ -25,68 +25,72 @@ class AuthLayout extends StatelessWidget {
       backgroundColor: context.palette.canvas,
       body: SafeArea(
         child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: Container(
-                    constraints: BoxConstraints(maxWidth: maxWidth + 64),
-                    padding: EdgeInsets.all(compact ? 20 : 32),
-                    decoration: BoxDecoration(
-                      color: context.palette.frame,
-                      borderRadius: BorderRadius.circular(32),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 16,
-                          runSpacing: 16,
-                          children: [
-                            const SizedBox(width: 132, child: BrandLogo()),
-                          ],
-                        ),
-                        SizedBox(height: compact ? 12 : 32),
-                        if (backPath != null)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: () => context.go(backPath!),
-                              icon: const Icon(Icons.arrow_back, size: 16),
-                              label: const Text('이전으로'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: context.palette.muted,
+          builder: (context, constraints) {
+            // Phones: give the content the width instead of the margins.
+            final narrow = constraints.maxWidth < 600;
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: EdgeInsets.all(narrow ? 12 : 24),
+                  child: Center(
+                    child: Container(
+                      constraints: BoxConstraints(maxWidth: maxWidth + 64),
+                      padding: EdgeInsets.all(compact || narrow ? 20 : 32),
+                      decoration: BoxDecoration(
+                        color: context.palette.frame,
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 16,
+                            runSpacing: 16,
+                            children: [
+                              const SizedBox(width: 132, child: BrandLogo()),
+                            ],
+                          ),
+                          SizedBox(height: compact ? 12 : 32),
+                          if (backPath != null)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed: () => context.go(backPath!),
+                                icon: const Icon(Icons.arrow_back, size: 16),
+                                label: const Text('이전으로'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: context.palette.muted,
+                                ),
+                              ),
+                            ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: compact ? 16 : 32,
+                            ),
+                            child: child,
+                          ),
+                          SizedBox(height: compact ? 4 : 16),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Text(
+                              '견줘 · 근거를 모아, 더 선명한 구매 검토.',
+                              style: TextStyle(
+                                fontSize: AppFontSizes.secondary,
+                                color: context.palette.muted,
                               ),
                             ),
                           ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: compact ? 16 : 32,
-                          ),
-                          child: child,
-                        ),
-                        SizedBox(height: compact ? 4 : 16),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: Text(
-                            '견줘 · 근거를 모아, 더 선명한 구매 검토.',
-                            style: TextStyle(
-                              fontSize: AppFontSizes.secondary,
-                              color: context.palette.muted,
-                            ),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

@@ -1,4 +1,7 @@
 import "dart:typed_data";
 
-void saveFile(Uint8List bytes, {required String filename, String? mimeType}) =>
-    throw UnsupportedError("파일 저장은 웹에서만 지원합니다.");
+Future<void> saveFile(
+  Uint8List bytes, {
+  required String filename,
+  String? mimeType,
+}) async => throw UnsupportedError("파일 저장은 이 기기에서 지원하지 않습니다.");
