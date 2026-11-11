@@ -58,7 +58,7 @@ enum LogEventType {
   rfqIntakeLinked("RFQ_INTAKE_LINKED", "회신 연결"),
   hold("HOLD", "보류"),
   resume("RESUME", "재개"),
-  acceptIncrease("ACCEPT_INCREASE", "수긍"),
+  acceptIncrease("ACCEPT_INCREASE", "수용"),
   archive("ARCHIVE", "보관"),
   restore("RESTORE", "복원"),
   approvalRequired("APPROVAL_REQUIRED", "승인 필요"),

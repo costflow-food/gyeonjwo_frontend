@@ -86,14 +86,14 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text(
-          "인상을 수긍할까요?",
+          "인상을 수용할까요?",
           style: TextStyle(
             fontSize: AppFontSizes.dialogTitleSmall,
             fontWeight: FontWeight.w700,
           ),
         ),
         content: const Text(
-          "수긍하면 이 업무와 연결된 메일이 견줘에서 삭제되고 되돌릴 수 없어요.\n"
+          "수용하면 이 업무와 연결된 메일이 견줘에서 삭제되고 되돌릴 수 없어요.\n"
           "견적 수락 메일이나 발주는 보내지 않아요.",
           style: TextStyle(fontSize: AppFontSizes.body, height: 1.7),
         ),
@@ -106,7 +106,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: WorkspaceButtonStyles.filled(context),
-            child: const Text("수긍하기"),
+            child: const Text("수용하기"),
           ),
         ],
       ),
@@ -116,7 +116,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
     final router = GoRouter.of(context);
     if (await _run(
       () => _viewModel.acceptIncrease(widget.workCase),
-      done: "수긍했어요. 업무 큐에서 정리했어요.",
+      done: "수용했어요. 업무 큐에서 정리했어요.",
     )) {
       router.go("/");
     }
@@ -528,7 +528,7 @@ class _MailError extends StatelessWidget {
   );
 }
 
-/// 아직 실행하지 않은 업무: 수긍하기 / 다른 대안 찾기.
+/// 아직 실행하지 않은 업무: 수용하기 / 다른 대안 찾기.
 /// 버튼은 서버가 허용한 행동(allowed_actions)일 때만 누를 수 있습니다.
 class _Decision extends StatelessWidget {
   const _Decision({
@@ -551,12 +551,12 @@ class _Decision extends StatelessWidget {
       button: OutlinedButton(
         onPressed: canAccept && !busy ? onAccept : null,
         style: WorkspaceButtonStyles.outlined(context),
-        child: const Text("수긍하기"),
+        child: const Text("수용하기"),
       ),
       caption: canAccept
           ? "인상안을 받아들이고 업무를 정리해요. 되돌릴 수 없어요."
           : workCase.disabledMessage(WorkCaseAction.acceptIncrease) ??
-                "지금은 수긍할 수 없어요.",
+                "지금은 수용할 수 없어요.",
     );
     final start = _Choice(
       button: FilledButton.icon(
