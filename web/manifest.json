@@ -1,11 +1,11 @@
 {
-    "name": "gyeonjwo_frontend",
-    "short_name": "gyeonjwo_frontend",
+    "name": "견줘",
+    "short_name": "견줘",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F2F0EB",
+    "theme_color": "#1E3932",
+    "description": "구매 요청 메일과 거래처 견적을 한곳에서 검토하는 구매 업무 도구",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
