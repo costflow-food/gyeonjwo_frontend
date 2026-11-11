@@ -10,6 +10,7 @@ import "../../../../shared/widgets/outline_panel.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
+import "../../../voice_import/data/recording_supplier_source.dart";
 import "../../../voice_import/presentation/voice_import_flow.dart";
 import "../../../voice_import/presentation/widgets/call_recording_section.dart";
 import "../../data/work_queue_repository_impl.dart";
@@ -215,6 +216,15 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
         onDownload: (attachment) => _download(mail.id, attachment),
       ),
     );
+    final recordings = recordingSupplierQueryOf(workCase);
+    // The queue's reply summary answers it. A case read on its own has none,
+    // so there the section waits for the suppliers themselves.
+    final showRecordings =
+        recordings != null &&
+        (workCase.replySummary != null ||
+            (ref.watch(recordingSuppliersProvider(recordings)).value ??
+                    const [])
+                .isNotEmpty);
     final Widget? bar;
     if (notStarted) {
       bar = _DecisionBar(
@@ -270,20 +280,24 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           mailContent,
-          const SizedBox(height: 20),
-          CallRecordingSection(
-            onAdd: () => addCallRecording(
-              context,
-              ref,
-              // The mail subject names the case best; the list title can be
-              // just the sender's address.
-              caseTitle:
-                  mail.value?.subject ??
-                  (workCase.itemName == null
-                      ? workCase.title
-                      : "${workCase.title} · ${workCase.itemName} 품목"),
+          // A call is a supplier's reply, so only once requests went out.
+          if (recordings != null && showRecordings) ...[
+            const SizedBox(height: 20),
+            CallRecordingSection(
+              onAdd: () => addCallRecording(
+                context,
+                ref,
+                // The mail subject names the case best; the list title can be
+                // just the sender's address.
+                caseTitle:
+                    mail.value?.subject ??
+                    (workCase.itemName == null
+                        ? workCase.title
+                        : "${workCase.title} · ${workCase.itemName} 품목"),
+                suppliers: recordings,
+              ),
             ),
-          ),
+          ],
           if (notStarted || atCandidates) ...[
             const SizedBox(height: 20),
             _Hint(

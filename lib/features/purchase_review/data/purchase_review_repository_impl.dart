@@ -34,6 +34,13 @@ class PurchaseReviewRepositoryImpl implements PurchaseReviewRepository {
   });
 
   @override
+  Future<List<QuoteVersion>> getQuotes(String caseId) => _guard(() async {
+    final response = await _dataSource.fetchQuotes(caseId);
+    final quotes = (response["data"] as Map<String, dynamic>)["items"] as List;
+    return [for (final item in quotes) _quote(item as Map<String, dynamic>)];
+  });
+
+  @override
   Future<void> selectPlan(ReviewCard card, ResponsePlan plan) => _decide(card, {
     "decision": ReviewAction.selectPlan,
     "plan_id": plan.planId,

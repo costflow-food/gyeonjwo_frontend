@@ -1,21 +1,27 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
+import "../data/recording_supplier_source.dart";
 import "../data/voice_file_picker.dart";
 import "../domain/voice_file.dart";
 import "voice_file_page.dart";
 
-/// 업무 상세의 "통화 녹음 추가": 파일 선택창 → 녹음 파일 확인.
+/// 업무 상세의 "통화 녹음 추가": 파일 선택창 → 파일·거래처 확인.
 Future<void> addCallRecording(
   BuildContext context,
   WidgetRef ref, {
   required String caseTitle,
+  required RecordingSupplierQuery suppliers,
 }) async {
   final file = await pickVoiceFile(context, ref);
   if (file == null || !context.mounted) return;
   await Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => VoiceFilePage(initial: file, caseTitle: caseTitle),
+      builder: (_) => VoiceFilePage(
+        initial: file,
+        caseTitle: caseTitle,
+        suppliers: suppliers,
+      ),
     ),
   );
 }

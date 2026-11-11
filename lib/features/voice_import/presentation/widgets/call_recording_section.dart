@@ -3,8 +3,8 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// 업무 상세(폰)의 "통화 녹음" 칸. 붙은 녹음 목록은 업로드 API가 생기면
-/// 이 칸에 함께 보여 줍니다.
+/// 업무 상세(폰)의 "통화 녹음" 칸. 견적 요청을 보낸 뒤에만 보입니다.
+/// 붙은 녹음 목록은 업로드 API가 생기면 이 칸에 함께 보여 줍니다.
 class CallRecordingSection extends StatelessWidget {
   const CallRecordingSection({super.key, required this.onAdd});
 
@@ -66,7 +66,7 @@ class CallRecordingSection extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            "이 업무와 관련된 통화·음성 녹음 파일을 붙입니다.",
+                            "견적을 요청한 거래처와의 통화 녹음을 붙입니다.",
                             style: TextStyle(
                               fontSize: AppFontSizes.caption,
                               color: context.palette.muted,
