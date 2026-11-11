@@ -400,7 +400,7 @@ class _HatchPainter extends CustomPainter {
   bool shouldRepaint(_HatchPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// 확정 가능한 안: 이 안 선택. 조건부 안: 수긍하기(아직 서버 동작이 없어 비활성).
+/// 확정 가능한 안: 이 안 선택. 조건부 안: 수용하기(아직 서버 동작이 없어 비활성).
 class _SelectButton extends StatelessWidget {
   const _SelectButton({
     required this.plan,
@@ -446,7 +446,7 @@ class _SelectButton extends StatelessWidget {
         : plan.planId == null
         ? "서버가 이 안의 ID를 보내지 않아 선택할 수 없어요."
         : card.disabledMessage(ReviewAction.selectPlan);
-    final label = plan.valid ? "이 안 선택" : "수긍하기";
+    final label = plan.valid ? "이 안 선택" : "수용하기";
     final onPressed = canSelect && !busy ? onSelect : null;
     const shape = StadiumBorder();
     const size = Size.fromHeight(48);
