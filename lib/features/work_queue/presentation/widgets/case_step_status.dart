@@ -47,7 +47,8 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
       }
     } on WorkQueueFailure catch (failure) {
       if (!mounted) return;
-      if (failure.caseChanged) viewModel.refresh();
+      // A retryable failure may still have gone through; read it again.
+      if (failure.caseChanged || failure.retryable) viewModel.refresh();
       setState(() {
         _busy = false;
         _error = failure.unknownOutcome

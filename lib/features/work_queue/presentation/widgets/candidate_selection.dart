@@ -97,7 +97,8 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
       }
     } on WorkQueueFailure catch (failure) {
       if (!mounted) return;
-      if (failure.caseChanged) {
+      // A retryable failure may still have gone through; read it again.
+      if (failure.caseChanged || failure.retryable) {
         ref.read(workQueueViewModelProvider.notifier).refresh();
       }
       // A 409/422 about the set: re-read API-11 and drop the old picks.

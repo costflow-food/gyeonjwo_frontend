@@ -1,6 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/idempotency_key.dart";
+import "../../../shared/network/api_request.dart";
 
 import "../domain/intake_mail.dart";
 import "../domain/mail_intake_repository.dart";
@@ -54,18 +55,19 @@ class MailIntakeRepositoryImpl implements MailIntakeRepository {
       ),
       // Keep the key when the outcome is unknown so a retry cannot apply twice.
       serverCode: (error) =>
-          error is IntakeFailure && !error.unknownOutcome ? error.code : null,
+          error is IntakeFailure && !error.retryable ? error.code : null,
     );
   }
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
       return await request();
-    } on MailIntakeApiException catch (error) {
+    } on ApiException catch (error) {
       throw IntakeFailure(
         error.code,
         error.message,
         unknownOutcome: error.unknownOutcome,
+        retryable: error.retryable,
       );
     }
   }

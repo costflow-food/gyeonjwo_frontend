@@ -1,6 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/idempotency_key.dart";
+import "../../../shared/network/api_request.dart";
 
 import "../domain/mail_draft.dart";
 import "../domain/mail_draft_repository.dart";
@@ -123,19 +124,19 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
     body,
     (key) => _guard(() => request(key)),
     // Keep the key when the outcome is unknown so a retry cannot act twice.
-    serverCode: (error) => error is MailDraftFailure && !error.unknownOutcome
-        ? error.code
-        : null,
+    serverCode: (error) =>
+        error is MailDraftFailure && !error.retryable ? error.code : null,
   );
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
       return await request();
-    } on MailDraftApiException catch (error) {
+    } on ApiException catch (error) {
       throw MailDraftFailure(
         error.code,
         error.message,
         unknownOutcome: error.unknownOutcome,
+        retryable: error.retryable,
       );
     }
   }

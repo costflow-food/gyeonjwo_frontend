@@ -2,6 +2,7 @@ import "dart:math";
 
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/idempotency_key.dart";
 import "../domain/auth_failure.dart";
 import "../domain/auth_repository.dart";
 import "../domain/auth_session.dart";
@@ -29,8 +30,9 @@ class AuthRepositoryImpl implements AuthRepository {
   /// Provider token the server already accepted; never sent twice.
   String? _acceptedProviderToken;
 
-  /// Reused only while the previous attempt's outcome is unknown.
-  String? _pendingIdempotencyKey;
+  /// Reused only while the previous attempt's outcome is unknown, and only
+  /// for [pendingKeyLifetime].
+  ({String key, DateTime issuedAt})? _pendingKey;
   bool _redirectFailureTaken = false;
 
   /// One request per grant even if the screen rebuilds while it is pending.
@@ -51,7 +53,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signOut() async {
     _acceptedProviderToken = null;
     _inFlight = null;
-    _pendingIdempotencyKey = null;
+    _pendingKey = null;
     await _session.signOut();
   }
 
@@ -96,7 +98,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   Future<GmailConnection> _connectGmail(GoogleProviderGrant grant) async {
-    final key = _pendingIdempotencyKey ??= _newIdempotencyKey();
+    final now = DateTime.now();
+    final pending = _pendingKey;
+    final key =
+        pending != null && now.difference(pending.issuedAt) < pendingKeyLifetime
+        ? pending.key
+        : _newIdempotencyKey();
+    if (key != pending?.key) _pendingKey = (key: key, issuedAt: now);
     try {
       final response = await _withSession(
         (accessToken) => _connection.connectGoogle(
@@ -106,7 +114,7 @@ class AuthRepositoryImpl implements AuthRepository {
           idempotencyKey: key,
         ),
       );
-      _pendingIdempotencyKey = null;
+      _pendingKey = null;
       final connection = _toConnection(response);
       if (connection.status != GmailConnectionStatus.failed) {
         _acceptedProviderToken = grant.accessToken;
@@ -114,7 +122,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return connection;
     } on AuthFailure catch (failure) {
       // Same key only when the server may have processed the request.
-      if (!failure.retryable) _pendingIdempotencyKey = null;
+      if (!failure.retryable) _pendingKey = null;
       rethrow;
     }
   }

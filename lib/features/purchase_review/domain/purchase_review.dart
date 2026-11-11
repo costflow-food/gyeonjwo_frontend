@@ -410,6 +410,7 @@ class PurchaseReviewFailure implements Exception {
     this.code,
     this.message, {
     this.unknownOutcome = false,
+    this.retryable = false,
   });
 
   final String code;
@@ -417,6 +418,10 @@ class PurchaseReviewFailure implements Exception {
 
   /// 응답을 받지 못해 서버 처리 여부를 알 수 없음. 같은 요청으로 다시 확인합니다.
   final bool unknownOutcome;
+
+  /// 응답 없음·5xx·`retryable: true`: 서버가 처리했을 수 있어 같은 멱등 키를
+  /// 남기고 상태를 다시 읽습니다. [unknownOutcome]이면 늘 참입니다.
+  final bool retryable;
 
   /// 아직 카드가 없음(404 REVIEW_NOT_READY). 오류가 아니라 대기 상태입니다.
   bool get notReady => code == "REVIEW_NOT_READY";

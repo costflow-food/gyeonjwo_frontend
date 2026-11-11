@@ -39,7 +39,10 @@ class PurchaseReviewViewModel extends _$PurchaseReviewViewModel {
     try {
       await send(ref.read(purchaseReviewRepositoryProvider), card);
     } on PurchaseReviewFailure catch (failure) {
-      if (failure.cardChanged && ref.mounted) ref.invalidateSelf();
+      // A retryable failure may still have gone through; read it again.
+      if ((failure.cardChanged || failure.retryable) && ref.mounted) {
+        ref.invalidateSelf();
+      }
       rethrow;
     }
     if (!ref.mounted) return;

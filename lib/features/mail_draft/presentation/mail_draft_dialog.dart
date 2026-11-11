@@ -125,7 +125,8 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       });
     } on MailDraftFailure catch (failure) {
       if (!mounted) return;
-      if (failure.draftChanged) {
+      // A retryable failure may still have gone through; read it again.
+      if (failure.draftChanged || failure.retryable) {
         ref.read(mailDraftViewModelProvider(widget.caseId).notifier).refresh();
       }
       setState(() {

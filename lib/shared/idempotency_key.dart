@@ -2,7 +2,14 @@ import "dart:async";
 import "dart:convert";
 import "dart:math";
 
+import "network/api_request.dart";
+
 final _random = Random.secure();
+
+/// How long a key whose outcome is unknown may be reused. After this, the
+/// same action gets a new key, so an old stored response cannot answer a
+/// later request.
+const pendingKeyLifetime = Duration(minutes: 10);
 
 /// Random 128-bit hex key for one user action. Reuse it only to retry that
 /// same action with the same body.
@@ -16,9 +23,23 @@ String newIdempotencyKey() {
 /// Concurrent identical actions share one Future, so double-clicks cannot
 /// issue duplicate HTTP mutations. A different body for the same action must
 /// wait until the first action finishes; it never overwrites the active key.
-/// Retrying the same body after an unknown outcome reuses the key.
+///
+/// The key is kept for a retry of the same body when the outcome is unknown
+/// or retryable (`serverCode` returns null: no response, 5xx, `retryable`),
+/// and for [_keepCodes]. Any other server rejection releases it. A kept key
+/// expires after [lifetime].
 class IdempotencyKeys {
-  final _pending = <String, ({String body, String key})>{};
+  IdempotencyKeys({
+    this.lifetime = pendingKeyLifetime,
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
+
+  /// The server did not process these; the same key is still safe to send.
+  static const _keepCodes = {"REQUEST_IN_PROGRESS", rateLimitedCode};
+
+  final Duration lifetime;
+  final DateTime Function() _now;
+  final _pending = <String, ({String body, String key, DateTime issuedAt})>{};
   final _inFlight = <String, ({String body, Future<dynamic> future})>{};
 
   Future<T> run<T>(
@@ -38,13 +59,18 @@ class IdempotencyKeys {
       return active.future as Future<T>;
     }
 
+    final now = _now();
     final previous = _pending[action];
-    final key = previous != null && previous.body == fingerprint
-        ? previous.key
-        : newIdempotencyKey();
+    final entry =
+        previous != null &&
+            previous.body == fingerprint &&
+            now.difference(previous.issuedAt) < lifetime
+        ? previous
+        : (body: fingerprint, key: newIdempotencyKey(), issuedAt: now);
+    _pending[action] = entry;
+    final key = entry.key;
     final completer = Completer<T>();
     _inFlight[action] = (body: fingerprint, future: completer.future);
-    _pending[action] = (body: fingerprint, key: key);
 
     Future<void> execute() async {
       try {
@@ -53,7 +79,7 @@ class IdempotencyKeys {
         completer.complete(result);
       } catch (error, stackTrace) {
         final code = serverCode(error);
-        if (code != null && code != "REQUEST_IN_PROGRESS") {
+        if (code != null && !_keepCodes.contains(code)) {
           _pending.remove(action);
         }
         completer.completeError(error, stackTrace);
@@ -66,4 +92,9 @@ class IdempotencyKeys {
     unawaited(execute());
     return completer.future;
   }
+
+  /// Drops kept keys, e.g. when the record they acted on moved on, so the
+  /// next press is a new request rather than a replay.
+  void discardWhere(bool Function(String action) test) =>
+      _pending.removeWhere((action, _) => test(action));
 }

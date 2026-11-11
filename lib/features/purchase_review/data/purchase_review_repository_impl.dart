@@ -1,6 +1,7 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/idempotency_key.dart";
+import "../../../shared/network/api_request.dart";
 import "../domain/purchase_review.dart";
 import "../domain/purchase_review_repository.dart";
 import "purchase_review_data_source.dart";
@@ -59,7 +60,7 @@ class PurchaseReviewRepositoryImpl implements PurchaseReviewRepository {
       (key) => _guard(
         () => _dataSource.submitDecision(card.caseId, body, idempotencyKey: key),
       ),
-      serverCode: (error) => error is PurchaseReviewFailure && !error.unknownOutcome
+      serverCode: (error) => error is PurchaseReviewFailure && !error.retryable
           ? error.code
           : null,
     );
@@ -68,11 +69,12 @@ class PurchaseReviewRepositoryImpl implements PurchaseReviewRepository {
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
       return await request();
-    } on PurchaseReviewApiException catch (error) {
+    } on ApiException catch (error) {
       throw PurchaseReviewFailure(
         error.code,
         error.message,
         unknownOutcome: error.unknownOutcome,
+        retryable: error.retryable,
       );
     } on PurchaseReviewFailure {
       rethrow;

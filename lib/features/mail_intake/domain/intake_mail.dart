@@ -105,12 +105,21 @@ class IntakePage {
 }
 
 class IntakeFailure implements Exception {
-  const IntakeFailure(this.code, this.message, {this.unknownOutcome = false});
+  const IntakeFailure(
+    this.code,
+    this.message, {
+    this.unknownOutcome = false,
+    this.retryable = false,
+  });
   final String code;
   final String message;
 
   /// No response arrived; the server may or may not have applied the change.
   final bool unknownOutcome;
+
+  /// 응답 없음·5xx·`retryable: true`: 서버가 처리했을 수 있어 같은 멱등 키를
+  /// 남기고 상태를 다시 읽습니다. [unknownOutcome]이면 늘 참입니다.
+  final bool retryable;
 
   @override
   String toString() => "IntakeFailure($code)";
