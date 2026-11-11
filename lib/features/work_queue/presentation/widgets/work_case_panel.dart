@@ -284,6 +284,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
           if (recordings != null && showRecordings) ...[
             const SizedBox(height: 20),
             CallRecordingSection(
+              suppliers: recordings,
               onAdd: () => addCallRecording(
                 context,
                 ref,

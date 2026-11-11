@@ -29,6 +29,7 @@ class FileVoiceFilePicker implements VoiceFilePicker {
       extension: extension,
       sizeBytes: await file.length(),
       uri: file.uri,
+      openRead: file.readAsByteStream,
     );
   }
 }

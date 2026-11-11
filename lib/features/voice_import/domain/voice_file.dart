@@ -1,10 +1,11 @@
-/// 휴대폰에서 고른 녹음 파일. 업로드 API가 정해지면 [uri]로 내용을 읽습니다.
+/// 휴대폰에서 고른 녹음 파일.
 class VoiceFile {
   const VoiceFile({
     required this.name,
     required this.extension,
     required this.sizeBytes,
     required this.uri,
+    required this.openRead,
   });
 
   final String name;
@@ -13,6 +14,10 @@ class VoiceFile {
   final String extension;
   final int? sizeBytes;
   final Uri uri;
+
+  /// A new stream of the file's bytes on each call, so an upload can be
+  /// retried. Exactly [sizeBytes] bytes.
+  final Stream<List<int>> Function() openRead;
 }
 
 /// 녹음 파일로 받는 확장자. 통화 녹음(m4a·amr·3gp)과 일반 음성 형식.
