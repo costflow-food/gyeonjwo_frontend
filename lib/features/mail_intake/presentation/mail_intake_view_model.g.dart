@@ -11,7 +11,8 @@ part of 'mail_intake_view_model.dart';
 /// SCR-009 pending intake mails. The work queue reads totalPending from here.
 ///
 /// No Realtime signal covers intake mails (they do not touch work_cases), so
-/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds).
+/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds),
+/// except while the browser tab is hidden.
 
 @ProviderFor(MailIntakeViewModel)
 final mailIntakeViewModelProvider = MailIntakeViewModelProvider._();
@@ -19,13 +20,15 @@ final mailIntakeViewModelProvider = MailIntakeViewModelProvider._();
 /// SCR-009 pending intake mails. The work queue reads totalPending from here.
 ///
 /// No Realtime signal covers intake mails (they do not touch work_cases), so
-/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds).
+/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds),
+/// except while the browser tab is hidden.
 final class MailIntakeViewModelProvider
     extends $AsyncNotifierProvider<MailIntakeViewModel, IntakePage> {
   /// SCR-009 pending intake mails. The work queue reads totalPending from here.
   ///
   /// No Realtime signal covers intake mails (they do not touch work_cases), so
-  /// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds).
+  /// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds),
+  /// except while the browser tab is hidden.
   MailIntakeViewModelProvider._()
     : super(
         from: null,
@@ -46,12 +49,13 @@ final class MailIntakeViewModelProvider
 }
 
 String _$mailIntakeViewModelHash() =>
-    r'71dd89747f65fce43d26a73fda206e36f84bd5e7';
+    r'294dba298410f97ad30e7aa94c768ab73949347f';
 
 /// SCR-009 pending intake mails. The work queue reads totalPending from here.
 ///
 /// No Realtime signal covers intake mails (they do not touch work_cases), so
-/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds).
+/// the list re-reads itself every [pollInterval] (08 §11 suggests 15 seconds),
+/// except while the browser tab is hidden.
 
 abstract class _$MailIntakeViewModel extends $AsyncNotifier<IntakePage> {
   FutureOr<IntakePage> build();

@@ -43,7 +43,7 @@ final class WorkQueueViewModelProvider
 }
 
 String _$workQueueViewModelHash() =>
-    r'357202b6b5301c1a0b0dcebff1c45890b6fa7cd1';
+    r'5ad9c3c93bb08f171acdfe8fed7d1d6d83bc5529';
 
 /// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
 ///
@@ -572,8 +572,13 @@ final workCaseChangesProvider = WorkCaseChangesProvider._();
 /// Realtime change signal while signed in; nothing when signed out.
 
 final class WorkCaseChangesProvider
-    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
-    with $FutureModifier<int>, $StreamProvider<int> {
+    extends
+        $FunctionalProvider<
+          AsyncValue<WorkCaseChange>,
+          WorkCaseChange,
+          Stream<WorkCaseChange>
+        >
+    with $FutureModifier<WorkCaseChange>, $StreamProvider<WorkCaseChange> {
   /// Realtime change signal while signed in; nothing when signed out.
   WorkCaseChangesProvider._()
     : super(
@@ -591,13 +596,14 @@ final class WorkCaseChangesProvider
 
   @$internal
   @override
-  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $StreamProviderElement<WorkCaseChange> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<int> create(Ref ref) {
+  Stream<WorkCaseChange> create(Ref ref) {
     return workCaseChanges(ref);
   }
 }
 
-String _$workCaseChangesHash() => r'9afbb535abd426346abafefb48aad72d939039c0';
+String _$workCaseChangesHash() => r'2568f016e936c8a811738be742bf37a7e8450456';

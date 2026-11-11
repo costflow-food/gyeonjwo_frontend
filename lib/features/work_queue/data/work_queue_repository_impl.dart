@@ -151,6 +151,50 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
   });
 
   @override
+  Future<WorkCase?> refreshCase(WorkCase listed) => _guard(() async {
+    final response = await _dataSource.fetchCase(listed.id);
+    final json = response["data"] as Map<String, dynamic>;
+    // API-01 lists only unarchived cases.
+    if (json["archived_at"] != null) return null;
+    final statusCode = json["status"] as String;
+    final step = json["processing_step"] as String;
+    final revision = json["input_revision"] as int;
+    final sameStep =
+        step == listed.processingStep && revision == listed.inputRevision;
+    return WorkCase(
+      id: listed.id,
+      initialMailId: listed.initialMailId,
+      title: listed.title,
+      sender: listed.sender,
+      senderName: listed.senderName,
+      itemName: json["item_name"] as String?,
+      receivedAt: listed.receivedAt,
+      status: WorkCaseStatus.fromCode(statusCode),
+      statusCode: statusCode,
+      processingStep: step,
+      // API-02 has no step_detail; its labels use the same table.
+      stepMessage: sameStep
+          ? listed.stepMessage
+          : processingStepLabel(step, inputRevision: revision),
+      inputRevision: revision,
+      attachmentCount: listed.attachmentCount,
+      hold: _hold(json["hold"]),
+      replySummary: listed.replySummary,
+      allowedActions: List.unmodifiable(
+        (json["allowed_actions"] as List? ?? const []).cast<String>(),
+      ),
+      disabledActions: List.unmodifiable([
+        for (final entry in json["disabled_actions"] as List? ?? const [])
+          DisabledWorkCaseAction(
+            action: entry["action"] as String,
+            reasonCode: entry["reason_code"] as String,
+            message: entry["message"] as String,
+          ),
+      ]),
+    );
+  });
+
+  @override
   Future<void> resume(WorkCase workCase) {
     // The reason follows the step: hold, failure, or a finished review.
     final body = <String, Object?>{
@@ -200,8 +244,9 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
             contactEmail: entry["contact_email"] as String?,
             handlingEvidence: entry["handling_evidence"] as String? ?? "",
             reason: entry["reason"] as String? ?? "",
-            caution: (entry["caution"] as Map<String, dynamic>?)?["reason"]
-                as String?,
+            caution:
+                (entry["caution"] as Map<String, dynamic>?)?["reason"]
+                    as String?,
             unknownFields: List.unmodifiable(
               (entry["unknown_fields"] as List? ?? const []).cast<String>(),
             ),

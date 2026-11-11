@@ -8,6 +8,7 @@ import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../../shared/workspace_colors.dart";
 import "../domain/intake_mail.dart";
 import "mail_intake_view_model.dart";
+import "widgets/intake_load_more.dart";
 import "widgets/intake_mail_detail.dart";
 import "widgets/intake_mail_row.dart";
 import "widgets/mail_intake_actions.dart";
@@ -246,6 +247,14 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
                                           _scrollTo(_detailKey);
                                         }
                                       },
+                                    ),
+                                  if (page.nextCursor != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: IntakeLoadMore(
+                                        loading: page.loadingMore,
+                                        onPressed: viewModel.loadMore,
+                                      ),
                                     ),
                                 ],
                               );
