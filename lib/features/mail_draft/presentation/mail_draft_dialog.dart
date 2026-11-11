@@ -14,6 +14,7 @@ import "widgets/mail_draft_footer.dart";
 import "widgets/mail_draft_header.dart";
 import "widgets/mail_draft_tabs.dart";
 import "widgets/send_policy_banner.dart";
+import "../../../shared/widgets/workspace_dialog.dart";
 
 Future<void> showMailDraftDialog(
   BuildContext context, {
@@ -248,100 +249,89 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _close();
       },
-      child: Dialog(
-        backgroundColor: context.palette.canvas,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        insetPadding: const EdgeInsets.all(20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: context.palette.line),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 860),
-          child: Form(
-            key: _formKey,
-            // Rebuild so canPop follows unsaved edits.
-            onChanged: () => setState(() {}),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                MailDraftHeader(onClose: _close),
-                Divider(height: 1, color: context.palette.line),
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(28),
-                    child: AsyncContent<List<MailDraft>>(
-                      value: value.hasValue ? AsyncData(drafts) : value,
-                      onRetry: ref.read(provider.notifier).refresh,
-                      builder: (drafts) => drafts.isEmpty || draft == null
-                          ? const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 32),
-                              child: Center(
-                                child: Text("이 업무에는 아직 메일 초안이 없습니다."),
-                              ),
-                            )
-                          : AbsorbPointer(
-                              absorbing: _busy,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  // Switching tabs while editing would lose edits.
-                                  IgnorePointer(
-                                    ignoring: _editing,
-                                    child: MailDraftTabs(
-                                      drafts: drafts,
-                                      dispatchStates: widget.dispatchStates,
-                                      selectedId: draft.id,
-                                      onSelect: (id) => setState(() {
-                                        _selectedId = id;
-                                        _error = null;
-                                      }),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 18),
-                                  SendPolicyBanner(
-                                    draft: draft,
-                                    editing: _editing,
-                                    dispatchState:
-                                        widget.dispatchStates[draft.id],
-                                    onOpenSettings: _editing
-                                        ? null
-                                        : _openSettings,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  MailDraftBody(
-                                    draft: draft,
-                                    editing: _editing,
-                                    recipient: _recipient,
-                                    subject: _subject,
-                                    body: _body,
-                                    editReason: _editReason,
-                                  ),
-                                ],
-                              ),
+      child: WorkspaceDialog(
+        maxWidth: 860,
+        child: Form(
+          key: _formKey,
+          // Rebuild so canPop follows unsaved edits.
+          onChanged: () => setState(() {}),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              MailDraftHeader(onClose: _close),
+              Divider(height: 1, color: context.palette.line),
+              DialogScrollArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(28),
+                  child: AsyncContent<List<MailDraft>>(
+                    value: value.hasValue ? AsyncData(drafts) : value,
+                    onRetry: ref.read(provider.notifier).refresh,
+                    builder: (drafts) => drafts.isEmpty || draft == null
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32),
+                            child: Center(
+                              child: Text("이 업무에는 아직 메일 초안이 없습니다."),
                             ),
-                    ),
+                          )
+                        : AbsorbPointer(
+                            absorbing: _busy,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Switching tabs while editing would lose edits.
+                                IgnorePointer(
+                                  ignoring: _editing,
+                                  child: MailDraftTabs(
+                                    drafts: drafts,
+                                    dispatchStates: widget.dispatchStates,
+                                    selectedId: draft.id,
+                                    onSelect: (id) => setState(() {
+                                      _selectedId = id;
+                                      _error = null;
+                                    }),
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                SendPolicyBanner(
+                                  draft: draft,
+                                  editing: _editing,
+                                  dispatchState:
+                                      widget.dispatchStates[draft.id],
+                                  onOpenSettings: _editing
+                                      ? null
+                                      : _openSettings,
+                                ),
+                                const SizedBox(height: 16),
+                                MailDraftBody(
+                                  draft: draft,
+                                  editing: _editing,
+                                  recipient: _recipient,
+                                  subject: _subject,
+                                  body: _body,
+                                  editReason: _editReason,
+                                ),
+                              ],
+                            ),
+                          ),
                   ),
                 ),
-                Divider(height: 1, color: context.palette.line),
-                MailDraftFooter(
-                  draft: draft,
-                  editing: _editing,
-                  busy: _busy,
-                  error: _error,
-                  onEdit: () => _startEdit(draft!),
-                  onCancelEdit: _cancelEdit,
-                  onSaveRevision: () => _saveRevision(draft!),
-                  onApprove: () => _approve(draft!),
-                  onReconcile: () => _reconcile(draft!),
-                  onWithdraw: () => _withdraw(draft!),
-                  onClose: _close,
-                ),
-              ],
-            ),
+              ),
+              Divider(height: 1, color: context.palette.line),
+              MailDraftFooter(
+                draft: draft,
+                editing: _editing,
+                busy: _busy,
+                error: _error,
+                onEdit: () => _startEdit(draft!),
+                onCancelEdit: _cancelEdit,
+                onSaveRevision: () => _saveRevision(draft!),
+                onApprove: () => _approve(draft!),
+                onReconcile: () => _reconcile(draft!),
+                onWithdraw: () => _withdraw(draft!),
+                onClose: _close,
+              ),
+            ],
           ),
         ),
       ),

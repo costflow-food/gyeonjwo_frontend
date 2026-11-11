@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../app_font_sizes.dart";
+import "../widgets/mobile_scaffold.dart";
 import "../widgets/workspace_button_styles.dart";
 import "../workspace_colors.dart";
 import "workspace_theme.dart";
@@ -25,7 +26,9 @@ class ThemePicker extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          "고른 모드와 색은 이 브라우저에만 저장됩니다.",
+          isCompactLayout(context)
+              ? "고른 모드와 색은 이 기기에만 저장됩니다."
+              : "고른 모드와 색은 이 브라우저에만 저장됩니다.",
           style: TextStyle(
             fontSize: AppFontSizes.secondary,
             color: context.palette.muted,
@@ -58,18 +61,30 @@ class ThemePicker extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            for (final palette in WorkspacePalette.all)
-              _ThemeTile(
-                palette: dark ? palette.toDark() : palette,
-                selected: palette.id == current.id,
-                onTap: () =>
-                    ref.read(workspaceThemeProvider.notifier).select(palette),
-              ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Two to a row on a phone instead of one lonely tile.
+            final width = constraints.maxWidth < 2 * _ThemeTile.width + 12
+                ? (constraints.maxWidth - 12) / 2
+                : _ThemeTile.width;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final palette in WorkspacePalette.all)
+                  SizedBox(
+                    width: width,
+                    child: _ThemeTile(
+                      palette: dark ? palette.toDark() : palette,
+                      selected: palette.id == current.id,
+                      onTap: () => ref
+                          .read(workspaceThemeProvider.notifier)
+                          .select(palette),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -82,6 +97,9 @@ class _ThemeTile extends StatelessWidget {
     required this.selected,
     required this.onTap,
   });
+
+  /// Default width; the picker narrows it on a phone.
+  static const width = 156.0;
 
   final WorkspacePalette palette;
   final bool selected;
@@ -107,7 +125,7 @@ class _ThemeTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: SizedBox(
-            width: 156,
+            width: double.infinity,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

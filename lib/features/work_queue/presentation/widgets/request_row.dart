@@ -12,11 +12,15 @@ class RequestRow extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onTap,
+    this.card = false,
   });
 
   final WorkCase data;
   final bool selected;
   final VoidCallback onTap;
+
+  /// Phone list: every row on its own white card.
+  final bool card;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +31,7 @@ class RequestRow extends StatelessWidget {
       selected: selected,
       button: true,
       child: Material(
-        color: selected ? context.palette.surface : Colors.transparent,
+        color: selected || card ? context.palette.surface : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: selected

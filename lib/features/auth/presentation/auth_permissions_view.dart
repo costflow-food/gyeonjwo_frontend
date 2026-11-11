@@ -19,6 +19,26 @@ class AuthPermissionsView extends ConsumerStatefulWidget {
 class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
   bool _starting = false;
 
+  // In the app, sign-in opens a browser; if the user backs out of it no
+  // callback arrives, so re-enable the button when the app is shown again.
+  late final _lifecycle = AppLifecycleListener(
+    onResume: () {
+      if (mounted && _starting) setState(() => _starting = false);
+    },
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle;
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
   Future<void> _continueWithGoogle() async {
     setState(() => _starting = true);
     try {

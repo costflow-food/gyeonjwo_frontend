@@ -9,6 +9,7 @@ import 'widgets/source_document_header.dart';
 import 'widgets/source_document_footer.dart';
 import 'widgets/source_document_content.dart';
 import 'widgets/source_document_error.dart';
+import '../../../shared/widgets/workspace_dialog.dart';
 
 Future<void> showSourceDocument(
   BuildContext context, {
@@ -31,48 +32,37 @@ class SourceDocumentDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = sourceDocumentViewModelProvider(requestId);
-    return Dialog(
-      backgroundColor: context.palette.canvas,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      insetPadding: const EdgeInsets.all(20),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: context.palette.line),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 760),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SourceDocumentHeader(),
-            Divider(height: 1, color: context.palette.line),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(28),
-                child: ref
-                    .watch(provider)
-                    .when(
-                      skipLoadingOnRefresh: false,
-                      loading: () => const Padding(
-                        padding: EdgeInsets.all(40),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                      error: (error, stackTrace) => SourceDocumentError(
-                        error: error,
-                        onRetry: () => ref.read(provider.notifier).refresh(),
-                      ),
-                      data: (document) =>
-                          SourceDocumentContent(document: document),
+    return WorkspaceDialog(
+      maxWidth: 760,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SourceDocumentHeader(),
+          Divider(height: 1, color: context.palette.line),
+          DialogScrollArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(28),
+              child: ref
+                  .watch(provider)
+                  .when(
+                    skipLoadingOnRefresh: false,
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
-              ),
+                    error: (error, stackTrace) => SourceDocumentError(
+                      error: error,
+                      onRetry: () => ref.read(provider.notifier).refresh(),
+                    ),
+                    data: (document) =>
+                        SourceDocumentContent(document: document),
+                  ),
             ),
-            Divider(height: 1, color: context.palette.line),
-            const SourceDocumentFooter(),
-          ],
-        ),
+          ),
+          Divider(height: 1, color: context.palette.line),
+          const SourceDocumentFooter(),
+        ],
       ),
     );
   }

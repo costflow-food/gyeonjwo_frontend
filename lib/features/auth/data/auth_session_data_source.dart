@@ -1,5 +1,7 @@
 import "dart:async";
 
+import "package:app_links/app_links.dart";
+import "package:flutter/foundation.dart";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 
@@ -11,6 +13,17 @@ const gmailScopes = [
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.send",
 ];
+
+/// Where Google sign-in returns on Android. Must match the intent filter in
+/// AndroidManifest.xml and be allowed in Supabase Auth's redirect URLs.
+final mobileAuthRedirect = Uri.parse("com.costflow.gyeonjwo://login-callback");
+
+const _googleQueryParams = {
+  // A refresh token lets the server keep receiving mail.
+  "access_type": "offline",
+  // Ask every time so Google issues a refresh token again on reconnect.
+  "prompt": "consent",
+};
 
 /// Google tokens that came back with this page's OAuth redirect.
 ///
@@ -67,7 +80,10 @@ abstract interface class AuthSessionDataSource {
   /// `error`, `error_code`, `error_description` from the OAuth redirect URL.
   Map<String, String> redirectError();
 
-  Future<void> signInWithGoogle();
+  /// On web the page navigates away and this never returns a result. In the
+  /// app it waits for the sign-in callback and returns its error fields
+  /// (empty on success; the session then arrives on [watchSession]).
+  Future<Map<String, String>> signInWithGoogle();
 
   Future<void> signOut();
 }
@@ -100,10 +116,11 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
       .handleError((Object _) {});
 
   @override
-  Map<String, String> redirectError() {
+  Map<String, String> redirectError() => _errorFields(Uri.base);
+
+  static Map<String, String> _errorFields(Uri uri) {
     final Map<String, String> parameters;
     try {
-      final uri = Uri.base;
       final fragment = uri.fragment.contains("?")
           ? uri.fragment.substring(uri.fragment.indexOf("?") + 1)
           : uri.fragment;
@@ -118,7 +135,8 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
   }
 
   @override
-  Future<void> signInWithGoogle() async {
+  Future<Map<String, String>> signInWithGoogle() async {
+    if (!kIsWeb) return _signInWithGoogleInApp();
     final base = Uri.base;
     final redirectTo = Uri(
       scheme: base.scheme,
@@ -133,14 +151,28 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
       provider: OAuthProvider.google,
       redirectTo: redirectTo,
       scopes: gmailScopes.join(" "),
-      queryParams: const {
-        // A refresh token lets the server keep receiving mail.
-        "access_type": "offline",
-        // Ask every time so Google issues a refresh token again on reconnect.
-        "prompt": "consent",
-      },
+      queryParams: _googleQueryParams,
     );
     navigateCurrentPage(Uri.parse(response.url));
+    return const {};
+  }
+
+  /// Opens Google in the browser and waits for [mobileAuthRedirect].
+  /// supabase_flutter exchanges the code from the same link on its own.
+  Future<Map<String, String>> _signInWithGoogleInApp() async {
+    final callback = AppLinks().uriLinkStream.firstWhere(
+      (uri) =>
+          uri.scheme == mobileAuthRedirect.scheme &&
+          uri.host == mobileAuthRedirect.host,
+    );
+    final launched = await _auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: mobileAuthRedirect.toString(),
+      scopes: gmailScopes.join(" "),
+      queryParams: _googleQueryParams,
+    );
+    if (!launched) throw StateError("Could not open the sign-in page.");
+    return _errorFields(await callback);
   }
 
   @override

@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../../shared/widgets/workspace_shell.dart";
 import "../../../shared/workspace_colors.dart";
@@ -19,6 +20,25 @@ class PurchaseReviewView extends ConsumerWidget {
     final provider = purchaseReviewViewModelProvider(caseId);
     final value = ref.watch(provider);
     final current = value.asData?.value;
+    if (isCompactLayout(context)) {
+      // The loaded card brings its own screen.
+      if (current != null) return ReviewCardContent(review: current);
+      return MobilePageScaffold(
+        title: "검토 카드",
+        onBack: () => context.go("/cases/$caseId"),
+        body: switch (value) {
+          AsyncError(:final error) => Padding(
+            padding: const EdgeInsets.all(24),
+            child: _Unavailable(
+              caseId: caseId,
+              failure: error is PurchaseReviewFailure ? error : null,
+              onRetry: ref.read(provider.notifier).refresh,
+            ),
+          ),
+          _ => const Center(child: CircularProgressIndicator()),
+        },
+      );
+    }
     return WorkspaceShell(
       child: switch (value) {
         // Keep the card on screen while it reloads after a decision.

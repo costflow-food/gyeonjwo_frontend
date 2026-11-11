@@ -46,7 +46,8 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    await _session.signInWithGoogle();
+    final failure = _failureFrom(await _session.signInWithGoogle());
+    if (failure != null) throw failure;
   }
 
   @override
@@ -61,7 +62,10 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthFailure? takeRedirectFailure() {
     if (_redirectFailureTaken) return null;
     _redirectFailureTaken = true;
-    final error = _session.redirectError();
+    return _failureFrom(_session.redirectError());
+  }
+
+  static AuthFailure? _failureFrom(Map<String, String> error) {
     if (error.isEmpty) return null;
     final cancelled =
         error["error"] == "access_denied" ||
