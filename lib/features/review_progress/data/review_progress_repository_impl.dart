@@ -32,7 +32,7 @@ class ReviewProgressRepositoryImpl implements ReviewProgressRepository {
     } catch (_) {
       throw const ReviewProgressFailure(
         "INVALID_RESPONSE",
-        "서버 응답을 확인하지 못했어요.",
+        "서버 응답을 확인하지 못했습니다.",
       );
     }
   }

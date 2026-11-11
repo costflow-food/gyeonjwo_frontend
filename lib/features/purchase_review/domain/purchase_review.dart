@@ -10,13 +10,13 @@ abstract final class ReviewAction {
 }
 
 enum ReviewOutcome {
-  optionsReady("OPTIONS_READY", "비교가 끝났어요. 구매안을 골라 주세요."),
-  completed("COMPLETED", "비교가 끝났어요. 구매안을 골라 주세요."),
-  noFeasiblePlan("NO_FEASIBLE_PLAN", "요청 조건을 만족하는 구매안이 없어요."),
-  noValidPlan("NO_VALID_PLAN", "요청 조건을 만족하는 구매안이 없어요."),
-  needsInfo("NEEDS_INFO", "확인이 필요한 항목이 있어 비교를 끝내지 못했어요."),
-  reviewRequiredClosed("REVIEW_REQUIRED_CLOSED", "확인이 필요한 항목이 남은 채 검토를 마쳤어요."),
-  onHold("ON_HOLD", "검토를 보류했어요."),
+  optionsReady("OPTIONS_READY", "비교가 끝났습니다. 구매안을 골라 주세요."),
+  completed("COMPLETED", "비교가 끝났습니다. 구매안을 골라 주세요."),
+  noFeasiblePlan("NO_FEASIBLE_PLAN", "요청 조건을 만족하는 구매안이 없습니다."),
+  noValidPlan("NO_VALID_PLAN", "요청 조건을 만족하는 구매안이 없습니다."),
+  needsInfo("NEEDS_INFO", "확인이 필요한 항목이 있어 비교를 끝내지 못했습니다."),
+  reviewRequiredClosed("REVIEW_REQUIRED_CLOSED", "확인이 필요한 항목이 남은 채 검토를 마쳤습니다."),
+  onHold("ON_HOLD", "검토를 보류했습니다."),
   unknown("", "업무에서 현재 상태를 확인해 주세요.");
 
   const ReviewOutcome(this.code, this.message);

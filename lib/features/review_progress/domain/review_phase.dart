@@ -29,18 +29,18 @@ enum ReviewOutcome {
     reached: ReviewStage.findingCandidates,
   ),
   waitingApproval(
-    "견적 요청 초안이 준비됐어요. 확인한 뒤 승인해 주세요.",
+    "견적 요청 초안이 준비됐습니다. 확인한 뒤 승인해 주세요.",
     reached: ReviewStage.findingCandidates,
   ),
   waitingReply(
-    "견적 요청을 보냈어요. 거래처 회신이 오면 이어서 검토해요.",
+    "견적 요청을 보냈습니다. 거래처 회신이 오면 이어서 검토합니다.",
     reached: ReviewStage.findingCandidates,
   ),
-  reviewReady("검토 카드가 준비됐어요.", reached: ReviewStage.preparingCard),
-  sendUnknown("발송 결과를 확인해야 해요.", stopped: true),
-  onHold("검토를 보류했어요.", stopped: true),
-  needsInfo("추가 정보 확인이 필요해요.", stopped: true),
-  failed("처리 중 오류가 났어요. 업무에서 상태를 확인해 주세요.", stopped: true),
+  reviewReady("검토 카드가 준비됐습니다.", reached: ReviewStage.preparingCard),
+  sendUnknown("발송 결과를 확인해야 합니다.", stopped: true),
+  onHold("검토를 보류했습니다.", stopped: true),
+  needsInfo("추가 정보 확인이 필요합니다.", stopped: true),
+  failed("처리 중 오류가 났습니다. 업무에서 상태를 확인해 주세요.", stopped: true),
   other("업무에서 현재 상태를 확인해 주세요.");
 
   const ReviewOutcome(this.message, {this.reached, this.stopped = false});

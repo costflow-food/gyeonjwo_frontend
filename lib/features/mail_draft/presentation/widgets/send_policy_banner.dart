@@ -92,7 +92,7 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.draft when draft.manualApprovalUnderAutoSend => (
         Icons.warning_amber_rounded,
         const Color(0xFF8A6516),
-        "이 초안은 자동 발송 대상이 아니에요. 내용을 확인한 뒤 승인 후 발송을 눌러 주세요.",
+        "이 초안은 자동 발송 대상이 아닙니다. 내용을 확인한 뒤 승인 후 발송을 눌러 주세요.",
       ),
       DraftStatus.draft => (
         Icons.info_outline,
@@ -119,7 +119,7 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.unknown => (
         Icons.help_outline,
         const Color(0xFF8A6516),
-        "발송 여부를 확인 중이에요. 이미 전송됐을 수 있어 발신함 대조 전에는 다시 보내지 않습니다.",
+        "발송 여부를 확인 중입니다. 이미 전송됐을 수 있어 발신함 대조 전에는 다시 보내지 않습니다.",
       ),
     };
     return Container(

@@ -437,9 +437,9 @@ class _SelectButton extends StatelessWidget {
     }
     final canSelect = card.can(ReviewAction.selectPlan) && plan.selectable;
     final reason = !plan.valid
-        ? "${plan.validationLabel} 안은 아직 확정할 수 없어요."
+        ? "${plan.validationLabel} 안은 아직 확정할 수 없습니다."
         : plan.planId == null
-        ? "서버가 이 안의 ID를 보내지 않아 선택할 수 없어요."
+        ? "서버가 이 안의 ID를 보내지 않아 선택할 수 없습니다."
         : card.disabledMessage(ReviewAction.selectPlan);
     final label = plan.valid ? "이 안 선택" : "수용하기";
     final onPressed = canSelect && !busy ? onSelect : null;

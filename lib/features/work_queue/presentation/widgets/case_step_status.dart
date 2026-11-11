@@ -50,14 +50,14 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
       setState(() {
         _busy = false;
         _error = failure.unknownOutcome
-            ? "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요."
+            ? "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."
             : failure.message;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요.";
+        _error = "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다.";
       });
     }
   }
@@ -123,7 +123,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                   children: [
                     Text(
                       workCase.stepMessage.isEmpty
-                          ? "검토가 진행되고 있어요."
+                          ? "검토가 진행되고 있습니다."
                           : workCase.stepMessage,
                       style: TextStyle(
                         fontSize: AppFontSizes.body,
@@ -147,7 +147,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                       const SizedBox(height: 6),
                       const Text(
                         "서버의 회신 검토 기능이 아직 준비되지 않아 "
-                        "이 회신은 검토로 넘어가지 못하고 있어요.",
+                        "이 회신은 검토로 넘어가지 못하고 있습니다.",
                         style: TextStyle(
                           fontSize: AppFontSizes.body,
                           color: danger,
@@ -203,7 +203,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
           ),
           const SizedBox(height: 6),
           Text(
-            "요청 품목을 취급하는 거래처를 등록하면 후보로 찾을 수 있어요.",
+            "요청 품목을 취급하는 거래처를 등록하면 후보로 찾을 수 있습니다.",
             style: TextStyle(
               fontSize: AppFontSizes.secondary,
               color: context.palette.muted,

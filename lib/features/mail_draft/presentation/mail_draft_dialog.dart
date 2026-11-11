@@ -174,7 +174,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("이 초안을 보내지 않을까요?"),
+        title: const Text("이 초안을 보내지 않고 닫으시겠습니까?"),
         content: Text(
           "${draft.displayName}에게 이 초안을 보내지 않고 닫습니다. 되돌릴 수 없으며, "
           "다시 보내려면 새 초안이 필요합니다. 보내지 않은 초안이 남아 있으면 "
@@ -217,7 +217,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("수정한 내용을 버릴까요?"),
+        title: const Text("수정한 내용을 버리시겠습니까?"),
         content: const Text("저장하지 않은 초안 수정은 사라집니다."),
         actions: [
           TextButton(

@@ -34,7 +34,7 @@ class WorkflowLogDetail extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: 24),
           child: Center(
             child: Text(
-              "로그를 선택하면 근거와 참조를 볼 수 있어요.",
+              "로그를 선택하면 근거와 참조를 볼 수 있습니다.",
               style: TextStyle(
                 fontSize: AppFontSizes.body,
                 color: context.palette.muted,

@@ -142,7 +142,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       if (!mounted) return;
       if (widget.embedded) {
         ScaffoldMessenger.maybeOf(context)
-            ?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했어요.")));
+            ?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했습니다.")));
         setState(() {
           _saving = false;
           _seed(saved);
@@ -202,7 +202,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("변경한 설정을 버릴까요?"),
+        title: const Text("변경한 설정을 버리시겠습니까?"),
         content: const Text("저장하지 않은 설정은 적용되지 않습니다."),
         actions: [
           TextButton(
