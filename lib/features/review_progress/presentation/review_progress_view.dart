@@ -9,7 +9,6 @@ import "review_progress_view_model.dart";
 import "widgets/review_progress_body.dart";
 import "widgets/review_progress_dialog.dart";
 
-/// SCR-003 검토 진행. START·RESUME가 접수된 뒤 API-03 단계를 보여 줍니다.
 Future<void> showReviewProgressDialog(
   BuildContext context, {
   required String caseId,

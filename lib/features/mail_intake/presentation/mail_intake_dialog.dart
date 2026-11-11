@@ -14,10 +14,6 @@ import "widgets/intake_mail_row.dart";
 import "widgets/mail_intake_actions.dart";
 import "widgets/mail_intake_header.dart";
 
-/// SCR-009 접수·연결 확인 모달을 엽니다.
-///
-/// Advertising and other non-business mail never reaches the queue; only
-/// mails the classifier could not settle appear here.
 Future<void> showMailIntakeDialog(BuildContext context, {String? mailId}) {
   return showDialog<void>(
     context: context,
@@ -32,7 +28,6 @@ Future<void> showMailIntakeDialog(BuildContext context, {String? mailId}) {
 class MailIntakeDialog extends ConsumerStatefulWidget {
   const MailIntakeDialog({super.key, this.initialMailId});
 
-  /// The mail picked in the sidebar; opens with it selected.
   final String? initialMailId;
 
   @override
@@ -106,10 +101,10 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("회신 메일을 새 업무로 만들까요?"),
+        title: const Text("회신 메일을 새 업무로 만드시겠습니까?"),
         content: const Text(
-          "이 메일은 보낸 견적 요청이나 추가 확인에 대한 회신일 수 있어요. "
-          "새 업무로 접수하면 원래 업무와 따로 진행되고, 나중에 원래 업무에 연결할 수 없어요.\n\n"
+          "이 메일은 보낸 견적 요청이나 추가 확인에 대한 회신일 수 있습니다. "
+          "새 업무로 접수하면 원래 업무와 따로 진행되고, 나중에 원래 업무에 연결할 수 없습니다.\n\n"
           "공급사가 보낸 새 인상 안내라면 새 업무로 접수해 주세요.",
         ),
         actions: [
@@ -152,7 +147,7 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
       if (!mounted) return;
       final message = switch (resolution) {
         IntakeResolution.nonBusiness => "비업무로 확인했습니다.",
-        IntakeResolution.createCase => "새 업무로 접수했습니다. 업무 큐에서 대기 상태로 확인할 수 있어요.",
+        IntakeResolution.createCase => "새 업무로 접수했습니다. 업무 큐에서 대기 상태로 확인할 수 있습니다.",
         IntakeResolution.linkCase => "선택한 업무에 연결했습니다.",
       };
       ScaffoldMessenger.maybeOf(context)

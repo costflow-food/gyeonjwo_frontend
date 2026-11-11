@@ -1,6 +1,3 @@
-/// SCR-007 models for API-16·17·19·20.
-library;
-
 enum DraftPurpose {
   rfq("RFQ", "견적 요청"),
   clarification("CLARIFICATION", "추가 확인"),
@@ -47,25 +44,23 @@ abstract final class DraftAction {
   static const withdraw = "WITHDRAW_DRAFT";
 }
 
-/// API-16·17 approval_block_reason.
 abstract final class DraftBlockReason {
   static const settingsRequired = "SEND_SETTINGS_REQUIRED";
   static const recipientNotRegistered = "RECIPIENT_NOT_REGISTERED";
 }
 
-/// API-12 drafts[].dispatch_state: what happened to each selected supplier.
 enum DraftDispatchState {
-  waitingApproval("WAITING_APPROVAL", "승인 대기", "승인 후 발송을 눌러야 발송돼요."),
-  autoQueued("AUTO_QUEUED", "자동 발송 대기", "자동 발송이 켜져 있어 서버가 자동 발송해요."),
+  waitingApproval("WAITING_APPROVAL", "승인 대기", "승인 후 발송을 눌러야 발송됩니다."),
+  autoQueued("AUTO_QUEUED", "자동 발송 대기", "자동 발송이 켜져 있어 서버가 자동 발송합니다."),
   cautionRequired(
     "CAUTION_REQUIRED",
     "주의 필요",
-    "확인할 점이 있어 자동 발송하지 않았어요. 내용을 확인한 뒤 승인해 주세요.",
+    "확인할 점이 있어 자동 발송하지 않았습니다. 내용을 확인한 뒤 승인해 주세요.",
   ),
   blockedPolicy(
     "BLOCKED_POLICY",
     "정책상 차단",
-    "발송 설정이 끝나지 않았거나 받는 주소가 등록된 업체 주소와 달라 발송하지 않아요.",
+    "발송 설정이 끝나지 않았거나 받는 주소가 등록된 업체 주소와 달라 발송하지 않습니다.",
   );
 
   const DraftDispatchState(this.code, this.label, this.message);
@@ -132,7 +127,6 @@ class MailDraft {
   /// Opaque version from the server; sent back unchanged on approval.
   final String? settingsVersion;
 
-  /// API-16·17. Null on servers that do not send it yet.
   /// With approval OFF, a draft the server will not auto-send (chosen before
   /// the settings were saved, or a caution supplier) still needs approval.
   final bool? approvalAvailable;
@@ -148,7 +142,6 @@ class MailDraft {
   bool get recipientNotRegistered =>
       blockReason == DraftBlockReason.recipientNotRegistered;
 
-  /// Approval OFF, yet this draft waits for a manual approval.
   bool get manualApprovalUnderAutoSend =>
       approvalRequired == false && approvalAvailable == true;
 
@@ -207,8 +200,6 @@ class MailDraft {
     DraftAction.approveSend =>
       status == DraftStatus.draft &&
           settingsConfigured &&
-          // The server decides when it sends approval_available; older
-          // servers only allow approval with the setting ON.
           (approvalAvailable ?? approvalRequired == true) &&
           settingsVersion != null &&
           !isStale &&
@@ -220,21 +211,21 @@ class MailDraft {
   };
 
   String? disabledReason(String action) => switch (action) {
-    DraftAction.edit => "초안 수정은 서버에 수정본 저장 기능이 생기면 열려요.",
+    DraftAction.edit => "초안 수정은 서버에 수정본 저장 기능이 생기면 열립니다.",
     DraftAction.approveSend when status != DraftStatus.draft => null,
     DraftAction.approveSend when awaitingResult =>
-      "발송 요청을 접수했어요. 결과를 확인하고 있어요.",
+      "발송 요청을 접수했습니다. 결과를 확인하고 있습니다.",
     DraftAction.approveSend when recipientNotRegistered =>
-      "받는 주소가 등록된 업체 주소와 달라 발송할 수 없어요.",
+      "받는 주소가 등록된 업체 주소와 달라 발송할 수 없습니다.",
     DraftAction.approveSend when !settingsConfigured =>
-      "설정 → 메일 발송 설정을 완료해야 발송할 수 있어요.",
-    DraftAction.approveSend when isStale => "업무 내용이 바뀌어 이 초안은 발송할 수 없어요.",
+      "설정 → 메일 발송 설정을 완료해야 발송할 수 있습니다.",
+    DraftAction.approveSend when isStale => "업무 내용이 바뀌어 이 초안은 발송할 수 없습니다.",
     DraftAction.approveSend
         when approvalRequired == false && approvalAvailable != true =>
-      "자동 발송이 켜져 있어 서버가 검증한 뒤 자동 발송해요.",
+      "자동 발송이 켜져 있어 서버가 검증한 뒤 자동 발송합니다.",
     DraftAction.approveSend when settingsVersion == null =>
-      "발송 설정 버전을 확인할 수 없어요. 다시 불러와 주세요.",
-    DraftAction.reconcile when awaitingResult => "발신함 대조를 접수했어요. 결과를 확인하고 있어요.",
+      "발송 설정 버전을 확인할 수 없습니다. 다시 불러와 주세요.",
+    DraftAction.reconcile when awaitingResult => "발신함 대조를 접수했습니다. 결과를 확인하고 있습니다.",
     _ => null,
   };
 }
@@ -271,7 +262,6 @@ class MailDraftFailure implements Exception {
   /// 남기고 상태를 다시 읽습니다. [unknownOutcome]이면 늘 참입니다.
   final bool retryable;
 
-  /// The draft, its case, or the settings changed; reload before deciding.
   bool get draftChanged => const {
     "DRAFT_CHANGED",
     "REVISION_CONFLICT",

@@ -10,7 +10,6 @@ part "supplier_view_model.g.dart";
 
 Duration? _noRetry(int retryCount, Object error) => null;
 
-/// SCR-011 list, search, selection, and registration.
 @Riverpod(keepAlive: true, retry: _noRetry)
 class SupplierListViewModel extends _$SupplierListViewModel {
   static const searchDelay = Duration(milliseconds: 300);
@@ -45,7 +44,6 @@ class SupplierListViewModel extends _$SupplierListViewModel {
     state = AsyncData(current.copyWith(selectedId: () => supplierId));
   }
 
-  /// Reloads the list and open details with the same query.
   Future<void> refresh() async {
     ref.invalidate(supplierDetailViewModelProvider);
     ref.invalidate(supplierPriceHistoryViewModelProvider);
@@ -150,7 +148,6 @@ class SupplierListViewModel extends _$SupplierListViewModel {
   }
 }
 
-/// API-30 detail, kept per supplier.
 @Riverpod(keepAlive: true, retry: _noRetry)
 class SupplierDetailViewModel extends _$SupplierDetailViewModel {
   @override
@@ -160,7 +157,6 @@ class SupplierDetailViewModel extends _$SupplierDetailViewModel {
   void refresh() => ref.invalidateSelf();
 }
 
-/// API-31 price history per supplier item, shown in SCR-005.
 @Riverpod(keepAlive: true, retry: _noRetry)
 class SupplierPriceHistoryViewModel extends _$SupplierPriceHistoryViewModel {
   @override

@@ -6,7 +6,6 @@ import "../domain/auth_failure.dart";
 
 part "account_connection_data_source.g.dart";
 
-/// Draft contract with the server. Update both sides together.
 abstract final class AccountConnectionPaths {
   static const connect = "/api/v1/mailboxes/google/connect";
   static const connection = "/api/v1/mailboxes/google/connection";
@@ -17,7 +16,6 @@ AccountConnectionDataSource accountConnectionDataSource(Ref ref) =>
     ApiAccountConnectionDataSource(ref.watch(apiClientProvider));
 
 abstract interface class AccountConnectionDataSource {
-  /// POST the Google tokens; the server verifies them and starts receiving.
   Future<Map<String, dynamic>> connectGoogle({
     required String accessToken,
     required String providerAccessToken,
@@ -25,7 +23,6 @@ abstract interface class AccountConnectionDataSource {
     required String idempotencyKey,
   });
 
-  /// GET the connection the server currently keeps for this user.
   Future<Map<String, dynamic>> fetchGoogleConnection({
     required String accessToken,
   });

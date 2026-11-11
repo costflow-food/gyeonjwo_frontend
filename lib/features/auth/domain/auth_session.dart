@@ -1,4 +1,3 @@
-/// Sign-in state of the current browser session.
 enum AuthSessionStatus { signedOut, signedIn }
 
 class AuthSession {

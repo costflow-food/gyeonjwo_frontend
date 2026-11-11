@@ -67,7 +67,6 @@ class ApiPurchaseReviewDataSource implements PurchaseReviewDataSource {
     idempotencyKey: idempotencyKey,
   );
 
-  /// 세션 갱신·429 대기·오류 변환은 [sendApiRequest]가 맡습니다.
   Future<T> _send<T>(
     Future<Response<T>> Function(Map<String, String> headers) request, {
     String? idempotencyKey,
@@ -79,7 +78,6 @@ class ApiPurchaseReviewDataSource implements PurchaseReviewDataSource {
         idempotencyKey: idempotencyKey,
       );
     } on ApiException catch (error) {
-      // The route itself is missing until the server ships API-13/14/15.
       if (error.statusCode == 404 && error.code == "HTTP_404") {
         throw ApiException(404, "REVIEW_NOT_READY", error.message);
       }

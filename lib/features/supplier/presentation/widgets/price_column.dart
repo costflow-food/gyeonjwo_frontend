@@ -5,7 +5,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/supplier.dart";
 import "price_record_tile.dart";
 
-/// One price source. The newest record comes first and is marked.
 class PriceColumn extends StatelessWidget {
   const PriceColumn({
     super.key,

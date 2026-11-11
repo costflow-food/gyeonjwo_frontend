@@ -5,7 +5,6 @@ import "../../domain/review_phase.dart";
 import "../../domain/review_progress_repository.dart";
 import "../../domain/review_progress_state.dart";
 
-/// The pipeline steps from API-03, and why it stopped once it did.
 class ReviewProgressBody extends StatelessWidget {
   const ReviewProgressBody({
     super.key,
@@ -63,9 +62,9 @@ class ReviewProgressBody extends StatelessWidget {
                   Text(
                     state.autoRefreshStopped
                         ? failure == null
-                              ? "오래 걸려서 자동 확인을 멈췄어요. 검토는 서버에서 계속돼요."
-                              : "진행 상황을 확인하지 못해 자동 확인을 멈췄어요."
-                        : "진행 상황을 확인하지 못했어요. 잠시 뒤 다시 확인해요.",
+                              ? "오래 걸려서 자동 확인을 멈췄습니다. 검토는 서버에서 계속됩니다."
+                              : "진행 상황을 확인하지 못해 자동 확인을 멈췄습니다."
+                        : "진행 상황을 확인하지 못했습니다. 잠시 뒤 다시 확인합니다.",
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -101,7 +100,6 @@ class ReviewProgressBody extends StatelessWidget {
   }
 }
 
-/// The first check failed, so there is no step to show yet.
 class ReviewProgressError extends StatelessWidget {
   const ReviewProgressError({
     super.key,
@@ -123,8 +121,8 @@ class ReviewProgressError extends StatelessWidget {
           children: [
             Text(
               current != null && current.serverNotReady
-                  ? "서버에서 진행 상황을 아직 받을 수 없어요."
-                  : "진행 상황을 불러오지 못했어요.",
+                  ? "서버에서 진행 상황을 아직 받을 수 없습니다."
+                  : "진행 상황을 불러오지 못했습니다.",
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,

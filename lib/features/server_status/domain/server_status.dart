@@ -15,7 +15,6 @@ enum ServerFeature {
   rfqMetadata("rfq_metadata", "거래처 회신 자동 연결"),
 
   /// 발송 워커가 꺼져 승인하거나 자동 발송해도 메일이 나가지 않음.
-  /// BE가 이 코드를 보내기 시작하면 바로 표시됩니다.
   rfqDispatch("rfq_dispatch", "견적 요청 메일 발송");
 
   const ServerFeature(this.code, this.label);

@@ -3,26 +3,20 @@
 /// 화면(plan_board.dart)에서 계산합니다.
 library;
 
-/// 서버의 행동 코드. API-14 allowed_actions·disabled_actions와 API-15 decision에 씁니다.
 abstract final class ReviewAction {
   static const selectPlan = "SELECT_PLAN";
   static const hold = "HOLD";
   static const confirmReview = "CONFIRM_REVIEW";
 }
 
-/// 검토가 끝난 결과. 정상 비교 성공과 그렇지 않은 종료를 구분합니다.
-///
-/// 08은 OPTIONS_READY·NEEDS_INFO·ON_HOLD를, 현재 BE·DB(06 종료 코드)는
-/// COMPLETED·NO_VALID_PLAN·REVIEW_REQUIRED_CLOSED를 보냅니다. 코드 집합이
-/// 합의될 때까지 두 집합을 모두 받아 같은 뜻으로 보여 줍니다.
 enum ReviewOutcome {
-  optionsReady("OPTIONS_READY", "비교가 끝났어요. 구매안을 골라 주세요."),
-  completed("COMPLETED", "비교가 끝났어요. 구매안을 골라 주세요."),
-  noFeasiblePlan("NO_FEASIBLE_PLAN", "요청 조건을 만족하는 구매안이 없어요."),
-  noValidPlan("NO_VALID_PLAN", "요청 조건을 만족하는 구매안이 없어요."),
-  needsInfo("NEEDS_INFO", "확인이 필요한 항목이 있어 비교를 끝내지 못했어요."),
-  reviewRequiredClosed("REVIEW_REQUIRED_CLOSED", "확인이 필요한 항목이 남은 채 검토를 마쳤어요."),
-  onHold("ON_HOLD", "검토를 보류했어요."),
+  optionsReady("OPTIONS_READY", "비교가 끝났습니다. 구매안을 골라 주세요."),
+  completed("COMPLETED", "비교가 끝났습니다. 구매안을 골라 주세요."),
+  noFeasiblePlan("NO_FEASIBLE_PLAN", "요청 조건을 만족하는 구매안이 없습니다."),
+  noValidPlan("NO_VALID_PLAN", "요청 조건을 만족하는 구매안이 없습니다."),
+  needsInfo("NEEDS_INFO", "확인이 필요한 항목이 있어 비교를 끝내지 못했습니다."),
+  reviewRequiredClosed("REVIEW_REQUIRED_CLOSED", "확인이 필요한 항목이 남은 채 검토를 마쳤습니다."),
+  onHold("ON_HOLD", "검토를 보류했습니다."),
   unknown("", "업무에서 현재 상태를 확인해 주세요.");
 
   const ReviewOutcome(this.code, this.message);
@@ -57,7 +51,6 @@ const _validation = {
   "NEEDS_INFO": "확인 필요",
 };
 
-/// ④ 구매안. 배정량·총액·검증은 서버가 검증한 값입니다.
 class ResponsePlan {
   const ResponsePlan({
     required this.planId,
@@ -92,7 +85,6 @@ class ResponsePlan {
   /// 08: 최신 revision의 VALID 안만 확정 선택할 수 있습니다.
   bool get valid => validationStatus == "VALID";
 
-  /// 확정 선택을 보낼 수 있는 안: VALID이고 plan_id가 있음.
   bool get selectable => valid && planId != null;
 }
 
@@ -122,7 +114,6 @@ const _counterStatus = {
   "HOLD": "역제안 보류",
 };
 
-/// ⑤ 역제안 결과. 생략·보류에도 사유와 참고 계산을 보여 줍니다.
 class CounterOffer {
   const CounterOffer({
     required this.status,
@@ -175,7 +166,6 @@ class CounterOfferReference {
   final List<String> allowedRange;
 }
 
-/// ③이 남긴 확인 항목.
 class ReviewQuestion {
   const ReviewQuestion({
     required this.supplierName,
@@ -196,7 +186,6 @@ class ReviewQuestion {
   String get fieldLabel => quoteFieldLabel(field);
 }
 
-/// 저장된 판단(API-15). 없으면 아직 판단 전입니다.
 class ReviewDecision {
   const ReviewDecision({
     required this.decision,
@@ -211,7 +200,6 @@ class ReviewDecision {
   final String? decidedAt;
 }
 
-/// API-14 저장 카드 한 개.
 class ReviewCard {
   const ReviewCard({
     required this.caseId,
@@ -259,7 +247,6 @@ class ReviewCard {
       : plans.where((plan) => plan.planId == planId).firstOrNull;
 }
 
-/// API-13 견적 한 버전. 원문에서 읽은 값과 필드별 근거를 함께 담습니다.
 class QuoteVersion {
   const QuoteVersion({
     required this.quoteId,
@@ -332,7 +319,6 @@ class QuoteCheck {
   String get label => quoteFieldLabel(field);
 }
 
-/// 필드 값이 원문 어디에 적혀 있었는지.
 class QuoteEvidence {
   const QuoteEvidence({
     required this.field,
@@ -387,7 +373,6 @@ const _fieldLabels = {
 
 String quoteFieldLabel(String field) => _fieldLabels[field] ?? field;
 
-/// 화면 한 장: 저장 카드와 그 근거 견적.
 class PurchaseReview {
   const PurchaseReview({required this.card, required this.quotes});
 
@@ -403,7 +388,6 @@ class PurchaseReview {
         ];
 }
 
-/// API-13·14·15 실패. 서버가 보낸 문구를 그대로 씁니다.
 class PurchaseReviewFailure implements Exception {
   const PurchaseReviewFailure(
     this.code,
@@ -425,7 +409,6 @@ class PurchaseReviewFailure implements Exception {
   /// 아직 카드가 없음(404 REVIEW_NOT_READY). 오류가 아니라 대기 상태입니다.
   bool get notReady => code == "REVIEW_NOT_READY";
 
-  /// 새 견적·조건이나 다른 판단으로 카드가 바뀜. 최신 카드를 다시 읽습니다.
   bool get cardChanged => const {
     "REVISION_CONFLICT",
     "ACTION_NOT_ALLOWED",

@@ -20,7 +20,6 @@ import 'auth_session_view_model.dart';
 import 'gmail_connection_view_model.dart';
 import 'widgets/auth_failure_message.dart';
 
-/// 설정: 권한 | 메일 발송 설정 | 화면 테마. 탭을 누르거나 옆으로 밀어 넘깁니다.
 class AccountView extends StatefulWidget {
   const AccountView({super.key});
 
@@ -141,7 +140,6 @@ class _AccountViewState extends State<AccountView>
   }
 }
 
-/// 계정과 Gmail 읽기·발송 권한.
 class _PermissionsPage extends ConsumerWidget {
   const _PermissionsPage();
 
@@ -171,7 +169,7 @@ class _PermissionsPage extends ConsumerWidget {
           AuthInfoTile(
             icon: Icons.inbox_outlined,
             title: 'Gmail 읽기',
-            description: '수신 메일을 업무 큐로 가져오는 데 사용해요.',
+            description: '수신 메일을 업무 큐로 가져오는 데 사용합니다.',
             enabled: hasConnection && phase.canRead,
             status: !hasConnection
                 ? '연결 전'
@@ -182,7 +180,7 @@ class _PermissionsPage extends ConsumerWidget {
           AuthInfoTile(
             icon: Icons.send_outlined,
             title: 'Gmail 발송',
-            description: '메일 발송 권한과 실제 발송 승인 설정은 별개예요.',
+            description: '메일 발송 권한과 실제 발송 승인 설정은 별개입니다.',
             enabled: hasConnection && phase.canSend,
             status: !hasConnection
                 ? '연결 전'
@@ -205,7 +203,6 @@ class _PermissionsPage extends ConsumerWidget {
   }
 }
 
-/// 메일함 수신 상태. 수신이 멈추거나 늦어지면 마지막 수신 시각과 함께 알립니다.
 class _MailboxSyncTile extends ConsumerWidget {
   const _MailboxSyncTile();
 
@@ -216,7 +213,7 @@ class _MailboxSyncTile extends ConsumerWidget {
       return const AuthInfoTile(
         icon: Icons.mark_email_unread_outlined,
         title: '메일 수신',
-        description: '수신 상태를 확인하고 있어요.',
+        description: '수신 상태를 확인하고 있습니다.',
       );
     }
     final status = sync.asData?.value;
@@ -233,31 +230,30 @@ class _MailboxSyncTile extends ConsumerWidget {
 
   static (String, String, bool) _describe(MailboxSyncStatus? status) {
     if (status == null) {
-      return ('확인하지 못함', '서버에서 수신 상태를 받아 오지 못했어요.', false);
+      return ('확인하지 못함', '서버에서 수신 상태를 받아 오지 못했습니다.', false);
     }
     if (!status.connected) {
-      return ('연결 전', '연결된 메일함이 없어 메일을 받지 않고 있어요.', false);
+      return ('연결 전', '연결된 메일함이 없어 메일을 받지 않고 있습니다.', false);
     }
     final synced = status.lastSyncedAt;
     final last = synced == null
-        ? '마지막 수신 시각을 알 수 없어요.'
+        ? '마지막 수신 시각을 알 수 없습니다.'
         : '마지막 수신 ${formatSeoulDateTime(synced.toUtc().toIso8601String())}.';
     if (status.failed) {
       final code = status.lastError == null ? '' : ' (오류 ${status.lastError})';
       return (
         '멈춤',
-        '$last 서버가 메일함을 읽지 못하고 있어 그 뒤에 온 메일은 아직 업무 큐에 없어요.$code',
+        '$last 서버가 메일함을 읽지 못하고 있어 그 뒤에 온 메일은 아직 업무 큐에 없습니다.$code',
         false,
       );
     }
     if (status.isStale(DateTime.now())) {
-      return ('늦어짐', '$last 그 뒤에 온 메일은 아직 업무 큐에 없을 수 있어요.', false);
+      return ('늦어짐', '$last 그 뒤에 온 메일은 아직 업무 큐에 없을 수 있습니다.', false);
     }
     return ('받는 중', last, true);
   }
 }
 
-/// 서버가 알려 준 멈춘 기능. 모두 정상이거나 확인하지 못하면 보이지 않습니다.
 class _ServerLimitsTile extends ConsumerWidget {
   const _ServerLimitsTile();
 
@@ -267,7 +263,7 @@ class _ServerLimitsTile extends ConsumerWidget {
     if (server == null) return const SizedBox.shrink();
     final String description;
     if (server.notReady) {
-      description = '서버 일부가 준비되지 않아 검토와 메일 발송이 멈출 수 있어요.';
+      description = '서버 일부가 준비되지 않아 검토와 메일 발송이 멈출 수 있습니다.';
     } else {
       final limited = [
         for (final feature in ServerFeature.values)
@@ -287,7 +283,6 @@ class _ServerLimitsTile extends ConsumerWidget {
   }
 }
 
-/// SCR-008 메일함 기본 발송 설정. 발송 설정은 이 페이지에서만 엽니다.
 class _SendSettingsPage extends StatelessWidget {
   const _SendSettingsPage();
 

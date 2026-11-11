@@ -4,7 +4,6 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/widgets/preview_button.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// 거래처 조회 제목과 새로고침.
 class SupplierHeader extends StatelessWidget {
   const SupplierHeader({super.key, required this.onRefresh});
 

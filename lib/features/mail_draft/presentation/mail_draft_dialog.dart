@@ -15,11 +15,6 @@ import "widgets/mail_draft_header.dart";
 import "widgets/mail_draft_tabs.dart";
 import "widgets/send_policy_banner.dart";
 
-/// SCR-007 메일 초안·발송 모달을 엽니다.
-///
-/// Opening or closing never sends. With approval OFF the server sends on its
-/// own, so this dialog only shows the scope and the result.
-/// [dispatchStates] are the API-12 results right after a candidate selection.
 Future<void> showMailDraftDialog(
   BuildContext context, {
   required String caseId,
@@ -175,12 +170,11 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.reconcile(draft));
   }
 
-  /// An unsent draft otherwise blocks the next selection and the review.
   Future<void> _withdraw(MailDraft draft) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("이 초안을 보내지 않을까요?"),
+        title: const Text("이 초안을 보내지 않고 닫으시겠습니까?"),
         content: Text(
           "${draft.displayName}에게 이 초안을 보내지 않고 닫습니다. 되돌릴 수 없으며, "
           "다시 보내려면 새 초안이 필요합니다. 보내지 않은 초안이 남아 있으면 "
@@ -207,7 +201,6 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.withdraw(draft, reason: "담당자가 보내지 않기로 함"));
   }
 
-  /// The mailbox default (설정 → 메일 발송 설정). A save reloads the drafts.
   Future<void> _openSettings() async {
     final saved = await showSendSettingsDialog(context);
     if (saved == true && mounted) {
@@ -224,7 +217,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("수정한 내용을 버릴까요?"),
+        title: const Text("수정한 내용을 버리시겠습니까?"),
         content: const Text("저장하지 않은 초안 수정은 사라집니다."),
         actions: [
           TextButton(

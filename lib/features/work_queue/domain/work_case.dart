@@ -1,4 +1,3 @@
-/// API-01 업무 큐 상태.
 enum WorkCaseStatus {
   waiting("Waiting", "대기"),
   running("Running", "진행 중"),
@@ -8,7 +7,6 @@ enum WorkCaseStatus {
   pending("Pending", "보류"),
   confirm("Confirm", "확인 필요"),
 
-  /// 그 밖에 아직 모르는 서버 상태.
   other("", "기타");
 
   const WorkCaseStatus(this.code, this.label);
@@ -20,7 +18,6 @@ enum WorkCaseStatus {
     orElse: () => other,
   );
 
-  /// 큐 탭에 표시하는 세 상태.
   static const tabs = [waiting, running, complete];
 
   /// 이 상태의 업무가 들어가는 큐 탭. 보류·실패·승인 대기(Pending)는
@@ -47,9 +44,9 @@ abstract final class WorkCaseAction {
 
 /// API-07 재개 사유. 단계마다 서버가 받는 사유가 다릅니다.
 enum ResumeReason {
-  resumeHold("RESUME_HOLD", "다시 추출", "보류 사유를 확인했다면 요청 정보 확인부터 다시 실행해요."),
-  retryFailed("RETRY_FAILED", "다시 시도", "오류가 난 처리를 다시 실행해요."),
-  reopenReview("REOPEN_REVIEW", "다시 검토", "이 업무의 검토를 다시 실행해요.");
+  resumeHold("RESUME_HOLD", "다시 추출", "보류 사유를 확인했다면 요청 정보 확인부터 다시 실행합니다."),
+  retryFailed("RETRY_FAILED", "다시 시도", "오류가 난 처리를 다시 실행합니다."),
+  reopenReview("REOPEN_REVIEW", "다시 검토", "이 업무의 검토를 다시 실행합니다.");
 
   const ResumeReason(this.code, this.buttonLabel, this.help);
   final String code;
@@ -64,7 +61,6 @@ enum ResumeReason {
       };
 }
 
-/// 서버 processing_step 중 화면이 따로 다루는 값.
 abstract final class ProcessingStep {
   static const onHold = "ON_HOLD";
   static const needsInfo = "NEEDS_INFO";
@@ -112,8 +108,8 @@ String processingStepLabel(String step, {int inputRevision = 1}) =>
 
 /// 서버 hold 문구가 없을 때 error.code로 고르는 대체 문구.
 const _fallbackStopMessages = {
-  "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
-  "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 해요.",
+  "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했습니다.",
+  "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 합니다.",
 };
 
 /// 거래처가 없어 멈춘 코드. 거래처 등록으로 원인을 풀 수 있습니다.
@@ -126,7 +122,6 @@ const supplierMissingStopCodes = {
 String? stopReasonMessage(HoldReason? hold, String? errorCode) =>
     hold?.message ?? _fallbackStopMessages[errorCode];
 
-/// API-01·03 hold. 문구는 서버가 정한 그대로 보여 줍니다.
 class HoldReason {
   const HoldReason({required this.code, required this.message});
 
@@ -134,7 +129,6 @@ class HoldReason {
   final String message;
 }
 
-/// API-03 저장된 진행 단계. 검토 진행 팝업과 보류 안내가 함께 씁니다.
 class CaseProgress {
   const CaseProgress({
     required this.caseId,
@@ -145,7 +139,6 @@ class CaseProgress {
     this.errorCode,
   });
 
-  /// API-03 `data`.
   factory CaseProgress.fromJson(Map<String, dynamic> json) {
     final hold = json["hold"];
     final error = json["error"];
@@ -250,12 +243,10 @@ class WorkCase {
   final String statusCode;
   final String processingStep;
 
-  /// API-01 step_detail.message.
   final String stepMessage;
   final int inputRevision;
   final int attachmentCount;
 
-  /// ON_HOLD일 때 서버가 정한 보류 사유.
   final HoldReason? hold;
 
   /// 회신 현황. API-01에만 있고 API-02로 읽은 업무는 null입니다.
@@ -263,16 +254,13 @@ class WorkCase {
   final List<String> allowedActions;
   final List<DisabledWorkCaseAction> disabledActions;
 
-  /// 아직 검토를 실행하지 않은 업무. 원문 확인 후 수용·대안 찾기를 고릅니다.
   bool get notStarted => status == WorkCaseStatus.waiting;
 
-  /// 저장된 검토 카드가 있는 업무(API-14). 카드 화면으로 갈 수 있습니다.
   bool get hasReviewCard =>
       processingStep == "REVIEW_READY" || status == WorkCaseStatus.complete;
 
   bool get onHold => processingStep == ProcessingStep.onHold;
 
-  /// 후보 단계(후보 찾기 대기·견적 요청 준비).
   bool get atCandidates =>
       processingStep == ProcessingStep.selectingCandidates ||
       processingStep == ProcessingStep.candidates;
@@ -280,7 +268,6 @@ class WorkCase {
   /// 멈춘 이유를 API-03에서 다시 확인할 단계.
   bool get stopped => onHold || processingStep == ProcessingStep.needsInfo;
 
-  /// 이 업무에서 재개할 때 보낼 사유.
   ResumeReason get resumeReason => ResumeReason.forStep(processingStep);
 
   bool can(String action) => allowedActions.contains(action);
@@ -392,7 +379,6 @@ class OriginalMail {
   final List<MailAttachment> attachments;
 }
 
-/// 08 오류 응답의 code·message.
 class WorkQueueFailure implements Exception {
   const WorkQueueFailure(
     this.code,
@@ -411,7 +397,6 @@ class WorkQueueFailure implements Exception {
   /// 남기고 상태를 다시 읽습니다. [unknownOutcome]이면 늘 참입니다.
   final bool retryable;
 
-  /// 다른 화면·사용자가 업무를 바꿨으니 목록을 다시 불러와야 합니다.
   bool get caseChanged => const {
     "REVISION_CONFLICT",
     "WORK_ALREADY_STARTED",
@@ -420,7 +405,6 @@ class WorkQueueFailure implements Exception {
     "CANDIDATES_CHANGED",
   }.contains(code);
 
-  /// 후보 세트가 바뀌었거나 이 선택이 더 맞지 않음: 후보를 다시 조회합니다.
   bool get candidatesChanged => const {
     "CANDIDATES_CHANGED",
     "REVISION_CONFLICT",

@@ -4,7 +4,6 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/work_case.dart";
 
-/// 서버 업무 상태(Waiting·Running·Complete)를 그대로 표시합니다.
 class StatusBadge extends StatelessWidget {
   const StatusBadge(this.status, {super.key, this.rawCode});
 

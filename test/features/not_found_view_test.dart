@@ -19,7 +19,7 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
 
-    expect(find.text("페이지를 찾을 수 없어요"), findsOneWidget);
+    expect(find.text("페이지를 찾을 수 없습니다"), findsOneWidget);
     final screenCenter = tester.getCenter(find.byType(NotFoundView)).dx;
     final logoCenter = tester.getCenter(find.byType(BrandLogo)).dx;
     expect(logoCenter, closeTo(screenCenter, 1));

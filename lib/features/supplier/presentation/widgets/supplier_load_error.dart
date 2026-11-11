@@ -2,7 +2,6 @@ import "package:flutter/material.dart";
 
 import "../../domain/supplier.dart";
 
-/// Shows the server message for a [SupplierFailure], otherwise [fallback].
 class SupplierLoadError extends StatelessWidget {
   const SupplierLoadError({
     super.key,

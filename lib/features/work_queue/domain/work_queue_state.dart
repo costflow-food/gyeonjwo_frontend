@@ -29,7 +29,6 @@ class WorkQueueState {
   /// 검색 없는 값을 유지합니다. 아직 모르면 null.
   final int? allWaiting;
 
-  /// 지금 탭에 보이는 업무. [WorkCaseStatus.tab] 기준입니다.
   List<WorkCase> get visibleItems => status == null
       ? items
       : [
@@ -78,7 +77,6 @@ class WorkQueueState {
     allWaiting: allWaiting,
   );
 
-  /// 탭만 바꿉니다.
   WorkQueueState withStatus(WorkCaseStatus? tab) => WorkQueueState(
     items: items,
     counts: counts,

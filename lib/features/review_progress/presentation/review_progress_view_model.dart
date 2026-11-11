@@ -56,7 +56,6 @@ class ReviewProgressViewModel extends _$ReviewProgressViewModel {
     return _accept(progress);
   }
 
-  /// '다시 시도' / '다시 확인'. Keeps the steps on screen when it has them.
   void refresh() {
     _polls = 0;
     _failures = 0;
@@ -67,14 +66,12 @@ class ReviewProgressViewModel extends _$ReviewProgressViewModel {
     }
   }
 
-  /// The app went to the background: no requests until [resume].
   void pause() {
     _paused = true;
     _poll?.cancel();
     _signal?.cancel();
   }
 
-  /// Back in the foreground: the step may have changed meanwhile.
   void resume() {
     if (!_paused) return;
     _paused = false;

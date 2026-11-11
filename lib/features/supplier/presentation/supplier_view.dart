@@ -9,7 +9,6 @@ import "supplier_view_model.dart";
 import "widgets/supplier_content.dart";
 import "widgets/supplier_header.dart";
 
-/// SCR-011 거래처 기준자료 검색과 조회.
 class SupplierView extends ConsumerStatefulWidget {
   const SupplierView({super.key});
 
@@ -56,7 +55,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 20, 4, 32),
-            child: NoteLine("견적과 실거래 가격의 적용일·조건을 함께 확인하세요."),
+            child: NoteLine("견적과 실거래 가격의 적용일·조건을 함께 확인하십시오."),
           ),
         ],
       ),

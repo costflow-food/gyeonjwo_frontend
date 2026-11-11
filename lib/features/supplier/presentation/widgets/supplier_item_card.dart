@@ -7,7 +7,6 @@ import "../../domain/supplier.dart";
 import "certification_badge.dart";
 import "supplier_fact.dart";
 
-/// One handled item. Mail quotes and receipt-backed purchases stay separate.
 class SupplierItemCard extends StatelessWidget {
   const SupplierItemCard({
     super.key,
@@ -72,7 +71,6 @@ class SupplierItemCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          // 한 줄에 하나씩 세로로 쌓아, 가로로 흩어져 생기던 빈 공간을 없앱니다.
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 12,

@@ -5,8 +5,6 @@ import "../../domain/purchase_review.dart";
 import "plan_card.dart";
 import "review_format.dart";
 
-/// 구매안 카드 · 업체별 배정 · 빠진 업체 안내 · 선택 버튼을 같은 열에 맞춰 둡니다.
-/// 열이 좁으면 배정을 카드 안에 넣고 카드마다 버튼을 붙입니다.
 class PlanBoard extends StatelessWidget {
   const PlanBoard({
     super.key,
@@ -154,7 +152,6 @@ class PlanBoard extends StatelessWidget {
     (sum, allocation) => sum + (num.tryParse(allocation.quantity) ?? 0),
   );
 
-  /// 업체별 첫 배정(이름·단가). 처음 나온 순서대로.
   static List<PlanAllocation> _suppliers(List<ResponsePlan> plans) {
     final seen = <String>{};
     return [
@@ -310,7 +307,6 @@ class _Cell extends StatelessWidget {
   );
 }
 
-/// 구매안에서 빠진 업체와 그 이유·역전 기준.
 class _ExcludedNotice extends StatelessWidget {
   const _ExcludedNotice({required this.question});
 
@@ -400,7 +396,6 @@ class _HatchPainter extends CustomPainter {
   bool shouldRepaint(_HatchPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// 확정 가능한 안: 이 안 선택. 조건부 안: 수용하기(아직 서버 동작이 없어 비활성).
 class _SelectButton extends StatelessWidget {
   const _SelectButton({
     required this.plan,
@@ -442,9 +437,9 @@ class _SelectButton extends StatelessWidget {
     }
     final canSelect = card.can(ReviewAction.selectPlan) && plan.selectable;
     final reason = !plan.valid
-        ? "${plan.validationLabel} 안은 아직 확정할 수 없어요."
+        ? "${plan.validationLabel} 안은 아직 확정할 수 없습니다."
         : plan.planId == null
-        ? "서버가 이 안의 ID를 보내지 않아 선택할 수 없어요."
+        ? "서버가 이 안의 ID를 보내지 않아 선택할 수 없습니다."
         : card.disabledMessage(ReviewAction.selectPlan);
     final label = plan.valid ? "이 안 선택" : "수용하기";
     final onPressed = canSelect && !busy ? onSelect : null;

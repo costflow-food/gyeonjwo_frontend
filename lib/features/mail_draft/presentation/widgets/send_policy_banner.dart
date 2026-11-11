@@ -6,7 +6,6 @@ import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/mail_draft.dart";
 
-/// What will happen to this draft under the current send setting and status.
 class SendPolicyBanner extends StatelessWidget {
   const SendPolicyBanner({
     super.key,
@@ -19,11 +18,8 @@ class SendPolicyBanner extends StatelessWidget {
   final MailDraft draft;
   final bool editing;
 
-  /// API-12 result for this draft right after a candidate selection.
   final DraftDispatchState? dispatchState;
 
-  /// Opens the mailbox send settings (설정 → 메일 발송 설정) when the draft
-  /// waits on them. Send settings are per purpose for the whole mailbox only.
   final VoidCallback? onOpenSettings;
 
   @override
@@ -96,7 +92,7 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.draft when draft.manualApprovalUnderAutoSend => (
         Icons.warning_amber_rounded,
         const Color(0xFF8A6516),
-        "이 초안은 자동 발송 대상이 아니에요. 내용을 확인한 뒤 승인 후 발송을 눌러 주세요.",
+        "이 초안은 자동 발송 대상이 아닙니다. 내용을 확인한 뒤 승인 후 발송을 눌러 주세요.",
       ),
       DraftStatus.draft => (
         Icons.info_outline,
@@ -123,7 +119,7 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.unknown => (
         Icons.help_outline,
         const Color(0xFF8A6516),
-        "발송 여부를 확인 중이에요. 이미 전송됐을 수 있어 발신함 대조 전에는 다시 보내지 않습니다.",
+        "발송 여부를 확인 중입니다. 이미 전송됐을 수 있어 발신함 대조 전에는 다시 보내지 않습니다.",
       ),
     };
     return Container(

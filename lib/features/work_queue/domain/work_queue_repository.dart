@@ -13,10 +13,8 @@ abstract interface class WorkQueueRepository {
     int? limit,
   });
 
-  /// API-25. 읽기 전용이며 추출을 시작하지 않습니다.
   Future<OriginalMail> getOriginalMail(String mailId);
 
-  /// API-26. 첨부 원본 바이트(읽기 전용).
   Future<Uint8List> getAttachmentContent(String mailId, String attachmentId);
 
   /// API-05. 되돌릴 수 없습니다: 업무와 연결 메일이 삭제됩니다.
@@ -37,7 +35,6 @@ abstract interface class WorkQueueRepository {
   /// 202 접수만 확인하며 처리 완료를 뜻하지 않습니다.
   Future<void> resume(WorkCase workCase);
 
-  /// API-11. 에이전트가 고른 견적 요청 후보.
   Future<CandidateSet> getCandidates(String caseId);
 
   /// API-12. 고른 업체로 견적 요청 초안을 만들고 업체별 발송 상태를 돌려줍니다.

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import "../../../../shared/workspace_colors.dart";
 
-/// 업무 큐 첫 화면: 진한 초록 카드에 안내와 검토를 기다리는 요청 수.
 class QueueSummary extends StatelessWidget {
   const QueueSummary({super.key, required this.waitingCount});
 
@@ -36,12 +35,12 @@ class QueueSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '흩어진 요청을, 한눈에 검토하세요.',
+                  '흩어진 요청을, 한눈에 검토하십시오.',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 10),
                 Text(
-                  '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수용하거나 다른 대안을 찾을 수 있어요.',
+                  '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수용하거나 다른 대안을 찾을 수 있습니다.',
                   style: TextStyle(
                     fontSize: 14,
                     color: context.palette.onDeepMuted,

@@ -18,7 +18,7 @@ MailDraftDataSource mailDraftDataSource(Ref ref) => ApiMailDraftDataSource(
 /// API-18 `POST /mail-drafts/{draft_id}/revisions`,
 /// API-19 `POST /mail-drafts/{draft_id}/approve-and-send`,
 /// API-20 `POST /mail-drafts/{draft_id}/reconcile`,
-/// `POST /mail-drafts/{draft_id}/withdraw` (unsent draft, X-2).
+/// `POST /mail-drafts/{draft_id}/withdraw` (unsent draft).
 abstract interface class MailDraftDataSource {
   Future<Map<String, dynamic>> fetchDrafts(String caseId, {String? cursor});
 
@@ -129,7 +129,6 @@ class ApiMailDraftDataSource implements MailDraftDataSource {
     idempotencyKey: idempotencyKey,
   );
 
-  /// 세션 갱신·429 대기·오류 변환은 [sendApiRequest]가 맡습니다.
   Future<T> _send<T>(
     Future<Response<T>> Function(Map<String, String> headers) request, {
     String? idempotencyKey,

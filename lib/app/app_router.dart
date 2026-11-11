@@ -46,23 +46,19 @@ final appRouter = GoRouter(
     ),
     GoRoute(path: '/account', builder: (context, state) => const AccountView()),
     GoRoute(path: '/', builder: (context, state) => const WorkQueueView()),
-    // 업무별 주소: 같은 업무 큐 화면에서 그 업무를 엽니다.
     GoRoute(
       path: '/cases/:caseId',
       builder: (context, state) =>
           WorkQueueView(caseId: state.pathParameters['caseId']),
     ),
-    // SCR-010 실행 로그
     GoRoute(
       path: '/logs',
       builder: (context, state) => const WorkflowLogView(),
     ),
-    // SCR-011 거래처 조회
     GoRoute(
       path: '/suppliers',
       builder: (context, state) => const SupplierView(),
     ),
-    // SCR-002 검토 카드 (API-13·14·15)
     GoRoute(
       path: '/cases/:caseId/review',
       builder: (context, state) =>

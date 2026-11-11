@@ -3,7 +3,6 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// Error message, cancel, and submit with an in-progress state.
 class SupplierRegisterFooter extends StatelessWidget {
   const SupplierRegisterFooter({
     super.key,

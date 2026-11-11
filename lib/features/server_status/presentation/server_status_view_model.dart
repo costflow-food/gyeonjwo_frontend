@@ -9,10 +9,6 @@ part "server_status_view_model.g.dart";
 
 Duration? _noRetry(int retryCount, Object error) => null;
 
-/// 작업 화면 상단 배너용 서버 준비 상태.
-///
-/// [pollInterval]마다 다시 읽어, 서버가 복구되면 배너가 저절로 사라집니다.
-/// 작업 화면이 모두 닫히면(자동 해제) 묻지 않습니다.
 @Riverpod(retry: _noRetry)
 class ServerStatusViewModel extends _$ServerStatusViewModel {
   static const pollInterval = Duration(seconds: 30);

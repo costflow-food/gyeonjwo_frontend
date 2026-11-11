@@ -71,7 +71,6 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
     final body = <String, Object?>{
       "expected_revision": draft.inputRevision,
       "snapshot_hash": draft.snapshotHash,
-      // Opaque string from API-16·17, sent back unchanged.
       "expected_settings_version": draft.settingsVersion,
     };
     return _send("approve:${draft.id}", body, (key) async {
@@ -98,19 +97,17 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
       "expected_snapshot_hash": draft.snapshotHash,
       "reason": reason,
     };
-    // 200; the draft's new status comes from API-17.
     return _send("withdraw:${draft.id}", body, (key) async {
       await _dataSource.withdraw(draft.id, body, idempotencyKey: key);
     });
   }
 
-  /// 202 only says the request was accepted; the result comes from API-17.
   static void _accepted(String draftId, Map<String, dynamic> response) {
     final data = response["data"] as Map<String, dynamic>;
     if (data["draft_id"] != draftId || data["accepted"] != true) {
       throw const MailDraftFailure(
         "INVALID_RESPONSE",
-        "발송 요청 접수 결과를 확인하지 못했어요.",
+        "발송 요청 접수 결과를 확인하지 못했습니다.",
       );
     }
   }

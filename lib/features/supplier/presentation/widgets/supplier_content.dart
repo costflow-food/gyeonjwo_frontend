@@ -10,7 +10,6 @@ import "supplier_list_panel.dart";
 import "supplier_list_status.dart";
 import "supplier_search_field.dart";
 
-/// List and detail side by side when wide, stacked when narrow.
 class SupplierContent extends StatefulWidget {
   const SupplierContent({
     super.key,
@@ -83,7 +82,7 @@ class _SupplierContentState extends State<SupplierContent> {
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(
                     child: Text(
-                      "거래처를 선택하면 상세 정보를 볼 수 있어요.",
+                      "거래처를 선택하면 상세 정보를 볼 수 있습니다.",
                       style: TextStyle(
                         fontSize: AppFontSizes.body,
                         color: context.palette.muted,

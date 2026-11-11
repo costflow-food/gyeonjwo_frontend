@@ -3,7 +3,6 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// Read-only notice and close.
 class SupplierEvidenceFooter extends StatelessWidget {
   const SupplierEvidenceFooter({super.key});
 
@@ -15,7 +14,7 @@ class SupplierEvidenceFooter extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              "가격별 적용일·조건·출처를 확인하세요.",
+              "가격별 적용일·조건·출처를 확인하십시오.",
               style: TextStyle(
                 fontSize: AppFontSizes.secondary,
                 color: context.palette.muted,

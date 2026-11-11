@@ -5,7 +5,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/supplier_list_state.dart";
 import "supplier_list_row.dart";
 
-/// Rows, empty states, and cursor-based "더 보기".
 class SupplierListPanel extends StatelessWidget {
   const SupplierListPanel({
     super.key,

@@ -9,7 +9,6 @@ import "widgets/workflow_log_content.dart";
 import "widgets/workflow_log_header.dart";
 import "workflow_log_view_model.dart";
 
-/// SCR-010 실행 로그. Case, role, node, tool, send, and settings history.
 class WorkflowLogView extends ConsumerWidget {
   const WorkflowLogView({super.key});
 
@@ -31,7 +30,7 @@ class WorkflowLogView extends ConsumerWidget {
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 20, 4, 32),
-            child: NoteLine("관련 업무와 원문에서 근거를 확인하세요."),
+            child: NoteLine("관련 업무와 원문에서 근거를 확인하십시오."),
           ),
         ],
       ),

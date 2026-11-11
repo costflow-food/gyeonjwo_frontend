@@ -1,7 +1,6 @@
 import "../../mail_draft/domain/mail_draft.dart";
 import "work_case.dart";
 
-/// API-11 후보 세트. 조건 충족 여부는 MET·UNMET·UNKNOWN입니다.
 enum CheckState {
   met("MET", "충족"),
   unmet("UNMET", "불충족"),
@@ -17,7 +16,6 @@ enum CheckState {
   );
 }
 
-/// 필수 조건 또는 선호 조건 한 줄.
 class CandidateCheck {
   const CandidateCheck({
     required this.label,
@@ -64,16 +62,13 @@ class Candidate {
   final String name;
   final String? contactEmail;
 
-  /// 이 품목을 취급한다고 본 근거(거래 이력·등록 품목 등).
   final String handlingEvidence;
 
-  /// 에이전트가 이 후보를 고른 이유.
   final String reason;
 
   /// 주의 사유. 있으면 자동 발송하지 않고 승인을 기다립니다.
   final String? caution;
 
-  /// 이 후보에서 확인하지 못한 항목의 키.
   final List<String> unknownFields;
   final List<CandidateCheck> checks;
 
@@ -112,7 +107,6 @@ class CandidateSet {
   /// 업무 입력이 바뀌어 이 후보는 과거 후보입니다. 고를 수 없습니다.
   final bool isStale;
 
-  /// 업무 전체에서 확인하지 못한 항목의 키.
   final List<String> unknownFields;
   final List<String> allowedActions;
   final List<DisabledWorkCaseAction> disabledActions;
@@ -126,7 +120,7 @@ class CandidateSet {
           .where((disabled) => disabled.action == WorkCaseAction.selectCandidates)
           .firstOrNull
           ?.message ??
-      (isStale ? "업무 내용이 바뀌어 이전 후보로는 견적을 요청할 수 없어요." : null);
+      (isStale ? "업무 내용이 바뀌어 이전 후보로는 견적을 요청할 수 없습니다." : null);
 
   /// 서버 사정으로 지금은 후보를 고를 수 없을 때 목록 위에 보일 안내.
   /// 과거 후보(따로 안내)이거나 이미 고른 뒤라면 null입니다.
@@ -139,13 +133,12 @@ class CandidateSet {
     return switch (disabled.reasonCode) {
       // 서버의 후보 선택·발송 기능이 꺼져 있습니다. 서버 문구는 개발자용이라 바꿔 보여줍니다.
       "CANDIDATE_SELECTION_INTEGRATION_REQUIRED" || "PROCESSING_UNAVAILABLE" =>
-        "지금은 견적 요청을 보낼 수 없어요. 서버 준비가 끝나면 다시 고를 수 있어요.",
+        "지금은 견적 요청을 보낼 수 없습니다. 서버 준비가 끝나면 다시 고를 수 있습니다.",
       _ => disabled.message,
     };
   }
 }
 
-/// API-12 drafts[]: the RFQ draft made for one selected supplier.
 class SelectedDraft {
   const SelectedDraft({
     required this.draftId,

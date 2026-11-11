@@ -8,7 +8,6 @@ part "workflow_log_view_model.g.dart";
 
 Duration? _noRetry(int retryCount, Object error) => null;
 
-/// SCR-010 filters, selection, and cursor paging (API-28).
 @Riverpod(keepAlive: true, retry: _noRetry)
 class WorkflowLogViewModel extends _$WorkflowLogViewModel {
   // A late response for an older filter must not replace a newer one.

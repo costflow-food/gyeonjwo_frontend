@@ -18,7 +18,6 @@ final pdfDocumentViewProvider =
           (bytes, sourceName) => PdfViewer.data(bytes, sourceName: sourceName),
     );
 
-/// 메일 본문 옆에 띄우는 첨부 PDF 뷰어(API-26).
 class AttachmentViewer extends ConsumerWidget {
   const AttachmentViewer({
     super.key,
@@ -85,7 +84,7 @@ class AttachmentViewer extends ConsumerWidget {
                   error: (error, _) => _ViewerError(
                     message: error is WorkQueueFailure
                         ? error.message
-                        : "첨부파일을 불러오지 못했어요.",
+                        : "첨부파일을 불러오지 못했습니다.",
                     onRetry: () => ref.invalidate(provider),
                   ),
                   data: (bytes) => ref.watch(pdfDocumentViewProvider)(

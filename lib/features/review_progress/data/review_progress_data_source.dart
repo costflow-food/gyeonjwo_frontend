@@ -14,7 +14,6 @@ ReviewProgressDataSource reviewProgressDataSource(Ref ref) =>
       ref.watch(authSessionDataSourceProvider).freshAccessToken,
     );
 
-/// API-03 `GET /work-cases/{case_id}/progress`. 조회만 하며 업무를 바꾸지 않습니다.
 abstract interface class ReviewProgressDataSource {
   Future<Map<String, dynamic>> fetchProgress(String caseId);
 }
@@ -27,7 +26,6 @@ class ApiReviewProgressDataSource implements ReviewProgressDataSource {
   final Dio _dio;
   final ApiTokenReader _accessToken;
 
-  /// 세션 갱신·429 대기·오류 변환은 [sendApiRequest]가 맡습니다.
   @override
   Future<Map<String, dynamic>> fetchProgress(String caseId) => sendApiRequest(
     _accessToken,

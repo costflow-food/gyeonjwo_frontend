@@ -45,7 +45,7 @@ Future<Map<String, dynamic>> authorizedJsonGet(
   }
   if (body["data"] == null) {
     throw const ApiReadException(502, {
-      "error": {"code": "INVALID_RESPONSE", "message": "서버 응답을 확인하지 못했어요."},
+      "error": {"code": "INVALID_RESPONSE", "message": "서버 응답을 확인하지 못했습니다."},
     });
   }
   return body;

@@ -33,7 +33,6 @@ abstract interface class WorkQueueDataSource {
 
   Future<Map<String, dynamic>> fetchOriginalMail(String mailId);
 
-  /// 첨부 원본 바이트. 서버는 Gmail에서 받아 그대로 넘겨주고 저장하지 않습니다.
   Future<Uint8List> fetchAttachmentContent(String mailId, String attachmentId);
 
   Future<Map<String, dynamic>> acceptIncrease(
@@ -188,7 +187,6 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
     idempotencyKey: idempotencyKey,
   );
 
-  /// 세션 갱신·429 대기·오류 변환은 [sendApiRequest]가 맡습니다.
   Future<T> _send<T>(
     Future<Response<T>> Function(Map<String, String> headers) request, {
     String? idempotencyKey,

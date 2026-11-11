@@ -5,7 +5,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../domain/intake_mail.dart";
 
-/// Three explicit outcomes. A new case starts as Waiting without analysis.
 class MailIntakeActions extends StatelessWidget {
   const MailIntakeActions({
     super.key,

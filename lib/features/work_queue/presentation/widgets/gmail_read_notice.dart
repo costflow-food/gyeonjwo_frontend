@@ -4,7 +4,6 @@ import "package:go_router/go_router.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// Shown when Gmail read permission is missing; automatic receiving is off.
 class GmailReadNotice extends StatelessWidget {
   const GmailReadNotice({super.key});
 
@@ -26,7 +25,7 @@ class GmailReadNotice extends StatelessWidget {
           color: context.palette.accentText,
         ),
         Text(
-          "Gmail 읽기 권한이 없어 메일 자동 수신이 꺼져 있어요.",
+          "Gmail 읽기 권한이 없어 메일 자동 수신이 꺼져 있습니다.",
           style: TextStyle(
             fontSize: AppFontSizes.body,
             color: context.palette.ink,

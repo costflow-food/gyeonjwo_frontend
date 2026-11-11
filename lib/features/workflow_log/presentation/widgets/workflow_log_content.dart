@@ -9,7 +9,6 @@ import "workflow_log_detail.dart";
 import "workflow_log_filters.dart";
 import "workflow_log_list.dart";
 
-/// Filters on top, then the timeline and the selected entry's details.
 class WorkflowLogContent extends StatefulWidget {
   const WorkflowLogContent({
     super.key,

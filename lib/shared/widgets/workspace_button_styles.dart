@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../app_font_sizes.dart';
 import '../workspace_colors.dart';
 
-/// Shared appearance; each button keeps its own disabled and busy behavior.
 abstract final class WorkspaceButtonStyles {
   static ButtonStyle filled(BuildContext context) => FilledButton.styleFrom(
     backgroundColor: context.palette.accent,

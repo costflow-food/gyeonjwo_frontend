@@ -46,7 +46,6 @@ class SendSettingsDialog extends ConsumerStatefulWidget {
 class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
   final _signature = TextEditingController();
 
-  // Local edits, seeded from the loaded version.
   String? _mailboxRef;
   int? _loadedVersion;
   Map<DraftPurpose, bool?> _approval = {};
@@ -143,8 +142,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       if (!mounted) return;
       if (widget.embedded) {
         ScaffoldMessenger.maybeOf(context)
-            ?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했어요.")));
-        // Show the saved version right away.
+            ?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했습니다.")));
         setState(() {
           _saving = false;
           _seed(saved);
@@ -181,7 +179,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     }
   }
 
-  /// Embedded: drop unsaved edits and show the saved values again.
   void _discard() {
     final value = ref.read(sendSettingsViewModelProvider(_scope));
     final settings = value.asData?.value;
@@ -205,7 +202,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("변경한 설정을 버릴까요?"),
+        title: const Text("변경한 설정을 버리시겠습니까?"),
         content: const Text("저장하지 않은 설정은 적용되지 않습니다."),
         actions: [
           TextButton(
@@ -248,7 +245,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Same inset as the footer.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: content,
@@ -297,7 +293,6 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     );
   }
 
-  /// Shows the server's reason, e.g. no connected mailbox.
   Widget _loadError(SendSettingsFailure failure, VoidCallback onRetry) =>
       Padding(
         padding: const EdgeInsets.all(24),

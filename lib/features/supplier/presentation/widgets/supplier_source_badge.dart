@@ -3,7 +3,6 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../domain/supplier.dart";
 
-/// How the supplier reached the reference data. Web candidates never show here.
 class SupplierSourceBadge extends StatelessWidget {
   const SupplierSourceBadge(this.sourceType, {super.key});
   final SupplierSourceType sourceType;

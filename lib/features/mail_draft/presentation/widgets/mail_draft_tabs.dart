@@ -5,7 +5,6 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/mail_draft.dart";
 import "draft_status_badge.dart";
 
-/// One tab per supplier draft, each with its own status. No combined result.
 class MailDraftTabs extends StatelessWidget {
   const MailDraftTabs({
     super.key,
@@ -17,7 +16,6 @@ class MailDraftTabs extends StatelessWidget {
 
   final List<MailDraft> drafts;
 
-  /// draft_id → API-12 dispatch_state, right after a candidate selection.
   final Map<String, DraftDispatchState> dispatchStates;
   final String? selectedId;
   final ValueChanged<String> onSelect;

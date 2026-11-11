@@ -3,7 +3,6 @@ import "package:flutter/widgets.dart";
 import "../domain/supplier.dart";
 import "../domain/supplier_form_rules.dart";
 
-/// Text controllers for the supplier part of the register form.
 class SupplierBasicFields {
   final name = TextEditingController();
   final registrationNo = TextEditingController();
@@ -47,7 +46,6 @@ class SupplierBasicFields {
   }
 }
 
-/// Text controllers for one handled item. The server derives the item key.
 class SupplierItemFields {
   final name = TextEditingController();
   final specification = TextEditingController();

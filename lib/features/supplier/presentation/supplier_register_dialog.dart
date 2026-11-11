@@ -10,10 +10,6 @@ import "widgets/supplier_item_form_list.dart";
 import "widgets/supplier_register_footer.dart";
 import "widgets/supplier_register_header.dart";
 
-/// 거래처 등록 모달을 엽니다. Returns the created supplier on success.
-///
-/// The server stores the record, decides the owner, and derives item keys;
-/// this screen never writes to the database directly.
 Future<SupplierDetail?> showSupplierRegisterDialog(BuildContext context) {
   return showDialog<SupplierDetail>(
     context: context,
@@ -74,8 +70,6 @@ class _SupplierRegisterDialogState
       });
     } catch (_) {
       if (!mounted) return;
-      // Unknown outcome: the repository keeps the key, so a retry cannot
-      // create a duplicate.
       setState(() {
         _submitting = false;
         _error = "등록 결과를 확인하지 못했습니다. 다시 등록을 누르면 같은 요청으로 확인합니다.";
@@ -92,7 +86,7 @@ class _SupplierRegisterDialogState
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("입력한 내용을 버릴까요?"),
+        title: const Text("입력한 내용을 버리시겠습니까?"),
         content: const Text("등록하지 않은 거래처 정보는 저장되지 않습니다."),
         actions: [
           TextButton(

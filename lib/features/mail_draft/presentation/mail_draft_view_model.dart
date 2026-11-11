@@ -57,19 +57,16 @@ class MailDraftViewModel extends _$MailDraftViewModel {
     return next;
   }
 
-  /// API-19, then API-17 for the result.
   Future<MailDraft> approve(MailDraft draft) => _submit(
     draft,
     () => ref.read(mailDraftRepositoryProvider).approveAndSend(draft),
   );
 
-  /// API-20, then API-17 for the result.
   Future<MailDraft> reconcile(MailDraft draft) => _submit(
     draft,
     () => ref.read(mailDraftRepositoryProvider).reconcile(draft),
   );
 
-  /// Closes an unsent draft, then API-17 for its new status.
   Future<MailDraft> withdraw(MailDraft draft, {required String reason}) =>
       _submit(
         draft,
@@ -98,7 +95,6 @@ class MailDraftViewModel extends _$MailDraftViewModel {
     return next;
   }
 
-  /// Supplier names are not in API-16; the candidate list has them.
   Future<Map<String, String>> _supplierNames(String caseId) async {
     try {
       final set = await ref

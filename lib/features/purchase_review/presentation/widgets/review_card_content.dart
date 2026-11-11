@@ -15,7 +15,6 @@ import "plan_board.dart";
 import "quote_card.dart";
 import "review_format.dart";
 
-/// SCR-002 검토 카드: 구매안·역제안·확인 항목·근거 견적과 판단(API-15).
 class ReviewCardContent extends ConsumerStatefulWidget {
   const ReviewCardContent({super.key, required this.review});
 
@@ -49,9 +48,9 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
       setState(() {
         _busy = false;
         _error = failure.unknownOutcome
-            ? "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요."
+            ? "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."
             : failure.cardChanged
-            ? "카드가 바뀌어 저장하지 못했어요. 최신 카드를 다시 불러왔어요. (${failure.message})"
+            ? "카드가 바뀌어 저장하지 못했습니다. 최신 카드를 다시 불러왔습니다. (${failure.message})"
             : failure.message;
       });
     }
@@ -71,7 +70,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("검토 확인"),
-        content: const Text("이 카드로 검토를 마치고 업무를 보관할까요? 보관한 업무는 업무 큐에서 빠져요."),
+        content: const Text("이 카드로 검토를 마치고 업무를 보관하시겠습니까? 보관한 업무는 업무 큐에서 빠집니다."),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -146,7 +145,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         if (card.isStale) ...[
           const _Notice(
             icon: Icons.history,
-            text: "새 견적이나 조건이 반영돼 이 카드는 이전 결과예요. 이 카드로는 선택하거나 확인할 수 없어요.",
+            text: "새 견적이나 조건이 반영돼 이 카드는 이전 결과입니다. 이 카드로는 선택하거나 확인할 수 없습니다.",
             strong: true,
           ),
           const SizedBox(height: 12),
@@ -178,7 +177,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         const SizedBox(height: 8),
         if (card.plans.isEmpty)
           Text(
-            "보여 줄 구매안이 없어요.",
+            "보여 줄 구매안이 없습니다.",
             style: TextStyle(fontSize: 13, color: context.palette.muted),
           )
         else
@@ -232,7 +231,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         const SizedBox(height: 12),
         if (quotes.isEmpty)
           Text(
-            "이 카드에 연결된 견적이 없어요.",
+            "이 카드에 연결된 견적이 없습니다.",
             style: TextStyle(fontSize: 13, color: context.palette.muted),
           )
         else
@@ -257,18 +256,17 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
       ReviewAction.selectPlan => () {
         final plan = card.plan(decision.planId);
         return plan == null
-            ? "구매안을 선택했어요."
+            ? "구매안을 선택했습니다."
             : "선택한 구매안: ${plan.typeLabel} · ${won(plan.totalAmount)}";
       }(),
       ReviewAction.hold =>
-        "검토를 보류했어요.${decision.note == null ? "" : " 사유: ${decision.note}"}",
-      ReviewAction.confirmReview => "검토를 확인하고 보관했어요.",
-      _ => "판단이 저장됐어요.",
+        "검토를 보류했습니다.${decision.note == null ? "" : " 사유: ${decision.note}"}",
+      ReviewAction.confirmReview => "검토를 확인하고 보관했습니다.",
+      _ => "판단이 저장됐습니다.",
     };
   }
 }
 
-/// 인상 요청: 역제안 대상 업체가 올린 단가(인상 전 → 요청).
 class _RaiseCard extends StatelessWidget {
   const _RaiseCard({
     required this.supplierName,
@@ -356,7 +354,6 @@ class _RaiseCard extends StatelessWidget {
   );
 }
 
-/// 역제안 · 확인할 항목 · 보류/확인하고 보관.
 class _SidePanel extends StatelessWidget {
   const _SidePanel({
     required this.card,

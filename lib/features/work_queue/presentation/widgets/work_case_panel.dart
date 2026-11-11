@@ -17,8 +17,6 @@ import "candidate_selection.dart";
 import "case_step_status.dart";
 import "status_badge.dart";
 
-/// 선택한 업무의 원문(제목·본문·첨부)과, 아직 실행하지 않은 업무의 두 가지 선택.
-/// PDF 첨부가 있으면 본문 옆(좁으면 아래)에 뷰어를 띄웁니다.
 class WorkCasePanel extends ConsumerStatefulWidget {
   const WorkCasePanel({super.key, required this.workCase});
 
@@ -71,7 +69,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
           content: Text(
             error is WorkQueueFailure
                 ? error.message
-                : "${attachment.filename}을(를) 내려받지 못했어요.",
+                : "${attachment.filename}을(를) 내려받지 못했습니다.",
           ),
         ),
       );
@@ -86,15 +84,15 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text(
-          "인상을 수용할까요?",
+          "인상을 수용하시겠습니까?",
           style: TextStyle(
             fontSize: AppFontSizes.dialogTitleSmall,
             fontWeight: FontWeight.w700,
           ),
         ),
         content: const Text(
-          "수용하면 이 업무와 연결된 메일이 견줘에서 삭제되고 되돌릴 수 없어요.\n"
-          "견적 수락 메일이나 발주는 보내지 않아요.",
+          "수용하면 이 업무와 연결된 메일이 견줘에서 삭제되고 되돌릴 수 없습니다.\n"
+          "견적 수락 메일이나 발주는 보내지 않습니다.",
           style: TextStyle(fontSize: AppFontSizes.body, height: 1.7),
         ),
         actions: [
@@ -116,7 +114,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
     final router = GoRouter.of(context);
     if (await _run(
       () => _viewModel.acceptIncrease(widget.workCase),
-      done: "수용했어요. 업무 큐에서 정리했어요.",
+      done: "수용했습니다. 업무 큐에서 정리했습니다.",
     )) {
       router.go("/");
     }
@@ -155,7 +153,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       setState(() {
         _busy = false;
         _error = failure.unknownOutcome
-            ? "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요."
+            ? "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."
             : failure.message;
       });
       return false;
@@ -163,7 +161,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       if (!mounted) return false;
       setState(() {
         _busy = false;
-        _error = "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요.";
+        _error = "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다.";
       });
       return false;
     }
@@ -212,7 +210,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
             error: (error, _) => _MailError(
               message: error is WorkQueueFailure
                   ? error.message
-                  : "메일 원문을 불러오지 못했어요.",
+                  : "메일 원문을 불러오지 못했습니다.",
               onRetry: () =>
                   ref.invalidate(originalMailProvider(workCase.initialMailId)),
             ),
@@ -313,7 +311,6 @@ class _MailContent extends StatelessWidget {
   final String? openAttachmentId;
   final ValueChanged<MailAttachment> onOpen;
 
-  /// PDF가 아닌 첨부: 미리 보기 대신 내려받습니다.
   final ValueChanged<MailAttachment> onDownload;
 
   @override
@@ -357,7 +354,7 @@ class _MailContent extends StatelessWidget {
         const SizedBox(height: 8),
         if (mail.attachments.isEmpty)
           Text(
-            "첨부파일이 없어요.",
+            "첨부파일이 없습니다.",
             style: TextStyle(
               fontSize: AppFontSizes.secondary,
               color: context.palette.muted,
@@ -426,7 +423,6 @@ class _AttachmentTile extends StatelessWidget {
   final MailAttachment attachment;
   final bool selected;
 
-  /// PDF는 뷰어로 열고, 다른 형식은 내려받습니다.
   final VoidCallback onTap;
 
   @override
@@ -485,7 +481,7 @@ class _AttachmentTile extends StatelessWidget {
     );
     final action = attachment.isPdf ? "열기" : "내려받기";
     return Tooltip(
-      message: attachment.isPdf ? "PDF 미리 보기" : "미리 볼 수 없는 형식이라 내려받아요.",
+      message: attachment.isPdf ? "PDF 미리 보기" : "미리 볼 수 없는 형식이라 내려받습니다.",
       child: Semantics(
         button: true,
         selected: selected,
@@ -528,8 +524,6 @@ class _MailError extends StatelessWidget {
   );
 }
 
-/// 아직 실행하지 않은 업무: 수용하기 / 다른 대안 찾기.
-/// 버튼은 서버가 허용한 행동(allowed_actions)일 때만 누를 수 있습니다.
 class _Decision extends StatelessWidget {
   const _Decision({
     required this.workCase,
@@ -554,9 +548,9 @@ class _Decision extends StatelessWidget {
         child: const Text("수용하기"),
       ),
       caption: canAccept
-          ? "인상안을 받아들이고 업무를 정리해요. 되돌릴 수 없어요."
+          ? "인상안을 받아들이고 업무를 정리합니다. 되돌릴 수 없습니다."
           : workCase.disabledMessage(WorkCaseAction.acceptIncrease) ??
-                "지금은 수용할 수 없어요.",
+                "지금은 수용할 수 없습니다.",
     );
     final start = _Choice(
       button: FilledButton.icon(
@@ -566,9 +560,9 @@ class _Decision extends StatelessWidget {
         label: const Text("다른 대안 찾기"),
       ),
       caption: canStart
-          ? "등록된 거래처 자료로 에이전트가 검토를 시작해요."
+          ? "등록된 거래처 자료로 에이전트가 검토를 시작합니다."
           : workCase.disabledMessage(WorkCaseAction.start) ??
-                "서버에서 검토 실행이 아직 준비되지 않았어요.",
+                "서버에서 검토 실행이 아직 준비되지 않았습니다.",
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
