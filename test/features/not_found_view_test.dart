@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:go_router/go_router.dart";
 import "package:gyeonjwo_frontend/app/not_found_view.dart";
+import "package:gyeonjwo_frontend/shared/widgets/brand_logo.dart";
 
 void main() {
   testWidgets("an unknown address shows the app's own page and leads home", (
@@ -19,6 +20,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("페이지를 찾을 수 없어요"), findsOneWidget);
+    final screenCenter = tester.getCenter(find.byType(NotFoundView)).dx;
+    final logoCenter = tester.getCenter(find.byType(BrandLogo)).dx;
+    expect(logoCenter, closeTo(screenCenter, 1));
     expect(find.textContaining("GoException"), findsNothing);
 
     await tester.tap(find.text("업무 큐로 이동"));
