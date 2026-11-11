@@ -275,9 +275,13 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
             onAdd: () => addCallRecording(
               context,
               ref,
-              caseTitle: workCase.itemName == null
-                  ? workCase.title
-                  : "${workCase.title} · ${workCase.itemName} 품목",
+              // The mail subject names the case best; the list title can be
+              // just the sender's address.
+              caseTitle:
+                  mail.value?.subject ??
+                  (workCase.itemName == null
+                      ? workCase.title
+                      : "${workCase.title} · ${workCase.itemName} 품목"),
             ),
           ),
           if (notStarted || atCandidates) ...[
