@@ -180,12 +180,16 @@ class AuthInfoTile extends StatelessWidget {
     required this.description,
     this.enabled = true,
     this.status,
+    this.statusColor,
   });
   final IconData icon;
   final String title;
   final String description;
   final bool enabled;
   final String? status;
+
+  /// 기본은 켜져 있으면 초록, 꺼져 있으면 흐린 색입니다.
+  final Color? statusColor;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -234,9 +238,11 @@ class AuthInfoTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: AppFontSizes.secondary,
                     fontWeight: FontWeight.w600,
-                    color: enabled
-                        ? const Color(0xFF00754A)
-                        : context.palette.muted,
+                    color:
+                        statusColor ??
+                        (enabled
+                            ? const Color(0xFF00754A)
+                            : context.palette.muted),
                   ),
                 ),
               ],
