@@ -10,6 +10,8 @@ import "../../../../shared/widgets/outline_panel.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
+import "../../../voice_import/presentation/voice_import_flow.dart";
+import "../../../voice_import/presentation/widgets/call_recording_section.dart";
 import "../../data/work_queue_repository_impl.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
@@ -267,8 +269,22 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
+          mailContent,
+          const SizedBox(height: 20),
+          CallRecordingSection(
+            onAdd: () => addCallRecording(
+              context,
+              ref,
+              // The mail subject names the case best; the list title can be
+              // just the sender's address.
+              caseTitle:
+                  mail.value?.subject ??
+                  (workCase.itemName == null
+                      ? workCase.title
+                      : "${workCase.title} · ${workCase.itemName} 품목"),
+            ),
+          ),
           if (notStarted || atCandidates) ...[
-            mailContent,
             const SizedBox(height: 20),
             _Hint(
               atCandidates
@@ -276,7 +292,6 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
                   : "원문을 확인한 뒤 어떻게 처리할지 골라 주세요.",
             ),
           ] else ...[
-            mailContent,
             const SizedBox(height: 20),
             CaseStepStatus(workCase: workCase),
           ],
