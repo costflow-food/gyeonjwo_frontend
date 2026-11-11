@@ -8,7 +8,7 @@ abstract interface class MailDraftRepository {
   /// API-17. One draft's snapshot, effective policy, and send result.
   Future<MailDraft> getDraft(String draftId);
 
-  /// API-18. Not on the server yet; the edit button stays disabled.
+  /// API-18. Not reached from the screen: [MailDraft.can] keeps edit off.
   Future<MailDraft> createRevision(MailDraft draft, DraftRevisionInput input);
 
   /// API-19. 202 means accepted, not sent; read API-17 for the result.

@@ -48,7 +48,7 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
     });
   }
 
-  /// The address drives the selection (KAN-144), from any screen.
+  /// The address drives the selection, from any screen.
   void _open(WorkCase workCase) => context.go("/cases/${workCase.id}");
 
   @override
@@ -214,7 +214,8 @@ class _GroupHeader extends StatelessWidget {
   }
 }
 
-/// 검색창과 상태 탭(전체·대기·진행 중·완료). 건수는 서버 counts 그대로입니다.
+/// 검색창과 상태 탭(전체·대기·진행 중·완료). 목록을 다 받았으면 받은 업무로
+/// 건수를 다시 세고, 서버에 더 남아 있으면 서버 counts를 씁니다.
 /// 보류(Pending) 업무는 전체에서만 보입니다.
 class _QueueFilters extends StatelessWidget {
   const _QueueFilters({

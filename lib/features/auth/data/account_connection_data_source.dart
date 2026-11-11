@@ -6,7 +6,7 @@ import "../domain/auth_failure.dart";
 
 part "account_connection_data_source.g.dart";
 
-/// Draft contract with the server (KAN-17). Update both sides together.
+/// Draft contract with the server. Update both sides together.
 abstract final class AccountConnectionPaths {
   static const connect = "/api/v1/mailboxes/google/connect";
   static const connection = "/api/v1/mailboxes/google/connection";
@@ -135,6 +135,11 @@ class ApiAccountConnectionDataSource implements AccountConnectionDataSource {
         retryable: true,
       );
     }
-    return AuthFailure(AuthFailureCode.serverRejected, serverCode: serverCode);
+    return AuthFailure(
+      AuthFailureCode.serverRejected,
+      serverCode: serverCode,
+      retryable:
+          errorBody is Map<String, dynamic> && errorBody["retryable"] == true,
+    );
   }
 }

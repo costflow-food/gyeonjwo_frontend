@@ -1,15 +1,14 @@
-import "dart:convert";
 import "dart:typed_data";
 
 import "package:dio/dio.dart";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/network/api_client.dart";
+import "../../../shared/network/api_request.dart";
 import "../../auth/data/auth_session_data_source.dart";
 
 part "work_queue_data_source.g.dart";
 
-/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 @Riverpod(keepAlive: true)
 WorkQueueDataSource workQueueDataSource(Ref ref) => ApiWorkQueueDataSource(
   ref.watch(apiClientProvider),
@@ -67,24 +66,6 @@ abstract interface class WorkQueueDataSource {
   });
 }
 
-class WorkQueueApiException implements Exception {
-  const WorkQueueApiException(
-    this.statusCode,
-    this.code,
-    this.message, {
-    this.unknownOutcome = false,
-  });
-
-  final int statusCode;
-  final String code;
-  final String message;
-
-  /// 응답을 받지 못함. 서버가 처리했는지 알 수 없습니다.
-  final bool unknownOutcome;
-}
-
-typedef AccessTokenReader = Future<String?> Function({bool forceRefresh});
-
 class ApiWorkQueueDataSource implements WorkQueueDataSource {
   const ApiWorkQueueDataSource(this._dio, this._accessToken);
 
@@ -92,7 +73,7 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
   static const _mails = "/api/v1/mail-messages";
 
   final Dio _dio;
-  final AccessTokenReader _accessToken;
+  final ApiTokenReader _accessToken;
 
   @override
   Future<Map<String, dynamic>> fetchCases({
@@ -207,70 +188,9 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
     idempotencyKey: idempotencyKey,
   );
 
-  /// 만료된 세션은 한 번 갱신해 같은 요청(같은 멱등 키)으로 다시 보냅니다.
+  /// 세션 갱신·429 대기·오류 변환은 [sendApiRequest]가 맡습니다.
   Future<T> _send<T>(
     Future<Response<T>> Function(Map<String, String> headers) request, {
     String? idempotencyKey,
-  }) async {
-    for (final forceRefresh in const [false, true]) {
-      final token = await _accessToken(forceRefresh: forceRefresh);
-      if (token == null) {
-        throw const WorkQueueApiException(401, "AUTH_REQUIRED", "다시 로그인해 주세요.");
-      }
-      try {
-        final response = await request({
-          "Authorization": "Bearer $token",
-          "Idempotency-Key": ?idempotencyKey,
-        });
-        final body = response.data;
-        if (body == null) {
-          throw const WorkQueueApiException(
-            502,
-            "INVALID_RESPONSE",
-            "서버 응답을 확인하지 못했어요.",
-          );
-        }
-        return body;
-      } on DioException catch (error) {
-        if (error.response?.statusCode == 401 && !forceRefresh) continue;
-        // DioException keeps request headers; never rethrow it.
-        throw _toException(error);
-      }
-    }
-    throw const WorkQueueApiException(401, "AUTH_REQUIRED", "다시 로그인해 주세요.");
-  }
-
-  static WorkQueueApiException _toException(DioException error) {
-    final response = error.response;
-    if (response == null) {
-      return const WorkQueueApiException(
-        0,
-        "NETWORK_UNAVAILABLE",
-        "서버에 연결하지 못했어요.",
-        unknownOutcome: true,
-      );
-    }
-    final body = _errorBody(response.data);
-    final detail = body is Map<String, dynamic> ? body["error"] : null;
-    final status = response.statusCode ?? 0;
-    return WorkQueueApiException(
-      status,
-      detail is Map<String, dynamic>
-          ? detail["code"] as String? ?? "HTTP_$status"
-          : "HTTP_$status",
-      detail is Map<String, dynamic>
-          ? detail["message"] as String? ?? "요청을 처리하지 못했어요."
-          : "요청을 처리하지 못했어요.",
-    );
-  }
-
-  /// 첨부 요청은 바이트로 받으므로 오류 본문도 바이트로 옵니다.
-  static Object? _errorBody(Object? data) {
-    if (data is! List<int>) return data;
-    try {
-      return jsonDecode(utf8.decode(data));
-    } on FormatException {
-      return null;
-    }
-  }
+  }) => sendApiRequest(_accessToken, request, idempotencyKey: idempotencyKey);
 }

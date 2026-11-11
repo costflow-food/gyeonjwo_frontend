@@ -125,7 +125,8 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       });
     } on MailDraftFailure catch (failure) {
       if (!mounted) return;
-      if (failure.draftChanged) {
+      // A retryable failure may still have gone through; read it again.
+      if (failure.draftChanged || failure.retryable) {
         ref.read(mailDraftViewModelProvider(widget.caseId).notifier).refresh();
       }
       setState(() {
@@ -174,7 +175,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     _run(() => viewModel.reconcile(draft));
   }
 
-  /// X-2: an unsent draft otherwise blocks the next selection and the review.
+  /// An unsent draft otherwise blocks the next selection and the review.
   Future<void> _withdraw(MailDraft draft) async {
     final confirmed = await showDialog<bool>(
       context: context,

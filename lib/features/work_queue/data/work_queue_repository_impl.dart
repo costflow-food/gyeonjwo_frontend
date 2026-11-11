@@ -3,6 +3,7 @@ import "dart:typed_data";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/idempotency_key.dart";
+import "../../../shared/network/api_request.dart";
 
 import "../../mail_draft/domain/mail_draft.dart";
 import "../domain/candidate.dart";
@@ -22,6 +23,24 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
 
   final WorkQueueDataSource _dataSource;
   final _keys = IdempotencyKeys();
+
+  /// Last stage read per case: status, step and revision.
+  final _stages = <String, String>{};
+
+  /// A case that moved on drops its kept keys, so the next press is a new
+  /// request rather than a replay of an answer for the old stage.
+  WorkCase _saw(WorkCase workCase) {
+    final id = workCase.id;
+    final stage =
+        "${workCase.statusCode}/${workCase.processingStep}/"
+        "${workCase.inputRevision}";
+    final previous = _stages[id];
+    _stages[id] = stage;
+    if (previous != null && previous != stage) {
+      _keys.discardWhere((action) => action.endsWith(":$id"));
+    }
+    return workCase;
+  }
 
   @override
   Future<WorkQueuePage> getCases({
@@ -43,7 +62,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
     return WorkQueuePage(
       items: List.unmodifiable([
         for (final entry in data["items"] as List)
-          _case(entry as Map<String, dynamic>),
+          _saw(_case(entry as Map<String, dynamic>)),
       ]),
       counts: WorkQueueCounts(
         waiting: counts["Waiting"] as int? ?? 0,
@@ -120,7 +139,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
     final mail = await getOriginalMail(json["initial_mail_id"] as String);
     final statusCode = json["status"] as String;
     final step = json["processing_step"] as String;
-    return WorkCase(
+    final workCase = WorkCase(
       id: json["case_id"] as String,
       initialMailId: json["initial_mail_id"] as String,
       title: mail.subject,
@@ -136,6 +155,51 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       ),
       inputRevision: json["input_revision"] as int,
       attachmentCount: mail.attachments.length,
+      allowedActions: List.unmodifiable(
+        (json["allowed_actions"] as List? ?? const []).cast<String>(),
+      ),
+      disabledActions: List.unmodifiable([
+        for (final entry in json["disabled_actions"] as List? ?? const [])
+          DisabledWorkCaseAction(
+            action: entry["action"] as String,
+            reasonCode: entry["reason_code"] as String,
+            message: entry["message"] as String,
+          ),
+      ]),
+    );
+    return _saw(workCase);
+  });
+
+  @override
+  Future<WorkCase?> refreshCase(WorkCase listed) => _guard(() async {
+    final response = await _dataSource.fetchCase(listed.id);
+    final json = response["data"] as Map<String, dynamic>;
+    // API-01 lists only unarchived cases.
+    if (json["archived_at"] != null) return null;
+    final statusCode = json["status"] as String;
+    final step = json["processing_step"] as String;
+    final revision = json["input_revision"] as int;
+    final sameStep =
+        step == listed.processingStep && revision == listed.inputRevision;
+    return WorkCase(
+      id: listed.id,
+      initialMailId: listed.initialMailId,
+      title: listed.title,
+      sender: listed.sender,
+      senderName: listed.senderName,
+      itemName: json["item_name"] as String?,
+      receivedAt: listed.receivedAt,
+      status: WorkCaseStatus.fromCode(statusCode),
+      statusCode: statusCode,
+      processingStep: step,
+      // API-02 has no step_detail; its labels use the same table.
+      stepMessage: sameStep
+          ? listed.stepMessage
+          : processingStepLabel(step, inputRevision: revision),
+      inputRevision: revision,
+      attachmentCount: listed.attachmentCount,
+      hold: _hold(json["hold"]),
+      replySummary: listed.replySummary,
       allowedActions: List.unmodifiable(
         (json["allowed_actions"] as List? ?? const []).cast<String>(),
       ),
@@ -200,8 +264,9 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
             contactEmail: entry["contact_email"] as String?,
             handlingEvidence: entry["handling_evidence"] as String? ?? "",
             reason: entry["reason"] as String? ?? "",
-            caution: (entry["caution"] as Map<String, dynamic>?)?["reason"]
-                as String?,
+            caution:
+                (entry["caution"] as Map<String, dynamic>?)?["reason"]
+                    as String?,
             unknownFields: List.unmodifiable(
               (entry["unknown_fields"] as List? ?? const []).cast<String>(),
             ),
@@ -258,16 +323,17 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
 
   /// A lost response keeps the key so a retry only checks the first request.
   static String? _serverCode(Object error) =>
-      error is WorkQueueFailure && !error.unknownOutcome ? error.code : null;
+      error is WorkQueueFailure && !error.retryable ? error.code : null;
 
   Future<T> _guard<T>(Future<T> Function() request) async {
     try {
       return await request();
-    } on WorkQueueApiException catch (error) {
+    } on ApiException catch (error) {
       throw WorkQueueFailure(
         error.code,
         error.message,
         unknownOutcome: error.unknownOutcome,
+        retryable: error.retryable,
       );
     }
   }

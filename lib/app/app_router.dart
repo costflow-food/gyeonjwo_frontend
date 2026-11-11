@@ -46,7 +46,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(path: '/account', builder: (context, state) => const AccountView()),
     GoRoute(path: '/', builder: (context, state) => const WorkQueueView()),
-    // KAN-144 업무별 주소: 같은 업무 큐 화면에서 그 업무를 엽니다.
+    // 업무별 주소: 같은 업무 큐 화면에서 그 업무를 엽니다.
     GoRoute(
       path: '/cases/:caseId',
       builder: (context, state) =>

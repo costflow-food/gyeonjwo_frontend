@@ -1,5 +1,6 @@
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
+import "../../../shared/network/api_request.dart";
 import "../../work_queue/domain/work_case.dart";
 import "../domain/review_progress_repository.dart";
 import "review_progress_data_source.dart";
@@ -20,7 +21,7 @@ class ReviewProgressRepositoryImpl implements ReviewProgressRepository {
     final Map<String, dynamic> response;
     try {
       response = await _dataSource.fetchProgress(caseId);
-    } on ReviewProgressApiException catch (error) {
+    } on ApiException catch (error) {
       throw ReviewProgressFailure(error.code, error.message);
     }
     final data = response["data"];

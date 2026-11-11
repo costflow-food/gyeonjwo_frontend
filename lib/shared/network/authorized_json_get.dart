@@ -1,7 +1,8 @@
 import "package:dio/dio.dart";
 
-/// Reads the current access token; `forceRefresh` refreshes the session first.
-typedef ApiTokenReader = Future<String?> Function({bool forceRefresh});
+import "api_request.dart";
+
+export "api_request.dart" show ApiTokenReader;
 
 /// 조회 실패. `body`는 08 오류 형식(`error.code`, `error.message`)입니다.
 class ApiReadException implements Exception {
@@ -18,62 +19,34 @@ class ApiReadException implements Exception {
       (body["error"] as Map<String, dynamic>?)?["message"] as String?;
 }
 
-/// 인증된 GET 조회. 만료된 세션은 한 번 갱신해 다시 보냅니다.
+/// 인증된 GET 조회. 세션 갱신·429 대기는 [sendApiRequest]가 맡습니다.
 ///
-/// 조회만 하므로 멱등 키를 보내지 않습니다. DioException은 요청 헤더(토큰)를
-/// 담고 있어 그대로 던지지 않고 [ApiReadException]으로 바꿉니다.
+/// 조회만 하므로 멱등 키를 보내지 않습니다.
 Future<Map<String, dynamic>> authorizedJsonGet(
   Dio dio,
   ApiTokenReader accessToken,
   String path, {
   Map<String, Object?>? queryParameters,
 }) async {
-  for (final forceRefresh in const [false, true]) {
-    final token = await accessToken(forceRefresh: forceRefresh);
-    if (token == null) throw _authRequired;
-    try {
-      final response = await dio.get<Map<String, dynamic>>(
+  final Map<String, dynamic> body;
+  try {
+    body = await sendApiRequest(
+      accessToken,
+      (headers) => dio.get<Map<String, dynamic>>(
         path,
         queryParameters: queryParameters,
-        options: Options(headers: {"Authorization": "Bearer $token"}),
-      );
-      final body = response.data;
-      if (body == null || body["data"] == null) {
-        throw const ApiReadException(502, {
-          "error": {"code": "INVALID_RESPONSE", "message": "서버 응답을 확인하지 못했어요."},
-        });
-      }
-      return body;
-    } on DioException catch (error) {
-      if (error.response?.statusCode == 401 && !forceRefresh) continue;
-      throw _toException(error);
-    }
-  }
-  throw _authRequired;
-}
-
-const _authRequired = ApiReadException(401, {
-  "error": {"code": "AUTH_REQUIRED", "message": "다시 로그인해 주세요."},
-});
-
-ApiReadException _toException(DioException error) {
-  final response = error.response;
-  if (response == null) {
-    return const ApiReadException(0, {
-      "error": {"code": "NETWORK_UNAVAILABLE", "message": "서버에 연결하지 못했어요."},
+        options: Options(headers: headers),
+      ),
+    );
+  } on ApiException catch (error) {
+    throw ApiReadException(error.statusCode, {
+      "error": {"code": error.code, "message": error.message},
     });
   }
-  final status = response.statusCode ?? 0;
-  final data = response.data;
-  final detail = data is Map<String, dynamic> ? data["error"] : null;
-  return ApiReadException(status, {
-    "error": {
-      "code": detail is Map<String, dynamic>
-          ? detail["code"] as String? ?? "HTTP_$status"
-          : "HTTP_$status",
-      "message": detail is Map<String, dynamic>
-          ? detail["message"] as String? ?? "요청을 처리하지 못했어요."
-          : "요청을 처리하지 못했어요.",
-    },
-  });
+  if (body["data"] == null) {
+    throw const ApiReadException(502, {
+      "error": {"code": "INVALID_RESPONSE", "message": "서버 응답을 확인하지 못했어요."},
+    });
+  }
+  return body;
 }

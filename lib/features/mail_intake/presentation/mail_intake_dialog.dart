@@ -8,6 +8,7 @@ import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../../shared/workspace_colors.dart";
 import "../domain/intake_mail.dart";
 import "mail_intake_view_model.dart";
+import "widgets/intake_load_more.dart";
 import "widgets/intake_mail_detail.dart";
 import "widgets/intake_mail_row.dart";
 import "widgets/mail_intake_actions.dart";
@@ -100,7 +101,7 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
   });
 
   /// 회신으로 보이는 메일을 새 업무로 만들면 원래 업무와 Work ID가 갈라지고,
-  /// 나중에 원래 업무에 다시 연결할 수 없습니다(E2E S5-11). 한 번 더 묻습니다.
+  /// 나중에 원래 업무에 다시 연결할 수 없습니다. 한 번 더 묻습니다.
   Future<bool> _confirmCreateFromReply() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -164,6 +165,10 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
       });
     } on IntakeFailure catch (failure) {
       if (!mounted) return;
+      // A retryable failure may still have gone through; read it again.
+      if (failure.retryable) {
+        ref.read(mailIntakeViewModelProvider.notifier).refresh();
+      }
       setState(() {
         _busy = false;
         _error = failure.unknownOutcome
@@ -246,6 +251,14 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
                                           _scrollTo(_detailKey);
                                         }
                                       },
+                                    ),
+                                  if (page.nextCursor != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: IntakeLoadMore(
+                                        loading: page.loadingMore,
+                                        onPressed: viewModel.loadMore,
+                                      ),
                                     ),
                                 ],
                               );

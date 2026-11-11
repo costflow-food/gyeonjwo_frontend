@@ -182,7 +182,7 @@ class _DataProcessing extends StatelessWidget {
         ),
         SizedBox(height: 16),
         Text(
-          '요청 분석에 필요한 메일 내용은 외부 LLM 제공업체에 전달될 수 있어요. 제공업체와 전달 데이터 범위는 아직 확정 전이며, 실제 연결을 시작하기 전에 구체적으로 안내할 예정이에요.',
+          '요청 분석에 필요한 메일 내용은 외부 LLM 제공업체에 전달될 수 있어요.',
           style: TextStyle(
             fontSize: AppFontSizes.bodyLarge,
             color: context.palette.muted,

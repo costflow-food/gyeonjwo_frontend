@@ -112,7 +112,7 @@ List<StageState> stageStates(
 }
 
 /// 팝업을 늦게 열어 처리 중 단계를 못 봤을 때의 추정. API-03은 보류를 낸
-/// 역할을 주지 않아 코드와 input_revision으로 정합니다(X-44).
+/// 역할을 주지 않아 코드와 input_revision으로 정합니다.
 ///
 /// - 회신이 연결된 뒤(input_revision > 1)에 멈췄다면 회신 검토 단계입니다.
 /// - CONDITIONS_MISSING은 ① 추출이 아니라 ② 후보 단계의 보류입니다(품목 미정 등).

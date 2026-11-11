@@ -47,7 +47,8 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
       }
     } on WorkQueueFailure catch (failure) {
       if (!mounted) return;
-      if (failure.caseChanged) viewModel.refresh();
+      // A retryable failure may still have gone through; read it again.
+      if (failure.caseChanged || failure.retryable) viewModel.refresh();
       setState(() {
         _busy = false;
         _error = failure.unknownOutcome
@@ -88,7 +89,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         draftsByStep ||
         (mayHaveDrafts &&
             (ref.watch(caseHasDraftsProvider(workCase.id)).value ?? false));
-    // X-15: a linked reply waits here while the server cannot review it.
+    // A linked reply waits here while the server cannot review it.
     final server = ref.watch(serverStatusViewModelProvider).asData?.value;
     final replyReviewBlocked =
         isReplyExtraction(workCase.processingStep, workCase.inputRevision) &&

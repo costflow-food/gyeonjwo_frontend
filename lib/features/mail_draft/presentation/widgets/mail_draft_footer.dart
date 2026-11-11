@@ -109,7 +109,7 @@ class MailDraftFooter extends StatelessWidget {
                     onPressed: busy ? null : onWithdraw,
                     child: const Text("보내지 않음"),
                   ),
-                // Shown but disabled until the server has API-18.
+                // Shown but disabled: [MailDraft.can] keeps edit off.
                 if (current != null && editable)
                   Tooltip(
                     message: current.disabledReason(DraftAction.edit) ?? "",

@@ -132,7 +132,7 @@ class MailDraft {
   /// Opaque version from the server; sent back unchanged on approval.
   final String? settingsVersion;
 
-  /// KAN-167 S4-4 (API-16·17). Null on servers that do not send it yet.
+  /// API-16·17. Null on servers that do not send it yet.
   /// With approval OFF, a draft the server will not auto-send (chosen before
   /// the settings were saved, or a caution supplier) still needs approval.
   final bool? approvalAvailable;
@@ -215,7 +215,7 @@ class MailDraft {
           !awaitingResult,
     DraftAction.reconcile => status == DraftStatus.unknown && !awaitingResult,
     DraftAction.withdraw => status == DraftStatus.draft && !awaitingResult,
-    // API-18 (revisions) does not exist on the server yet.
+    // Edit (API-18) is not offered in the app.
     _ => false,
   };
 
@@ -259,12 +259,17 @@ class MailDraftFailure implements Exception {
     this.code,
     this.message, {
     this.unknownOutcome = false,
+    this.retryable = false,
   });
   final String code;
   final String message;
 
   /// No response arrived; the server may or may not have accepted it.
   final bool unknownOutcome;
+
+  /// 응답 없음·5xx·`retryable: true`: 서버가 처리했을 수 있어 같은 멱등 키를
+  /// 남기고 상태를 다시 읽습니다. [unknownOutcome]이면 늘 참입니다.
+  final bool retryable;
 
   /// The draft, its case, or the settings changed; reload before deciding.
   bool get draftChanged => const {

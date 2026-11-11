@@ -85,32 +85,49 @@ class IntakeMail {
 }
 
 /// "RE:", "Re :", "회신:", "답장:" 같은 답장 제목 접두어.
-final _replySubject = RegExp(
-  r"^\s*(re|회신|답장)\s*[:：]",
-  caseSensitive: false,
-);
+final _replySubject = RegExp(r"^\s*(re|회신|답장)\s*[:：]", caseSensitive: false);
 
 class IntakePage {
   const IntakePage({
     required this.items,
     required this.totalPending,
     this.nextCursor,
+    this.loadingMore = false,
   });
 
   final List<IntakeMail> items;
 
   /// Same count as API-01 intake_pending.
   final int totalPending;
+
+  /// Set while more mails wait on the server ("더 불러오기").
   final String? nextCursor;
+  final bool loadingMore;
+
+  IntakePage withLoadingMore(bool loading) => IntakePage(
+    items: items,
+    totalPending: totalPending,
+    nextCursor: nextCursor,
+    loadingMore: loading,
+  );
 }
 
 class IntakeFailure implements Exception {
-  const IntakeFailure(this.code, this.message, {this.unknownOutcome = false});
+  const IntakeFailure(
+    this.code,
+    this.message, {
+    this.unknownOutcome = false,
+    this.retryable = false,
+  });
   final String code;
   final String message;
 
   /// No response arrived; the server may or may not have applied the change.
   final bool unknownOutcome;
+
+  /// 응답 없음·5xx·`retryable: true`: 서버가 처리했을 수 있어 같은 멱등 키를
+  /// 남기고 상태를 다시 읽습니다. [unknownOutcome]이면 늘 참입니다.
+  final bool retryable;
 
   @override
   String toString() => "IntakeFailure($code)";

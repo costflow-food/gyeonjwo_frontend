@@ -78,7 +78,7 @@ class WorkQueueState {
     allWaiting: allWaiting,
   );
 
-  /// 탭만 바꿉니다. 목록은 그대로라 다시 조회하지 않습니다.
+  /// 탭만 바꿉니다.
   WorkQueueState withStatus(WorkCaseStatus? tab) => WorkQueueState(
     items: items,
     counts: counts,
@@ -95,6 +95,7 @@ class WorkQueueState {
     required String? nextCursor,
     required bool loadingMore,
     WorkQueueCounts? counts,
+    int? allWaiting,
   }) => WorkQueueState(
     items: items,
     counts: counts ?? this.counts,
@@ -103,6 +104,6 @@ class WorkQueueState {
     query: query,
     selectedId: selectedId,
     loadingMore: loadingMore,
-    allWaiting: allWaiting,
+    allWaiting: allWaiting ?? this.allWaiting,
   );
 }

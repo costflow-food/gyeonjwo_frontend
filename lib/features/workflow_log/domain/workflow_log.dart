@@ -19,8 +19,7 @@ enum LogComponent {
 }
 
 /// Five agent roles and the lightweight nodes from 07. [code] is the DB
-/// agent_runs.agent_role (06); [aliases] are earlier app codes still used by
-/// the UI preview.
+/// agent_runs.agent_role (06); [aliases] are earlier app codes, still accepted.
 enum LogActor {
   extraction("INFO_EXTRACTOR", "① 정보 추출", ["EXTRACTION"]),
   candidate("CANDIDATE", "② 후보 선정", ["CANDIDATE_SELECTION"]),
@@ -44,8 +43,8 @@ enum LogActor {
       .firstOrNull;
 }
 
-/// workflow_logs.event_type. The DB codes (06 v2.7 list and what the graph
-/// writes) come first; the rest are earlier app codes kept for the UI preview.
+/// workflow_logs.event_type. The DB codes (06 list and what the graph
+/// writes) come first; the rest are earlier app codes.
 enum LogEventType {
   groupLinked("GROUP_LINKED", "업무 묶음 연결"),
   mailAcknowledged("MAIL_ACKNOWLEDGED", "메일 확인"),
