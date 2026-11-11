@@ -84,7 +84,7 @@ class AttachmentViewer extends ConsumerWidget {
                   error: (error, _) => _ViewerError(
                     message: error is WorkQueueFailure
                         ? error.message
-                        : "첨부파일을 불러오지 못했어요.",
+                        : "첨부파일을 불러오지 못했습니다.",
                     onRetry: () => ref.invalidate(provider),
                   ),
                   data: (bytes) => ref.watch(pdfDocumentViewProvider)(

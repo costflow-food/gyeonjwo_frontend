@@ -25,7 +25,7 @@ class NotFoundView extends StatelessWidget {
                 const SizedBox(width: 110, child: BrandLogo()),
                 const SizedBox(height: 28),
                 Text(
-                  "페이지를 찾을 수 없어요",
+                  "페이지를 찾을 수 없습니다",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: AppFontSizes.heading,
@@ -35,7 +35,7 @@ class NotFoundView extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "주소가 바뀌었거나 잘못 입력됐을 수 있어요.",
+                  "주소가 바뀌었거나 잘못 입력됐을 수 있습니다.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: AppFontSizes.bodyLarge,

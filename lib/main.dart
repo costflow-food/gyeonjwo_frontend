@@ -191,7 +191,7 @@ class MissingConfigApp extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '실행 설정이 필요해요',
+                  '실행 설정이 필요합니다',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),

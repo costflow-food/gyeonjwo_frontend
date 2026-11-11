@@ -35,12 +35,12 @@ class QueueSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '흩어진 요청을, 한눈에 검토하세요.',
+                  '흩어진 요청을, 한눈에 검토하십시오.',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 10),
                 Text(
-                  '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수용하거나 다른 대안을 찾을 수 있어요.',
+                  '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수용하거나 다른 대안을 찾을 수 있습니다.',
                   style: TextStyle(
                     fontSize: 14,
                     color: context.palette.onDeepMuted,

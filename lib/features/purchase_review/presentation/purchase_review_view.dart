@@ -64,13 +64,13 @@ class _Unavailable extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              notReady ? "아직 검토 카드가 없어요." : "검토 카드를 불러오지 못했어요.",
+              notReady ? "아직 검토 카드가 없습니다." : "검토 카드를 불러오지 못했습니다.",
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
               notReady
-                  ? "회신 검토가 끝나면 카드가 생겨요. 진행 상황은 업무에서 확인할 수 있어요."
+                  ? "회신 검토가 끝나면 카드가 생깁니다. 진행 상황은 업무에서 확인할 수 있습니다."
                   : failure?.message ?? "잠시 뒤 다시 시도해 주세요.",
               textAlign: TextAlign.center,
               style: TextStyle(

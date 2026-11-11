@@ -29,7 +29,7 @@ class WorkflowLogRepositoryImpl implements WorkflowLogRepository {
     } on ApiReadException catch (error) {
       throw WorkflowLogFailure(
         error.code ?? "HTTP_${error.statusCode}",
-        error.message ?? "실행 로그를 불러오지 못했어요.",
+        error.message ?? "실행 로그를 불러오지 못했습니다.",
       );
     }
     final data = response["data"] as Map<String, dynamic>;
