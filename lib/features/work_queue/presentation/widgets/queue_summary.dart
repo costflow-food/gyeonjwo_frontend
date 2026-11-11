@@ -41,7 +41,7 @@ class QueueSummary extends StatelessWidget {
                 ),
                 SizedBox(height: 10),
                 Text(
-                  '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수긍하거나 다른 대안을 찾을 수 있어요.',
+                  '왼쪽 업무 큐에서 요청을 고르면 원문을 보고 수용하거나 다른 대안을 찾을 수 있어요.',
                   style: TextStyle(
                     fontSize: 14,
                     color: context.palette.onDeepMuted,
