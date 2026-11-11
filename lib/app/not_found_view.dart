@@ -21,7 +21,9 @@ class NotFoundView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const BrandLogo(),
+                // BrandLogo fills the width it is given; keep it logo-sized so
+                // it sits centered with the text below.
+                const SizedBox(width: 110, child: BrandLogo()),
                 const SizedBox(height: 28),
                 Text(
                   "페이지를 찾을 수 없어요",
