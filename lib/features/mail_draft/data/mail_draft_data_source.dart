@@ -7,7 +7,6 @@ import "../../auth/data/auth_session_data_source.dart";
 
 part "mail_draft_data_source.g.dart";
 
-/// 앱은 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 @Riverpod(keepAlive: true)
 MailDraftDataSource mailDraftDataSource(Ref ref) => ApiMailDraftDataSource(
   ref.watch(apiClientProvider),
@@ -16,7 +15,7 @@ MailDraftDataSource mailDraftDataSource(Ref ref) => ApiMailDraftDataSource(
 
 /// API-16 `GET /work-cases/{case_id}/mail-drafts`,
 /// API-17 `GET /mail-drafts/{draft_id}`,
-/// API-18 `POST /mail-drafts/{draft_id}/revisions` (not on the server yet),
+/// API-18 `POST /mail-drafts/{draft_id}/revisions`,
 /// API-19 `POST /mail-drafts/{draft_id}/approve-and-send`,
 /// API-20 `POST /mail-drafts/{draft_id}/reconcile`,
 /// `POST /mail-drafts/{draft_id}/withdraw` (unsent draft, X-2).

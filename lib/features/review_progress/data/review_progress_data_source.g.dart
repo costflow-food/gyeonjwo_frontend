@@ -8,12 +8,9 @@ part of 'review_progress_data_source.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 @ProviderFor(reviewProgressDataSource)
 final reviewProgressDataSourceProvider = ReviewProgressDataSourceProvider._();
-
-/// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
 
 final class ReviewProgressDataSourceProvider
     extends
@@ -23,7 +20,6 @@ final class ReviewProgressDataSourceProvider
           ReviewProgressDataSource
         >
     with $Provider<ReviewProgressDataSource> {
-  /// 앱은 항상 실제 API를 씁니다. 합성 응답은 UI 미리보기 페이지와 테스트에서만 덮어씁니다.
   ReviewProgressDataSourceProvider._()
     : super(
         from: null,

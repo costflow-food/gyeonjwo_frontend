@@ -1,5 +1,6 @@
 /// API-14 검토 카드와 API-13 견적. 저장된 카드(work_cases.latest_review_jsonb)를
-/// 그대로 보여 주며 화면에서 금액을 다시 계산하지 않습니다.
+/// 보여 줍니다. 안별 합계는 서버 값이고, 최저가 표시·최저가 대비 차액·배정 비율은
+/// 화면(plan_board.dart)에서 계산합니다.
 library;
 
 /// 서버의 행동 코드. API-14 allowed_actions·disabled_actions와 API-15 decision에 씁니다.
@@ -20,10 +21,7 @@ enum ReviewOutcome {
   noFeasiblePlan("NO_FEASIBLE_PLAN", "요청 조건을 만족하는 구매안이 없어요."),
   noValidPlan("NO_VALID_PLAN", "요청 조건을 만족하는 구매안이 없어요."),
   needsInfo("NEEDS_INFO", "확인이 필요한 항목이 있어 비교를 끝내지 못했어요."),
-  reviewRequiredClosed(
-    "REVIEW_REQUIRED_CLOSED",
-    "확인이 필요한 항목이 남은 채 검토를 마쳤어요.",
-  ),
+  reviewRequiredClosed("REVIEW_REQUIRED_CLOSED", "확인이 필요한 항목이 남은 채 검토를 마쳤어요."),
   onHold("ON_HOLD", "검토를 보류했어요."),
   unknown("", "업무에서 현재 상태를 확인해 주세요.");
 
@@ -74,7 +72,7 @@ class ResponsePlan {
   });
 
   /// 확정 선택(API-15 SELECT_PLAN)에 보내는 ID. 아직 에이전트 출력에 없을 수
-  /// 있으며(E2E S7-4), 없으면 이 안만 선택할 수 없고 카드는 그대로 보여 줍니다.
+  /// 있으며, 없으면 이 안만 선택할 수 없고 카드는 그대로 보여 줍니다.
   final String? planId;
   final String planType;
   final String validationStatus;
@@ -88,7 +86,8 @@ class ResponsePlan {
   final String? reason;
 
   String get typeLabel => _planTypes[planType] ?? planType;
-  String get validationLabel => _validation[validationStatus] ?? validationStatus;
+  String get validationLabel =>
+      _validation[validationStatus] ?? validationStatus;
 
   /// 08: 최신 revision의 VALID 안만 확정 선택할 수 있습니다.
   bool get valid => validationStatus == "VALID";

@@ -3,7 +3,7 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 
-/// Read-only notice and close. Closing never changes supplier data.
+/// Read-only notice and close.
 class SupplierEvidenceFooter extends StatelessWidget {
   const SupplierEvidenceFooter({super.key});
 
