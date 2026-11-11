@@ -3,16 +3,21 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../shared/app_font_sizes.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
+import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../../shared/workspace_colors.dart";
+import "../data/recording_supplier_source.dart";
+import "../domain/recording_supplier.dart";
 import "../domain/voice_file.dart";
 import "voice_import_flow.dart";
 
-/// 업무에 붙일 녹음 파일 확인. 업로드는 서버 API가 정해지면 연결합니다.
+/// 업무에 붙일 통화 녹음 확인: 파일과, 어느 거래처와의 통화인지.
+/// 업로드는 서버 API가 정해지면 연결합니다.
 class VoiceFilePage extends ConsumerStatefulWidget {
   const VoiceFilePage({
     super.key,
     required this.initial,
     required this.caseTitle,
+    required this.suppliers,
   });
 
   final VoiceFile initial;
@@ -20,12 +25,18 @@ class VoiceFilePage extends ConsumerStatefulWidget {
   /// The case the recording goes to.
   final String caseTitle;
 
+  /// Which suppliers the recording can belong to.
+  final RecordingSupplierQuery suppliers;
+
   @override
   ConsumerState<VoiceFilePage> createState() => _VoiceFilePageState();
 }
 
 class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
   late VoiceFile _file = widget.initial;
+
+  /// The call's supplier. Required before the upload.
+  String? _supplierId;
 
   Future<void> _pickAnother() async {
     final file = await pickVoiceFile(context, ref);
@@ -35,8 +46,12 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
   @override
   Widget build(BuildContext context) {
     final file = _file;
-    final format = file.extension.toUpperCase();
-    final size = formatFileSize(file.sizeBytes);
+    final provider = recordingSuppliersProvider(widget.suppliers);
+    final suppliers = ref.watch(provider);
+    // A supplier that left the list is no longer chosen.
+    final chosen = suppliers.value
+        ?.where((supplier) => supplier.supplierId == _supplierId)
+        .firstOrNull;
     return MobilePageScaffold(
       title: "통화 녹음 추가",
       closeIcon: true,
@@ -44,22 +59,9 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           _Panel(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: context.palette.blush,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.link,
-                    size: 18,
-                    color: context.palette.accentText,
-                  ),
-                ),
+                const _IconBadge(icon: Icons.link, size: 34, iconSize: 18),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -88,24 +90,17 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _Panel(
             child: Row(
               children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: context.palette.blush,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    Icons.graphic_eq,
-                    size: 28,
-                    color: context.palette.accentText,
-                  ),
+                const _IconBadge(
+                  icon: Icons.graphic_eq,
+                  size: 44,
+                  iconSize: 24,
+                  radius: 13,
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,16 +108,17 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
                       SelectableText(
                         file.name,
                         style: const TextStyle(
-                          fontSize: AppFontSizes.bodyLarge,
+                          fontSize: AppFontSizes.body,
                           fontWeight: FontWeight.w700,
                           height: 1.4,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        "$format · $size",
+                        "${file.extension.toUpperCase()} · "
+                        "${formatFileSize(file.sizeBytes)}",
                         style: TextStyle(
-                          fontSize: AppFontSizes.secondary,
+                          fontSize: AppFontSizes.caption,
                           color: context.palette.muted,
                         ),
                       ),
@@ -132,45 +128,81 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          _Panel(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-            child: Column(
-              children: [
-                _Fact(label: "형식", value: format),
-                Divider(height: 1, color: context.palette.line),
-                _Fact(label: "크기", value: size),
-              ],
+          const SizedBox(height: 18),
+          const Text(
+            "어느 거래처와의 통화입니까?",
+            style: TextStyle(
+              fontSize: AppFontSizes.bodyLarge,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: context.palette.blush,
-              borderRadius: BorderRadius.circular(14),
+          const SizedBox(height: 2),
+          Text(
+            "이 업무에서 견적을 요청한 거래처입니다.",
+            style: TextStyle(
+              fontSize: AppFontSizes.caption,
+              color: context.palette.muted,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 18,
-                  color: context.palette.accentText,
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    "업로드는 서버 준비가 끝나면 열립니다. 지금은 고른 파일만 확인할 수 있습니다.",
-                    style: TextStyle(
-                      fontSize: AppFontSizes.secondary,
-                      height: 1.6,
+          ),
+          const SizedBox(height: 4),
+          suppliers.when(
+            skipLoadingOnRefresh: false,
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+            error: (_, _) => _ListMessage(
+              "거래처 목록을 불러오지 못했습니다.",
+              action: TextButton(
+                onPressed: () => ref.invalidate(provider),
+                style: WorkspaceButtonStyles.text(context),
+                child: const Text("다시 시도"),
+              ),
+            ),
+            data: (list) => list.isEmpty
+                ? const _ListMessage("견적 요청을 보낸 거래처가 없습니다.")
+                : Column(
+                    children: [
+                      for (final supplier in list)
+                        _SupplierOption(
+                          supplier: supplier,
+                          selected: supplier.supplierId == chosen?.supplierId,
+                          onTap: () =>
+                              setState(() => _supplierId = supplier.supplierId),
+                        ),
+                    ],
+                  ),
+          ),
+          if (chosen != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: context.palette.blush,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: context.palette.accentText,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      "업로드는 서버 준비가 끝나면 열립니다. 지금은 고른 파일과 거래처만 확인할 수 있습니다.",
+                      style: TextStyle(
+                        fontSize: AppFontSizes.secondary,
+                        height: 1.6,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
       bottomBar: Row(
@@ -181,24 +213,42 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
               onPressed: _pickAnother,
               style: MobileButtons.outlined(context),
               icon: const Icon(Icons.swap_horiz, size: 18),
-              label: const Text("다른 파일"),
+              label: const _OneLine("다른 파일"),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             flex: 7,
-            child: FilledButton.icon(
-              // No upload API yet.
-              onPressed: null,
-              style: MobileButtons.filled(context),
-              icon: const Icon(Icons.cloud_upload_outlined, size: 18),
-              label: const Text("업로드 · 준비 중"),
-            ),
+            child: chosen == null
+                ? FilledButton(
+                    onPressed: null,
+                    style: MobileButtons.filled(context),
+                    child: const _OneLine("거래처를 골라 주세요"),
+                  )
+                : FilledButton.icon(
+                    // No upload API yet.
+                    onPressed: null,
+                    style: MobileButtons.filled(context),
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                    label: const _OneLine("업로드 · 준비 중"),
+                  ),
           ),
         ],
       ),
     );
   }
+}
+
+/// A button label that shrinks instead of wrapping at large text sizes, so
+/// the two bottom buttons keep the same height.
+class _OneLine extends StatelessWidget {
+  const _OneLine(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) =>
+      FittedBox(fit: BoxFit.scaleDown, child: Text(text, maxLines: 1));
 }
 
 String formatFileSize(int? bytes) {
@@ -208,50 +258,177 @@ String formatFileSize(int? bytes) {
   return "${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB";
 }
 
-class _Panel extends StatelessWidget {
-  const _Panel({required this.child, this.padding = const EdgeInsets.all(18)});
+class _SupplierOption extends StatelessWidget {
+  const _SupplierOption({
+    required this.supplier,
+    required this.selected,
+    required this.onTap,
+  });
 
-  final Widget child;
-  final EdgeInsetsGeometry padding;
+  final RecordingSupplier supplier;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final replied = supplier.replied;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Semantics(
+        inMutuallyExclusiveGroup: true,
+        checked: selected,
+        child: Material(
+          color: palette.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: selected ? palette.accentText : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    selected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    size: 20,
+                    color: selected ? palette.accentText : palette.muted,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          supplier.name,
+                          style: const TextStyle(
+                            fontSize: AppFontSizes.body,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        // Without a registered name the address is the name.
+                        if (supplier.email != supplier.name)
+                          Text(
+                            supplier.email,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: AppFontSizes.caption,
+                              color: palette.muted,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (replied != null) ...[
+                    const SizedBox(width: 8),
+                    _ReplyMark(replied: replied),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReplyMark extends StatelessWidget {
+  const _ReplyMark({required this.replied});
+
+  final bool replied;
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: padding,
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
     decoration: BoxDecoration(
-      color: context.palette.surface,
-      borderRadius: BorderRadius.circular(20),
+      color: replied ? const Color(0xFFE2F4EA) : context.palette.line,
+      borderRadius: BorderRadius.circular(10),
     ),
-    child: child,
+    child: Text(
+      replied ? "메일 회신 있음" : "회신 전",
+      style: TextStyle(
+        fontSize: AppFontSizes.captionSmall,
+        fontWeight: FontWeight.w600,
+        color: replied ? const Color(0xFF00754A) : context.palette.ink,
+      ),
+    ),
   );
 }
 
-class _Fact extends StatelessWidget {
-  const _Fact({required this.label, required this.value});
+class _ListMessage extends StatelessWidget {
+  const _ListMessage(this.text, {this.action});
 
-  final String label;
-  final String value;
+  final String text;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12),
-    child: Row(
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          text,
           style: TextStyle(
-            fontSize: AppFontSizes.body,
+            fontSize: AppFontSizes.secondary,
             color: context.palette.muted,
           ),
         ),
-        const Spacer(),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: AppFontSizes.body,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        ?action,
       ],
     ),
+  );
+}
+
+class _IconBadge extends StatelessWidget {
+  const _IconBadge({
+    required this.icon,
+    required this.size,
+    required this.iconSize,
+    this.radius,
+  });
+
+  final IconData icon;
+  final double size;
+  final double iconSize;
+
+  /// Rounded square with this radius; a circle when null.
+  final double? radius;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: context.palette.blush,
+      shape: radius == null ? BoxShape.circle : BoxShape.rectangle,
+      borderRadius: radius == null ? null : BorderRadius.circular(radius!),
+    ),
+    child: Icon(icon, size: iconSize, color: context.palette.accentText),
+  );
+}
+
+class _Panel extends StatelessWidget {
+  const _Panel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    decoration: BoxDecoration(
+      color: context.palette.surface,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: child,
   );
 }
