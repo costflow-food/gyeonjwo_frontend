@@ -9,6 +9,9 @@ abstract final class AppConfig {
   );
   static const apiBaseUrl = String.fromEnvironment("API_BASE_URL");
 
+  /// 배포 워크플로가 넣는 커밋 앞 7자리. 로컬 실행에서는 비어 있습니다.
+  static const buildRevision = String.fromEnvironment("BUILD_REVISION");
+
   /// Values the app cannot run without.
   static List<String> get missingKeys => [
     if (supabaseUrl.isEmpty) "SUPABASE_URL",

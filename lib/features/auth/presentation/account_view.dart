@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_config.dart';
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/theme/theme_picker.dart';
 import '../../../shared/widgets/workspace_shell.dart';
@@ -116,6 +117,17 @@ class _AccountViewState extends State<AccountView>
                   ),
                 ),
               ),
+              if (AppConfig.buildRevision.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                SelectableText(
+                  '빌드 ${AppConfig.buildRevision}',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.caption,
+                    color: context.palette.muted,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -62,12 +62,22 @@ jobs:
 
       - run: flutter pub get
 
+      # 분석이나 테스트가 실패하면 빌드·배포하지 않는다.
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
       - name: Build web
         run: >-
           flutter build web --release
           --dart-define=SUPABASE_URL="$SUPABASE_URL"
           --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
           --dart-define=API_BASE_URL="$API_BASE_URL"
+          --dart-define=BUILD_REVISION="${MERGE_SHA::7}"
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
 
       # Git 정보가 없는 임시 폴더에서 올려 Vercel이 저장소를 자동 연결하지 않게 한다.
       - name: Deploy to Vercel (production)
@@ -75,7 +85,8 @@ jobs:
           site="$RUNNER_TEMP/site"
           mkdir -p "$site/.vercel/output"
           cp -R build/web "$site/.vercel/output/static"
-          echo '{"version":3}' > "$site/.vercel/output/config.json"
+          # 보안 헤더를 붙이는 Build Output 설정
+          cp .github/vercel/config.json "$site/.vercel/output/config.json"
           cd "$site"
           vercel="npx --yes vercel@65.14.0"
           # 첫 배포 때만 프로젝트를 만든다(이미 있으면 실패해도 무시하고 아래 link가 확인)
