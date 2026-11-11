@@ -4,6 +4,8 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../shared/widgets/mobile_scaffold.dart";
+import "../../../shared/workspace_colors.dart";
 import "../domain/review_progress_repository.dart";
 import "review_progress_view_model.dart";
 import "widgets/review_progress_body.dart";
@@ -16,6 +18,23 @@ Future<void> showReviewProgressDialog(
 }) {
   // Capture navigation before the step change can rebuild the caller.
   final router = GoRouter.of(context);
+  if (isCompactLayout(context)) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: context.palette.surface,
+      builder: (sheetContext) => ReviewProgressView(
+        caseId: caseId,
+        title: title,
+        onViewCase: () {
+          Navigator.of(sheetContext).pop();
+          router.go("/cases/$caseId");
+        },
+      ),
+    );
+  }
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: .30),
@@ -57,7 +76,9 @@ class _ReviewProgressViewState extends ConsumerState<ReviewProgressView> {
     // A hidden tab or a backgrounded app asks nothing until it is back.
     _lifecycle = AppLifecycleListener(
       onStateChange: (lifecycle) {
-        final viewModel = ref.read(reviewProgressViewModelProvider(widget.caseId).notifier);
+        final viewModel = ref.read(
+          reviewProgressViewModelProvider(widget.caseId).notifier,
+        );
         switch (lifecycle) {
           case AppLifecycleState.resumed:
             viewModel.resume();
@@ -82,7 +103,9 @@ class _ReviewProgressViewState extends ConsumerState<ReviewProgressView> {
   Widget build(BuildContext context) {
     final value = ref.watch(reviewProgressViewModelProvider(widget.caseId));
     final current = value.asData?.value;
-    final retry = ref.read(reviewProgressViewModelProvider(widget.caseId).notifier).refresh;
+    final retry = ref
+        .read(reviewProgressViewModelProvider(widget.caseId).notifier)
+        .refresh;
     return ReviewProgressDialog(
       title: widget.title,
       outcome: current?.outcome,

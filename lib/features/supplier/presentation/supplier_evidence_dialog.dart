@@ -10,6 +10,7 @@ import "widgets/supplier_evidence_footer.dart";
 import "widgets/supplier_evidence_header.dart";
 import "widgets/supplier_evidence_item.dart";
 import "widgets/supplier_evidence_supplier.dart";
+import "../../../shared/widgets/workspace_dialog.dart";
 
 Future<void> showSupplierEvidenceDialog(
   BuildContext context, {
@@ -38,75 +39,62 @@ class SupplierEvidenceDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: context.palette.canvas,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      insetPadding: const EdgeInsets.all(20),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: context.palette.line),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 860),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SupplierEvidenceHeader(
-              title: "${supplier.name} · ${item.itemName}",
-            ),
-            Divider(height: 1, color: context.palette.line),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      [
-                        item.specification ?? "규격 미확인",
-                        if (item.unit != null) "단위 ${item.unit}",
-                        if (item.origin != null) item.origin!,
-                      ].join(" · "),
+    return WorkspaceDialog(
+      maxWidth: 860,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SupplierEvidenceHeader(title: "${supplier.name} · ${item.itemName}"),
+          Divider(height: 1, color: context.palette.line),
+          DialogScrollArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    [
+                      item.specification ?? "규격 미확인",
+                      if (item.unit != null) "단위 ${item.unit}",
+                      if (item.origin != null) item.origin!,
+                    ].join(" · "),
+                    style: TextStyle(
+                      fontSize: AppFontSizes.body,
+                      color: context.palette.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  PriceHistorySection(supplierItemId: item.id),
+                  const SizedBox(height: 20),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(top: 12),
+                    shape: const Border(),
+                    collapsedShape: const Border(),
+                    iconColor: context.palette.ink,
+                    collapsedIconColor: context.palette.muted,
+                    title: Text(
+                      "업체·품목 상세",
                       style: TextStyle(
-                        fontSize: AppFontSizes.body,
-                        color: context.palette.muted,
+                        fontSize: AppFontSizes.bodyLarge,
+                        fontWeight: FontWeight.w700,
+                        color: context.palette.ink,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    PriceHistorySection(supplierItemId: item.id),
-                    const SizedBox(height: 20),
-                    ExpansionTile(
-                      tilePadding: EdgeInsets.zero,
-                      childrenPadding: const EdgeInsets.only(top: 12),
-                      shape: const Border(),
-                      collapsedShape: const Border(),
-                      iconColor: context.palette.ink,
-                      collapsedIconColor: context.palette.muted,
-                      title: Text(
-                        "업체·품목 상세",
-                        style: TextStyle(
-                          fontSize: AppFontSizes.bodyLarge,
-                          fontWeight: FontWeight.w700,
-                          color: context.palette.ink,
-                        ),
-                      ),
-                      children: [
-                        SupplierEvidenceSupplier(supplier: supplier),
-                        const SizedBox(height: 24),
-                        SupplierEvidenceItem(item: item),
-                      ],
-                    ),
-                  ],
-                ),
+                    children: [
+                      SupplierEvidenceSupplier(supplier: supplier),
+                      const SizedBox(height: 24),
+                      SupplierEvidenceItem(item: item),
+                    ],
+                  ),
+                ],
               ),
             ),
-            Divider(height: 1, color: context.palette.line),
-            const SupplierEvidenceFooter(),
-          ],
-        ),
+          ),
+          Divider(height: 1, color: context.palette.line),
+          const SupplierEvidenceFooter(),
+        ],
       ),
     );
   }

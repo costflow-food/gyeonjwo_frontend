@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
@@ -12,9 +13,16 @@ import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
 class CandidateSelection extends ConsumerStatefulWidget {
-  const CandidateSelection({super.key, required this.workCase});
+  const CandidateSelection({
+    super.key,
+    required this.workCase,
+    this.page = false,
+  });
 
   final WorkCase workCase;
+
+  /// Phone: a screen of its own with the request button pinned to the bottom.
+  final bool page;
 
   @override
   ConsumerState<CandidateSelection> createState() => _CandidateSelectionState();
@@ -121,6 +129,22 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.page) return _content(context, (_) {});
+    Widget? bar;
+    final body = _content(context, (submit) => bar = submit);
+    return MobilePageScaffold(
+      title: "견적 요청 대상 선택",
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        child: body,
+      ),
+      bottomBar: bar,
+    );
+  }
+
+  /// [pinSubmit] takes the request button on a phone page; otherwise the
+  /// button stays at the end of the list.
+  Widget _content(BuildContext context, void Function(Widget) pinSubmit) {
     final value = ref.watch(caseCandidatesProvider(widget.workCase.id));
     return value.when(
       skipLoadingOnRefresh: false,
@@ -166,6 +190,31 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         final blockedReason = set.blockedReason;
         // 서버 사정으로 막힌 경우: 목록 위에서 먼저 알리고 후보를 흐리게 보여줍니다.
         final serverNotice = set.serverBlockedNotice;
+        final submit = FilledButton.icon(
+          onPressed: selected.isEmpty || _busy || !canSelect
+              ? null
+              : () => _submit(set),
+          style: widget.page
+              ? MobileButtons.filled(context)
+              : WorkspaceButtonStyles.filled(context),
+          icon: _busy
+              ? const SizedBox.square(
+                  dimension: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.send_outlined, size: 16),
+          label: Text(
+            serverNotice != null
+                ? "지금은 요청할 수 없습니다"
+                : selected.isEmpty
+                ? "업체를 골라 주세요"
+                : "선택한 ${selected.length}곳에 견적 요청",
+          ),
+        );
+        if (widget.page) pinSubmit(submit);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -238,32 +287,10 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                   }),
                 ),
               ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: selected.isEmpty || _busy || !canSelect
-                    ? null
-                    : () => _submit(set),
-                style: WorkspaceButtonStyles.filled(context),
-                icon: _busy
-                    ? const SizedBox.square(
-                        dimension: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.send_outlined, size: 16),
-                label: Text(
-                  serverNotice != null
-                      ? "지금은 요청할 수 없습니다"
-                      : selected.isEmpty
-                      ? "업체를 골라 주세요"
-                      : "선택한 ${selected.length}곳에 견적 요청",
-                ),
-              ),
-            ),
+            if (!widget.page) ...[
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerRight, child: submit),
+            ],
             // Already chosen: the drafts carry on in SCR-007.
             if (!canSelect && set.selectedSupplierIds.isNotEmpty) ...[
               const SizedBox(height: 8),

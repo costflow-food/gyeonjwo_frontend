@@ -132,3 +132,67 @@ class _ViewerError extends StatelessWidget {
     ),
   );
 }
+
+/// 폰: 첨부 PDF를 전체 화면으로 봅니다.
+class AttachmentPage extends ConsumerWidget {
+  const AttachmentPage({
+    super.key,
+    required this.mailId,
+    required this.attachment,
+    required this.onDownload,
+  });
+
+  final String mailId;
+  final MailAttachment attachment;
+  final VoidCallback onDownload;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = attachmentContentProvider(mailId, attachment.id);
+    final content = ref.watch(provider);
+    return Scaffold(
+      backgroundColor: const Color(0xFF4A4A4A),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1E1E1E),
+        foregroundColor: Colors.white,
+        titleSpacing: 0,
+        leading: IconButton(
+          tooltip: "첨부 닫기",
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close),
+        ),
+        title: Text(
+          attachment.filename,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: AppFontSizes.bodyLarge,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip: "내려받기",
+            onPressed: onDownload,
+            icon: const Icon(Icons.download_outlined),
+          ),
+        ],
+      ),
+      body: content.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => ColoredBox(
+          color: context.palette.canvas,
+          child: _ViewerError(
+            message: error is WorkQueueFailure
+                ? error.message
+                : "첨부파일을 불러오지 못했습니다.",
+            onRetry: () => ref.invalidate(provider),
+          ),
+        ),
+        data: (bytes) => ref.watch(pdfDocumentViewProvider)(
+          bytes,
+          "$mailId/${attachment.id}",
+        ),
+      ),
+    );
+  }
+}

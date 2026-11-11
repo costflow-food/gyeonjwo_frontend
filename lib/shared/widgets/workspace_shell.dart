@@ -6,6 +6,7 @@ import '../../features/auth/presentation/widgets/sign_out_action.dart';
 import '../app_font_sizes.dart';
 import '../workspace_colors.dart';
 import 'brand_logo.dart';
+import 'mobile_scaffold.dart';
 import 'workspace_sidebar.dart';
 
 class WorkspaceShell extends StatefulWidget {
@@ -25,6 +26,15 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (isCompactLayout(context)) {
+      return MobileTabScaffold(
+        title: _mobileTitle(GoRouterState.of(context).uri.path),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          child: widget.child,
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: context.palette.frame,
       body: SafeArea(
@@ -110,6 +120,14 @@ class _WorkspaceShellState extends State<WorkspaceShell> {
       ),
     );
   }
+
+  static String? _mobileTitle(String path) => path.startsWith('/suppliers')
+      ? '거래처'
+      : path.startsWith('/logs')
+      ? '로그'
+      : path.startsWith('/account')
+      ? '계정 설정'
+      : null;
 
   Widget _body() => LayoutBuilder(
     builder: (context, viewport) {

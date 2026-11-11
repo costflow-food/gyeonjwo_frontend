@@ -3,7 +3,11 @@ import "dart:typed_data";
 
 import "package:web/web.dart" as web;
 
-void saveFile(Uint8List bytes, {required String filename, String? mimeType}) {
+Future<void> saveFile(
+  Uint8List bytes, {
+  required String filename,
+  String? mimeType,
+}) async {
   final blob = web.Blob(
     [bytes.toJS].toJS,
     web.BlobPropertyBag(type: mimeType ?? "application/octet-stream"),

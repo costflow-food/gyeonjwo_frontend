@@ -14,10 +14,14 @@ class WorkflowLogContent extends StatefulWidget {
     super.key,
     required this.data,
     required this.viewModel,
+    this.onOpenDetail,
   });
 
   final WorkflowLogState data;
   final WorkflowLogViewModel viewModel;
+
+  /// Phone: the list only; a selected log opens on its own screen.
+  final VoidCallback? onOpenDetail;
 
   @override
   State<WorkflowLogContent> createState() => _WorkflowLogContentState();
@@ -86,9 +90,14 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
               Divider(height: 1, color: context.palette.muted),
               WorkflowLogList(
                 data: data,
+                showSelection: widget.onOpenDetail == null,
                 onSelect: (id) {
                   viewModel.select(id);
-                  if (narrow) _scrollTo(_detailKey);
+                  if (widget.onOpenDetail case final open?) {
+                    open();
+                  } else if (narrow) {
+                    _scrollTo(_detailKey);
+                  }
                 },
                 onLoadMore: viewModel.loadMore,
               ),
@@ -108,46 +117,49 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
               onClearCase: () => viewModel.filterCase(null),
             ),
             const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (!narrow) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 6, child: list),
-                      const SizedBox(width: 20),
-                      Expanded(flex: 5, child: detail),
-                    ],
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    list,
-                    const SizedBox(height: 20),
-                    Column(
-                      key: _detailKey,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+            if (widget.onOpenDetail != null)
+              list
+            else
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (!narrow) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (data.selected != null)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: () => _scrollTo(_listKey),
-                              icon: const Icon(Icons.arrow_back, size: 16),
-                              label: const Text('목록으로'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: context.palette.ink,
+                        Expanded(flex: 6, child: list),
+                        const SizedBox(width: 20),
+                        Expanded(flex: 5, child: detail),
+                      ],
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      list,
+                      const SizedBox(height: 20),
+                      Column(
+                        key: _detailKey,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (data.selected != null)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed: () => _scrollTo(_listKey),
+                                icon: const Icon(Icons.arrow_back, size: 16),
+                                label: const Text('목록으로'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: context.palette.ink,
+                                ),
                               ),
                             ),
-                          ),
-                        detail,
-                      ],
-                    ),
-                  ],
-                );
-              },
-            ),
+                          detail,
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
           ],
         );
       },

@@ -9,6 +9,7 @@ import "widgets/supplier_basic_form.dart";
 import "widgets/supplier_item_form_list.dart";
 import "widgets/supplier_register_footer.dart";
 import "widgets/supplier_register_header.dart";
+import "../../../shared/widgets/workspace_dialog.dart";
 
 Future<SupplierDetail?> showSupplierRegisterDialog(BuildContext context) {
   return showDialog<SupplierDetail>(
@@ -126,56 +127,45 @@ class _SupplierRegisterDialogState
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _close();
       },
-      child: Dialog(
-        backgroundColor: context.palette.canvas,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        insetPadding: const EdgeInsets.all(20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: context.palette.line),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: Form(
-            key: _formKey,
-            onChanged: _markDirty,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SupplierRegisterHeader(onClose: _close),
-                Divider(height: 1, color: context.palette.line),
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(28),
-                    child: AbsorbPointer(
-                      absorbing: _submitting,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SupplierBasicForm(fields: _basic),
-                          const SizedBox(height: 28),
-                          SupplierItemFormList(
-                            items: _items,
-                            onAdd: _addItem,
-                            onRemove: _removeItem,
-                          ),
-                        ],
-                      ),
+      child: WorkspaceDialog(
+        maxWidth: 760,
+        child: Form(
+          key: _formKey,
+          onChanged: _markDirty,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SupplierRegisterHeader(onClose: _close),
+              Divider(height: 1, color: context.palette.line),
+              DialogScrollArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(28),
+                  child: AbsorbPointer(
+                    absorbing: _submitting,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SupplierBasicForm(fields: _basic),
+                        const SizedBox(height: 28),
+                        SupplierItemFormList(
+                          items: _items,
+                          onAdd: _addItem,
+                          onRemove: _removeItem,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                Divider(height: 1, color: context.palette.line),
-                SupplierRegisterFooter(
-                  error: _error,
-                  submitting: _submitting,
-                  onCancel: _close,
-                  onSubmit: _submit,
-                ),
-              ],
-            ),
+              ),
+              Divider(height: 1, color: context.palette.line),
+              SupplierRegisterFooter(
+                error: _error,
+                submitting: _submitting,
+                onCancel: _close,
+                onSubmit: _submit,
+              ),
+            ],
           ),
         ),
       ),

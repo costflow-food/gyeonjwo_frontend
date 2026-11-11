@@ -3,6 +3,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../../shared/formatters.dart";
+import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/widgets/preview_button.dart";
 import "../../../../shared/widgets/responsive_columns.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
@@ -88,8 +89,120 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
     await _run((viewModel) => viewModel.confirmReview());
   }
 
+  List<Widget> _notices(ReviewCard card) => [
+    if (card.isStale) ...[
+      const _Notice(
+        icon: Icons.history,
+        text: "새 견적이나 조건이 반영돼 이 카드는 이전 결과입니다. 이 카드로는 선택하거나 확인할 수 없습니다.",
+        strong: true,
+      ),
+      const SizedBox(height: 12),
+    ],
+    if (!card.outcome.ready || card.unresolved.isNotEmpty) ...[
+      _Notice(
+        icon: Icons.pause_circle_outline,
+        text: card.outcome.message,
+        strong: !card.outcome.ready,
+        details: card.unresolved,
+      ),
+      const SizedBox(height: 12),
+    ],
+    if (card.decision != null) ...[
+      _Notice(icon: Icons.task_alt, text: _decisionText(card)),
+      const SizedBox(height: 12),
+    ],
+    if (_error != null) ...[
+      Semantics(
+        liveRegion: true,
+        child: _Notice(icon: Icons.error_outline, text: _error!, strong: true),
+      ),
+      const SizedBox(height: 12),
+    ],
+  ];
+
+  /// Phone: the card as its own screen; 보류 / 확인하고 보관 pinned below.
+  Widget _page(BuildContext context) {
+    final card = _card;
+    final quotes = widget.review.sourceQuotes;
+    final actions = _ReviewActions(
+      card: card,
+      busy: _busy,
+      onHold: _hold,
+      onConfirm: _confirm,
+    );
+    return MobilePageScaffold(
+      title: "검토 카드",
+      onBack: () => context.go("/cases/${card.caseId}"),
+      actions: [
+        IconButton(
+          tooltip: "메일 초안",
+          onPressed: () => showMailDraftDialog(context, caseId: card.caseId),
+          icon: const Icon(Icons.mail_outline),
+        ),
+      ],
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        children: [
+          Text(
+            [
+              "검토 ${card.reviewRevision}회차",
+              if (card.createdAt != null)
+                "${formatSeoulDateTime(card.createdAt!)} 저장",
+            ].join(" · "),
+            style: TextStyle(fontSize: 13, color: context.palette.muted),
+          ),
+          const SizedBox(height: 10),
+          if (_RaiseCard.from(card, widget.review.quotes, compact: true)
+              case final raise?) ...[
+            raise,
+            const SizedBox(height: 12),
+          ],
+          ..._notices(card),
+          if (card.plans.isEmpty)
+            Text(
+              "보여 줄 구매안이 없습니다.",
+              style: TextStyle(fontSize: 13, color: context.palette.muted),
+            )
+          else
+            PlanBoard(
+              card: card,
+              busy: _busy,
+              carousel: true,
+              onSelect: (plan) =>
+                  _run((viewModel) => viewModel.selectPlan(plan)),
+            ),
+          const SizedBox(height: 20),
+          _SidePanel(
+            card: card,
+            busy: _busy,
+            showActions: false,
+            onHold: _hold,
+            onConfirm: _confirm,
+            onMailDraft: () =>
+                showMailDraftDialog(context, caseId: card.caseId),
+          ),
+          const SizedBox(height: 28),
+          const _Heading("견적과 근거"),
+          const SizedBox(height: 12),
+          if (quotes.isEmpty)
+            Text(
+              "이 카드에 연결된 견적이 없습니다.",
+              style: TextStyle(fontSize: 13, color: context.palette.muted),
+            )
+          else
+            for (final quote in quotes) ...[
+              QuoteCard(key: ValueKey("quote-${quote.quoteId}"), quote: quote),
+              const SizedBox(height: 12),
+            ],
+        ],
+      ),
+      bottomBar: actions.visible ? actions : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (isCompactLayout(context)) return _page(context);
     final card = _card;
     final textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
     final quotes = widget.review.sourceQuotes;
@@ -142,38 +255,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
           ],
         ),
         const SizedBox(height: 20),
-        if (card.isStale) ...[
-          const _Notice(
-            icon: Icons.history,
-            text: "새 견적이나 조건이 반영돼 이 카드는 이전 결과입니다. 이 카드로는 선택하거나 확인할 수 없습니다.",
-            strong: true,
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (!card.outcome.ready || card.unresolved.isNotEmpty) ...[
-          _Notice(
-            icon: Icons.pause_circle_outline,
-            text: card.outcome.message,
-            strong: !card.outcome.ready,
-            details: card.unresolved,
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (card.decision != null) ...[
-          _Notice(icon: Icons.task_alt, text: _decisionText(card)),
-          const SizedBox(height: 12),
-        ],
-        if (_error != null) ...[
-          Semantics(
-            liveRegion: true,
-            child: _Notice(
-              icon: Icons.error_outline,
-              text: _error!,
-              strong: true,
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
+        ..._notices(card),
         const SizedBox(height: 8),
         if (card.plans.isEmpty)
           Text(
@@ -274,13 +356,21 @@ class _RaiseCard extends StatelessWidget {
     required this.requested,
     required this.unit,
     required this.effectiveFrom,
+    this.compact = false,
   });
 
   final String supplierName;
   final String previous, requested;
   final String? unit, effectiveFrom;
 
-  static _RaiseCard? from(ReviewCard card, List<QuoteVersion> quotes) {
+  /// Phone: prices on one line, smaller.
+  final bool compact;
+
+  static _RaiseCard? from(
+    ReviewCard card,
+    List<QuoteVersion> quotes, {
+    bool compact = false,
+  }) {
     final offer = card.counterOffer;
     final reference = offer?.reference;
     final target = offer?.target;
@@ -298,12 +388,13 @@ class _RaiseCard extends StatelessWidget {
       requested: reference.requestedUnitPrice!,
       unit: reference.unit,
       effectiveFrom: quote?.effectiveFrom,
+      compact: compact,
     );
   }
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(24),
+    padding: EdgeInsets.all(compact ? 18 : 24),
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(16),
       gradient: LinearGradient(
@@ -330,9 +421,11 @@ class _RaiseCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            "${decimal(previous)}\n→ ${decimal(requested)}",
-            style: const TextStyle(
-              fontSize: 52,
+            compact
+                ? "${decimal(previous)} → ${decimal(requested)}"
+                : "${decimal(previous)}\n→ ${decimal(requested)}",
+            style: TextStyle(
+              fontSize: compact ? 28 : 52,
               fontWeight: FontWeight.w600,
               height: 1.05,
               letterSpacing: -.5,
@@ -361,21 +454,28 @@ class _SidePanel extends StatelessWidget {
     required this.onHold,
     required this.onConfirm,
     required this.onMailDraft,
+    this.showActions = true,
   });
 
   final ReviewCard card;
   final bool busy;
   final VoidCallback onHold, onConfirm, onMailDraft;
 
+  /// False on a phone, where the buttons are pinned to the bottom instead.
+  final bool showActions;
+
   @override
   Widget build(BuildContext context) {
-    final holdBlocked = card.disabledMessage(ReviewAction.hold);
-    final confirmBlocked = card.disabledMessage(ReviewAction.confirmReview);
-    final canHold = card.can(ReviewAction.hold);
-    final canConfirm = card.can(ReviewAction.confirmReview);
-    final showActions =
-        canHold || canConfirm || holdBlocked != null || confirmBlocked != null;
+    final actions = _ReviewActions(
+      card: card,
+      busy: busy,
+      onHold: onHold,
+      onConfirm: onConfirm,
+    );
     final offer = card.counterOffer;
+    if (offer == null && card.questions.isEmpty && !showActions) {
+      return const SizedBox.shrink();
+    }
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -468,46 +568,81 @@ class _SidePanel extends StatelessWidget {
               ),
             const SizedBox(height: 24),
           ],
-          if (showActions) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: WorkspaceButtonStyles.outlined(context).copyWith(
-                      minimumSize: const WidgetStatePropertyAll(
-                        Size.fromHeight(48),
-                      ),
-                    ),
-                    onPressed: canHold && !busy ? onHold : null,
-                    child: const Text("보류"),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton(
-                    style: WorkspaceButtonStyles.filled(context).copyWith(
-                      minimumSize: const WidgetStatePropertyAll(
-                        Size.fromHeight(48),
-                      ),
-                    ),
-                    onPressed: canConfirm && !busy ? onConfirm : null,
-                    child: const Text("확인하고 보관"),
-                  ),
-                ),
-              ],
-            ),
-            for (final message in {?holdBlocked, ?confirmBlocked})
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  message,
-                  style: TextStyle(fontSize: 12, color: context.palette.muted),
-                ),
-              ),
-          ],
+          if (showActions && actions.visible) actions,
         ],
       ),
+    );
+  }
+}
+
+/// 보류 / 확인하고 보관, with the reason when one is blocked.
+class _ReviewActions extends StatelessWidget {
+  const _ReviewActions({
+    required this.card,
+    required this.busy,
+    required this.onHold,
+    required this.onConfirm,
+  });
+
+  final ReviewCard card;
+  final bool busy;
+  final VoidCallback onHold, onConfirm;
+
+  String? get _holdBlocked => card.disabledMessage(ReviewAction.hold);
+  String? get _confirmBlocked =>
+      card.disabledMessage(ReviewAction.confirmReview);
+
+  bool get visible =>
+      card.can(ReviewAction.hold) ||
+      card.can(ReviewAction.confirmReview) ||
+      _holdBlocked != null ||
+      _confirmBlocked != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final canHold = card.can(ReviewAction.hold);
+    final canConfirm = card.can(ReviewAction.confirmReview);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                style: WorkspaceButtonStyles.outlined(context).copyWith(
+                  minimumSize: const WidgetStatePropertyAll(
+                    Size.fromHeight(48),
+                  ),
+                ),
+                onPressed: canHold && !busy ? onHold : null,
+                child: const Text("보류"),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: FilledButton(
+                style: WorkspaceButtonStyles.filled(context).copyWith(
+                  minimumSize: const WidgetStatePropertyAll(
+                    Size.fromHeight(48),
+                  ),
+                ),
+                onPressed: canConfirm && !busy ? onConfirm : null,
+                child: const Text("확인하고 보관"),
+              ),
+            ),
+          ],
+        ),
+        for (final message in {?_holdBlocked, ?_confirmBlocked})
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 12, color: context.palette.muted),
+            ),
+          ),
+      ],
     );
   }
 }
