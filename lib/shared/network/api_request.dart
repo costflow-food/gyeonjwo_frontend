@@ -52,7 +52,7 @@ const _authRequired = ApiException(401, "AUTH_REQUIRED", "다시 로그인해 �
 const _invalidResponse = ApiException(
   502,
   "INVALID_RESPONSE",
-  "서버 응답을 확인하지 못했어요.",
+  "서버 응답을 확인하지 못했습니다.",
 );
 
 /// 인증된 API 요청 하나를 보내고 응답 본문을 돌려줍니다.
@@ -112,7 +112,7 @@ ApiException apiExceptionFrom(DioException error) {
     return const ApiException(
       0,
       "NETWORK_UNAVAILABLE",
-      "서버에 연결하지 못했어요.",
+      "서버에 연결하지 못했습니다.",
       retryable: true,
       unknownOutcome: true,
     );
@@ -122,7 +122,7 @@ ApiException apiExceptionFrom(DioException error) {
     return ApiException(
       429,
       rateLimitedCode,
-      "요청이 많아요. 잠시 후 다시 해 주세요.",
+      "요청이 많습니다. 잠시 후 다시 해 주세요.",
       retryAfter: _retryAfter(response.headers.value("retry-after")),
     );
   }
@@ -136,7 +136,7 @@ ApiException apiExceptionFrom(DioException error) {
   return ApiException(
     status,
     fields["code"] as String? ?? "HTTP_$status",
-    fields["message"] as String? ?? "요청을 처리하지 못했어요.",
+    fields["message"] as String? ?? "요청을 처리하지 못했습니다.",
     retryable: serverError || flagged == true,
     unknownOutcome: serverError && flagged != false,
   );

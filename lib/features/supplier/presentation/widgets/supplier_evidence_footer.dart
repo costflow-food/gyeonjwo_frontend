@@ -15,7 +15,7 @@ class SupplierEvidenceFooter extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              "가격별 적용일·조건·출처를 확인하세요.",
+              "가격별 적용일·조건·출처를 확인하십시오.",
               style: TextStyle(
                 fontSize: AppFontSizes.secondary,
                 color: context.palette.muted,

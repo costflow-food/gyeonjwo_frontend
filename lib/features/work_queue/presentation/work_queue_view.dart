@@ -134,7 +134,7 @@ class _CaseDetail extends ConsumerWidget {
               Icon(Icons.error_outline, size: 32, color: context.palette.muted),
               const SizedBox(height: 12),
               Text(
-                error is WorkQueueFailure ? error.message : "업무를 불러오지 못했어요.",
+                error is WorkQueueFailure ? error.message : "업무를 불러오지 못했습니다.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: AppFontSizes.bodyLarge,
@@ -185,8 +185,8 @@ class _Guidance extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             failed
-                ? "업무 큐를 불러오지 못했어요."
-                : "왼쪽 업무 큐에서 품목별 업무를 선택하면\n메일 원문과 첨부파일을 볼 수 있어요.",
+                ? "업무 큐를 불러오지 못했습니다."
+                : "왼쪽 업무 큐에서 품목별 업무를 선택하면\n메일 원문과 첨부파일을 볼 수 있습니다.",
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: AppFontSizes.bodyLarge,

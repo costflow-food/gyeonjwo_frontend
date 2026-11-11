@@ -74,7 +74,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
           .read(workQueueViewModelProvider.notifier)
           .selectCandidates(widget.workCase, set, selected.toList());
       messenger?.showSnackBar(
-        SnackBar(content: Text("${selected.length}곳에 보낼 견적 요청 초안을 만들었어요.")),
+        SnackBar(content: Text("${selected.length}곳에 보낼 견적 요청 초안을 만들었습니다.")),
       );
       if (mounted) setState(() => _busy = false);
       if (drafts.isNotEmpty && navigatorContext.mounted) {
@@ -109,14 +109,14 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         if (failure.candidatesChanged) _selected = null;
         _busy = false;
         _error = failure.unknownOutcome
-            ? "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요."
+            ? "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."
             : failure.message;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = "결과를 확인하지 못했어요. 다시 누르면 같은 요청으로 확인해요.";
+        _error = "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다.";
       });
     }
   }
@@ -143,7 +143,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 ),
                 SizedBox(width: 10),
                 Text(
-                  "에이전트가 견적 요청 후보를 찾고 있어요.",
+                  "에이전트가 견적 요청 후보를 찾고 있습니다.",
                   style: TextStyle(
                     fontSize: AppFontSizes.body,
                     color: context.palette.muted,
@@ -154,7 +154,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
           );
         }
         return Text(
-          error is WorkQueueFailure ? error.message : "후보 목록을 불러오지 못했어요.",
+          error is WorkQueueFailure ? error.message : "후보 목록을 불러오지 못했습니다.",
           style: TextStyle(
             fontSize: AppFontSizes.body,
             color: context.palette.muted,
@@ -180,7 +180,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
             ),
             const SizedBox(height: 4),
             Text(
-              "에이전트가 이 품목을 취급하는 업체를 찾았어요. 견적을 요청할 업체를 골라 주세요.",
+              "에이전트가 이 품목을 취급하는 업체를 찾았습니다. 견적을 요청할 업체를 골라 주세요.",
               style: TextStyle(
                 fontSize: AppFontSizes.secondary,
                 color: context.palette.muted,
@@ -190,7 +190,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
               const SizedBox(height: 12),
               _Notice(
                 icon: Icons.history,
-                text: "업무 내용이 바뀌어 아래는 이전 후보예요. 이 후보로는 견적을 요청할 수 없어요.",
+                text: "업무 내용이 바뀌어 아래는 이전 후보입니다. 이 후보로는 견적을 요청할 수 없습니다.",
                 action: TextButton(
                   onPressed: () => ref.invalidate(
                     caseCandidatesProvider(widget.workCase.id),
@@ -260,7 +260,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                     : const Icon(Icons.send_outlined, size: 16),
                 label: Text(
                   serverNotice != null
-                      ? "지금은 요청할 수 없어요"
+                      ? "지금은 요청할 수 없습니다"
                       : selected.isEmpty
                       ? "업체를 골라 주세요"
                       : "선택한 ${selected.length}곳에 견적 요청",
@@ -428,7 +428,7 @@ class _CandidateTile extends StatelessWidget {
                       _Notice(
                         icon: Icons.warning_amber_rounded,
                         color: const Color(0xFF8A6516),
-                        text: "주의 · $caution · 자동 발송하지 않고 승인을 기다려요.",
+                        text: "주의 · $caution · 자동 발송하지 않고 승인을 기다립니다.",
                       ),
                     ],
                     if (candidate.unknownFields.isNotEmpty) ...[
@@ -444,7 +444,7 @@ class _CandidateTile extends StatelessWidget {
                     if (candidate.failsRequired) ...[
                       const SizedBox(height: 6),
                       const Text(
-                        "필수 조건을 충족하지 않아 견적 요청 대상으로 고를 수 없어요.",
+                        "필수 조건을 충족하지 않아 견적 요청 대상으로 고를 수 없습니다.",
                         style: TextStyle(
                           fontSize: AppFontSizes.secondary,
                           color: Color(0xFF8A6516),

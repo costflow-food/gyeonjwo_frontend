@@ -26,7 +26,7 @@ class ThemePicker extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          "고른 모드와 색은 이 브라우저에만 저장돼요.",
+          "고른 모드와 색은 이 브라우저에만 저장됩니다.",
           style: TextStyle(
             fontSize: AppFontSizes.secondary,
             color: context.palette.muted,

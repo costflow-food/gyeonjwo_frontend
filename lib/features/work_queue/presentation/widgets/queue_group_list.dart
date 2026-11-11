@@ -84,7 +84,7 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
     if (!value.hasValue) {
       if (value.hasError) {
         return _Message(
-          "업무 큐를 불러오지 못했어요.",
+          "업무 큐를 불러오지 못했습니다.",
           action: TextButton(
             onPressed: viewModel.refresh,
             child: const Text("다시 시도"),
@@ -101,8 +101,8 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
     if (groups.isEmpty) {
       return _Message(
         data.status == null && data.query.isEmpty
-            ? "아직 도착한 업무가 없어요."
-            : "조건에 맞는 업무가 없어요.",
+            ? "아직 도착한 업무가 없습니다."
+            : "조건에 맞는 업무가 없습니다.",
       );
     }
     return ListView(

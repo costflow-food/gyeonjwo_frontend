@@ -56,7 +56,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 20, 4, 32),
-            child: NoteLine("견적과 실거래 가격의 적용일·조건을 함께 확인하세요."),
+            child: NoteLine("견적과 실거래 가격의 적용일·조건을 함께 확인하십시오."),
           ),
         ],
       ),

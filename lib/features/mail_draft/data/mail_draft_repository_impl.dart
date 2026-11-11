@@ -110,7 +110,7 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
     if (data["draft_id"] != draftId || data["accepted"] != true) {
       throw const MailDraftFailure(
         "INVALID_RESPONSE",
-        "발송 요청 접수 결과를 확인하지 못했어요.",
+        "발송 요청 접수 결과를 확인하지 못했습니다.",
       );
     }
   }

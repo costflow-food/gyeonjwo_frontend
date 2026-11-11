@@ -47,9 +47,9 @@ abstract final class WorkCaseAction {
 
 /// API-07 재개 사유. 단계마다 서버가 받는 사유가 다릅니다.
 enum ResumeReason {
-  resumeHold("RESUME_HOLD", "다시 추출", "보류 사유를 확인했다면 요청 정보 확인부터 다시 실행해요."),
-  retryFailed("RETRY_FAILED", "다시 시도", "오류가 난 처리를 다시 실행해요."),
-  reopenReview("REOPEN_REVIEW", "다시 검토", "이 업무의 검토를 다시 실행해요.");
+  resumeHold("RESUME_HOLD", "다시 추출", "보류 사유를 확인했다면 요청 정보 확인부터 다시 실행합니다."),
+  retryFailed("RETRY_FAILED", "다시 시도", "오류가 난 처리를 다시 실행합니다."),
+  reopenReview("REOPEN_REVIEW", "다시 검토", "이 업무의 검토를 다시 실행합니다.");
 
   const ResumeReason(this.code, this.buttonLabel, this.help);
   final String code;
@@ -112,8 +112,8 @@ String processingStepLabel(String step, {int inputRevision = 1}) =>
 
 /// 서버 hold 문구가 없을 때 error.code로 고르는 대체 문구.
 const _fallbackStopMessages = {
-  "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했어요.",
-  "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 해요.",
+  "NO_SUITABLE_CANDIDATES": "요청 조건에 맞는 거래처 후보를 찾지 못했습니다.",
+  "SEND_POLICY_REQUIRED": "견적 요청에 필요한 발송 설정을 확인해야 합니다.",
 };
 
 /// 거래처가 없어 멈춘 코드. 거래처 등록으로 원인을 풀 수 있습니다.

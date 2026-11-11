@@ -82,7 +82,7 @@ class PurchaseReviewRepositoryImpl implements PurchaseReviewRepository {
       // A shape this screen cannot read; never show half a card.
       throw const PurchaseReviewFailure(
         "INVALID_RESPONSE",
-        "서버 응답을 확인하지 못했어요.",
+        "서버 응답을 확인하지 못했습니다.",
       );
     }
   }

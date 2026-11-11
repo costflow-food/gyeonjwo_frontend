@@ -92,7 +92,7 @@ class _SupplierRegisterDialogState
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("입력한 내용을 버릴까요?"),
+        title: const Text("입력한 내용을 버리시겠습니까?"),
         content: const Text("등록하지 않은 거래처 정보는 저장되지 않습니다."),
         actions: [
           TextButton(

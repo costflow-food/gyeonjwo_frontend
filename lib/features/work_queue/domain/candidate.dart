@@ -126,7 +126,7 @@ class CandidateSet {
           .where((disabled) => disabled.action == WorkCaseAction.selectCandidates)
           .firstOrNull
           ?.message ??
-      (isStale ? "업무 내용이 바뀌어 이전 후보로는 견적을 요청할 수 없어요." : null);
+      (isStale ? "업무 내용이 바뀌어 이전 후보로는 견적을 요청할 수 없습니다." : null);
 
   /// 서버 사정으로 지금은 후보를 고를 수 없을 때 목록 위에 보일 안내.
   /// 과거 후보(따로 안내)이거나 이미 고른 뒤라면 null입니다.
@@ -139,7 +139,7 @@ class CandidateSet {
     return switch (disabled.reasonCode) {
       // 서버의 후보 선택·발송 기능이 꺼져 있습니다. 서버 문구는 개발자용이라 바꿔 보여줍니다.
       "CANDIDATE_SELECTION_INTEGRATION_REQUIRED" || "PROCESSING_UNAVAILABLE" =>
-        "지금은 견적 요청을 보낼 수 없어요. 서버 준비가 끝나면 다시 고를 수 있어요.",
+        "지금은 견적 요청을 보낼 수 없습니다. 서버 준비가 끝나면 다시 고를 수 있습니다.",
       _ => disabled.message,
     };
   }

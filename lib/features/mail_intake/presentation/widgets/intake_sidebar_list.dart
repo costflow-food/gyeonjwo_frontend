@@ -19,7 +19,7 @@ class IntakeSidebarList extends ConsumerWidget {
     if (!value.hasValue) {
       if (value.hasError) {
         return _Message(
-          "접수 확인 목록을 불러오지 못했어요.",
+          "접수 확인 목록을 불러오지 못했습니다.",
           action: TextButton(
             onPressed: ref.read(mailIntakeViewModelProvider.notifier).refresh,
             child: const Text("다시 시도"),
@@ -33,7 +33,7 @@ class IntakeSidebarList extends ConsumerWidget {
     }
     final page = value.requireValue;
     final mails = page.items;
-    if (mails.isEmpty) return const _Message("확인할 메일이 없어요.");
+    if (mails.isEmpty) return const _Message("확인할 메일이 없습니다.");
     final more = page.nextCursor != null;
     return ListView.separated(
       padding: EdgeInsets.zero,

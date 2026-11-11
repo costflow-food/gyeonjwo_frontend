@@ -84,7 +84,7 @@ void main() {
         }),
       );
       expect(error.code, rateLimitedCode);
-      expect(error.message, "요청이 많아요. 잠시 후 다시 해 주세요.");
+      expect(error.message, "요청이 많습니다. 잠시 후 다시 해 주세요.");
       expect(error.retryAfter, const Duration(seconds: 3));
       expect(error.retryable, isFalse);
     });

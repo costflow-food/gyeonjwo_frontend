@@ -106,10 +106,10 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("회신 메일을 새 업무로 만들까요?"),
+        title: const Text("회신 메일을 새 업무로 만드시겠습니까?"),
         content: const Text(
-          "이 메일은 보낸 견적 요청이나 추가 확인에 대한 회신일 수 있어요. "
-          "새 업무로 접수하면 원래 업무와 따로 진행되고, 나중에 원래 업무에 연결할 수 없어요.\n\n"
+          "이 메일은 보낸 견적 요청이나 추가 확인에 대한 회신일 수 있습니다. "
+          "새 업무로 접수하면 원래 업무와 따로 진행되고, 나중에 원래 업무에 연결할 수 없습니다.\n\n"
           "공급사가 보낸 새 인상 안내라면 새 업무로 접수해 주세요.",
         ),
         actions: [
@@ -152,7 +152,7 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
       if (!mounted) return;
       final message = switch (resolution) {
         IntakeResolution.nonBusiness => "비업무로 확인했습니다.",
-        IntakeResolution.createCase => "새 업무로 접수했습니다. 업무 큐에서 대기 상태로 확인할 수 있어요.",
+        IntakeResolution.createCase => "새 업무로 접수했습니다. 업무 큐에서 대기 상태로 확인할 수 있습니다.",
         IntakeResolution.linkCase => "선택한 업무에 연결했습니다.",
       };
       ScaffoldMessenger.maybeOf(context)
