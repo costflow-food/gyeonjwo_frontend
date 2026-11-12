@@ -239,7 +239,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
               PlanBoard(
                 card: card,
                 busy: _busy,
-                carousel: true,
+                folding: true,
                 onSelect: (plan) =>
                     _run((viewModel) => viewModel.selectPlan(plan)),
               ),
