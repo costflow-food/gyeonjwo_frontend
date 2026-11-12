@@ -5,13 +5,16 @@ import "../../../shared/app_font_sizes.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../../shared/workspace_colors.dart";
+import "../data/call_recording_repository_impl.dart";
 import "../data/recording_supplier_source.dart";
+import "../domain/call_recording.dart";
+import "../domain/call_recording_repository.dart";
 import "../domain/recording_supplier.dart";
 import "../domain/voice_file.dart";
 import "voice_import_flow.dart";
 
-/// 업무에 붙일 통화 녹음 확인: 파일과, 어느 거래처와의 통화인지.
-/// 업로드는 서버 API가 정해지면 연결합니다.
+/// 업무에 붙일 통화 녹음: 파일과 거래처를 확인하고 올립니다.
+/// 서버에 통화 녹음 기능이 아직 없으면 올리기는 닫아 둡니다.
 class VoiceFilePage extends ConsumerStatefulWidget {
   const VoiceFilePage({
     super.key,
@@ -38,10 +41,96 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
   /// The call's supplier. Required before the upload.
   String? _supplierId;
 
+  /// Null when no upload is running.
+  RecordingUploadStep? _step;
+  int _percent = 0;
+  String? _error;
+
+  /// The last try may have left its recording on the server. The next press
+  /// continues it, so the per-case limit is not checked here again.
+  bool _resumable = false;
+
+  /// The picker answers only after it copied the file, which can be well
+  /// after its screen closed: nothing else starts until then.
+  bool _picking = false;
+
+  bool get _busy => _step != null;
+
   Future<void> _pickAnother() async {
+    if (_picking || _busy) return;
+    setState(() => _picking = true);
     final file = await pickVoiceFile(context, ref);
-    if (file != null && mounted) setState(() => _file = file);
+    if (!mounted) return;
+    setState(() {
+      _picking = false;
+      if (file != null) {
+        _file = file;
+        _error = null;
+        _resumable = false;
+      }
+    });
   }
+
+  /// Leaving mid-upload would lose track of it; it ends or fails by itself.
+  void _close() {
+    if (!_busy) Navigator.of(context).pop();
+  }
+
+  Future<void> _upload(RecordingSupplier supplier) async {
+    if (_busy || _picking) return;
+    final caseId = widget.suppliers.caseId;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final navigator = Navigator.of(context);
+    setState(() {
+      _step = RecordingUploadStep.requesting;
+      _percent = 0;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(callRecordingRepositoryProvider)
+          .upload(
+            caseId: caseId,
+            supplierId: supplier.supplierId,
+            file: _file,
+            onStep: (step) {
+              if (mounted) setState(() => _step = step);
+            },
+            onProgress: (sent, total) {
+              // Per percent, not per chunk: chunks arrive many times a second.
+              final percent = total > 0 ? sent * 100 ~/ total : 0;
+              if (mounted && percent != _percent) {
+                setState(() => _percent = percent);
+              }
+            },
+          );
+      if (!mounted) return;
+      ref.invalidate(callRecordingsProvider(caseId));
+      messenger?.showSnackBar(const SnackBar(content: Text("통화 녹음을 올렸습니다.")));
+      navigator.pop();
+    } on CallRecordingFailure catch (failure) {
+      if (!mounted) return;
+      // The list may have changed, or the try may have gone through.
+      ref.invalidate(callRecordingsProvider(caseId));
+      if (failure.suppliersChanged) {
+        ref.invalidate(recordingSuppliersProvider(widget.suppliers));
+      }
+      setState(() {
+        _step = null;
+        _error = failure.unknownOutcome ? _unknownOutcome : failure.message;
+        _resumable = failure.retryable || failure.unknownOutcome;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _step = null;
+        _error = _unknownOutcome;
+        _resumable = true;
+      });
+    }
+  }
+
+  static const _unknownOutcome = "결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다.";
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +141,31 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
     final chosen = suppliers.value
         ?.where((supplier) => supplier.supplierId == _supplierId)
         .firstOrNull;
+
+    // The case's recordings answer two things before anything is sent:
+    // whether the server has the feature at all, and its limits.
+    final recordings = ref.watch(
+      callRecordingsProvider(widget.suppliers.caseId),
+    );
+    final limits = recordings.value;
+    final unavailable = switch (recordings.error) {
+      final CallRecordingFailure failure when limits == null =>
+        failure.unavailable,
+      _ => false,
+    };
+    final checking =
+        recordings.isLoading && limits == null && !recordings.hasError;
+    final maxBytes = limits?.maxBytes ?? defaultMaxRecordingBytes;
+    // Why this file cannot go up as it is.
+    final blocked = limits != null && limits.limitReached && !_resumable
+        ? "업무 하나에 녹음은 ${limits.maxPerCase}개까지 올릴 수 있습니다."
+        : (file.sizeBytes ?? 0) > maxBytes
+        ? "녹음 파일은 ${maxBytes ~/ (1024 * 1024)}MB까지 올릴 수 있습니다."
+        : null;
     return MobilePageScaffold(
       title: "통화 녹음 추가",
       closeIcon: true,
+      onBack: _close,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
@@ -167,13 +278,18 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
                         _SupplierOption(
                           supplier: supplier,
                           selected: supplier.supplierId == chosen?.supplierId,
-                          onTap: () =>
-                              setState(() => _supplierId = supplier.supplierId),
+                          onTap: _busy
+                              ? null
+                              : () => setState(() {
+                                  _supplierId = supplier.supplierId;
+                                  _error = null;
+                                  _resumable = false;
+                                }),
                         ),
                     ],
                   ),
           ),
-          if (chosen != null) ...[
+          if (unavailable) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -205,33 +321,98 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
           ],
         ],
       ),
-      bottomBar: Row(
+      bottomBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            flex: 5,
-            child: OutlinedButton.icon(
-              onPressed: _pickAnother,
-              style: MobileButtons.outlined(context),
-              icon: const Icon(Icons.swap_horiz, size: 18),
-              label: const _OneLine("다른 파일"),
+          if (_busy) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                // Only the file transfer has a known length.
+                value: _step == RecordingUploadStep.uploading
+                    ? _percent / 100
+                    : null,
+                minHeight: 4,
+                color: context.palette.accent,
+                backgroundColor: context.palette.line,
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            flex: 7,
-            child: chosen == null
-                ? FilledButton(
+            const SizedBox(height: 10),
+          ] else if (unavailable ? null : _error ?? blocked
+              case final message?) ...[
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.secondary,
+                  color: danger,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          Row(
+            children: [
+              Expanded(
+                flex: 5,
+                child: OutlinedButton.icon(
+                  onPressed: _busy || _picking ? null : _pickAnother,
+                  style: MobileButtons.outlined(context),
+                  icon: const Icon(Icons.swap_horiz, size: 18),
+                  label: const _OneLine("다른 파일"),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 7,
+                child: switch (chosen) {
+                  null => FilledButton(
                     onPressed: null,
                     style: MobileButtons.filled(context),
                     child: const _OneLine("거래처를 골라 주세요"),
-                  )
-                : FilledButton.icon(
-                    // No upload API yet.
+                  ),
+                  // The server has no call recordings yet.
+                  _ when unavailable => FilledButton.icon(
                     onPressed: null,
                     style: MobileButtons.filled(context),
                     icon: const Icon(Icons.cloud_upload_outlined, size: 18),
                     label: const _OneLine("업로드 · 준비 중"),
                   ),
+                  _ when _busy => FilledButton.icon(
+                    onPressed: null,
+                    style: MobileButtons.filled(context),
+                    icon: SizedBox.square(
+                      dimension: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: context.palette.muted,
+                      ),
+                    ),
+                    label: _OneLine(switch (_step!) {
+                      RecordingUploadStep.requesting => "업로드 준비 중",
+                      RecordingUploadStep.uploading => "올리는 중 $_percent%",
+                      RecordingUploadStep.confirming => "확인 중",
+                    }),
+                  ),
+                  _ when checking => FilledButton(
+                    onPressed: null,
+                    style: MobileButtons.filled(context),
+                    child: const _OneLine("확인 중"),
+                  ),
+                  final supplier => FilledButton.icon(
+                    onPressed: blocked == null && !_picking
+                        ? () => _upload(supplier)
+                        : null,
+                    style: MobileButtons.filled(context),
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                    label: _OneLine(_error == null ? "업로드" : "다시 시도"),
+                  ),
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -267,7 +448,9 @@ class _SupplierOption extends StatelessWidget {
 
   final RecordingSupplier supplier;
   final bool selected;
-  final VoidCallback onTap;
+
+  /// Null while an upload is running.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

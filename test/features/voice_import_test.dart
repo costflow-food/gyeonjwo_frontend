@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
@@ -7,8 +9,11 @@ import "package:gyeonjwo_frontend/features/mail_draft/domain/mail_draft_reposito
 import "package:gyeonjwo_frontend/features/purchase_review/data/purchase_review_repository_impl.dart";
 import "package:gyeonjwo_frontend/features/purchase_review/domain/purchase_review.dart";
 import "package:gyeonjwo_frontend/features/purchase_review/domain/purchase_review_repository.dart";
+import "package:gyeonjwo_frontend/features/voice_import/data/call_recording_repository_impl.dart";
 import "package:gyeonjwo_frontend/features/voice_import/data/recording_supplier_source.dart";
 import "package:gyeonjwo_frontend/features/voice_import/data/voice_file_picker.dart";
+import "package:gyeonjwo_frontend/features/voice_import/domain/call_recording.dart";
+import "package:gyeonjwo_frontend/features/voice_import/domain/call_recording_repository.dart";
 import "package:gyeonjwo_frontend/features/voice_import/domain/recording_supplier.dart";
 import "package:gyeonjwo_frontend/features/voice_import/domain/voice_file.dart";
 import "package:gyeonjwo_frontend/features/voice_import/presentation/voice_import_flow.dart";
@@ -30,6 +35,7 @@ class _Picker implements VoiceFilePicker {
   Future<VoiceFile?> pick() async {
     final result = results[picks++];
     if (result is Exception) throw result;
+    if (result is Future<VoiceFile?>) return result;
     return result as VoiceFile?;
   }
 }
@@ -38,8 +44,92 @@ VoiceFile _file(String name, int size) => VoiceFile(
   name: name,
   extension: name.split(".").last,
   sizeBytes: size,
-  uri: Uri.parse("content://media/$name"),
+  uri: Uri.parse("file:///cache/file_picker/$name"),
+  openRead: () => Stream.value(const [1, 2, 3]),
 );
+
+CallRecording _recording(
+  String id, {
+  String supplierId = "s2",
+  CallRecordingStatus status = CallRecordingStatus.uploaded,
+}) => CallRecording(
+  recordingId: id,
+  supplierId: supplierId,
+  fileName: "통화 녹음 새벽딸기_20261111_1432.m4a",
+  extension: "m4a",
+  sizeBytes: 2516582,
+  status: status,
+  createdAt: "2026-11-11T05:40:00Z",
+  uploadedAt: status == CallRecordingStatus.uploaded
+      ? "2026-11-11T05:41:00Z"
+      : null,
+);
+
+/// The server's side of the recordings: what the list shows, and how each
+/// upload ends. An upload with no scripted end waits for [finish].
+class _Recordings implements CallRecordingRepository {
+  _Recordings({this.unavailable = false, this.maxPerCase = 10});
+
+  /// A server that does not have the feature yet.
+  final bool unavailable;
+  final int maxPerCase;
+  final items = <CallRecording>[];
+  final uploads = <({String caseId, String supplierId, VoiceFile file})>[];
+
+  /// Failures for the next uploads, in order; after them uploads wait.
+  final failures = <CallRecordingFailure>[];
+  Completer<void>? finish;
+  void Function(RecordingUploadStep step)? onStep;
+  void Function(int sent, int total)? onProgress;
+
+  @override
+  Future<CallRecordingList> getRecordings(String caseId) async {
+    if (unavailable) {
+      throw const CallRecordingFailure(
+        "CALL_RECORDING_UNAVAILABLE",
+        "통화 녹음 기능을 사용할 수 없습니다.",
+      );
+    }
+    return CallRecordingList(
+      items: [...items],
+      maxPerCase: maxPerCase,
+      maxBytes: defaultMaxRecordingBytes,
+    );
+  }
+
+  @override
+  Future<CallRecording> upload({
+    required String caseId,
+    required String supplierId,
+    required VoiceFile file,
+    void Function(RecordingUploadStep step)? onStep,
+    void Function(int sent, int total)? onProgress,
+  }) async {
+    uploads.add((caseId: caseId, supplierId: supplierId, file: file));
+    this.onStep = onStep;
+    this.onProgress = onProgress;
+    onStep?.call(RecordingUploadStep.requesting);
+    if (failures.isNotEmpty) {
+      // Like the server: the slot is taken and the row stays unfinished.
+      if (items.every((item) => item.recordingId != "pending")) {
+        items.insert(
+          0,
+          _recording(
+            "pending",
+            supplierId: supplierId,
+            status: CallRecordingStatus.uploading,
+          ),
+        );
+      }
+      throw failures.removeAt(0);
+    }
+    await (finish = Completer<void>()).future;
+    items.removeWhere((item) => item.recordingId == "pending");
+    final recording = _recording("r${uploads.length}", supplierId: supplierId);
+    items.insert(0, recording);
+    return recording;
+  }
+}
 
 const _caseTitle = "[달콤농원] 냉동 딸기 적용일 협의 안내";
 const RecordingSupplierQuery _query = (caseId: "c1", responded: 1);
@@ -65,6 +155,7 @@ Future<void> _pumpCase(
   WidgetTester tester,
   _Picker picker, {
   List<Object>? repositories,
+  _Recordings? recordings,
 }) async {
   tester.view.physicalSize = const Size(360, 760);
   tester.view.devicePixelRatio = 1;
@@ -73,6 +164,9 @@ Future<void> _pumpCase(
     ProviderScope(
       overrides: [
         voiceFilePickerProvider.overrideWithValue(picker),
+        callRecordingRepositoryProvider.overrideWithValue(
+          recordings ?? _Recordings(),
+        ),
         if (repositories == null)
           recordingSuppliersProvider(_query)
               .overrideWith((ref) async => _suppliers)
@@ -86,6 +180,7 @@ Future<void> _pumpCase(
             body: Padding(
               padding: const EdgeInsets.all(16),
               child: CallRecordingSection(
+                suppliers: _query,
                 onAdd: () => addCallRecording(
                   context,
                   ref,
@@ -239,16 +334,219 @@ void main() {
     await tester.tap(find.text("새벽딸기"));
     await tester.pumpAndSettle();
     expect(find.text("거래처를 골라 주세요"), findsNothing);
-    // No upload API yet.
-    expect(_enabled(tester, "업로드 · 준비 중"), isFalse);
+    expect(_enabled(tester, "업로드"), isTrue);
 
     // 다른 파일 replaces the file and keeps the supplier.
     await tester.tap(find.text("다른 파일"));
     await tester.pumpAndSettle();
     expect(find.text("회의_단가협의.mp3"), findsOneWidget);
     expect(find.text("MP3 · 12.7MB"), findsOneWidget);
-    expect(find.text("업로드 · 준비 중"), findsOneWidget);
+    expect(_enabled(tester, "업로드"), isTrue);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets("a server without call recordings keeps the upload closed", (
+    tester,
+  ) async {
+    final recordings = _Recordings(unavailable: true);
+    await _pumpCase(
+      tester,
+      _Picker([_file("통화.m4a", 1024)]),
+      recordings: recordings,
+    );
+    // The section still offers the add tile; there is just no list.
+    expect(find.text("통화 녹음"), findsOneWidget);
+    expect(find.text("올린 녹음을 불러오지 못했습니다."), findsNothing);
+    await _choose(tester);
+    await tester.tap(find.text("새벽딸기"));
+    await tester.pumpAndSettle();
+    expect(_enabled(tester, "업로드 · 준비 중"), isFalse);
+    expect(find.textContaining("서버 준비가 끝나면 열립니다"), findsOneWidget);
+    expect(recordings.uploads, isEmpty);
+  });
+
+  testWidgets("an upload shows its progress, then lists the recording", (
+    tester,
+  ) async {
+    final recordings = _Recordings();
+    final file = _file("통화 녹음 새벽딸기_20261111_1432.m4a", 2516582);
+    await _pumpCase(tester, _Picker([file]), recordings: recordings);
+    await _choose(tester);
+    await tester.tap(find.text("새벽딸기"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("업로드"));
+    await tester.pump();
+
+    expect(recordings.uploads.single, (
+      caseId: "c1",
+      supplierId: "s2",
+      file: file,
+    ));
+    expect(_enabled(tester, "업로드 준비 중"), isFalse);
+    expect(_enabled(tester, "다른 파일"), isFalse);
+    recordings.onStep!(RecordingUploadStep.uploading);
+    recordings.onProgress!(42, 100);
+    await tester.pump();
+    expect(find.text("올리는 중 42%"), findsOneWidget);
+    expect(
+      tester
+          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
+          .value,
+      0.42,
+    );
+    // The page stays while the upload runs: a second press or back does nothing.
+    await tester.tap(find.byTooltip("닫기"));
+    await tester.pump();
+    expect(find.text("어느 거래처와의 통화입니까?"), findsOneWidget);
+    recordings.onStep!(RecordingUploadStep.confirming);
+    await tester.pump();
+    expect(find.text("확인 중"), findsOneWidget);
+
+    recordings.finish!.complete();
+    await tester.pumpAndSettle();
+    expect(recordings.uploads, hasLength(1));
+    expect(find.text("통화 녹음을 올렸습니다."), findsOneWidget);
+    // Back on the case: the section lists it with its supplier and state.
+    expect(find.text("어느 거래처와의 통화입니까?"), findsNothing);
+    expect(find.text("통화 녹음 1"), findsOneWidget);
+    expect(find.text("새벽딸기"), findsOneWidget);
+    expect(find.text("업로드됨"), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets("a failed upload says why and the same button tries again", (
+    tester,
+  ) async {
+    final recordings = _Recordings()
+      ..failures.addAll(const [
+        CallRecordingFailure(
+          "UPLOAD_INTERRUPTED",
+          "파일을 올리는 중 연결이 끊겼습니다. 다시 시도해 주세요.",
+          retryable: true,
+        ),
+        CallRecordingFailure(
+          "NETWORK_UNAVAILABLE",
+          "서버에 연결하지 못했습니다.",
+          retryable: true,
+          unknownOutcome: true,
+        ),
+      ]);
+    await _pumpCase(
+      tester,
+      _Picker([_file("통화.m4a", 1024)]),
+      recordings: recordings,
+    );
+    await _choose(tester);
+    await tester.tap(find.text("새벽딸기"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("업로드"));
+    await tester.pumpAndSettle();
+    expect(find.text("파일을 올리는 중 연결이 끊겼습니다. 다시 시도해 주세요."), findsOneWidget);
+    expect(_enabled(tester, "다시 시도"), isTrue);
+    expect(_enabled(tester, "다른 파일"), isTrue);
+
+    // Not known whether it went through: said so, without the server's words.
+    await tester.tap(find.text("다시 시도"));
+    await tester.pumpAndSettle();
+    expect(find.text("결과를 확인하지 못했습니다. 다시 누르면 같은 요청으로 확인합니다."), findsOneWidget);
+    expect(find.text("서버에 연결하지 못했습니다."), findsNothing);
+
+    await tester.tap(find.text("다시 시도"));
+    await tester.pump();
+    recordings.finish!.complete();
+    await tester.pumpAndSettle();
+    expect(recordings.uploads, hasLength(3));
+    expect(find.text("통화 녹음을 올렸습니다."), findsOneWidget);
+  });
+
+  testWidgets("the last free slot can still be retried", (tester) async {
+    final recordings = _Recordings(maxPerCase: 1)
+      ..failures.add(
+        const CallRecordingFailure(
+          "UPLOAD_INTERRUPTED",
+          "파일을 올리는 중 연결이 끊겼습니다. 다시 시도해 주세요.",
+          retryable: true,
+        ),
+      );
+    await _pumpCase(
+      tester,
+      _Picker([_file("통화.m4a", 1024), _file("다른 통화.m4a", 2048)]),
+      recordings: recordings,
+    );
+    await _choose(tester);
+    await tester.tap(find.text("새벽딸기"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("업로드"));
+    await tester.pumpAndSettle();
+    // The unfinished recording now fills the case, but it is this one.
+    expect(recordings.items.single.status, CallRecordingStatus.uploading);
+    expect(find.textContaining("1개까지"), findsNothing);
+    expect(_enabled(tester, "다시 시도"), isTrue);
+
+    // Another file would be a new recording: the limit applies again.
+    await tester.tap(find.text("다른 파일"));
+    await tester.pumpAndSettle();
+    expect(find.text("업무 하나에 녹음은 1개까지 올릴 수 있습니다."), findsOneWidget);
+    expect(_enabled(tester, "업로드"), isFalse);
+    expect(recordings.uploads, hasLength(1));
+  });
+
+  testWidgets("nothing starts while another file is still being picked", (
+    tester,
+  ) async {
+    final picking = Completer<VoiceFile?>();
+    final recordings = _Recordings();
+    await _pumpCase(
+      tester,
+      _Picker([_file("통화.m4a", 1024), picking.future]),
+      recordings: recordings,
+    );
+    await _choose(tester);
+    await tester.tap(find.text("새벽딸기"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("다른 파일"));
+    await tester.pump();
+    expect(_enabled(tester, "다른 파일"), isFalse);
+    expect(_enabled(tester, "업로드"), isFalse);
+    picking.complete(_file("다른 통화.m4a", 2048));
+    await tester.pumpAndSettle();
+    expect(find.text("다른 통화.m4a"), findsOneWidget);
+    expect(_enabled(tester, "업로드"), isTrue);
+    expect(recordings.uploads, isEmpty);
+  });
+
+  testWidgets("a full case and an oversized file cannot be uploaded", (
+    tester,
+  ) async {
+    final recordings = _Recordings(maxPerCase: 1);
+    final picker = _Picker([_file("큰 녹음.wav", defaultMaxRecordingBytes + 1)]);
+    await _pumpCase(tester, picker, recordings: recordings);
+    await _choose(tester);
+    await tester.tap(find.text("새벽딸기"));
+    await tester.pumpAndSettle();
+    expect(find.text("녹음 파일은 50MB까지 올릴 수 있습니다."), findsOneWidget);
+    expect(_enabled(tester, "업로드"), isFalse);
+
+    // With the case at its limit the add tile itself closes.
+    recordings.items.add(_recording("r1"));
+    await tester.tap(find.byTooltip("닫기"));
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(CallRecordingSection)),
+    );
+    container.invalidate(callRecordingsProvider("c1"));
+    await tester.pumpAndSettle();
+    expect(find.text("업무 하나에 녹음은 1개까지 올릴 수 있습니다."), findsOneWidget);
+    await tester.tap(find.text("통화 녹음 추가"));
+    await tester.pumpAndSettle();
+    expect(picker.picks, 1);
+    // A failed recording does not count toward the limit.
+    recordings.items
+      ..clear()
+      ..add(_recording("r2", status: CallRecordingStatus.failed));
+    container.invalidate(callRecordingsProvider("c1"));
+    await tester.pumpAndSettle();
+    expect(find.text("견적을 요청한 거래처와의 통화 녹음을 붙입니다."), findsOneWidget);
   });
 
   testWidgets("a failed supplier read shows its error and retries on tap", (
