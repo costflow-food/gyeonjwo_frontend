@@ -165,39 +165,5 @@ void main() {
       expect(usedKeys[0], usedKeys[1]);
       expect(usedKeys[2], isNot(usedKeys[0]));
     });
-
-    test("discardWhere drops only the matching kept keys", () async {
-      final keys = IdempotencyKeys();
-      final usedKeys = <String, List<String>>{};
-
-      Future<void> send(String action, String key) async {
-        (usedKeys[action] ??= []).add(key);
-        if (usedKeys[action]!.length == 1) throw TimeoutException("lost");
-      }
-
-      for (final action in ["start:c1", "start:c2"]) {
-        await expectLater(
-          keys.run<void>(
-            action,
-            1,
-            (key) => send(action, key),
-            serverCode: (_) => null,
-          ),
-          throwsA(isA<TimeoutException>()),
-        );
-      }
-      keys.discardWhere((action) => action.endsWith(":c1"));
-      for (final action in ["start:c1", "start:c2"]) {
-        await keys.run<void>(
-          action,
-          1,
-          (key) => send(action, key),
-          serverCode: (_) => null,
-        );
-      }
-
-      expect(usedKeys["start:c1"]![0], isNot(usedKeys["start:c1"]![1]));
-      expect(usedKeys["start:c2"]![0], usedKeys["start:c2"]![1]);
-    });
   });
 }

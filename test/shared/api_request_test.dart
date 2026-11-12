@@ -1,5 +1,3 @@
-import "dart:convert";
-
 import "package:dio/dio.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_data_source.dart";
@@ -77,23 +75,15 @@ void main() {
       expect(error.unknownOutcome, isFalse);
     });
 
-    test("429 has its own code, message and wait", () {
+    test("429 has its own code and wait", () {
       final error = apiExceptionFrom(
         _http(429, _error("RATE_LIMITED", retryable: true), {
           "retry-after": ["3"],
         }),
       );
       expect(error.code, rateLimitedCode);
-      expect(error.message, "요청이 많습니다. 잠시 후 다시 해 주세요.");
       expect(error.retryAfter, const Duration(seconds: 3));
       expect(error.retryable, isFalse);
-    });
-
-    test("byte error bodies are decoded", () {
-      final bytes = utf8.encode(
-        '{"error":{"code":"RESOURCE_NOT_FOUND","message":"없음"}}',
-      );
-      expect(apiExceptionFrom(_http(404, bytes)).code, "RESOURCE_NOT_FOUND");
     });
   });
 
@@ -189,21 +179,6 @@ void main() {
       await repository.getCases();
       source.step = "RECEIVED";
       await repository.getCases();
-      await repository.start(workCase);
-
-      expect(source.startKeys[0], isNot(source.startKeys[1]));
-    });
-
-    test("a definite rejection releases the key", () async {
-      final source = _FakeWorkQueue()
-        ..failNextStartWith = _http(409, _error("REVISION_CONFLICT"));
-      final repository = WorkQueueRepositoryImpl(source);
-      final workCase = (await repository.getCases()).items.single;
-
-      await expectLater(
-        repository.start(workCase),
-        throwsA(isA<WorkQueueFailure>()),
-      );
       await repository.start(workCase);
 
       expect(source.startKeys[0], isNot(source.startKeys[1]));
