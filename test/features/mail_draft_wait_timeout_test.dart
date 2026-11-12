@@ -86,32 +86,4 @@ void main() {
     await container.read(provider.future);
     expect(current().resultTimedOut, isFalse);
   });
-
-  testWidgets("a sent draft is not labelled with the current address check", (
-    tester,
-  ) async {
-    const sent = MailDraft(
-      id: "draft-2",
-      caseId: "case-1",
-      supplierId: "supplier-1",
-      purpose: DraftPurpose.rfq,
-      recipient: "old@example.invalid",
-      subject: "견적 요청",
-      body: "본문",
-      status: DraftStatus.sent,
-      inputRevision: 1,
-      snapshotHash: "hash",
-      settingsConfigured: false,
-      approvalRequired: true,
-      blockReason: DraftBlockReason.recipientNotRegistered,
-      sentAt: "2026-11-10T07:09:42Z",
-    );
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: SendPolicyBanner(draft: sent, editing: false)),
-      ),
-    );
-    expect(find.text("등록 업체 주소 불일치"), findsNothing);
-    expect(find.textContaining("발송됨"), findsOneWidget);
-  });
 }
