@@ -55,8 +55,14 @@ class CallRecordingRepositoryImpl implements CallRecordingRepository {
       ],
       maxPerCase: limits["max_per_case"] as int,
       maxBytes: limits["max_bytes"] as int,
+      // Missing on a server that cannot delete yet.
+      deletable: data["deletable"] == true,
     );
   });
+
+  @override
+  Future<void> deleteRecording(String caseId, String recordingId) =>
+      _guard(() => _dataSource.deleteRecording(caseId, recordingId));
 
   @override
   Future<CallRecording> upload({

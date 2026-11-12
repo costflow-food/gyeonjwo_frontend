@@ -68,12 +68,29 @@ CallRecording _recording(
 /// The server's side of the recordings: what the list shows, and how each
 /// upload ends. An upload with no scripted end waits for [finish].
 class _Recordings implements CallRecordingRepository {
-  _Recordings({this.unavailable = false, this.maxPerCase = 10});
+  _Recordings({
+    this.unavailable = false,
+    this.maxPerCase = 10,
+    this.deletable = true,
+  });
 
   /// A server that does not have the feature yet.
   final bool unavailable;
   final int maxPerCase;
+
+  /// Whether the server offers deleting.
+  final bool deletable;
   final items = <CallRecording>[];
+
+  /// Recordings asked to be deleted, in order; those in [undeletable] fail.
+  final deletes = <String>[];
+  final undeletable = <String>{};
+
+  /// Deleted on the server, but the answer never arrives.
+  final lostAnswers = <String>{};
+
+  /// Set to hold the next delete until completed.
+  Completer<void>? deleting;
   final uploads = <({String caseId, String supplierId, VoiceFile file})>[];
 
   /// Failures for the next uploads, in order; after them uploads wait.
@@ -94,7 +111,29 @@ class _Recordings implements CallRecordingRepository {
       items: [...items],
       maxPerCase: maxPerCase,
       maxBytes: defaultMaxRecordingBytes,
+      deletable: deletable,
     );
+  }
+
+  @override
+  Future<void> deleteRecording(String caseId, String recordingId) async {
+    deletes.add(recordingId);
+    await deleting?.future;
+    if (lostAnswers.contains(recordingId)) {
+      items.removeWhere((item) => item.recordingId == recordingId);
+      throw const CallRecordingFailure(
+        "NETWORK_ERROR",
+        "서버 응답을 받지 못했습니다.",
+        unknownOutcome: true,
+      );
+    }
+    if (undeletable.contains(recordingId)) {
+      throw const CallRecordingFailure(
+        "CALL_RECORDING_DELETE_NOT_ALLOWED",
+        "지금은 이 녹음을 삭제할 수 없습니다.",
+      );
+    }
+    items.removeWhere((item) => item.recordingId == recordingId);
   }
 
   @override
@@ -106,6 +145,12 @@ class _Recordings implements CallRecordingRepository {
     void Function(int sent, int total)? onProgress,
   }) async {
     uploads.add((caseId: caseId, supplierId: supplierId, file: file));
+    if (unavailable) {
+      throw const CallRecordingFailure(
+        "CALL_RECORDING_UNAVAILABLE",
+        "통화 녹음 기능을 사용할 수 없습니다.",
+      );
+    }
     this.onStep = onStep;
     this.onProgress = onProgress;
     onStep?.call(RecordingUploadStep.requesting);
@@ -345,7 +390,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets("a server without call recordings keeps the upload closed", (
+  testWidgets("a server without call recordings answers the upload itself", (
     tester,
   ) async {
     final recordings = _Recordings(unavailable: true);
@@ -360,9 +405,15 @@ void main() {
     await _choose(tester);
     await tester.tap(find.text("새벽딸기"));
     await tester.pumpAndSettle();
-    expect(_enabled(tester, "업로드 · 준비 중"), isFalse);
-    expect(find.textContaining("서버 준비가 끝나면 열립니다"), findsOneWidget);
-    expect(recordings.uploads, isEmpty);
+    // No notice made up by the app: the upload is offered as usual and the
+    // server's own answer is shown.
+    expect(find.textContaining("준비"), findsNothing);
+    expect(_enabled(tester, "업로드"), isTrue);
+    await tester.tap(find.text("업로드"));
+    await tester.pumpAndSettle();
+    expect(recordings.uploads, hasLength(1));
+    expect(find.text("통화 녹음 기능을 사용할 수 없습니다."), findsOneWidget);
+    expect(_enabled(tester, "다시 시도"), isTrue);
   });
 
   testWidgets("an upload shows its progress, then lists the recording", (
@@ -547,6 +598,232 @@ void main() {
     container.invalidate(callRecordingsProvider("c1"));
     await tester.pumpAndSettle();
     expect(find.text("견적을 요청한 거래처와의 통화 녹음을 붙입니다."), findsOneWidget);
+  });
+
+  group("deleting recordings", () {
+    _Recordings three({bool deletable = true}) =>
+        _Recordings(deletable: deletable)
+          ..items.addAll([
+            _recording("r1"),
+            _recording(
+              "r2",
+              supplierId: "s1",
+              status: CallRecordingStatus.uploading,
+            ),
+            _recording("r3", status: CallRecordingStatus.failed),
+          ]);
+    Finder confirm() => find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.widgetWithText(FilledButton, "삭제"),
+    );
+
+    testWidgets("the icon shows only when there is something to delete", (
+      tester,
+    ) async {
+      await _pumpCase(tester, _Picker([]), recordings: _Recordings());
+      expect(find.byTooltip("녹음 삭제"), findsNothing);
+      // A server that cannot delete yet.
+      await _pumpCase(tester, _Picker([]), recordings: three(deletable: false));
+      expect(find.text("통화 녹음 3"), findsOneWidget);
+      expect(find.byTooltip("녹음 삭제"), findsNothing);
+      await _pumpCase(tester, _Picker([]), recordings: three());
+      expect(find.byTooltip("녹음 삭제"), findsOneWidget);
+      // At the right end of the title row.
+      expect(
+        tester.getCenter(find.byTooltip("녹음 삭제")).dx,
+        greaterThan(tester.getRect(find.text("통화 녹음 3")).right),
+      );
+      expect(
+        tester.getRect(find.byTooltip("녹음 삭제")).right,
+        closeTo(360 - 16, 2),
+      );
+    });
+
+    testWidgets("chosen recordings are deleted together after a confirm", (
+      tester,
+    ) async {
+      final recordings = three();
+      final picker = _Picker([_file("통화.m4a", 1000)]);
+      await _pumpCase(tester, picker, recordings: recordings);
+      await tester.tap(find.byTooltip("녹음 삭제"));
+      await tester.pumpAndSettle();
+      expect(find.text("삭제할 녹음 선택"), findsOneWidget);
+      expect(_enabled(tester, "삭제"), isFalse);
+      // Adding is closed while choosing.
+      await _choose(tester);
+      expect(picker.picks, 0);
+      expect(find.text("어느 거래처와의 통화입니까?"), findsNothing);
+
+      // Unfinished and failed recordings can be chosen like any other.
+      await tester.tap(find.text("프레시팜"));
+      await tester.tap(find.text("실패"));
+      await tester.pumpAndSettle();
+      expect(find.text("2개 선택"), findsOneWidget);
+      expect(find.byIcon(Icons.check_box), findsNWidgets(2));
+      // A second tap takes one back out.
+      await tester.tap(find.text("실패"));
+      await tester.tap(find.text("실패"));
+      await tester.pumpAndSettle();
+      expect(find.text("2개 선택"), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, "삭제"));
+      await tester.pumpAndSettle();
+      expect(
+        find.text("통화 녹음 2개를 삭제하시겠습니까? 올린 파일까지 지워지며 되돌릴 수 없습니다."),
+        findsOneWidget,
+      );
+      expect(recordings.deletes, isEmpty);
+      recordings.deleting = Completer<void>();
+      await tester.tap(confirm());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text("삭제하는 중"), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, "삭제"), findsNothing);
+      // One at a time.
+      expect(recordings.deletes, ["r2"]);
+      recordings.deleting!.complete();
+      await tester.pumpAndSettle();
+      expect(recordings.deletes, ["r2", "r3"]);
+      expect(find.text("녹음 2개를 삭제했습니다."), findsOneWidget);
+      expect(find.text("통화 녹음 1"), findsOneWidget);
+      expect(find.text("프레시팜"), findsNothing);
+      expect(find.byIcon(Icons.check_box_outline_blank), findsNothing);
+      expect(find.byTooltip("녹음 삭제"), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("취소 deletes nothing, in the title row or in the dialog", (
+      tester,
+    ) async {
+      final recordings = three();
+      await _pumpCase(tester, _Picker([]), recordings: recordings);
+      await tester.tap(find.byTooltip("녹음 삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text("새벽딸기").first);
+      await tester.pumpAndSettle();
+      expect(find.text("1개 선택"), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, "삭제"));
+      await tester.pumpAndSettle();
+      expect(
+        find.text("이 통화 녹음을 삭제하시겠습니까? 올린 파일까지 지워지며 되돌릴 수 없습니다."),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text("취소"),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // Still choosing, with the choice kept.
+      expect(find.text("1개 선택"), findsOneWidget);
+      await tester.tap(find.text("취소"));
+      await tester.pumpAndSettle();
+      expect(find.text("통화 녹음 3"), findsOneWidget);
+      expect(find.byIcon(Icons.check_box), findsNothing);
+      // Choosing again starts empty.
+      await tester.tap(find.byTooltip("녹음 삭제"));
+      await tester.pumpAndSettle();
+      expect(find.text("삭제할 녹음 선택"), findsOneWidget);
+      expect(recordings.deletes, isEmpty);
+    });
+
+    testWidgets("leaving the case while it deletes still finishes cleanly", (
+      tester,
+    ) async {
+      final recordings = three()..deleting = Completer<void>();
+      await _pumpCase(tester, _Picker([]), recordings: recordings);
+      final scope = ProviderScope.containerOf(
+        tester.element(find.byType(CallRecordingSection)),
+      );
+      await tester.tap(find.byTooltip("녹음 삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text("프레시팜"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, "삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(confirm());
+      await tester.pump();
+      // The section goes away before the server answers.
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: scope,
+          child: const MaterialApp(home: Scaffold(body: Text("다른 화면"))),
+        ),
+      );
+      recordings.deleting!.complete();
+      await tester.pumpAndSettle();
+      expect(recordings.deletes, ["r2"]);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("a slot freed by a delete opens the add tile at once", (
+      tester,
+    ) async {
+      final recordings = _Recordings(maxPerCase: 2)
+        ..items.addAll([_recording("r1"), _recording("r2", supplierId: "s1")]);
+      final picker = _Picker([_file("통화.m4a", 1000)]);
+      await _pumpCase(tester, picker, recordings: recordings);
+      expect(find.text("업무 하나에 녹음은 2개까지 올릴 수 있습니다."), findsOneWidget);
+      await tester.tap(find.byTooltip("녹음 삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text("프레시팜"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, "삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(confirm());
+      await tester.pumpAndSettle();
+      expect(find.text("업무 하나에 녹음은 2개까지 올릴 수 있습니다."), findsNothing);
+      await _choose(tester);
+      expect(picker.picks, 1);
+    });
+
+    testWidgets("a lost answer is checked against the list, not assumed", (
+      tester,
+    ) async {
+      // The server deleted r1, but the app never heard back.
+      final recordings = three()..lostAnswers.add("r1");
+      await _pumpCase(tester, _Picker([]), recordings: recordings);
+      await tester.tap(find.byTooltip("녹음 삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text("업로드됨"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, "삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(confirm());
+      await tester.pumpAndSettle();
+      expect(find.text("녹음 1개를 삭제했습니다."), findsOneWidget);
+      expect(find.text("통화 녹음 2"), findsOneWidget);
+    });
+
+    testWidgets("the rows do not move when choosing starts", (tester) async {
+      await _pumpCase(tester, _Picker([]), recordings: three());
+      final before = tester.getTopLeft(find.text("프레시팜")).dy;
+      await tester.tap(find.byTooltip("녹음 삭제"));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(find.text("프레시팜")).dy, before);
+    });
+
+    testWidgets("a recording the server refuses stays, and it says so", (
+      tester,
+    ) async {
+      final recordings = three()..undeletable.add("r1");
+      await _pumpCase(tester, _Picker([]), recordings: recordings);
+      await tester.tap(find.byTooltip("녹음 삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text("업로드됨"));
+      await tester.tap(find.text("프레시팜"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, "삭제"));
+      await tester.pumpAndSettle();
+      await tester.tap(confirm());
+      await tester.pumpAndSettle();
+      expect(recordings.deletes, ["r1", "r2"]);
+      expect(find.text("2개 중 1개를 삭제하지 못했습니다. 다시 시도해 주세요."), findsOneWidget);
+      expect(find.text("통화 녹음 2"), findsOneWidget);
+      expect(find.text("업로드됨"), findsOneWidget);
+      expect(find.text("프레시팜"), findsNothing);
+    });
   });
 
   testWidgets("a failed supplier read shows its error and retries on tap", (
