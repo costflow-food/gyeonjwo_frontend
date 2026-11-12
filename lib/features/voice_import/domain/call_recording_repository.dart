@@ -18,6 +18,10 @@ abstract interface class CallRecordingRepository {
   /// [CallRecordingFailure.unavailable].
   Future<CallRecordingList> getRecordings(String caseId);
 
+  /// 녹음과 올린 파일을 지웁니다. 되돌릴 수 없습니다. 올리다 만 녹음이나
+  /// 이미 지워진 녹음도 성공으로 끝납니다.
+  Future<void> deleteRecording(String caseId, String recordingId);
+
   /// 자리 받기 → 파일 올리기 → 완료 확인. 중간에 실패해
   /// [CallRecordingFailure.retryable]이면 같은 파일·거래처로 다시 부를 때
   /// 같은 녹음을 이어서 올립니다(녹음이 두 개 생기지 않습니다).
