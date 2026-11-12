@@ -8,15 +8,12 @@ part of 'supplier_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// SCR-011 list, search, selection, and registration.
 
 @ProviderFor(SupplierListViewModel)
 final supplierListViewModelProvider = SupplierListViewModelProvider._();
 
-/// SCR-011 list, search, selection, and registration.
 final class SupplierListViewModelProvider
     extends $AsyncNotifierProvider<SupplierListViewModel, SupplierListState> {
-  /// SCR-011 list, search, selection, and registration.
   SupplierListViewModelProvider._()
     : super(
         from: null,
@@ -39,8 +36,6 @@ final class SupplierListViewModelProvider
 String _$supplierListViewModelHash() =>
     r'9b33d19ebfbbe3f48fd096b943900756d331e65d';
 
-/// SCR-011 list, search, selection, and registration.
-
 abstract class _$SupplierListViewModel
     extends $AsyncNotifier<SupplierListState> {
   FutureOr<SupplierListState> build();
@@ -61,15 +56,11 @@ abstract class _$SupplierListViewModel
   }
 }
 
-/// API-30 detail, kept per supplier.
-
 @ProviderFor(SupplierDetailViewModel)
 final supplierDetailViewModelProvider = SupplierDetailViewModelFamily._();
 
-/// API-30 detail, kept per supplier.
 final class SupplierDetailViewModelProvider
     extends $AsyncNotifierProvider<SupplierDetailViewModel, SupplierDetail> {
-  /// API-30 detail, kept per supplier.
   SupplierDetailViewModelProvider._({
     required SupplierDetailViewModelFamily super.from,
     required String super.argument,
@@ -110,8 +101,6 @@ final class SupplierDetailViewModelProvider
 String _$supplierDetailViewModelHash() =>
     r'94f2d27f8963df582e8a59d7cc35bea386c30e52';
 
-/// API-30 detail, kept per supplier.
-
 final class SupplierDetailViewModelFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -130,16 +119,12 @@ final class SupplierDetailViewModelFamily extends $Family
         isAutoDispose: false,
       );
 
-  /// API-30 detail, kept per supplier.
-
   SupplierDetailViewModelProvider call(String supplierId) =>
       SupplierDetailViewModelProvider._(argument: supplierId, from: this);
 
   @override
   String toString() => r'supplierDetailViewModelProvider';
 }
-
-/// API-30 detail, kept per supplier.
 
 abstract class _$SupplierDetailViewModel
     extends $AsyncNotifier<SupplierDetail> {
@@ -163,17 +148,13 @@ abstract class _$SupplierDetailViewModel
   }
 }
 
-/// API-31 price history per supplier item, shown in SCR-005.
-
 @ProviderFor(SupplierPriceHistoryViewModel)
 final supplierPriceHistoryViewModelProvider =
     SupplierPriceHistoryViewModelFamily._();
 
-/// API-31 price history per supplier item, shown in SCR-005.
 final class SupplierPriceHistoryViewModelProvider
     extends
         $AsyncNotifierProvider<SupplierPriceHistoryViewModel, PriceHistory> {
-  /// API-31 price history per supplier item, shown in SCR-005.
   SupplierPriceHistoryViewModelProvider._({
     required SupplierPriceHistoryViewModelFamily super.from,
     required String super.argument,
@@ -214,8 +195,6 @@ final class SupplierPriceHistoryViewModelProvider
 String _$supplierPriceHistoryViewModelHash() =>
     r'e4cec4134aa53fd75bfadaf01486ef3fd9513dee';
 
-/// API-31 price history per supplier item, shown in SCR-005.
-
 final class SupplierPriceHistoryViewModelFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -234,8 +213,6 @@ final class SupplierPriceHistoryViewModelFamily extends $Family
         isAutoDispose: false,
       );
 
-  /// API-31 price history per supplier item, shown in SCR-005.
-
   SupplierPriceHistoryViewModelProvider call(String supplierItemId) =>
       SupplierPriceHistoryViewModelProvider._(
         argument: supplierItemId,
@@ -245,8 +222,6 @@ final class SupplierPriceHistoryViewModelFamily extends $Family
   @override
   String toString() => r'supplierPriceHistoryViewModelProvider';
 }
-
-/// API-31 price history per supplier item, shown in SCR-005.
 
 abstract class _$SupplierPriceHistoryViewModel
     extends $AsyncNotifier<PriceHistory> {

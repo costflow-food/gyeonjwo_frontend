@@ -8,15 +8,12 @@ part of 'send_settings_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// SCR-008 effective settings for the mailbox or one case.
 
 @ProviderFor(SendSettingsViewModel)
 final sendSettingsViewModelProvider = SendSettingsViewModelFamily._();
 
-/// SCR-008 effective settings for the mailbox or one case.
 final class SendSettingsViewModelProvider
     extends $AsyncNotifierProvider<SendSettingsViewModel, SendSettings> {
-  /// SCR-008 effective settings for the mailbox or one case.
   SendSettingsViewModelProvider._({
     required SendSettingsViewModelFamily super.from,
     required String super.argument,
@@ -56,8 +53,6 @@ final class SendSettingsViewModelProvider
 String _$sendSettingsViewModelHash() =>
     r'e65aef6ddb6c01eadaf02c2312b8542498d26dfc';
 
-/// SCR-008 effective settings for the mailbox or one case.
-
 final class SendSettingsViewModelFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -76,16 +71,12 @@ final class SendSettingsViewModelFamily extends $Family
         isAutoDispose: false,
       );
 
-  /// SCR-008 effective settings for the mailbox or one case.
-
   SendSettingsViewModelProvider call(String scope) =>
       SendSettingsViewModelProvider._(argument: scope, from: this);
 
   @override
   String toString() => r'sendSettingsViewModelProvider';
 }
-
-/// SCR-008 effective settings for the mailbox or one case.
 
 abstract class _$SendSettingsViewModel extends $AsyncNotifier<SendSettings> {
   late final _$args = ref.$arg as String;

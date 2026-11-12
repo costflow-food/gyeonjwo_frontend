@@ -8,15 +8,12 @@ part of 'auth_session_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Sign-in state for route guards, the sidebar and the account screen.
 
 @ProviderFor(AuthSessionViewModel)
 final authSessionViewModelProvider = AuthSessionViewModelProvider._();
 
-/// Sign-in state for route guards, the sidebar and the account screen.
 final class AuthSessionViewModelProvider
     extends $AsyncNotifierProvider<AuthSessionViewModel, AuthSession> {
-  /// Sign-in state for route guards, the sidebar and the account screen.
   AuthSessionViewModelProvider._()
     : super(
         from: null,
@@ -39,8 +36,6 @@ final class AuthSessionViewModelProvider
 String _$authSessionViewModelHash() =>
     r'39f586af96b5c14fd104eaebb97b36987a85a8f9';
 
-/// Sign-in state for route guards, the sidebar and the account screen.
-
 abstract class _$AuthSessionViewModel extends $AsyncNotifier<AuthSession> {
   FutureOr<AuthSession> build();
   @$mustCallSuper
@@ -59,17 +54,12 @@ abstract class _$AuthSessionViewModel extends $AsyncNotifier<AuthSession> {
   }
 }
 
-/// OAuth error returned on the redirect URL, read once per page load.
-
 @ProviderFor(authRedirectFailure)
 final authRedirectFailureProvider = AuthRedirectFailureProvider._();
-
-/// OAuth error returned on the redirect URL, read once per page load.
 
 final class AuthRedirectFailureProvider
     extends $FunctionalProvider<AuthFailure?, AuthFailure?, AuthFailure?>
     with $Provider<AuthFailure?> {
-  /// OAuth error returned on the redirect URL, read once per page load.
   AuthRedirectFailureProvider._()
     : super(
         from: null,
