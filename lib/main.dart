@@ -1,4 +1,6 @@
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:google_fonts/google_fonts.dart";
 import "package:shared_preferences/shared_preferences.dart";
@@ -12,6 +14,7 @@ import "features/auth/presentation/auth_session_view_model.dart";
 import "features/auth/presentation/gmail_connection_view_model.dart";
 import "shared/theme/workspace_theme.dart";
 import "shared/widgets/app_scroll_behavior.dart";
+import "shared/widgets/mobile_scaffold.dart";
 import "shared/workspace_colors.dart";
 
 ThemeData buildAppTheme(WorkspacePalette p) {
@@ -162,6 +165,11 @@ class MyApp extends ConsumerWidget {
       gmailConnectionViewModelProvider.select((value) => value.connectionPhase),
       (_, _) => appRouter.refresh(),
     );
+    // Phones stay upright; the size is empty until the first frame is laid out.
+    final screen = MediaQuery.maybeSizeOf(context);
+    if (!kIsWeb && screen != null && !screen.isEmpty) {
+      SystemChrome.setPreferredOrientations(allowedOrientations(screen));
+    }
     return MaterialApp.router(
       title: '견줘',
       debugShowCheckedModeBanner: false,

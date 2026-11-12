@@ -107,6 +107,13 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
             ? "카드가 바뀌어 저장하지 못했습니다. 최신 카드를 다시 불러왔습니다. (${failure.message})"
             : failure.message;
       });
+      // Phone: the buttons stay pinned while the notice above may be
+      // scrolled away, so the failure is also said over the page.
+      if (isCompactLayout(context)) {
+        ScaffoldMessenger.maybeOf(context)
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(_error!)));
+      }
     }
   }
 
@@ -211,7 +218,14 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
       // must exist while it is off screen.
       body: SingleChildScrollView(
         key: const ValueKey("review-card-scroll"),
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        // Without the pinned bar nothing else keeps the end of the page
+        // clear of the system navigation bar.
+        padding: EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          24 + (actions.visible ? 0 : MediaQuery.paddingOf(context).bottom),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

@@ -200,7 +200,9 @@ class _PermissionsPage extends ConsumerWidget {
             label: phase == GmailConnectionPhase.connected
                 ? '권한 다시 선택하기'
                 : '다시 연결하기',
-            onPressed: () => context.go('/login/permissions'),
+            // extra: where phone back returns from the permissions screen.
+            onPressed: () =>
+                context.go('/login/permissions', extra: '/account'),
           ),
           // On a phone there is no account menu; sign out lives here.
           if (isCompactLayout(context)) ...[

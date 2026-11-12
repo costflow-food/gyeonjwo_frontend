@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
@@ -32,6 +34,17 @@ class _FakeIntake extends MailIntakeViewModel {
   Future<IntakePage> build() async => _first;
 
   void show(IntakePage page) => state = AsyncData(page);
+
+  /// When set, a resolve stays in flight until the test completes it.
+  Completer<void>? pending;
+
+  @override
+  Future<void> resolve(
+    IntakeMail mail,
+    IntakeResolution resolution, {
+    String? targetCaseId,
+    String? reason,
+  }) => pending!.future;
 }
 
 void main() {
@@ -39,8 +52,9 @@ void main() {
     WidgetTester tester,
     List<String> ids, {
     String? selected,
+    Size size = const Size(1400, 1000),
   }) async {
-    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final intake = _FakeIntake(_page(ids));
@@ -99,5 +113,100 @@ void main() {
     expect(find.text("본문 b"), findsNothing);
     expect(find.text("본문 n"), findsOneWidget);
     expect(reasonText(tester), isEmpty);
+  });
+
+  // Narrower than 600: the phone layout, which shows one mail and no list.
+  const phone = Size(360, 720);
+
+  testWidgets("phone: when the open mail leaves the list, no other mail "
+      "takes its place", (tester) async {
+    final intake = await open(tester, ["b", "c"], selected: "b", size: phone);
+    expect(find.text("본문 b"), findsOneWidget);
+
+    intake.show(_page(["n", "c"]));
+    await tester.pumpAndSettle();
+
+    expect(find.text("본문 n"), findsNothing);
+    expect(find.text("이 메일은 이미 처리되어 목록에서 빠졌습니다."), findsOneWidget);
+    final button = tester.widget<ButtonStyleButton>(
+      find.ancestor(
+        of: find.text("비업무로 확인"),
+        matching: find.bySubtype<ButtonStyleButton>(),
+      ),
+    );
+    expect(button.onPressed, isNull);
+  });
+
+  testWidgets("phone: back does not close the screen while a request is "
+      "in flight", (tester) async {
+    tester.view.physicalSize = phone;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final intake = _FakeIntake(_page(["b", "c"]))..pending = Completer<void>();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [mailIntakeViewModelProvider.overrideWith(() => intake)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showMailIntakeDialog(context, mailId: "b"),
+                child: const Text("열기"),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text("열기"));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text("비업무로 확인"));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(MailIntakeDialog), findsOneWidget);
+
+    intake.pending!.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(MailIntakeDialog), findsNothing);
+    expect(find.text("비업무로 확인했습니다."), findsOneWidget);
+  });
+
+  testWidgets("phone: the full-screen dialog fills behind the status bar", (
+    tester,
+  ) async {
+    tester.view.physicalSize = phone;
+    tester.view.devicePixelRatio = 1;
+    tester.view.padding = const FakeViewPadding(top: 24);
+    addTearDown(tester.view.reset);
+    final intake = _FakeIntake(_page(["b"]));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [mailIntakeViewModelProvider.overrideWith(() => intake)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showMailIntakeDialog(context, mailId: "b"),
+                child: const Text("열기"),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text("열기"));
+    await tester.pumpAndSettle();
+
+    // The dialog surface starts at the very top, so no strip of the screen
+    // behind shows (or takes a dismissing tap); the content stays below the
+    // status bar.
+    final surface = find.descendant(
+      of: find.byType(Dialog),
+      matching: find.byType(Material),
+    );
+    expect(tester.getTopLeft(surface.first).dy, 0);
+    expect(tester.getTopLeft(find.text("본문 b")).dy, greaterThan(24));
   });
 }

@@ -6,7 +6,7 @@ import "../../../../shared/workspace_colors.dart";
 import "../../domain/mail_draft.dart";
 import "draft_status_badge.dart";
 
-class MailDraftTabs extends StatelessWidget {
+class MailDraftTabs extends StatefulWidget {
   const MailDraftTabs({
     super.key,
     required this.drafts,
@@ -22,10 +22,51 @@ class MailDraftTabs extends StatelessWidget {
   final ValueChanged<String> onSelect;
 
   @override
+  State<MailDraftTabs> createState() => _MailDraftTabsState();
+}
+
+class _MailDraftTabsState extends State<MailDraftTabs> {
+  final _selectedKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _showSelected();
+  }
+
+  @override
+  void didUpdateWidget(MailDraftTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedId != widget.selectedId) _showSelected();
+  }
+
+  /// Phone: the tabs are one sliding row, so bring the selected one into it.
+  /// Only the row moves; the dialog's own scroll stays where it is.
+  void _showSelected() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final selected = _selectedKey.currentContext;
+      if (!mounted || selected == null || !isCompactLayout(context)) return;
+      final box = selected.findRenderObject();
+      if (box == null) return;
+      Scrollable.maybeOf(selected)?.position.ensureVisible(
+        box,
+        alignment: .5,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final drafts = widget.drafts;
+    final dispatchStates = widget.dispatchStates;
+    final selectedId = widget.selectedId;
+    final onSelect = widget.onSelect;
     final tabs = [
       for (final draft in drafts)
         Semantics(
+          key: draft.id == selectedId ? _selectedKey : null,
           selected: draft.id == selectedId,
           button: true,
           child: InkWell(

@@ -23,6 +23,16 @@ class GmailConnectionViewModel extends _$GmailConnectionViewModel {
     }
     final repository = ref.read(authRepositoryProvider);
     final grant = repository.pendingGoogleGrant();
+    // In the app, consenting again with the same account returns to this
+    // process and the session compares equal, so nothing above rebuilds.
+    // Rebuild once when a provider token this build has not seen arrives.
+    final subscription = repository.watchSession().listen((_) {
+      final next = repository.pendingGoogleGrant();
+      if (next != null && next.accessToken != grant?.accessToken) {
+        ref.invalidateSelf();
+      }
+    });
+    ref.onDispose(subscription.cancel);
     return grant == null
         ? repository.fetchGmailConnection()
         : repository.connectGmail(grant);

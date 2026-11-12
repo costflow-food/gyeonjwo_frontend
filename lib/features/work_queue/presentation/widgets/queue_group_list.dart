@@ -5,11 +5,28 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/work_case.dart";
 import "../../domain/work_queue_state.dart";
 import "../work_queue_view_model.dart";
 import "request_row.dart";
+
+/// What the phone home screen remembers while a case is open. Opening a case
+/// replaces the home page, so its own state would start over on the way back.
+class QueueHomeMemory {
+  double scrollOffset = 0;
+
+  /// 접수 확인 is the chosen list.
+  bool intake = false;
+
+  /// Folded groups, keyed like [WorkCaseGroup.itemName].
+  final collapsed = <String?>{};
+}
+
+final queueHomeMemoryProvider = Provider<QueueHomeMemory>(
+  (ref) => QueueHomeMemory(),
+);
 
 class QueueGroupList extends ConsumerStatefulWidget {
   const QueueGroupList({super.key, this.shrinkWrap = false});
@@ -23,7 +40,12 @@ class QueueGroupList extends ConsumerStatefulWidget {
 
 class _QueueGroupListState extends ConsumerState<QueueGroupList> {
   // Groups the user folded. Keyed by item name; null is "품목 미확인".
-  final _collapsed = <String?>{};
+  // On a phone they outlive this list; see [QueueHomeMemory].
+  final _ownCollapsed = <String?>{};
+
+  Set<String?> get _collapsed => isCompactLayout(context)
+      ? ref.read(queueHomeMemoryProvider).collapsed
+      : _ownCollapsed;
 
   late final _search = TextEditingController(
     text: ref.read(workQueueViewModelProvider).value?.query ?? "",
@@ -97,6 +119,8 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
     }
     final data = value.requireValue;
     final groups = data.groups;
+    // Cards are the phone's look; the narrow web list keeps its indent.
+    final cards = widget.shrinkWrap && isCompactLayout(context);
     if (groups.isEmpty) {
       return _Message(
         data.status == null && data.query.isEmpty
@@ -122,13 +146,13 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
           if (!_collapsed.contains(group.itemName))
             for (final workCase in group.cases)
               Padding(
-                padding: widget.shrinkWrap
+                padding: cards
                     ? const EdgeInsets.only(bottom: 8)
                     : const EdgeInsets.only(left: 8, bottom: 2),
                 child: RequestRow(
                   workCase,
                   selected: workCase.id == data.selectedId,
-                  card: widget.shrinkWrap,
+                  card: cards,
                   onTap: () => _open(workCase),
                 ),
               ),
