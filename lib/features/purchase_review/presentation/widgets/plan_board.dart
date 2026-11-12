@@ -11,15 +11,16 @@ class PlanBoard extends StatelessWidget {
     required this.card,
     required this.busy,
     required this.onSelect,
-    this.carousel = false,
+    this.folding = false,
   });
 
   final ReviewCard card;
   final bool busy;
   final ValueChanged<ResponsePlan> onSelect;
 
-  /// Phone: one plan at a time, swiped sideways.
-  final bool carousel;
+  /// Phone: every plan as one line, in the server's order; the tapped one
+  /// opens.
+  final bool folding;
 
   static const _gap = 12.0;
   static const _minColumnWidth = 190.0;
@@ -33,7 +34,7 @@ class PlanBoard extends StatelessWidget {
       builder: (context, constraints) {
         final columnWidth =
             (constraints.maxWidth - _gap * (plans.length - 1)) / plans.length;
-        final grid = !carousel && columnWidth >= _minColumnWidth;
+        final grid = !folding && columnWidth >= _minColumnWidth;
         Widget cardFor(ResponsePlan plan) => PlanCard(
           plan: plan,
           lowest: _isLowest(plan, lowestTotal),
@@ -54,32 +55,15 @@ class PlanBoard extends StatelessWidget {
                     ),
                 ],
         );
-        if (carousel) {
+        if (folding) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _PlanCarousel(
-                // A peek of the next plan shows there is more to swipe.
-                itemWidth: plans.length == 1
-                    ? constraints.maxWidth
-                    : constraints.maxWidth * .86,
-                children: [
-                  for (final plan in plans)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        cardFor(plan),
-                        const SizedBox(height: 8),
-                        _SelectButton(
-                          plan: plan,
-                          card: card,
-                          busy: busy,
-                          lowest: _isLowest(plan, lowestTotal),
-                          onSelect: () => onSelect(plan),
-                        ),
-                      ],
-                    ),
-                ],
+              _PlanList(
+                card: card,
+                busy: busy,
+                lowestTotal: lowestTotal,
+                onSelect: onSelect,
               ),
               for (final question in card.questions) ...[
                 const SizedBox(height: 12),
@@ -520,78 +504,83 @@ class _SelectButton extends StatelessWidget {
   }
 }
 
-/// Plans side by side, snapping one at a time, with page dots underneath.
-class _PlanCarousel extends StatefulWidget {
-  const _PlanCarousel({required this.itemWidth, required this.children});
+/// Phone: the plans as a list to compare, one line each. The tapped plan
+/// opens to its notes, allocation and select button; nothing scrolls sideways.
+class _PlanList extends StatefulWidget {
+  const _PlanList({
+    required this.card,
+    required this.busy,
+    required this.lowestTotal,
+    required this.onSelect,
+  });
 
-  final double itemWidth;
-  final List<Widget> children;
+  final ReviewCard card;
+  final bool busy;
+  final num? lowestTotal;
+  final ValueChanged<ResponsePlan> onSelect;
 
   @override
-  State<_PlanCarousel> createState() => _PlanCarouselState();
+  State<_PlanList> createState() => _PlanListState();
 }
 
-class _PlanCarouselState extends State<_PlanCarousel> {
-  static const _gap = 10.0;
-  final _controller = ScrollController();
-  int _page = 0;
+class _PlanListState extends State<_PlanList> {
+  /// The open plan; null when all are folded.
+  ResponsePlan? _open;
 
-  double get _extent => widget.itemWidth + _gap;
+  bool _selected(ResponsePlan plan) {
+    final decision = widget.card.decision;
+    return plan.planId != null &&
+        decision?.decision == ReviewAction.selectPlan &&
+        decision?.planId == plan.planId;
+  }
+
+  /// The chosen plan, else the first that can be chosen, else the first.
+  ResponsePlan? get _initial {
+    final plans = widget.card.plans;
+    return plans.where(_selected).firstOrNull ??
+        plans.where((plan) => plan.selectable).firstOrNull ??
+        plans.firstOrNull;
+  }
+
+  /// The same plan on a reloaded card, where the plans are new objects.
+  bool _same(ResponsePlan plan, ResponsePlan other) =>
+      identical(plan, other) ||
+      (plan.planId != null
+          ? plan.planId == other.planId
+          : other.planId == null && plan.planType == other.planType);
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
-      final page = (_controller.offset / _extent).round();
-      if (page != _page) setState(() => _page = page);
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    _open = _initial;
   }
 
   @override
   Widget build(BuildContext context) {
-    final count = widget.children.length;
+    final plans = widget.card.plans;
+    // Folded by hand stays folded; an open plan that left the card (a new
+    // review) gives way to the starting choice.
+    final remembered = _open;
+    final open = remembered == null
+        ? null
+        : plans.where((plan) => _same(plan, remembered)).firstOrNull ??
+              _initial;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SingleChildScrollView(
-          controller: _controller,
-          scrollDirection: Axis.horizontal,
-          physics: _SnapPhysics(extent: _extent),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final (index, child) in widget.children.indexed) ...[
-                if (index > 0) const SizedBox(width: _gap),
-                SizedBox(width: widget.itemWidth, child: child),
-              ],
-            ],
-          ),
-        ),
-        if (count > 1) ...[
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var index = 0; index < count; index++)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: index == _page ? 18 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: index == _page
-                        ? context.palette.accent
-                        : context.palette.line,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-            ],
+        for (final (index, plan) in plans.indexed) ...[
+          if (index > 0) const SizedBox(height: 8),
+          _PlanRow(
+            plan: plan,
+            card: widget.card,
+            busy: widget.busy,
+            open: plan == open || plans.length == 1,
+            foldable: plans.length > 1,
+            selected: _selected(plan),
+            lowest: PlanBoard._isLowest(plan, widget.lowestTotal),
+            difference: PlanBoard._difference(plan, widget.lowestTotal),
+            onToggle: () => setState(() => _open = plan == open ? null : plan),
+            onSelect: () => widget.onSelect(plan),
           ),
         ],
       ],
@@ -599,50 +588,218 @@ class _PlanCarouselState extends State<_PlanCarousel> {
   }
 }
 
-/// Settles on the nearest card, like a page view with narrower pages.
-class _SnapPhysics extends ScrollPhysics {
-  const _SnapPhysics({required this.extent, super.parent});
+class _PlanRow extends StatelessWidget {
+  const _PlanRow({
+    required this.plan,
+    required this.card,
+    required this.busy,
+    required this.open,
+    required this.foldable,
+    required this.selected,
+    required this.lowest,
+    required this.difference,
+    required this.onToggle,
+    required this.onSelect,
+  });
 
-  final double extent;
+  final ResponsePlan plan;
+  final ReviewCard card;
+  final bool busy, open, foldable, selected, lowest;
+  final String? difference;
+  final VoidCallback onToggle, onSelect;
 
   @override
-  _SnapPhysics applyTo(ScrollPhysics? ancestor) =>
-      _SnapPhysics(extent: extent, parent: buildParent(ancestor));
-
-  double _target(ScrollMetrics position, Tolerance tolerance, double velocity) {
-    var page = position.pixels / extent;
-    if (velocity < -tolerance.velocity) {
-      page -= .5;
-    } else if (velocity > tolerance.velocity) {
-      page += .5;
-    }
-    return (page.roundToDouble() * extent).clamp(
-      position.minScrollExtent,
-      position.maxScrollExtent,
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final notes = [...plan.conditions, ...plan.adjustments, ?plan.reason];
+    final (chip, chipBackground, chipText) = lowest
+        ? (
+            "${plan.validationLabel} · 가장 낮음",
+            palette.gold,
+            const Color(0xFF1E1E1E),
+          )
+        : plan.valid
+        ? (plan.validationLabel, palette.blush, palette.accentText)
+        : (plan.validationLabel, cautionTint, caution);
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) => Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (selected) ...[
+                        Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: palette.accentText,
+                          semanticLabel: "선택한 구매안",
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Flexible(
+                        child: Text(
+                          plan.typeLabel,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: chipBackground,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      chip,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: chipText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            // The total never takes more than about half the row: a longer
+            // one shrinks instead of pushing the name out.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth * .55),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      won(plan.totalAmount),
+                      // Capped so a large text setting leaves room for the name.
+                      textScaler: MediaQuery.textScalerOf(context)
+                          .clamp(maxScaleFactor: 1.3),
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+                  if (lowest)
+                    Text(
+                      "최저",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: palette.isDark ? palette.gold : caution,
+                      ),
+                    )
+                  else if (difference != null)
+                    Text(
+                      "+$difference",
+                      style: TextStyle(fontSize: 12, color: palette.muted),
+                    ),
+                ],
+              ),
+            ),
+            if (foldable) ...[
+              const SizedBox(width: 4),
+              Icon(
+                open ? Icons.expand_less : Icons.expand_more,
+                size: 22,
+                color: palette.muted,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+    return Material(
+      color: palette.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: open && foldable ? palette.accentText : Colors.transparent,
+          width: 1.5,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (foldable)
+            Semantics(
+              button: true,
+              expanded: open,
+              child: InkWell(onTap: onToggle, child: header),
+            )
+          else
+            header,
+          AnimatedSize(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: !open
+                ? const SizedBox(width: double.infinity)
+                : Container(
+                    decoration: BoxDecoration(
+                      border: Border(top: BorderSide(color: palette.line)),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final note in notes)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              note,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: palette.muted,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        if (notes.isNotEmpty) const SizedBox(height: 6),
+                        for (final allocation in plan.allocations)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _AllocationCell(
+                              allocation: allocation,
+                              planQuantity: PlanBoard._planQuantity(plan),
+                              lowest: lowest,
+                              conditional: !plan.valid,
+                              showSupplier: true,
+                            ),
+                          ),
+                        _SelectButton(
+                          plan: plan,
+                          card: card,
+                          busy: busy,
+                          lowest: lowest,
+                          onSelect: onSelect,
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
-
-  @override
-  Simulation? createBallisticSimulation(
-    ScrollMetrics position,
-    double velocity,
-  ) {
-    if ((velocity <= 0 && position.pixels <= position.minScrollExtent) ||
-        (velocity >= 0 && position.pixels >= position.maxScrollExtent)) {
-      return super.createBallisticSimulation(position, velocity);
-    }
-    final tolerance = toleranceFor(position);
-    final target = _target(position, tolerance, velocity);
-    if (target == position.pixels) return null;
-    return ScrollSpringSimulation(
-      spring,
-      position.pixels,
-      target,
-      velocity,
-      tolerance: tolerance,
-    );
-  }
-
-  @override
-  bool get allowImplicitScrolling => false;
 }

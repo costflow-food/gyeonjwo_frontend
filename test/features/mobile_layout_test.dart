@@ -228,16 +228,37 @@ void main() {
       await tester.drag(scroll, const Offset(0, -200));
       await tester.pumpAndSettle();
       expect(position.pixels, greaterThan(0));
-      await tester.ensureVisible(find.text("이 안 선택").first);
+      // Every plan is on the page at once, in the server's order, and
+      // nothing on it scrolls sideways.
+      final totals = [
+        for (final total in ["1,724,000원", "1,850,000원", "1,690,000원"])
+          tester.getRect(find.text(total)),
+      ];
+      expect(totals[0].top, lessThan(totals[1].top));
+      expect(totals[1].top, lessThan(totals[2].top));
+      for (final rect in totals) {
+        expect(rect.left, greaterThanOrEqualTo(0));
+        expect(rect.right, lessThanOrEqualTo(360));
+      }
+      expect(
+        tester
+            .widgetList<Scrollable>(find.byType(Scrollable))
+            .where((scrollable) => scrollable.axis == Axis.horizontal),
+        isEmpty,
+      );
+      // The lowest plan that can be chosen starts open; tapping another
+      // opens that one instead.
+      expect(find.text("이 안 선택"), findsOneWidget);
+      expect(find.text("수용하기"), findsNothing);
+      await tester.ensureVisible(find.text("전량 전환"));
+      await tester.tap(find.text("전량 전환"));
       await tester.pumpAndSettle();
-      expect(find.text("이 안 선택").hitTestable(), findsWidgets);
-      // Swipe to the next plan: it snaps into view.
-      final buttons = find.text("이 안 선택");
-      expect(tester.getCenter(buttons.at(1)).dx, greaterThan(360));
-      await tester.drag(buttons.first, const Offset(-200, 0));
+      expect(find.text("이 안 선택"), findsNothing);
+      expect(find.text("수용하기"), findsOneWidget);
+      await tester.ensureVisible(find.text("전량 전환"));
+      await tester.tap(find.text("전량 전환"));
       await tester.pumpAndSettle();
-      final next = tester.getCenter(buttons.at(1)).dx;
-      expect(next, inExclusiveRange(0, 360));
+      expect(find.text("수용하기"), findsNothing);
       // Scroll through the rest of the card.
       await tester.ensureVisible(find.text("견적과 근거"));
       await tester.pumpAndSettle();
