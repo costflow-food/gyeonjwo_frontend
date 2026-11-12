@@ -11,6 +11,7 @@ import "features/auth/data/provider_token_free_local_storage.dart";
 import "features/auth/presentation/auth_session_view_model.dart";
 import "features/auth/presentation/gmail_connection_view_model.dart";
 import "shared/theme/workspace_theme.dart";
+import "shared/widgets/app_scroll_behavior.dart";
 import "shared/workspace_colors.dart";
 
 ThemeData buildAppTheme(WorkspacePalette p) {
@@ -165,6 +166,7 @@ class MyApp extends ConsumerWidget {
       title: '견줘',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(ref.watch(activePaletteProvider)),
+      scrollBehavior: const AppScrollBehavior(),
       routerConfig: appRouter,
     );
   }
