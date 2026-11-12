@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 const danger = Color(0xFFC8102E);
 const dangerTint = Color(0xFFFBE9EB);
 
+/// 확인할 것이 남음. 오류는 아니어서 [danger]보다 약하게 알립니다.
+const caution = Color(0xFF8A6516);
+const cautionTint = Color(0xFFF6EEDC);
+
 /// 화면에서 쓰는 테마 색. 판은 연하게 두고, 진한 색은 포인트(주 버튼·선택·강조 카드)에만 씁니다.
 /// 위젯에서는 `context.palette.accent`처럼 꺼내 씁니다.
 @immutable
