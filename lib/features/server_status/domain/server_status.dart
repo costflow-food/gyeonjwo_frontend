@@ -50,11 +50,6 @@ class ServerStatus {
               feature,
         ];
 
-  /// 회신을 받아도 검토로 이어지지 않는 상태. '거래처 회신 확인 중' 업무에 함께 알립니다.
-  bool get replyReviewBlocked =>
-      showReviewBanner ||
-      (degraded?.contains(ServerFeature.reviewReply) ?? false);
-
   @override
   bool operator ==(Object other) =>
       other is ServerStatus &&
