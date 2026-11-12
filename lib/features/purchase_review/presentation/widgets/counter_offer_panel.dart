@@ -47,19 +47,26 @@ class CounterOfferPanel extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Expanded(
-              child: Text(
-                "역제안",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-              ),
+            const Text(
+              "역제안",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
             ),
-            if (hold)
-              _HoldChip(offer.statusLabel)
-            else if (target != null)
-              Text(
-                target.supplierName,
-                style: TextStyle(fontSize: 13, color: context.palette.muted),
+            if (hold) ...[
+              const Spacer(),
+              _HoldChip(offer.statusLabel),
+            ] else if (target != null) ...[
+              const SizedBox(width: 12),
+              // A long name is cut short instead of pushing past the panel.
+              Expanded(
+                child: Text(
+                  target.supplierName,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: context.palette.muted),
+                ),
               ),
+            ],
           ],
         ),
         if (!hold || target != null) ...[

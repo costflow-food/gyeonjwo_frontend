@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/workspace_colors.dart';
@@ -43,6 +45,9 @@ class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
     setState(() => _starting = true);
     try {
       await ref.read(authSessionViewModelProvider.notifier).signInWithGoogle();
+      // The app returns here after consent (web reloads the page instead);
+      // the connection screen shows what the server made of the new grant.
+      if (!kIsWeb && mounted) context.go('/login/connection');
     } catch (error) {
       if (!mounted) return;
       setState(() => _starting = false);
@@ -56,8 +61,17 @@ class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
 
   @override
   Widget build(BuildContext context) {
+    // Signed in, '/login' only redirects forward; on a phone go back to the
+    // screen that opened this one (passed as extra), else the work queue.
+    final signedIn =
+        ref.watch(authSessionViewModelProvider).asData?.value.isSignedIn ??
+        false;
+    final origin = GoRouterState.of(context).extra;
     return AuthLayout(
       backPath: '/login',
+      phoneBackPath: signedIn
+          ? (origin is String && origin.startsWith('/') ? origin : '/')
+          : null,
       maxWidth: 1280,
       compact: true,
       child: Column(

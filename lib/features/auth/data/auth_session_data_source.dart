@@ -93,6 +93,9 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
 
   final GoTrueClient _auth;
 
+  /// The app's open wait for the sign-in callback; at most one.
+  static StreamSubscription<Uri>? _callbackWait;
+
   @override
   Map<String, dynamic>? currentSession() => _toJson(_auth.currentSession);
 
@@ -160,19 +163,33 @@ class SupabaseAuthSessionDataSource implements AuthSessionDataSource {
   /// Opens Google in the browser and waits for [mobileAuthRedirect].
   /// supabase_flutter exchanges the code from the same link on its own.
   Future<Map<String, String>> _signInWithGoogleInApp() async {
-    final callback = AppLinks().uriLinkStream.firstWhere(
-      (uri) =>
-          uri.scheme == mobileAuthRedirect.scheme &&
-          uri.host == mobileAuthRedirect.host,
-    );
+    // Backing out of the browser leaves the previous wait open; drop it so
+    // one callback is not reported once per attempt.
+    await _callbackWait?.cancel();
+    final callback = Completer<Uri>();
+    final wait = AppLinks().uriLinkStream
+        .where(
+          (uri) =>
+              uri.scheme == mobileAuthRedirect.scheme &&
+              uri.host == mobileAuthRedirect.host,
+        )
+        .listen(null);
+    wait.onData((uri) {
+      wait.cancel();
+      if (!callback.isCompleted) callback.complete(uri);
+    });
+    _callbackWait = wait;
     final launched = await _auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: mobileAuthRedirect.toString(),
       scopes: gmailScopes.join(" "),
       queryParams: _googleQueryParams,
     );
-    if (!launched) throw StateError("Could not open the sign-in page.");
-    return _errorFields(await callback);
+    if (!launched) {
+      await wait.cancel();
+      throw StateError("Could not open the sign-in page.");
+    }
+    return _errorFields(await callback.future);
   }
 
   @override

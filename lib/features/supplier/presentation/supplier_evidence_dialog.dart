@@ -10,6 +10,7 @@ import "widgets/supplier_evidence_footer.dart";
 import "widgets/supplier_evidence_header.dart";
 import "widgets/supplier_evidence_item.dart";
 import "widgets/supplier_evidence_supplier.dart";
+import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/workspace_dialog.dart";
 
 Future<void> showSupplierEvidenceDialog(
@@ -19,6 +20,9 @@ Future<void> showSupplierEvidenceDialog(
 }) {
   return showDialog<void>(
     context: context,
+    // Full screen on a phone: the dialog paints behind the system bars and
+    // WorkspaceDialog's own SafeArea keeps the content clear of them.
+    useSafeArea: !isCompactLayout(context),
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),

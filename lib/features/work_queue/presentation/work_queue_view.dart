@@ -140,7 +140,13 @@ class _CaseDetail extends ConsumerWidget {
         ? MobilePageScaffold(
             onBack: () => context.go("/"),
             body: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              // No bottom bar here, so keep clear of the system navigation.
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.paddingOf(context).bottom,
+              ),
               child: body,
             ),
           )

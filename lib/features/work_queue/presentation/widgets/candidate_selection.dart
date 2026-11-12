@@ -164,11 +164,14 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
                 SizedBox(width: 10),
-                Text(
-                  "에이전트가 견적 요청 후보를 찾고 있습니다.",
-                  style: TextStyle(
-                    fontSize: AppFontSizes.body,
-                    color: context.palette.muted,
+                // Wraps on a narrow phone or with a large system font.
+                Flexible(
+                  child: Text(
+                    "에이전트가 견적 요청 후보를 찾고 있습니다.",
+                    style: TextStyle(
+                      fontSize: AppFontSizes.body,
+                      color: context.palette.muted,
+                    ),
                   ),
                 ),
               ],

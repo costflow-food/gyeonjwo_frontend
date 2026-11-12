@@ -16,6 +16,7 @@ import "widgets/send_settings_footer.dart";
 import "widgets/send_settings_header.dart";
 import "widgets/settings_missing_banner.dart";
 import "widgets/settings_section_title.dart";
+import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/workspace_dialog.dart";
 
 /// SCR-008 발송·메일 스타일 설정 모달을 엽니다. Returns true after a save.
@@ -24,6 +25,9 @@ import "../../../shared/widgets/workspace_dialog.dart";
 Future<bool?> showSendSettingsDialog(BuildContext context, {String? caseId}) {
   return showDialog<bool>(
     context: context,
+    // Full screen on a phone: the dialog paints behind the system bars and
+    // WorkspaceDialog's own SafeArea keeps the content clear of them.
+    useSafeArea: !isCompactLayout(context),
     barrierDismissible: false,
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
