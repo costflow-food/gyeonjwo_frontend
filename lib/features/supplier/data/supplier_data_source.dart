@@ -84,7 +84,7 @@ class ApiSupplierDataSource implements SupplierDataSource {
     throw const SupplierApiException(501, {
       "error": {
         "code": "SUPPLIER_REGISTRATION_UNSUPPORTED",
-        "message": "거래처 등록은 아직 서버에서 지원하지 않습니다.",
+        "message": "거래처를 등록하지 못했습니다.",
       },
     });
   }
