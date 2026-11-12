@@ -142,17 +142,11 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
         ?.where((supplier) => supplier.supplierId == _supplierId)
         .firstOrNull;
 
-    // The case's recordings answer two things before anything is sent:
-    // whether the server has the feature at all, and its limits.
+    // The case's recordings give the limits before anything is sent.
     final recordings = ref.watch(
       callRecordingsProvider(widget.suppliers.caseId),
     );
     final limits = recordings.value;
-    final unavailable = switch (recordings.error) {
-      final CallRecordingFailure failure when limits == null =>
-        failure.unavailable,
-      _ => false,
-    };
     final checking =
         recordings.isLoading && limits == null && !recordings.hasError;
     final maxBytes = limits?.maxBytes ?? defaultMaxRecordingBytes;
@@ -289,36 +283,6 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
                     ],
                   ),
           ),
-          if (unavailable) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: context.palette.blush,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 18,
-                    color: context.palette.accentText,
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      "업로드는 서버 준비가 끝나면 열립니다. 지금은 고른 파일과 거래처만 확인할 수 있습니다.",
-                      style: TextStyle(
-                        fontSize: AppFontSizes.secondary,
-                        height: 1.6,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
       bottomBar: Column(
@@ -339,8 +303,7 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
               ),
             ),
             const SizedBox(height: 10),
-          ] else if (unavailable ? null : _error ?? blocked
-              case final message?) ...[
+          ] else if (_error ?? blocked case final message?) ...[
             Semantics(
               liveRegion: true,
               child: Text(
@@ -373,13 +336,6 @@ class _VoiceFilePageState extends ConsumerState<VoiceFilePage> {
                     onPressed: null,
                     style: MobileButtons.filled(context),
                     child: const _OneLine("거래처를 골라 주세요"),
-                  ),
-                  // The server has no call recordings yet.
-                  _ when unavailable => FilledButton.icon(
-                    onPressed: null,
-                    style: MobileButtons.filled(context),
-                    icon: const Icon(Icons.cloud_upload_outlined, size: 18),
-                    label: const _OneLine("업로드 · 준비 중"),
                   ),
                   _ when _busy => FilledButton.icon(
                     onPressed: null,

@@ -145,6 +145,12 @@ class _Recordings implements CallRecordingRepository {
     void Function(int sent, int total)? onProgress,
   }) async {
     uploads.add((caseId: caseId, supplierId: supplierId, file: file));
+    if (unavailable) {
+      throw const CallRecordingFailure(
+        "CALL_RECORDING_UNAVAILABLE",
+        "통화 녹음 기능을 사용할 수 없습니다.",
+      );
+    }
     this.onStep = onStep;
     this.onProgress = onProgress;
     onStep?.call(RecordingUploadStep.requesting);
@@ -384,7 +390,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets("a server without call recordings keeps the upload closed", (
+  testWidgets("a server without call recordings answers the upload itself", (
     tester,
   ) async {
     final recordings = _Recordings(unavailable: true);
@@ -399,9 +405,15 @@ void main() {
     await _choose(tester);
     await tester.tap(find.text("새벽딸기"));
     await tester.pumpAndSettle();
-    expect(_enabled(tester, "업로드 · 준비 중"), isFalse);
-    expect(find.textContaining("서버 준비가 끝나면 열립니다"), findsOneWidget);
-    expect(recordings.uploads, isEmpty);
+    // No notice made up by the app: the upload is offered as usual and the
+    // server's own answer is shown.
+    expect(find.textContaining("준비"), findsNothing);
+    expect(_enabled(tester, "업로드"), isTrue);
+    await tester.tap(find.text("업로드"));
+    await tester.pumpAndSettle();
+    expect(recordings.uploads, hasLength(1));
+    expect(find.text("통화 녹음 기능을 사용할 수 없습니다."), findsOneWidget);
+    expect(_enabled(tester, "다시 시도"), isTrue);
   });
 
   testWidgets("an upload shows its progress, then lists the recording", (
