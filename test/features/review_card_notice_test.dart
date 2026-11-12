@@ -585,4 +585,111 @@ void main() {
       expect(tester.widget<Icon>(find.byIcon(Icons.history)).color, danger);
     });
   });
+
+  group("phone plan list", () {
+    ResponsePlan plan(String type, String? total, {String status = "VALID"}) =>
+        ResponsePlan(
+          planId: "p-$type",
+          planType: type,
+          validationStatus: status,
+          totalAmount: total,
+          allocations: const [],
+        );
+    ReviewCard card(List<ResponsePlan> plans, {String? chosen}) => ReviewCard(
+      caseId: "c1",
+      reviewRevision: 1,
+      inputRevision: 1,
+      isStale: false,
+      outcome: ReviewOutcome.completed,
+      plans: plans,
+      decision: chosen == null
+          ? null
+          : ReviewDecision(decision: ReviewAction.selectPlan, planId: chosen),
+      allowedActions: const ["SELECT_PLAN"],
+    );
+    double top(WidgetTester tester, String text) =>
+        tester.getRect(find.text(text)).top;
+
+    testWidgets("plans keep the server's order; the chosen plan is open", (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        card([
+          plan("KEEP", "2559000"),
+          plan("SPLIT", null, status: "NEEDS_INFO"),
+          plan("SWITCH", "2502000"),
+        ], chosen: "p-KEEP"),
+      );
+      expect(top(tester, "기존 업체 유지"), lessThan(top(tester, "분산 구매")));
+      expect(top(tester, "분산 구매"), lessThan(top(tester, "전량 전환")));
+      expect(find.text("미확인"), findsOneWidget);
+      expect(find.text("+57,000"), findsOneWidget);
+      expect(find.text("최저"), findsOneWidget);
+      // Open on the chosen plan, not the lowest.
+      expect(find.text("선택한 구매안"), findsOneWidget);
+      expect(find.text("이 안 선택"), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("starts on the first plan that can be chosen", (tester) async {
+      await _pump(
+        tester,
+        card([
+          plan("SWITCH", "2400000", status: "CONDITIONAL"),
+          plan("KEEP", "2559000"),
+        ]),
+      );
+      expect(find.text("이 안 선택"), findsOneWidget);
+      expect(find.text("수용하기"), findsNothing);
+    });
+
+    testWidgets("the open plan stays open over a reload, also without ids", (
+      tester,
+    ) async {
+      ResponsePlan bare(String type, String total) => ResponsePlan(
+        planId: null,
+        planType: type,
+        validationStatus: "CONDITIONAL",
+        totalAmount: total,
+        allocations: const [],
+        reason: "$type 사유",
+      );
+      List<ResponsePlan> plans() => [
+        bare("KEEP", "2559000"),
+        bare("SWITCH", "2502000"),
+      ];
+      await _pump(tester, card(plans()));
+      expect(find.text("KEEP 사유"), findsOneWidget);
+      await tester.tap(find.text("전량 전환"));
+      await tester.pumpAndSettle();
+      expect(find.text("SWITCH 사유"), findsOneWidget);
+      // The same card again, as new objects.
+      await _pump(tester, card(plans()));
+      expect(find.text("SWITCH 사유"), findsOneWidget);
+      expect(find.text("KEEP 사유"), findsNothing);
+      // A new review without the open plan: back to the starting choice.
+      await _pump(tester, card([plan("SPLIT", "2600000")]));
+      expect(find.text("이 안 선택"), findsOneWidget);
+    });
+
+    testWidgets("a long total leaves the name readable at text scale 2", (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        card([plan("KEEP", "1255900000"), plan("SWITCH", "1250200000")]),
+        textScale: 2,
+      );
+      expect(tester.takeException(), isNull);
+      expect(tester.getSize(find.text("기존 업체 유지")).width, greaterThan(90));
+    });
+
+    testWidgets("a single plan is simply open", (tester) async {
+      await _pump(tester, card([plan("KEEP", "2559000")]));
+      expect(find.text("이 안 선택"), findsOneWidget);
+      expect(find.byIcon(Icons.expand_less), findsNothing);
+      expect(find.byIcon(Icons.expand_more), findsNothing);
+    });
+  });
 }
