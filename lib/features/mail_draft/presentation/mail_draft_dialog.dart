@@ -14,6 +14,7 @@ import "widgets/mail_draft_footer.dart";
 import "widgets/mail_draft_header.dart";
 import "widgets/mail_draft_tabs.dart";
 import "widgets/send_policy_banner.dart";
+import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/workspace_dialog.dart";
 
 Future<void> showMailDraftDialog(
@@ -24,6 +25,9 @@ Future<void> showMailDraftDialog(
 }) {
   return showDialog<void>(
     context: context,
+    // Full screen on a phone: the dialog paints behind the system bars and
+    // WorkspaceDialog's own SafeArea keeps the content clear of them.
+    useSafeArea: !isCompactLayout(context),
     barrierDismissible: false,
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
@@ -142,7 +146,11 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
   }
 
   void _saveRevision(MailDraft draft) {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      // The field with the error may be scrolled out of view; say so here.
+      setState(() => _error = "입력 내용을 확인해 주세요. 오류가 표시된 칸을 고친 뒤 다시 저장해 주세요.");
+      return;
+    }
     final input = DraftRevisionInput(
       recipient: _recipient.text.trim(),
       subject: _subject.text.trim(),

@@ -6,8 +6,6 @@ import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
-import "../../../server_status/presentation/server_status_view_model.dart";
-import "../../../supplier/presentation/supplier_register_dialog.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
@@ -87,11 +85,6 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         draftsByStep ||
         (mayHaveDrafts &&
             (ref.watch(caseHasDraftsProvider(workCase.id)).value ?? false));
-    // A linked reply waits here while the server cannot review it.
-    final server = ref.watch(serverStatusViewModelProvider).asData?.value;
-    final replyReviewBlocked =
-        isReplyExtraction(workCase.processingStep, workCase.inputRevision) &&
-        (server?.replyReviewBlocked ?? false);
     final needsSupplier =
         workCase.stopped &&
         supplierMissingStopCodes.contains(hold?.code ?? progress?.errorCode);
@@ -143,18 +136,6 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
                         ),
                       ),
                     ],
-                    if (replyReviewBlocked) ...[
-                      const SizedBox(height: 6),
-                      const Text(
-                        "서버의 회신 검토 기능이 아직 준비되지 않아 "
-                        "이 회신은 검토로 넘어가지 못하고 있습니다.",
-                        style: TextStyle(
-                          fontSize: AppFontSizes.body,
-                          color: danger,
-                          height: 1.6,
-                        ),
-                      ),
-                    ],
                     if (reason != null) ...[
                       const SizedBox(height: 6),
                       Text(
@@ -194,20 +175,13 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
             child: SizedBox(
               height: 44,
               child: OutlinedButton.icon(
-                onPressed: () => showSupplierRegisterDialog(context),
+                // The server has no supplier registration: not pressable.
+                // Reconnect showSupplierRegisterDialog once it has.
+                onPressed: null,
                 style: WorkspaceButtonStyles.outlined(context),
                 icon: const Icon(Icons.store_outlined, size: 16),
                 label: const Text("거래처 등록"),
               ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            "요청 품목을 취급하는 거래처를 등록하면 후보로 찾을 수 있습니다.",
-            style: TextStyle(
-              fontSize: AppFontSizes.secondary,
-              color: context.palette.muted,
-              height: 1.5,
             ),
           ),
         ],

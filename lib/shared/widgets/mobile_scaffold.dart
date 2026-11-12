@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,6 +13,13 @@ import 'workspace_sidebar.dart';
 /// responsive layout at every width.
 bool isCompactLayout(BuildContext context) =>
     !kIsWeb && MediaQuery.sizeOf(context).width < 600;
+
+/// Orientations the app allows on a screen of [size]. A phone (shortest side
+/// under 600) stays upright: turned sideways it would be wide enough to drop
+/// the phone layout and rebuild every screen. An empty list means any
+/// orientation, which tablets keep.
+List<DeviceOrientation> allowedOrientations(Size size) =>
+    size.shortestSide < 600 ? const [DeviceOrientation.portraitUp] : const [];
 
 /// A top-level screen on a phone: app bar and the bottom navigation.
 class MobileTabScaffold extends StatelessWidget {

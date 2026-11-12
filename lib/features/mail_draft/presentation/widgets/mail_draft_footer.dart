@@ -109,16 +109,13 @@ class MailDraftFooter extends StatelessWidget {
                   ),
                 // Shown but disabled: [MailDraft.can] keeps edit off.
                 if (current != null && editable)
-                  Tooltip(
-                    message: current.disabledReason(DraftAction.edit) ?? "",
-                    child: OutlinedButton(
-                      style: WorkspaceButtonStyles.outlined(context),
-                      onPressed: current.can(DraftAction.edit) && !busy
-                          ? onEdit
-                          : null,
-                      child: Text(
-                        current.status == DraftStatus.failed ? "수정본 만들기" : "수정",
-                      ),
+                  OutlinedButton(
+                    style: WorkspaceButtonStyles.outlined(context),
+                    onPressed: current.can(DraftAction.edit) && !busy
+                        ? onEdit
+                        : null,
+                    child: Text(
+                      current.status == DraftStatus.failed ? "수정본 만들기" : "수정",
                     ),
                   ),
                 if (current != null && current.can(DraftAction.reconcile))

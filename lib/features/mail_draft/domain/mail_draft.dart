@@ -211,7 +211,6 @@ class MailDraft {
   };
 
   String? disabledReason(String action) => switch (action) {
-    DraftAction.edit => "초안 수정은 서버에 수정본 저장 기능이 생기면 열립니다.",
     DraftAction.approveSend when status != DraftStatus.draft => null,
     DraftAction.approveSend when awaitingResult =>
       "발송 요청을 접수했습니다. 결과를 확인하고 있습니다.",
@@ -225,7 +224,8 @@ class MailDraft {
       "자동 발송이 켜져 있어 서버가 검증한 뒤 자동 발송합니다.",
     DraftAction.approveSend when settingsVersion == null =>
       "발송 설정 버전을 확인할 수 없습니다. 다시 불러와 주세요.",
-    DraftAction.reconcile when awaitingResult => "발신함 대조를 접수했습니다. 결과를 확인하고 있습니다.",
+    DraftAction.reconcile when awaitingResult =>
+      "발신함 대조를 접수했습니다. 결과를 확인하고 있습니다.",
     _ => null,
   };
 }

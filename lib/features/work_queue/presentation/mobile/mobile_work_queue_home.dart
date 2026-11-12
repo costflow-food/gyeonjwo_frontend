@@ -21,7 +21,24 @@ class MobileWorkQueueHome extends ConsumerStatefulWidget {
 }
 
 class _MobileWorkQueueHomeState extends ConsumerState<MobileWorkQueueHome> {
-  bool _intake = false;
+  // Kept across a visit to a case, which replaces this screen.
+  late final QueueHomeMemory _memory = ref.read(queueHomeMemoryProvider);
+  late bool _intake = _memory.intake;
+  late final ScrollController _scroll = ScrollController(
+    initialScrollOffset: _memory.scrollOffset,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(() => _memory.scrollOffset = _scroll.offset);
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   void _refresh() {
     ref.read(workQueueViewModelProvider.notifier).refresh();
@@ -54,6 +71,7 @@ class _MobileWorkQueueHomeState extends ConsumerState<MobileWorkQueueHome> {
           }
         },
         child: ListView(
+          controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           children: [
@@ -67,7 +85,8 @@ class _MobileWorkQueueHomeState extends ConsumerState<MobileWorkQueueHome> {
               intake: _intake,
               queueCount: data?.counts.total,
               intakeCount: intake.value?.totalPending,
-              onChanged: (value) => setState(() => _intake = value),
+              onChanged: (value) =>
+                  setState(() => _intake = _memory.intake = value),
             ),
             const SizedBox(height: 12),
             if (_intake)

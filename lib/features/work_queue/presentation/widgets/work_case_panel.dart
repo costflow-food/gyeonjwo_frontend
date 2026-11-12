@@ -55,8 +55,13 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
 
   void _closeViewer() => setState(() => _viewerClosed = true);
 
+  /// Attachments being downloaded; a second tap on one is ignored.
+  final _downloading = <String>{};
+
   /// 미리 볼 수 없는 첨부(Excel·이미지 등)는 API-26 원본을 내려받습니다.
   Future<void> _download(String mailId, MailAttachment attachment) async {
+    if (!mounted || !_downloading.add(attachment.id)) return;
+    setState(() {});
     final messenger = ScaffoldMessenger.maybeOf(context);
     try {
       final bytes = await ref
@@ -77,6 +82,9 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
           ),
         ),
       );
+    } finally {
+      _downloading.remove(attachment.id);
+      if (mounted) setState(() {});
     }
   }
 
@@ -212,6 +220,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
         mail: mail,
         compact: true,
         openAttachmentId: null,
+        downloadingIds: _downloading,
         onOpen: (attachment) => _openAttachmentPage(mail.id, attachment),
         onDownload: (attachment) => _download(mail.id, attachment),
       ),
@@ -277,7 +286,13 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        // Without a bottom bar the list runs under the system navigation.
+        padding: EdgeInsets.fromLTRB(
+          16,
+          4,
+          16,
+          24 + (bar == null ? MediaQuery.paddingOf(context).bottom : 0),
+        ),
         children: [
           mailContent,
           // A call is a supplier's reply, so only once requests went out.
@@ -377,6 +392,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
             data: (mail) => _MailContent(
               mail: mail,
               openAttachmentId: openAttachment?.id,
+              downloadingIds: _downloading,
               onOpen: _openViewer,
               onDownload: (attachment) => _download(mail.id, attachment),
             ),
@@ -459,6 +475,7 @@ class _MailContent extends StatelessWidget {
   const _MailContent({
     required this.mail,
     required this.openAttachmentId,
+    required this.downloadingIds,
     required this.onOpen,
     required this.onDownload,
     this.compact = false,
@@ -469,6 +486,7 @@ class _MailContent extends StatelessWidget {
 
   final OriginalMail mail;
   final String? openAttachmentId;
+  final Set<String> downloadingIds;
   final ValueChanged<MailAttachment> onOpen;
 
   final ValueChanged<MailAttachment> onDownload;
@@ -480,6 +498,7 @@ class _MailContent extends StatelessWidget {
         _AttachmentTile(
           attachment: attachment,
           selected: attachment.id == openAttachmentId,
+          busy: downloadingIds.contains(attachment.id),
           maxWidth: compact ? 220 : 280,
           onTap: attachment.isPdf
               ? () => onOpen(attachment)
@@ -649,8 +668,7 @@ class _DecisionBar extends StatelessWidget {
     final canStart = workCase.can(WorkCaseAction.start);
     final caption = canStart
         ? "다른 대안 찾기: 등록된 거래처 자료로 에이전트가 검토를 시작합니다."
-        : workCase.disabledMessage(WorkCaseAction.start) ??
-              "서버에서 검토 실행이 아직 준비되지 않았습니다.";
+        : workCase.disabledMessage(WorkCaseAction.start);
     final acceptBlocked = canAccept
         ? null
         : workCase.disabledMessage(WorkCaseAction.acceptIncrease) ??
@@ -684,7 +702,7 @@ class _DecisionBar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        for (final line in [?acceptBlocked, caption])
+        for (final line in [?acceptBlocked, ?caption])
           Text(
             line,
             textAlign: TextAlign.center,
@@ -731,13 +749,19 @@ class _MetaRow extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 64,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: AppFontSizes.body,
-              color: context.palette.muted,
+        ConstrainedBox(
+          // At least the usual column; wider when a large system font needs
+          // it, so the label stays whole on one line.
+          constraints: const BoxConstraints(minWidth: 64),
+          child: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(
+              label,
+              softWrap: false,
+              style: TextStyle(
+                fontSize: AppFontSizes.body,
+                color: context.palette.muted,
+              ),
             ),
           ),
         ),
@@ -757,8 +781,12 @@ class _AttachmentTile extends StatelessWidget {
     required this.attachment,
     required this.selected,
     required this.onTap,
+    this.busy = false,
     this.maxWidth = 280,
   });
+
+  /// Being downloaded.
+  final bool busy;
 
   final double maxWidth;
 
@@ -784,15 +812,27 @@ class _AttachmentTile extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            attachment.isPdf
-                ? Icons.picture_as_pdf_outlined
-                : Icons.download_outlined,
-            size: 20,
-            color: selected
-                ? context.palette.accentText
-                : context.palette.muted,
-          ),
+          if (busy)
+            SizedBox.square(
+              dimension: 20,
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: context.palette.accent,
+                ),
+              ),
+            )
+          else
+            Icon(
+              attachment.isPdf
+                  ? Icons.picture_as_pdf_outlined
+                  : Icons.download_outlined,
+              size: 20,
+              color: selected
+                  ? context.palette.accentText
+                  : context.palette.muted,
+            ),
           const SizedBox(width: 10),
           Flexible(
             child: Column(
@@ -903,8 +943,7 @@ class _Decision extends StatelessWidget {
       ),
       caption: canStart
           ? "등록된 거래처 자료로 에이전트가 검토를 시작합니다."
-          : workCase.disabledMessage(WorkCaseAction.start) ??
-                "서버에서 검토 실행이 아직 준비되지 않았습니다.",
+          : workCase.disabledMessage(WorkCaseAction.start),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -948,22 +987,26 @@ class _Choice extends StatelessWidget {
   const _Choice({required this.button, required this.caption});
 
   final Widget button;
-  final String caption;
+
+  /// Null when there is nothing to add to the button.
+  final String? caption;
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       SizedBox(height: 44, child: button),
-      const SizedBox(height: 6),
-      Text(
-        caption,
-        style: TextStyle(
-          fontSize: AppFontSizes.secondary,
-          color: context.palette.muted,
-          height: 1.5,
+      if (caption case final caption?) ...[
+        const SizedBox(height: 6),
+        Text(
+          caption,
+          style: TextStyle(
+            fontSize: AppFontSizes.secondary,
+            color: context.palette.muted,
+            height: 1.5,
+          ),
         ),
-      ),
+      ],
     ],
   );
 }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/widgets/brand_logo.dart';
+import '../../../shared/widgets/mobile_scaffold.dart';
 import '../../../shared/workspace_colors.dart';
 
 class AuthLayout extends StatelessWidget {
@@ -10,17 +11,37 @@ class AuthLayout extends StatelessWidget {
     super.key,
     required this.child,
     this.backPath,
+    this.phoneBackPath,
     this.maxWidth = 1080,
     this.compact = false,
   });
 
   final Widget child;
   final String? backPath;
+
+  /// Where back leads on a phone instead of [backPath], when set.
+  final String? phoneBackPath;
   final double maxWidth;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final phone = isCompactLayout(context);
+    final backPath = phone ? phoneBackPath ?? this.backPath : this.backPath;
+    final scaffold = _scaffold(context, backPath);
+    if (!phone || backPath == null) return scaffold;
+    // These screens are opened with go, so there is nothing under them to
+    // pop to: system back would leave the app.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go(backPath);
+      },
+      child: scaffold,
+    );
+  }
+
+  Widget _scaffold(BuildContext context, String? backPath) {
     return Scaffold(
       backgroundColor: context.palette.canvas,
       body: SafeArea(
@@ -58,7 +79,7 @@ class AuthLayout extends StatelessWidget {
                             Align(
                               alignment: Alignment.centerLeft,
                               child: TextButton.icon(
-                                onPressed: () => context.go(backPath!),
+                                onPressed: () => context.go(backPath),
                                 icon: const Icon(Icons.arrow_back, size: 16),
                                 label: const Text('이전으로'),
                                 style: TextButton.styleFrom(

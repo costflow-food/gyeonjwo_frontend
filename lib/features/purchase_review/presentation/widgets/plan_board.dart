@@ -424,12 +424,16 @@ class _SelectButton extends StatelessWidget {
     required this.card,
     required this.busy,
     required this.lowest,
+    this.showReason = false,
     required this.onSelect,
   });
 
   final ResponsePlan plan;
   final ReviewCard card;
   final bool busy, lowest;
+
+  /// Writes why the plan cannot be chosen under the button.
+  final bool showReason;
   final VoidCallback onSelect;
 
   @override
@@ -498,6 +502,22 @@ class _SelectButton extends StatelessWidget {
             onPressed: onPressed,
             child: Text(label),
           );
+    // Phone: a tooltip needs a long press, so the reason is written out.
+    if (showReason && !canSelect && reason != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          button,
+          const SizedBox(height: 6),
+          Text(
+            reason,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: context.palette.muted),
+          ),
+        ],
+      );
+    }
     return onPressed == null && reason != null
         ? Tooltip(message: reason, child: button)
         : button;
@@ -792,6 +812,7 @@ class _PlanRow extends StatelessWidget {
                           card: card,
                           busy: busy,
                           lowest: lowest,
+                          showReason: true,
                           onSelect: onSelect,
                         ),
                       ],

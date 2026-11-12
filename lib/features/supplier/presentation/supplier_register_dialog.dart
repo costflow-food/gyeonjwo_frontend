@@ -9,11 +9,15 @@ import "widgets/supplier_basic_form.dart";
 import "widgets/supplier_item_form_list.dart";
 import "widgets/supplier_register_footer.dart";
 import "widgets/supplier_register_header.dart";
+import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/workspace_dialog.dart";
 
 Future<SupplierDetail?> showSupplierRegisterDialog(BuildContext context) {
   return showDialog<SupplierDetail>(
     context: context,
+    // Full screen on a phone: the dialog paints behind the system bars and
+    // WorkspaceDialog's own SafeArea keeps the content clear of them.
+    useSafeArea: !isCompactLayout(context),
     barrierDismissible: false,
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => const SupplierRegisterDialog(),
