@@ -15,7 +15,7 @@ enum ReviewOutcome {
   noFeasiblePlan("NO_FEASIBLE_PLAN", "요청 조건을 만족하는 구매안이 없습니다."),
   noValidPlan("NO_VALID_PLAN", "요청 조건을 만족하는 구매안이 없습니다."),
   needsInfo("NEEDS_INFO", "확인이 필요한 항목이 있어 비교를 끝내지 못했습니다."),
-  reviewRequiredClosed("REVIEW_REQUIRED_CLOSED", "확인이 필요한 항목이 남은 채 검토를 마쳤습니다."),
+  reviewRequiredClosed("REVIEW_REQUIRED_CLOSED", "확인할 것이 남은 채 검토를 마쳤습니다."),
   onHold("ON_HOLD", "검토를 보류했습니다."),
   unknown("", "업무에서 현재 상태를 확인해 주세요.");
 
@@ -29,6 +29,9 @@ enum ReviewOutcome {
   );
 
   bool get ready => this == optionsReady || this == completed;
+
+  /// No plan to choose from: shown as a stop, not as something left to check.
+  bool get noPlan => this == noFeasiblePlan || this == noValidPlan;
 }
 
 class DisabledReviewAction {
@@ -130,6 +133,9 @@ class CounterOffer {
   final List<String> draftIds;
 
   String get statusLabel => _counterStatus[status] ?? status;
+
+  /// The agent could not set a target price; [reason] says why.
+  bool get onHold => status == "HOLD";
 }
 
 class CounterOfferTarget {
@@ -366,12 +372,27 @@ const _fieldLabels = {
   "valid_until": "유효기간",
   "available_quantity": "공급 가능량",
   "moq_quantity": "최소 주문 수량",
+  "moq": "최소 주문 수량",
   "shipping_cost": "운송비",
   "delivery_date": "납품일",
+  "lead_time": "납기 소요기간",
   "supplier_name": "업체명",
+  "currency": "통화",
+  "order_unit": "발주 단위",
+  "quantity_per_order_unit": "발주 단위당 수량",
+  "pack_multiple": "발주 배수",
+  "previous_unit_price": "기존 단가",
+  "increase_reason": "인상 사유",
+  "price_tiers": "물량별 단가",
+  "cost_terms": "부대비용",
+  "item_notes": "품목 비고",
 };
 
 String quoteFieldLabel(String field) => _fieldLabels[field] ?? field;
+
+/// Null for a field or cost type this app has no name for.
+String? knownFieldLabel(String field) => _fieldLabels[field];
+String? knownCostLabel(String costType) => _costTypes[costType];
 
 class PurchaseReview {
   const PurchaseReview({required this.card, required this.quotes});

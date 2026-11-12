@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
@@ -10,6 +12,7 @@ import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../domain/purchase_review.dart";
+import "../../domain/unresolved_line.dart";
 import "../purchase_review_view_model.dart";
 import "counter_offer_panel.dart";
 import "plan_board.dart";
@@ -29,7 +32,57 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
   bool _busy = false;
   String? _error;
 
+  /// The counter-offer panel, which the notice's "사유 보기" scrolls to.
+  final _counterOfferKey = GlobalKey();
+
+  /// The panel is marked for a moment after "사유 보기": on a wide screen it
+  /// is already in view and nothing would move.
+  bool _offerMarked = false;
+  Timer? _offerMark;
+
   ReviewCard get _card => widget.review.card;
+
+  @override
+  void dispose() {
+    _offerMark?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _showCounterOffer() async {
+    final target = _counterOfferKey.currentContext;
+    if (target == null) return;
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 250);
+    final panel = target.findRenderObject();
+    final viewport = Scrollable.maybeOf(target)?.position.viewportDimension;
+    final tall =
+        panel is RenderBox && viewport != null && panel.size.height > viewport;
+    // A panel taller than the screen goes to its top, where the reason is.
+    // Otherwise it is brought in whole, from whichever side it is cut off,
+    // and one already in view stays put.
+    for (final policy
+        in tall
+            ? const [ScrollPositionAlignmentPolicy.explicit]
+            : const [
+                ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+                ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+              ]) {
+      if (!target.mounted) return;
+      await Scrollable.ensureVisible(
+        target,
+        alignmentPolicy: policy,
+        duration: duration,
+        curve: Curves.easeOutCubic,
+      );
+    }
+    if (!mounted) return;
+    setState(() => _offerMarked = true);
+    _offerMark?.cancel();
+    _offerMark = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _offerMarked = false);
+    });
+  }
 
   Future<void> _run(
     Future<void> Function(PurchaseReviewViewModel viewModel) action,
@@ -89,36 +142,50 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
     await _run((viewModel) => viewModel.confirmReview());
   }
 
-  List<Widget> _notices(ReviewCard card) => [
-    if (card.isStale) ...[
-      const _Notice(
-        icon: Icons.history,
-        text: "새 견적이나 조건이 반영돼 이 카드는 이전 결과입니다. 이 카드로는 선택하거나 확인할 수 없습니다.",
-        strong: true,
-      ),
-      const SizedBox(height: 12),
-    ],
-    if (!card.outcome.ready || card.unresolved.isNotEmpty) ...[
-      _Notice(
-        icon: Icons.pause_circle_outline,
-        text: card.outcome.message,
-        strong: !card.outcome.ready,
-        details: card.unresolved,
-      ),
-      const SizedBox(height: 12),
-    ],
-    if (card.decision != null) ...[
-      _Notice(icon: Icons.task_alt, text: _decisionText(card)),
-      const SizedBox(height: 12),
-    ],
-    if (_error != null) ...[
-      Semantics(
-        liveRegion: true,
-        child: _Notice(icon: Icons.error_outline, text: _error!, strong: true),
-      ),
-      const SizedBox(height: 12),
-    ],
-  ];
+  List<Widget> _notices(ReviewCard card) {
+    final lines = unresolvedLines(card, quotes: widget.review.quotes);
+    return [
+      if (card.isStale) ...[
+        const _Notice(
+          icon: Icons.history,
+          text: "새 견적이나 조건이 반영돼 이 카드는 이전 결과입니다. 이 카드로는 선택하거나 확인할 수 없습니다.",
+          tone: _Tone.danger,
+        ),
+        const SizedBox(height: 12),
+      ],
+      if (!card.outcome.ready || lines.isNotEmpty) ...[
+        _Notice(
+          icon: Icons.pause_circle_outline,
+          text: card.outcome.message,
+          // Red only when there is no plan at all; something left to check
+          // is a caution.
+          tone: card.outcome.ready
+              ? _Tone.info
+              : card.outcome.noPlan
+              ? _Tone.danger
+              : _Tone.caution,
+          lines: lines,
+          onCounterOffer: _showCounterOffer,
+        ),
+        const SizedBox(height: 12),
+      ],
+      if (card.decision != null) ...[
+        _Notice(icon: Icons.task_alt, text: _decisionText(card)),
+        const SizedBox(height: 12),
+      ],
+      if (_error != null) ...[
+        Semantics(
+          liveRegion: true,
+          child: _Notice(
+            icon: Icons.error_outline,
+            text: _error!,
+            tone: _Tone.danger,
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    ];
+  }
 
   /// Phone: the card as its own screen; 보류 / 확인하고 보관 pinned below.
   Widget _page(BuildContext context) {
@@ -140,61 +207,72 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
           icon: const Icon(Icons.mail_outline),
         ),
       ],
-      body: ListView(
+      // Not a lazy list: "사유 보기" scrolls to the counter-offer panel, which
+      // must exist while it is off screen.
+      body: SingleChildScrollView(
+        key: const ValueKey("review-card-scroll"),
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        children: [
-          Text(
-            [
-              "검토 ${card.reviewRevision}회차",
-              if (card.createdAt != null)
-                "${formatSeoulDateTime(card.createdAt!)} 저장",
-            ].join(" · "),
-            style: TextStyle(fontSize: 13, color: context.palette.muted),
-          ),
-          const SizedBox(height: 10),
-          if (_RaiseCard.from(card, widget.review.quotes, compact: true)
-              case final raise?) ...[
-            raise,
-            const SizedBox(height: 12),
-          ],
-          ..._notices(card),
-          if (card.plans.isEmpty)
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Text(
-              "보여 줄 구매안이 없습니다.",
+              [
+                "검토 ${card.reviewRevision}회차",
+                if (card.createdAt != null)
+                  "${formatSeoulDateTime(card.createdAt!)} 저장",
+              ].join(" · "),
               style: TextStyle(fontSize: 13, color: context.palette.muted),
-            )
-          else
-            PlanBoard(
-              card: card,
-              busy: _busy,
-              carousel: true,
-              onSelect: (plan) =>
-                  _run((viewModel) => viewModel.selectPlan(plan)),
             ),
-          const SizedBox(height: 20),
-          _SidePanel(
-            card: card,
-            busy: _busy,
-            showActions: false,
-            onHold: _hold,
-            onConfirm: _confirm,
-            onMailDraft: () =>
-                showMailDraftDialog(context, caseId: card.caseId),
-          ),
-          const SizedBox(height: 28),
-          const _Heading("견적과 근거"),
-          const SizedBox(height: 12),
-          if (quotes.isEmpty)
-            Text(
-              "이 카드에 연결된 견적이 없습니다.",
-              style: TextStyle(fontSize: 13, color: context.palette.muted),
-            )
-          else
-            for (final quote in quotes) ...[
-              QuoteCard(key: ValueKey("quote-${quote.quoteId}"), quote: quote),
+            const SizedBox(height: 10),
+            if (_RaiseCard.from(card, widget.review.quotes, compact: true)
+                case final raise?) ...[
+              raise,
               const SizedBox(height: 12),
             ],
-        ],
+            ..._notices(card),
+            if (card.plans.isEmpty)
+              Text(
+                "보여 줄 구매안이 없습니다.",
+                style: TextStyle(fontSize: 13, color: context.palette.muted),
+              )
+            else
+              PlanBoard(
+                card: card,
+                busy: _busy,
+                carousel: true,
+                onSelect: (plan) =>
+                    _run((viewModel) => viewModel.selectPlan(plan)),
+              ),
+            const SizedBox(height: 20),
+            _SidePanel(
+              card: card,
+              busy: _busy,
+              showActions: false,
+              counterOfferKey: _counterOfferKey,
+              counterOfferMarked: _offerMarked,
+              onHold: _hold,
+              onConfirm: _confirm,
+              onMailDraft: () =>
+                  showMailDraftDialog(context, caseId: card.caseId),
+            ),
+            const SizedBox(height: 28),
+            const _Heading("견적과 근거"),
+            const SizedBox(height: 12),
+            if (quotes.isEmpty)
+              Text(
+                "이 카드에 연결된 견적이 없습니다.",
+                style: TextStyle(fontSize: 13, color: context.palette.muted),
+              )
+            else
+              for (final quote in quotes) ...[
+                QuoteCard(
+                  key: ValueKey("quote-${quote.quoteId}"),
+                  quote: quote,
+                ),
+                const SizedBox(height: 12),
+              ],
+          ],
+        ),
       ),
       bottomBar: actions.visible ? actions : null,
     );
@@ -280,6 +358,8 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         _SidePanel(
           card: card,
           busy: _busy,
+          counterOfferKey: _counterOfferKey,
+          counterOfferMarked: _offerMarked,
           onHold: _hold,
           onConfirm: _confirm,
           onMailDraft: () => showMailDraftDialog(context, caseId: card.caseId),
@@ -451,6 +531,8 @@ class _SidePanel extends StatelessWidget {
   const _SidePanel({
     required this.card,
     required this.busy,
+    required this.counterOfferKey,
+    required this.counterOfferMarked,
     required this.onHold,
     required this.onConfirm,
     required this.onMailDraft,
@@ -459,6 +541,10 @@ class _SidePanel extends StatelessWidget {
 
   final ReviewCard card;
   final bool busy;
+  final Key counterOfferKey;
+
+  /// Draws a soft caution wash behind the counter-offer panel.
+  final bool counterOfferMarked;
   final VoidCallback onHold, onConfirm, onMailDraft;
 
   /// False on a phone, where the buttons are pinned to the bottom instead.
@@ -493,7 +579,32 @@ class _SidePanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (offer != null) ...[
-            CounterOfferPanel(offer: offer, onMailDraft: onMailDraft),
+            AnimatedContainer(
+              key: counterOfferKey,
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 300),
+              // A spread shadow: a wash that reaches past the panel without
+              // moving it.
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: caution.withValues(
+                      alpha: counterOfferMarked ? .16 : 0,
+                    ),
+                    spreadRadius: 10,
+                  ),
+                ],
+              ),
+              child: CounterOfferPanel(
+                offer: offer,
+                onMailDraft: onMailDraft,
+                plansSelectable:
+                    card.can(ReviewAction.selectPlan) &&
+                    card.plans.any((plan) => plan.selectable),
+              ),
+            ),
             const SizedBox(height: 24),
           ],
           if (card.questions.isNotEmpty) ...[
@@ -710,55 +821,172 @@ class _Heading extends StatelessWidget {
   );
 }
 
+enum _Tone {
+  /// Plain information.
+  info,
+
+  /// Something is left to check.
+  caution,
+
+  /// A stop: an error, an outdated card, no plan.
+  danger,
+}
+
+/// Text on the fixed caution and danger tints, which stay light in dark mode.
+const _onTint = Color(0xFF26302D);
+
 class _Notice extends StatelessWidget {
   const _Notice({
     required this.icon,
     required this.text,
-    this.strong = false,
-    this.details = const [],
+    this.tone = _Tone.info,
+    this.lines = const [],
+    this.onCounterOffer,
   });
 
   final IconData icon;
   final String text;
-  final bool strong;
-  final List<String> details;
+  final _Tone tone;
+
+  /// What is left unresolved, under the title.
+  final List<UnresolvedLine> lines;
+
+  /// Shows the counter-offer panel, for a line whose reason is written there.
+  final VoidCallback? onCounterOffer;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: strong ? dangerTint : context.palette.blush,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: strong ? danger : context.palette.ink),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                text,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: strong ? danger : context.palette.ink,
-                ),
-              ),
-              for (final detail in details)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    "· $detail",
-                    style: const TextStyle(fontSize: 12, height: 1.5),
+  Widget build(BuildContext context) {
+    final (color, background, body) = switch (tone) {
+      _Tone.info => (context.palette.ink, context.palette.blush, null),
+      _Tone.caution => (caution, cautionTint, _onTint),
+      _Tone.danger => (danger, dangerTint, _onTint),
+    };
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color,
                   ),
                 ),
-            ],
+                for (final line in lines)
+                  if (line.inCounterOffer && onCounterOffer != null)
+                    _JumpLine(
+                      label: line.label ?? line.text,
+                      color: body ?? context.palette.ink,
+                      background: body == null
+                          ? context.palette.surface
+                          : Colors.white,
+                      onTap: onCounterOffer!,
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(text: "· "),
+                            if (line.label != null)
+                              TextSpan(
+                                text: line.text.isEmpty
+                                    ? line.label
+                                    : "${line.label} · ",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            TextSpan(text: line.text),
+                          ],
+                        ),
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.5,
+                          color: body,
+                        ),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One unresolved item whose reason is in the counter-offer panel: its name
+/// and a way there, instead of the same sentence twice.
+class _JumpLine extends StatelessWidget {
+  const _JumpLine({
+    required this.label,
+    required this.color,
+    required this.background,
+    required this.onTap,
+  });
+
+  final String label;
+  final Color color, background;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Semantics(
+      button: true,
+      child: Material(
+        color: background.withValues(alpha: .6),
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "사유 보기",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: color.withValues(alpha: .75),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: color.withValues(alpha: .75),
+                ),
+              ],
+            ),
           ),
         ),
-      ],
+      ),
     ),
   );
 }

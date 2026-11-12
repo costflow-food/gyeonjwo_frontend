@@ -216,11 +216,19 @@ void main() {
       expect(find.text("검토 카드"), findsOneWidget);
       expect(find.text("확인하고 보관"), findsOneWidget);
       // Scroll down to the first plan's button.
-      await tester.dragUntilVisible(
-        find.text("이 안 선택").first,
-        find.byType(ListView),
-        const Offset(0, -200),
-      );
+      // The page scrolls under a finger.
+      final scroll = find.byKey(const ValueKey("review-card-scroll"));
+      final position = tester
+          .state<ScrollableState>(
+            find
+                .descendant(of: scroll, matching: find.byType(Scrollable))
+                .first,
+          )
+          .position;
+      await tester.drag(scroll, const Offset(0, -200));
+      await tester.pumpAndSettle();
+      expect(position.pixels, greaterThan(0));
+      await tester.ensureVisible(find.text("이 안 선택").first);
       await tester.pumpAndSettle();
       expect(find.text("이 안 선택").hitTestable(), findsWidgets);
       // Swipe to the next plan: it snaps into view.
@@ -231,11 +239,7 @@ void main() {
       final next = tester.getCenter(buttons.at(1)).dx;
       expect(next, inExclusiveRange(0, 360));
       // Scroll through the rest of the card.
-      await tester.dragUntilVisible(
-        find.text("견적과 근거"),
-        find.byType(ListView),
-        const Offset(0, -300),
-      );
+      await tester.ensureVisible(find.text("견적과 근거"));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
