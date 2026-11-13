@@ -47,7 +47,7 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
   });
 
   @override
-  Future<MailDraft> createRevision(MailDraft draft, DraftRevisionInput input) {
+  Future<String> createRevision(MailDraft draft, DraftRevisionInput input) {
     final body = <String, Object?>{
       "expected_revision": draft.inputRevision,
       "expected_snapshot_hash": draft.snapshotHash,
@@ -62,7 +62,18 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
         body,
         idempotencyKey: key,
       );
-      return _draft(response["data"] as Map<String, dynamic>);
+      // 201 carries IDs only: {case_id, draft_id, replaces_id, input_revision}.
+      final data = response["data"];
+      if (data is! Map<String, dynamic> ||
+          data["draft_id"] is! String ||
+          data["draft_id"] == draft.id ||
+          data["replaces_id"] != draft.id) {
+        throw const MailDraftFailure(
+          "INVALID_RESPONSE",
+          "수정본 저장 결과를 확인하지 못했습니다.",
+        );
+      }
+      return data["draft_id"] as String;
     });
   }
 
@@ -140,6 +151,7 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
 
   static MailDraft _draft(Map<String, dynamic> json) {
     final policy = json["effective_send_policy"] as Map<String, dynamic>?;
+    final sendState = json["send_state"] as Map<String, dynamic>?;
     return MailDraft(
       id: json["draft_id"] as String,
       caseId: json["case_id"] as String,
@@ -148,7 +160,10 @@ class MailDraftRepositoryImpl implements MailDraftRepository {
       recipient: json["recipient"] as String,
       subject: json["subject"] as String,
       body: json["body_text"] as String,
-      status: DraftStatus.fromCode(json["status"] as String),
+      status: DraftStatus.fromCode(
+        json["status"] as String,
+        sendState: sendState?["code"] as String?,
+      ),
       inputRevision: json["input_revision"] as int,
       snapshotHash: json["snapshot_hash"] as String,
       settingsConfigured: policy?["configured"] as bool? ?? false,
