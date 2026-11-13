@@ -170,14 +170,14 @@ void main() {
     tester,
   ) async {
     await _pumpPhone(tester, _content(_card(planId: null)));
-    expect(find.text("이 안 선택"), findsOneWidget);
+    expect(find.text("선택"), findsOneWidget);
     expect(find.text("서버가 이 안의 ID를 보내지 않아 선택할 수 없습니다."), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets("a plan that can be chosen has no reason line", (tester) async {
     await _pumpPhone(tester, _content(_card()));
-    expect(find.text("이 안 선택"), findsOneWidget);
+    expect(find.text("선택"), findsOneWidget);
     expect(find.textContaining("선택할 수 없습니다"), findsNothing);
   });
 
