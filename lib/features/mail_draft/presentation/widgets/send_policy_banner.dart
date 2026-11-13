@@ -114,7 +114,12 @@ class SendPolicyBanner extends StatelessWidget {
       DraftStatus.failed => (
         Icons.error_outline,
         danger,
-        "발송하지 못했습니다. 수신자와 발송 설정을 확인해 주세요.",
+        "발송하지 못했습니다. 수신자와 발송 설정을 확인한 뒤 수정본 만들기로 고쳐 다시 보내 주세요.",
+      ),
+      DraftStatus.withdrawn => (
+        Icons.block,
+        context.palette.muted,
+        "보내지 않기로 닫은 초안입니다. 다시 보내려면 새 초안이 필요합니다.",
       ),
       DraftStatus.unknown => (
         Icons.help_outline,

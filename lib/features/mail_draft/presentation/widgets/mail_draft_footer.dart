@@ -107,7 +107,7 @@ class MailDraftFooter extends StatelessWidget {
                     onPressed: busy ? null : onWithdraw,
                     child: const Text("보내지 않음"),
                   ),
-                // Shown but disabled: [MailDraft.can] keeps edit off.
+                // A stale or pending draft keeps the button, disabled.
                 if (current != null && editable)
                   OutlinedButton(
                     style: WorkspaceButtonStyles.outlined(context),

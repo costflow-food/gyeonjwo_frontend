@@ -8,12 +8,9 @@ part of 'source_document_data_source.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Reads the mail through API-25.
 
 @ProviderFor(sourceDocumentDataSource)
 final sourceDocumentDataSourceProvider = SourceDocumentDataSourceProvider._();
-
-/// Reads the mail through API-25.
 
 final class SourceDocumentDataSourceProvider
     extends
@@ -23,7 +20,6 @@ final class SourceDocumentDataSourceProvider
           SourceDocumentDataSource
         >
     with $Provider<SourceDocumentDataSource> {
-  /// Reads the mail through API-25.
   SourceDocumentDataSourceProvider._()
     : super(
         from: null,

@@ -8,21 +8,12 @@ part of 'work_queue_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
-///
-/// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
 
 @ProviderFor(WorkQueueViewModel)
 final workQueueViewModelProvider = WorkQueueViewModelProvider._();
 
-/// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
-///
-/// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
 final class WorkQueueViewModelProvider
     extends $AsyncNotifierProvider<WorkQueueViewModel, WorkQueueState> {
-  /// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
-  ///
-  /// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
   WorkQueueViewModelProvider._()
     : super(
         from: null,
@@ -44,10 +35,6 @@ final class WorkQueueViewModelProvider
 
 String _$workQueueViewModelHash() =>
     r'5ad9c3c93bb08f171acdfe8fed7d1d6d83bc5529';
-
-/// 사이드바의 품목별 업무 큐와 현재 선택한 업무.
-///
-/// 목록 조회(API-01)는 상태를 바꾸지 않습니다. 업무를 선택해도 추출이 시작되지 않습니다.
 
 abstract class _$WorkQueueViewModel extends $AsyncNotifier<WorkQueueState> {
   FutureOr<WorkQueueState> build();
@@ -397,12 +384,8 @@ final class CaseCandidatesFamily extends $Family
   String toString() => r'caseCandidatesProvider';
 }
 
-/// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
-
 @ProviderFor(originalMail)
 final originalMailProvider = OriginalMailFamily._();
-
-/// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
 
 final class OriginalMailProvider
     extends
@@ -412,7 +395,6 @@ final class OriginalMailProvider
           FutureOr<OriginalMail>
         >
     with $FutureModifier<OriginalMail>, $FutureProvider<OriginalMail> {
-  /// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
   OriginalMailProvider._({
     required OriginalMailFamily super.from,
     required String super.argument,
@@ -459,8 +441,6 @@ final class OriginalMailProvider
 
 String _$originalMailHash() => r'164617511233085b0b882ee4caddaa0d4a269ca2';
 
-/// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
-
 final class OriginalMailFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<OriginalMail>, String> {
   OriginalMailFamily._()
@@ -471,8 +451,6 @@ final class OriginalMailFamily extends $Family
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
-
-  /// API-25 원문. 열기만 해서는 추출·OCR이 실행되지 않습니다.
 
   OriginalMailProvider call(String mailId) =>
       OriginalMailProvider._(argument: mailId, from: this);
@@ -564,12 +542,8 @@ final class AttachmentContentFamily extends $Family
   String toString() => r'attachmentContentProvider';
 }
 
-/// Realtime change signal while signed in; nothing when signed out.
-
 @ProviderFor(workCaseChanges)
 final workCaseChangesProvider = WorkCaseChangesProvider._();
-
-/// Realtime change signal while signed in; nothing when signed out.
 
 final class WorkCaseChangesProvider
     extends
@@ -579,7 +553,6 @@ final class WorkCaseChangesProvider
           Stream<WorkCaseChange>
         >
     with $FutureModifier<WorkCaseChange>, $StreamProvider<WorkCaseChange> {
-  /// Realtime change signal while signed in; nothing when signed out.
   WorkCaseChangesProvider._()
     : super(
         from: null,

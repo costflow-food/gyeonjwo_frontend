@@ -15,22 +15,33 @@ enum DraftPurpose {
 }
 
 /// DRAFT → SENDING → SENT / FAILED / UNKNOWN. UNKNOWN may already be sent.
+/// [withdrawn] is app-only: the server stores a withdrawn draft as FAILED and
+/// marks it with send_state DRAFT_WITHDRAWN.
 enum DraftStatus {
   draft("DRAFT", "초안"),
   sending("SENDING", "발송 중"),
   sent("SENT", "발송됨"),
   failed("FAILED", "발송 실패"),
-  unknown("UNKNOWN", "발송 확인 중");
+  unknown("UNKNOWN", "발송 확인 중"),
+  withdrawn("FAILED", "보내지 않음");
+
+  /// send_state code of a draft closed with "보내지 않음".
+  static const withdrawnSendState = "DRAFT_WITHDRAWN";
 
   const DraftStatus(this.code, this.label);
   final String code;
   final String label;
 
   /// Unknown codes fall back to UNKNOWN, which blocks edits and re-sends.
-  static DraftStatus fromCode(String code) => values.firstWhere(
-    (value) => value.code == code,
-    orElse: () => DraftStatus.unknown,
-  );
+  static DraftStatus fromCode(String code, {String? sendState}) {
+    if (code == failed.code && sendState == withdrawnSendState) {
+      return withdrawn;
+    }
+    return values.firstWhere(
+      (value) => value.code == code,
+      orElse: () => DraftStatus.unknown,
+    );
+  }
 }
 
 /// Draft actions. API-16·17 send no allowed_actions, so [MailDraft] derives
@@ -206,7 +217,12 @@ class MailDraft {
           !awaitingResult,
     DraftAction.reconcile => status == DraftStatus.unknown && !awaitingResult,
     DraftAction.withdraw => status == DraftStatus.draft && !awaitingResult,
-    // Edit (API-18) is not offered in the app.
+    // A revision is a new draft, so a failed draft is fixed and sent again
+    // through one.
+    DraftAction.edit =>
+      (status == DraftStatus.draft || status == DraftStatus.failed) &&
+          !isStale &&
+          !awaitingResult,
     _ => false,
   };
 
@@ -236,13 +252,15 @@ class DraftRevisionInput {
     required this.recipient,
     required this.subject,
     required this.body,
-    this.editReason,
+    required this.editReason,
   });
 
   final String recipient;
   final String subject;
   final String body;
-  final String? editReason;
+
+  /// Required by the server; must not be empty.
+  final String editReason;
 }
 
 class MailDraftFailure implements Exception {
