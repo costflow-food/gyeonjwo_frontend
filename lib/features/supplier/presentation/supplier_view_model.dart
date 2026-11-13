@@ -89,6 +89,18 @@ class SupplierListViewModel extends _$SupplierListViewModel {
     }
   }
 
+  /// The server has no supplier update yet (08 has no such API): this always
+  /// fails. Send the request here once it exists.
+  Future<SupplierDetail> updateSupplier(
+    String supplierId,
+    SupplierDraft draft,
+  ) async {
+    throw const SupplierFailure(
+      "SUPPLIER_UPDATE_UNSUPPORTED",
+      "거래처를 수정하지 못했습니다.",
+    );
+  }
+
   /// Clears the search and selects the new supplier. Returns the created
   /// supplier even if reloading the list fails.
   Future<SupplierDetail> register(SupplierDraft draft) async {

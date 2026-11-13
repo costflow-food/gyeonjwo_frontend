@@ -4,6 +4,7 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../domain/supplier.dart";
 import "../supplier_evidence_dialog.dart";
+import "../supplier_register_dialog.dart";
 import "evidence_source_line.dart";
 import "supplier_fact.dart";
 import "supplier_item_card.dart";
@@ -32,6 +33,13 @@ class SupplierDetailContent extends StatelessWidget {
               ),
             ),
             SupplierSourceBadge(supplier.sourceType),
+            IconButton(
+              tooltip: "거래처 수정",
+              visualDensity: VisualDensity.compact,
+              onPressed: () =>
+                  showSupplierRegisterDialog(context, initial: supplier),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+            ),
           ],
         ),
         const SizedBox(height: 20),
