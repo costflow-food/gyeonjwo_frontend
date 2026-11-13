@@ -48,13 +48,15 @@ class MailDraftViewModel extends _$MailDraftViewModel {
     ref.invalidateSelf();
   }
 
+  /// The server answers with IDs only, so the drafts are read again: the new
+  /// draft is added and the one it replaces changes state.
   Future<MailDraft> revise(MailDraft draft, DraftRevisionInput input) async {
-    final revised = await ref
-        .read(mailDraftRepositoryProvider)
-        .createRevision(draft, input);
-    final next = _named(revised);
-    _replace(draft.id, next);
-    return next;
+    final repository = ref.read(mailDraftRepositoryProvider);
+    final revisedId = await repository.createRevision(draft, input);
+    refresh();
+    final drafts = await future;
+    return drafts.where((item) => item.id == revisedId).firstOrNull ??
+        _named(await repository.getDraft(revisedId));
   }
 
   Future<MailDraft> approve(MailDraft draft) => _submit(

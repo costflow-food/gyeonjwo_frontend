@@ -98,6 +98,8 @@ class MailDraftBody extends StatelessWidget {
           controller: editReason,
           style: style,
           decoration: decoration("수정 사유", hint: "예: 수신자 주소 정정, 표현 수정"),
+          validator: (value) =>
+              (value?.trim().isEmpty ?? true) ? "수정 사유를 입력해 주세요." : null,
         ),
       ],
     );
