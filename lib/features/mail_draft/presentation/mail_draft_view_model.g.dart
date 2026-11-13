@@ -57,7 +57,7 @@ final class MailDraftViewModelProvider
 }
 
 String _$mailDraftViewModelHash() =>
-    r'348dd446516227b236eb68bdd7e270beb1abe732';
+    r'db1d9ba0763d921a696348106fa6528824683c6b';
 
 /// SCR-007 drafts of one case. While a draft is sending, or an accepted
 /// approval or reconcile has no visible result yet, re-reads it with API-17.

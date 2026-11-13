@@ -8,24 +8,12 @@ part of 'gmail_connection_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Server-confirmed Gmail connection for the signed-in user.
-///
-/// Right after the OAuth redirect it sends the Google tokens once and waits
-/// for the server result. Otherwise it reads the connection the server keeps.
 
 @ProviderFor(GmailConnectionViewModel)
 final gmailConnectionViewModelProvider = GmailConnectionViewModelProvider._();
 
-/// Server-confirmed Gmail connection for the signed-in user.
-///
-/// Right after the OAuth redirect it sends the Google tokens once and waits
-/// for the server result. Otherwise it reads the connection the server keeps.
 final class GmailConnectionViewModelProvider
     extends $AsyncNotifierProvider<GmailConnectionViewModel, GmailConnection> {
-  /// Server-confirmed Gmail connection for the signed-in user.
-  ///
-  /// Right after the OAuth redirect it sends the Google tokens once and waits
-  /// for the server result. Otherwise it reads the connection the server keeps.
   GmailConnectionViewModelProvider._()
     : super(
         from: null,
@@ -46,12 +34,7 @@ final class GmailConnectionViewModelProvider
 }
 
 String _$gmailConnectionViewModelHash() =>
-    r'ef96882e1dd452c38134034b1fc6c168749159be';
-
-/// Server-confirmed Gmail connection for the signed-in user.
-///
-/// Right after the OAuth redirect it sends the Google tokens once and waits
-/// for the server result. Otherwise it reads the connection the server keeps.
+    r'c737f1de843805b2fc0d1d5676e6016f1211e571';
 
 abstract class _$GmailConnectionViewModel
     extends $AsyncNotifier<GmailConnection> {
@@ -72,14 +55,8 @@ abstract class _$GmailConnectionViewModel
   }
 }
 
-/// Mail features the UI may enable. Disabling here is a convenience only;
-/// the server rejects requests without the matching Google permission.
-
 @ProviderFor(gmailCapabilities)
 final gmailCapabilitiesProvider = GmailCapabilitiesProvider._();
-
-/// Mail features the UI may enable. Disabling here is a convenience only;
-/// the server rejects requests without the matching Google permission.
 
 final class GmailCapabilitiesProvider
     extends
@@ -89,8 +66,6 @@ final class GmailCapabilitiesProvider
           GmailCapabilities
         >
     with $Provider<GmailCapabilities> {
-  /// Mail features the UI may enable. Disabling here is a convenience only;
-  /// the server rejects requests without the matching Google permission.
   GmailCapabilitiesProvider._()
     : super(
         from: null,

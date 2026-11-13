@@ -176,12 +176,8 @@ abstract class _$WorkspaceDarkMode extends $Notifier<bool> {
   }
 }
 
-/// 화면에 실제로 쓰는 팔레트: 고른 테마에 라이트/다크를 적용합니다.
-
 @ProviderFor(activePalette)
 final activePaletteProvider = ActivePaletteProvider._();
-
-/// 화면에 실제로 쓰는 팔레트: 고른 테마에 라이트/다크를 적용합니다.
 
 final class ActivePaletteProvider
     extends
@@ -191,7 +187,6 @@ final class ActivePaletteProvider
           WorkspacePalette
         >
     with $Provider<WorkspacePalette> {
-  /// 화면에 실제로 쓰는 팔레트: 고른 테마에 라이트/다크를 적용합니다.
   ActivePaletteProvider._()
     : super(
         from: null,
