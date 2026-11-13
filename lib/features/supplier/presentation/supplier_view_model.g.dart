@@ -34,7 +34,7 @@ final class SupplierListViewModelProvider
 }
 
 String _$supplierListViewModelHash() =>
-    r'9b33d19ebfbbe3f48fd096b943900756d331e65d';
+    r'88fc7bb000217a0dc803ecec2d4b29f55ab74c75';
 
 abstract class _$SupplierListViewModel
     extends $AsyncNotifier<SupplierListState> {
