@@ -668,8 +668,7 @@ class _DecisionBar extends StatelessWidget {
     final canStart = workCase.can(WorkCaseAction.start);
     final caption = canStart
         ? "다른 대안 찾기: 등록된 거래처 자료로 에이전트가 검토를 시작합니다."
-        : workCase.disabledMessage(WorkCaseAction.start) ??
-              "서버에서 검토 실행이 아직 준비되지 않았습니다.";
+        : workCase.disabledMessage(WorkCaseAction.start);
     final acceptBlocked = canAccept
         ? null
         : workCase.disabledMessage(WorkCaseAction.acceptIncrease) ??
@@ -703,7 +702,7 @@ class _DecisionBar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        for (final line in [?acceptBlocked, caption])
+        for (final line in [?acceptBlocked, ?caption])
           Text(
             line,
             textAlign: TextAlign.center,
@@ -944,8 +943,7 @@ class _Decision extends StatelessWidget {
       ),
       caption: canStart
           ? "등록된 거래처 자료로 에이전트가 검토를 시작합니다."
-          : workCase.disabledMessage(WorkCaseAction.start) ??
-                "서버에서 검토 실행이 아직 준비되지 않았습니다.",
+          : workCase.disabledMessage(WorkCaseAction.start),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -989,22 +987,26 @@ class _Choice extends StatelessWidget {
   const _Choice({required this.button, required this.caption});
 
   final Widget button;
-  final String caption;
+
+  /// Null when there is nothing to add to the button.
+  final String? caption;
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       SizedBox(height: 44, child: button),
-      const SizedBox(height: 6),
-      Text(
-        caption,
-        style: TextStyle(
-          fontSize: AppFontSizes.secondary,
-          color: context.palette.muted,
-          height: 1.5,
+      if (caption case final caption?) ...[
+        const SizedBox(height: 6),
+        Text(
+          caption,
+          style: TextStyle(
+            fontSize: AppFontSizes.secondary,
+            color: context.palette.muted,
+            height: 1.5,
+          ),
         ),
-      ),
+      ],
     ],
   );
 }

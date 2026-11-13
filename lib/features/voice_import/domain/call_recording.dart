@@ -62,12 +62,16 @@ class CallRecordingList {
     required this.items,
     required this.maxPerCase,
     required this.maxBytes,
+    this.deletable = false,
   });
 
   /// 최신순.
   final List<CallRecording> items;
   final int maxPerCase;
   final int maxBytes;
+
+  /// 서버가 녹음 삭제를 제공합니다. 아니면 삭제 버튼을 보여 주지 않습니다.
+  final bool deletable;
 
   /// 실패한 녹음은 한도에 세지 않습니다.
   bool get limitReached =>

@@ -155,9 +155,7 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
       recipient: _recipient.text.trim(),
       subject: _subject.text.trim(),
       body: _body.text,
-      editReason: _editReason.text.trim().isEmpty
-          ? null
-          : _editReason.text.trim(),
+      editReason: _editReason.text.trim(),
     );
     final viewModel = ref.read(
       mailDraftViewModelProvider(widget.caseId).notifier,

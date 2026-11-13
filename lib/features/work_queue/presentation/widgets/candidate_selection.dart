@@ -191,8 +191,8 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         final itemName = widget.workCase.itemName;
         final canSelect = set.canSelect;
         final blockedReason = set.blockedReason;
-        // 서버 사정으로 막힌 경우: 목록 위에서 먼저 알리고 후보를 흐리게 보여줍니다.
-        final serverNotice = set.serverBlockedNotice;
+        // 서버 사정으로 막힌 경우: 버튼을 막고 후보를 흐리게 보여줍니다.
+        final serverBlocked = set.serverBlocked;
         final submit = FilledButton.icon(
           onPressed: selected.isEmpty || _busy || !canSelect
               ? null
@@ -210,7 +210,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 )
               : const Icon(Icons.send_outlined, size: 16),
           label: Text(
-            serverNotice != null
+            serverBlocked
                 ? "지금은 요청할 수 없습니다"
                 : selected.isEmpty
                 ? "업체를 골라 주세요"
@@ -250,21 +250,6 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 ),
               ),
             ],
-            if (serverNotice != null) ...[
-              const SizedBox(height: 12),
-              _Notice(
-                icon: Icons.info_outline,
-                color: const Color(0xFF8A6516),
-                text: serverNotice,
-                action: TextButton(
-                  onPressed: () => ref.invalidate(
-                    caseCandidatesProvider(widget.workCase.id),
-                  ),
-                  style: WorkspaceButtonStyles.text(context),
-                  child: const Text("다시 확인"),
-                ),
-              ),
-            ],
             if (set.unknownFields.isNotEmpty) ...[
               const SizedBox(height: 12),
               _Notice(
@@ -276,7 +261,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
             const SizedBox(height: 12),
             for (final candidate in set.candidates)
               Opacity(
-                opacity: serverNotice != null ? 0.55 : 1,
+                opacity: serverBlocked ? 0.55 : 1,
                 child: _CandidateTile(
                   candidate: candidate,
                   selected: selected.contains(candidate.supplierId),
@@ -308,10 +293,11 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
                 ),
               ),
             ],
-            // 위에서 이미 안내한 경우(서버 사정·과거 후보)는 아래에 다시 적지 않습니다.
+            // 서버 사정으로 막힌 경우는 안내 없이 버튼만 막고, 과거 후보는 위에서 이미
+            // 안내했으므로 아래에 다시 적지 않습니다.
             if (!canSelect &&
                 blockedReason != null &&
-                serverNotice == null &&
+                !serverBlocked &&
                 !set.isStale &&
                 _error == null) ...[
               const SizedBox(height: 8),

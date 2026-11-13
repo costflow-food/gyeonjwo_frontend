@@ -80,7 +80,24 @@ class _Api implements CallRecordingDataSource {
   @override
   Future<Map<String, dynamic>> fetchRecordings(String caseId) async {
     if (listError case final error?) throw error;
-    return _list;
+    if (!deletable) return _list;
+    return {
+      "data": {...(_list["data"] as Map<String, dynamic>), "deletable": true},
+    };
+  }
+
+  /// Whether the list says the server can delete.
+  bool deletable = false;
+
+  final deletes = <String>[];
+
+  /// Thrown by the next delete, if set.
+  ApiException? deleteError;
+
+  @override
+  Future<void> deleteRecording(String caseId, String recordingId) async {
+    deletes.add("$caseId/$recordingId");
+    if (deleteError case final error?) throw error;
   }
 
   static final _list = <String, dynamic>{
@@ -562,6 +579,77 @@ void main() {
       );
       final closed = await answer(503, "CALL_RECORDING_UNAVAILABLE");
       expect(closed.code, "CALL_RECORDING_UNAVAILABLE");
+    });
+  });
+
+  group("delete", () {
+    test(
+      "goes to the recording's own route and needs no answer body",
+      () async {
+        final requests = <String>[];
+        final source = ApiCallRecordingDataSource(
+          _dio((options, body) {
+            requests.add("${options.method} ${options.path}");
+            expect(options.headers.containsKey("Idempotency-Key"), isFalse);
+            expect(options.headers["Authorization"], "Bearer app-token");
+            return ResponseBody.fromString("", 204);
+          }),
+          _token,
+        );
+        await source.deleteRecording("c1", "r1");
+        expect(requests, ["DELETE /api/v1/work-cases/c1/call-recordings/r1"]);
+      },
+    );
+
+    test("a refusal keeps the server's code and message", () async {
+      final source = ApiCallRecordingDataSource(
+        _dio(
+          (options, body) => _json({
+            "error": {
+              "code": "CALL_RECORDING_DELETE_NOT_ALLOWED",
+              "message": "지금은 이 녹음을 삭제할 수 없습니다.",
+            },
+          }, 409),
+        ),
+        _token,
+      );
+      final failure = await _failure(
+        CallRecordingRepositoryImpl(
+          source,
+          storage,
+        ).deleteRecording("c1", "r1"),
+      );
+      expect(failure.code, "CALL_RECORDING_DELETE_NOT_ALLOWED");
+      expect(failure.message, "지금은 이 녹음을 삭제할 수 없습니다.");
+    });
+
+    test("a server without the route reads as not available", () async {
+      final source = ApiCallRecordingDataSource(
+        _dio(
+          (options, body) => _json({
+            "error": {"code": "HTTP_404", "message": "Not Found"},
+          }, 404),
+        ),
+        _token,
+      );
+      final failure = await _failure(
+        CallRecordingRepositoryImpl(
+          source,
+          storage,
+        ).deleteRecording("c1", "r1"),
+      );
+      expect(failure.unavailable, isTrue);
+    });
+
+    test("the repository passes the case and the recording on", () async {
+      await repository.deleteRecording("c1", "r9");
+      expect(api.deletes, ["c1/r9"]);
+    });
+
+    test("the list says whether deleting is offered", () async {
+      expect((await repository.getRecordings("c1")).deletable, isFalse);
+      api.deletable = true;
+      expect((await repository.getRecordings("c1")).deletable, isTrue);
     });
   });
 

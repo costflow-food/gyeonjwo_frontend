@@ -3,7 +3,12 @@ import "package:flutter/material.dart";
 import "../../../../shared/app_font_sizes.dart";
 
 class SupplierRegisterHeader extends StatelessWidget {
-  const SupplierRegisterHeader({super.key, required this.onClose});
+  const SupplierRegisterHeader({
+    super.key,
+    required this.onClose,
+    this.title = "거래처 등록",
+  });
+  final String title;
   final VoidCallback onClose;
 
   @override
@@ -12,10 +17,10 @@ class SupplierRegisterHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(28, 22, 16, 18),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
-              "거래처 등록",
-              style: TextStyle(
+              title,
+              style: const TextStyle(
                 fontSize: AppFontSizes.dialogTitle,
                 fontWeight: FontWeight.w700,
               ),

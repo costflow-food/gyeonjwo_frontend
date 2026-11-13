@@ -10,7 +10,7 @@ class PlanCard extends StatelessWidget {
     required this.plan,
     required this.lowest,
     required this.difference,
-    this.allocations = const [],
+    this.allocation,
   });
 
   final ResponsePlan plan;
@@ -20,14 +20,14 @@ class PlanCard extends StatelessWidget {
   /// 가장 낮은 안과의 차이(원). 계산할 수 없으면 null.
   final String? difference;
 
-  final List<Widget> allocations;
+  /// 배정 칸. 카드 아래쪽에 붙습니다.
+  final Widget? allocation;
 
   @override
   Widget build(BuildContext context) {
     final notes = [...plan.conditions, ...plan.adjustments, ?plan.reason];
     return Container(
       constraints: const BoxConstraints(minHeight: 196),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
@@ -43,92 +43,109 @@ class PlanCard extends StatelessWidget {
           ),
         ],
       ),
-      foregroundDecoration: lowest
-          ? BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-              gradient: RadialGradient(
-                center: Alignment(.85, 1),
-                radius: 1.1,
-                colors: [
-                  context.palette.gold.withValues(alpha: 0.42),
-                  context.palette.gold.withValues(alpha: 0.0),
-                ],
-              ),
-            )
-          : null,
-      child: DefaultTextStyle.merge(
-        style: const TextStyle(color: Colors.white),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              plan.typeLabel,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 6),
-            _StatusChip(plan: plan, lowest: lowest),
-            const SizedBox(height: 18),
-            for (final note in notes)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  note,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.palette.onDeepMuted,
-                    height: 1.5,
-                  ),
+      // The gold glow sits under the content, so the allocation cell keeps
+      // its own colour.
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+        decoration: lowest
+            ? BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                gradient: RadialGradient(
+                  center: Alignment(.85, 1),
+                  radius: 1.1,
+                  colors: [
+                    context.palette.gold.withValues(alpha: 0.42),
+                    context.palette.gold.withValues(alpha: 0.0),
+                  ],
                 ),
-              ),
-            const SizedBox(height: 6),
-            Text.rich(
-              TextSpan(
+              )
+            : null,
+        child: DefaultTextStyle.merge(
+          style: const TextStyle(color: Colors.white),
+          // The amount comes first so it sits at the same height in every
+          // column; the allocation keeps to the bottom edge.
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextSpan(
-                    text: plan.totalAmount == null
-                        ? "미확인"
-                        : decimal(plan.totalAmount!),
+                  Text(
+                    plan.typeLabel,
                     style: const TextStyle(
-                      fontSize: 30,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: -.5,
-                      fontFeatures: [FontFeature.tabularFigures()],
                     ),
                   ),
-                  if (plan.totalAmount != null)
-                    const TextSpan(
-                      text: " 원",
+                  const SizedBox(height: 6),
+                  _StatusChip(plan: plan, lowest: lowest),
+                  const SizedBox(height: 14),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: plan.totalAmount == null
+                              ? "미확인"
+                              : decimal(plan.totalAmount!),
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -.5,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                        if (plan.totalAmount != null)
+                          const TextSpan(
+                            text: " 원",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (lowest)
+                    const Text(
+                      "최저",
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE3C68A),
+                      ),
+                    )
+                  else if (difference != null)
+                    Text(
+                      "+$difference",
+                      style: TextStyle(
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
+                        color: context.palette.onDeepMuted,
+                      ),
+                    ),
+                  for (final (index, note) in notes.indexed)
+                    Padding(
+                      padding: EdgeInsets.only(top: index == 0 ? 10 : 4),
+                      child: Text(
+                        note,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.palette.onDeepMuted,
+                          height: 1.5,
+                        ),
                       ),
                     ),
                 ],
               ),
-            ),
-            if (lowest)
-              const Text(
-                "최저",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFE3C68A),
+              if (allocation != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: allocation,
                 ),
-              )
-            else if (difference != null)
-              Text(
-                "+$difference",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: context.palette.onDeepMuted,
-                ),
-              ),
-            if (allocations.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              ...allocations,
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -159,11 +176,12 @@ class _StatusChip extends StatelessWidget {
             const Color(0x8CFFFFFF),
           );
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(999),
-        border: border == null ? null : Border.all(color: border),
+        // Always there, so every chip is the same height.
+        border: Border.all(color: border ?? Colors.transparent),
       ),
       child: Text(
         label,

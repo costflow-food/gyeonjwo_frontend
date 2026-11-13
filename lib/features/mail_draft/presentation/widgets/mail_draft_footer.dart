@@ -107,18 +107,15 @@ class MailDraftFooter extends StatelessWidget {
                     onPressed: busy ? null : onWithdraw,
                     child: const Text("보내지 않음"),
                   ),
-                // Shown but disabled: [MailDraft.can] keeps edit off.
+                // A stale or pending draft keeps the button, disabled.
                 if (current != null && editable)
-                  Tooltip(
-                    message: current.disabledReason(DraftAction.edit) ?? "",
-                    child: OutlinedButton(
-                      style: WorkspaceButtonStyles.outlined(context),
-                      onPressed: current.can(DraftAction.edit) && !busy
-                          ? onEdit
-                          : null,
-                      child: Text(
-                        current.status == DraftStatus.failed ? "수정본 만들기" : "수정",
-                      ),
+                  OutlinedButton(
+                    style: WorkspaceButtonStyles.outlined(context),
+                    onPressed: current.can(DraftAction.edit) && !busy
+                        ? onEdit
+                        : null,
+                    child: Text(
+                      current.status == DraftStatus.failed ? "수정본 만들기" : "수정",
                     ),
                   ),
                 if (current != null && current.can(DraftAction.reconcile))
