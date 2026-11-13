@@ -8,7 +8,12 @@ import "supplier_form_group_title.dart";
 
 /// Supplier fields. Only the name is required; blanks are stored as unknown.
 class SupplierBasicForm extends StatelessWidget {
-  const SupplierBasicForm({super.key, required this.fields});
+  const SupplierBasicForm({
+    super.key,
+    required this.fields,
+    this.editing = false,
+  });
+  final bool editing;
   final SupplierBasicFields fields;
 
   @override
@@ -29,13 +34,14 @@ class SupplierBasicForm extends StatelessWidget {
               validator: SupplierFormRules.validateName,
               autofocus: true,
             ),
-            SupplierFormField(
-              label: "사업자번호",
-              hint: "000-00-00000",
-              controller: fields.registrationNo,
-              validator: SupplierFormRules.validateBusinessRegistrationNo,
-              keyboardType: TextInputType.number,
-            ),
+            if (editing)
+              SupplierFormField(
+                label: "사업자번호",
+                hint: "000-00-00000",
+                controller: fields.registrationNo,
+                validator: SupplierFormRules.validateBusinessRegistrationNo,
+                keyboardType: TextInputType.number,
+              ),
             SupplierFormField(
               label: "견적 요청 이메일",
               hint: "sales@example.com",
@@ -57,13 +63,14 @@ class SupplierBasicForm extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        SupplierFormField(
-          label: "기준자료 출처 메모",
-          hint: "예: 2026 상반기 공급 계약서",
-          controller: fields.evidenceMemo,
-          maxLines: 2,
-        ),
+        if (editing) const SizedBox(height: 12),
+        if (editing)
+          SupplierFormField(
+            label: "기준자료 출처 메모",
+            hint: "예: 2026 상반기 공급 계약서",
+            controller: fields.evidenceMemo,
+            maxLines: 2,
+          ),
       ],
     );
   }

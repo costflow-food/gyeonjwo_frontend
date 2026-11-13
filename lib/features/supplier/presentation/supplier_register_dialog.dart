@@ -173,10 +173,11 @@ class _SupplierRegisterDialogState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SupplierBasicForm(fields: _basic),
+                        SupplierBasicForm(fields: _basic, editing: _editing),
                         const SizedBox(height: 28),
                         SupplierItemFormList(
                           items: _items,
+                          editing: _editing,
                           onAdd: _addItem,
                           onRemove: _removeItem,
                         ),
