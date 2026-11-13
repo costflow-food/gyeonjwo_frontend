@@ -37,6 +37,10 @@ class ReviewProgressViewModel extends _$ReviewProgressViewModel {
   int _failures = 0;
   bool _paused = false;
   bool _fetching = false;
+
+  /// A check was asked for while one was running; that one may have read
+  /// the case before the change, so another follows it.
+  bool _again = false;
   ReviewStage? _lastRunning;
   String? _lastStep;
 
@@ -46,9 +50,13 @@ class ReviewProgressViewModel extends _$ReviewProgressViewModel {
       _poll?.cancel();
       _signal?.cancel();
     });
-    // A Realtime change may be this case moving on: check now, not in 3 s.
+    // A Realtime change of this case: check now, not in 3 s. Changes of the
+    // buyer's other cases are skipped; a signal without a case id (resync
+    // after a reconnect) may have hidden a change of this one.
     ref.listen(workCaseChangesProvider, (_, next) {
-      if (next.hasValue) _checkSoon();
+      final change = next.value;
+      if (change == null) return;
+      if (change.caseId == null || change.caseId == caseId) _checkSoon();
     });
     final progress = await ref
         .watch(reviewProgressRepositoryProvider)
@@ -120,7 +128,11 @@ class ReviewProgressViewModel extends _$ReviewProgressViewModel {
   }
 
   Future<void> _checkNow() async {
-    if (!ref.mounted || _fetching || _paused) return;
+    if (!ref.mounted || _paused) return;
+    if (_fetching) {
+      _again = true;
+      return;
+    }
     _poll?.cancel();
     _fetching = true;
     try {
@@ -143,6 +155,10 @@ class ReviewProgressViewModel extends _$ReviewProgressViewModel {
       if (!giveUp && !_paused) _poll = Timer(pollInterval, _checkNow);
     } finally {
       _fetching = false;
+      if (_again) {
+        _again = false;
+        if (ref.mounted) _checkSoon();
+      }
     }
   }
 }

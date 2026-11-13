@@ -34,7 +34,7 @@ final class ServerStatusViewModelProvider
 }
 
 String _$serverStatusViewModelHash() =>
-    r'f40852ec0c25f11084054accdadbdf67f9559d20';
+    r'a03360494b1868db8fbb0fb309f3fc2961a762b1';
 
 abstract class _$ServerStatusViewModel extends $AsyncNotifier<ServerStatus> {
   FutureOr<ServerStatus> build();

@@ -73,7 +73,7 @@ final class ReviewProgressViewModelProvider
 }
 
 String _$reviewProgressViewModelHash() =>
-    r'4adee4b25a67da45ff5a6a05c9efdfbb15e46930';
+    r'5fabc415782f59c8c1ed073bc7eb73f995557cdf';
 
 /// API-03 progress of one case after START or RESUME was accepted.
 ///
