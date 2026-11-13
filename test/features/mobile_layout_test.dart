@@ -248,17 +248,17 @@ void main() {
       );
       // The lowest plan that can be chosen starts open; tapping another
       // opens that one instead.
-      expect(find.text("이 안 선택"), findsOneWidget);
-      expect(find.text("수용하기"), findsNothing);
+      expect(find.text("선택"), findsOneWidget);
+      expect(find.text("수용"), findsNothing);
       await tester.ensureVisible(find.text("전량 전환"));
       await tester.tap(find.text("전량 전환"));
       await tester.pumpAndSettle();
-      expect(find.text("이 안 선택"), findsNothing);
-      expect(find.text("수용하기"), findsOneWidget);
+      expect(find.text("선택"), findsNothing);
+      expect(find.text("수용"), findsOneWidget);
       await tester.ensureVisible(find.text("전량 전환"));
       await tester.tap(find.text("전량 전환"));
       await tester.pumpAndSettle();
-      expect(find.text("수용하기"), findsNothing);
+      expect(find.text("수용"), findsNothing);
       // Scroll through the rest of the card.
       await tester.ensureVisible(find.text("견적과 근거"));
       await tester.pumpAndSettle();
