@@ -23,13 +23,12 @@ class PlanBoard extends StatelessWidget {
   final bool folding;
 
   static const _gap = 12.0;
-  static const _minColumnWidth = 190.0;
+  static const _minColumnWidth = 240.0;
 
   @override
   Widget build(BuildContext context) {
     final plans = card.plans;
     final lowestTotal = _lowestValidTotal(plans);
-    final suppliers = _suppliers(plans);
     return LayoutBuilder(
       builder: (context, constraints) {
         final columnWidth =
@@ -39,21 +38,9 @@ class PlanBoard extends StatelessWidget {
           plan: plan,
           lowest: _isLowest(plan, lowestTotal),
           difference: _difference(plan, lowestTotal),
-          allocations: grid
-              ? const []
-              : [
-                  for (final allocation in plan.allocations)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _AllocationCell(
-                        allocation: allocation,
-                        planQuantity: _planQuantity(plan),
-                        lowest: _isLowest(plan, lowestTotal),
-                        conditional: !plan.valid,
-                        showSupplier: true,
-                      ),
-                    ),
-                ],
+          allocation: plan.allocations.isEmpty
+              ? null
+              : _Allocations(plan: plan, lowest: _isLowest(plan, lowestTotal)),
         );
         if (folding) {
           return Column(
@@ -110,24 +97,6 @@ class PlanBoard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             row(cardFor),
-            for (final supplier in suppliers) ...[
-              const SizedBox(height: 14),
-              _SupplierHeader(allocation: supplier),
-              const SizedBox(height: 8),
-              row((plan) {
-                final allocation = plan.allocations
-                    .where((a) => a.supplierId == supplier.supplierId)
-                    .firstOrNull;
-                return allocation == null
-                    ? const _EmptyCell()
-                    : _AllocationCell(
-                        allocation: allocation,
-                        planQuantity: _planQuantity(plan),
-                        lowest: _isLowest(plan, lowestTotal),
-                        conditional: !plan.valid,
-                      );
-              }),
-            ],
             for (final question in card.questions) ...[
               const SizedBox(height: 14),
               _ExcludedNotice(question: question),
@@ -173,135 +142,171 @@ class PlanBoard extends StatelessWidget {
     0,
     (sum, allocation) => sum + (num.tryParse(allocation.quantity) ?? 0),
   );
-
-  static List<PlanAllocation> _suppliers(List<ResponsePlan> plans) {
-    final seen = <String>{};
-    return [
-      for (final plan in plans)
-        for (final allocation in plan.allocations)
-          if (seen.add(allocation.supplierId)) allocation,
-    ];
-  }
 }
 
-class _SupplierHeader extends StatelessWidget {
-  const _SupplierHeader({required this.allocation});
+/// What a plan buys from whom. One supplier: its price, a bar and the
+/// quantity. Several: one bar split by supplier colour, then a line each.
+class _Allocations extends StatelessWidget {
+  const _Allocations({required this.plan, required this.lowest});
 
-  final PlanAllocation allocation;
+  final ResponsePlan plan;
+  final bool lowest;
 
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 4),
-    child: Text.rich(
+  Color _color(BuildContext context, int index) {
+    final palette = context.palette;
+    if (index == 0) {
+      return lowest
+          ? palette.gold
+          : plan.valid
+          ? palette.accent
+          : palette.ink.withValues(alpha: 0.3);
+    }
+    // Later suppliers: fixed hues that stay apart from the first colour and
+    // from each other on the cell, in either brightness.
+    const light = [
+      Color(0xFF5FA98A),
+      Color(0xFF7C9CC4),
+      Color(0xFFB07FB0),
+      Color(0xFF8A8F98),
+    ];
+    const dark = [
+      Color(0xFFA9DCC0),
+      Color(0xFFA9C1E6),
+      Color(0xFFD9B3D9),
+      Color(0xFFB5BAC2),
+    ];
+    final hues = palette.isDark ? dark : light;
+    return hues[(index - 1) % hues.length];
+  }
+
+  Widget _quantity(BuildContext context, PlanAllocation allocation, num total) {
+    return Text.rich(
       TextSpan(
         children: [
           TextSpan(
-            text: allocation.supplierName,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            text: decimal(allocation.quantity),
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          const TextSpan(text: "  "),
           TextSpan(
-            text: allocation.unitPrice == null
-                ? "단가 미확인"
-                : decimal(allocation.unitPrice!),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            text:
+                " | ${decimal(total.toString())}${allocation.unit ?? ""}"
+                "${plan.valid ? "" : " · 조건부"}",
+            style: TextStyle(color: context.palette.muted),
           ),
-          if (allocation.unitPrice != null)
-            TextSpan(
-              text:
-                  "  원${allocation.unit == null ? "" : "/${allocation.unit}"}",
-              style: TextStyle(fontSize: 12, color: context.palette.muted),
-            ),
         ],
       ),
-    ),
-  );
-}
-
-class _AllocationCell extends StatelessWidget {
-  const _AllocationCell({
-    required this.allocation,
-    required this.planQuantity,
-    required this.lowest,
-    required this.conditional,
-    this.showSupplier = false,
-  });
-
-  final PlanAllocation allocation;
-  final num planQuantity;
-  final bool lowest, conditional, showSupplier;
+      style: TextStyle(fontSize: 13, color: context.palette.ink),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final quantity = num.tryParse(allocation.quantity) ?? 0;
-    final share = planQuantity <= 0
-        ? 0.0
-        : (quantity / planQuantity).clamp(0, 1).toDouble();
-    final barColor = lowest
-        ? context.palette.gold
-        : conditional
-        ? context.palette.ink.withValues(alpha: 0.3)
-        : context.palette.accent;
-    final unit = allocation.unit ?? "";
-    return _Cell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (showSupplier) ...[
+    final palette = context.palette;
+    final allocations = plan.allocations;
+    final total = PlanBoard._planQuantity(plan);
+    final supplier = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: palette.ink,
+    );
+    final segments = [
+      for (final (index, allocation) in allocations.indexed)
+        if (total > 0 &&
+            total.isFinite &&
+            (num.tryParse(allocation.quantity) ?? 0) > 0 &&
+            num.parse(allocation.quantity).isFinite)
+          (
+            _color(context, index),
+            (num.parse(allocation.quantity) / total * 1000).round().clamp(
+              1,
+              1000,
+            ),
+          ),
+    ];
+    final bar = ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: SizedBox(
+        height: 6,
+        child: segments.isEmpty
+            ? ColoredBox(color: palette.line)
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (index, (color, flex)) in segments.indexed) ...[
+                    if (index > 0) const SizedBox(width: 2),
+                    Expanded(
+                      flex: flex,
+                      child: ColoredBox(color: color),
+                    ),
+                  ],
+                ],
+              ),
+      ),
+    );
+    if (allocations.length == 1) {
+      final allocation = allocations.single;
+      return _Cell(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             Text(
               "${allocation.supplierName} · ${perUnit(allocation.unitPrice, allocation.unit)}",
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              style: supplier,
             ),
             const SizedBox(height: 6),
+            bar,
+            const SizedBox(height: 8),
+            _quantity(context, allocation, total),
           ],
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: share,
-              minHeight: 6,
-              color: barColor,
-              backgroundColor: context.palette.line,
+        ),
+      );
+    }
+    return _Cell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          bar,
+          for (final (index, allocation) in allocations.indexed)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5, right: 6),
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _color(context, index),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  // The quantity drops under the name when both do not fit.
+                  Expanded(
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 8,
+                      runSpacing: 2,
+                      children: [
+                        Text(
+                          "${allocation.supplierName} · ${perUnit(allocation.unitPrice, allocation.unit)}",
+                          style: supplier,
+                        ),
+                        _quantity(context, allocation, total),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: decimal(allocation.quantity),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                TextSpan(
-                  text:
-                      " | ${decimal(planQuantity.toString())}$unit"
-                      "${conditional ? " · 조건부" : ""}",
-                  style: TextStyle(color: context.palette.muted),
-                ),
-              ],
-            ),
-            style: TextStyle(fontSize: 13, color: context.palette.ink),
-          ),
         ],
       ),
     );
   }
-}
-
-class _EmptyCell extends StatelessWidget {
-  const _EmptyCell();
-
-  @override
-  Widget build(BuildContext context) => _Cell(
-    child: Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        "—",
-        semanticsLabel: "배정 없음",
-        style: TextStyle(color: context.palette.muted),
-      ),
-    ),
-  );
 }
 
 class _Cell extends StatelessWidget {
@@ -467,7 +472,7 @@ class _SelectButton extends StatelessWidget {
         : plan.planId == null
         ? "서버가 이 안의 ID를 보내지 않아 선택할 수 없습니다."
         : card.disabledMessage(ReviewAction.selectPlan);
-    final label = plan.valid ? "이 안 선택" : "수용하기";
+    final label = plan.valid ? "선택" : "수용";
     final onPressed = canSelect && !busy ? onSelect : null;
     const shape = StadiumBorder();
     const size = Size.fromHeight(48);
@@ -796,16 +801,10 @@ class _PlanRow extends StatelessWidget {
                             ),
                           ),
                         if (notes.isNotEmpty) const SizedBox(height: 6),
-                        for (final allocation in plan.allocations)
+                        if (plan.allocations.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
-                            child: _AllocationCell(
-                              allocation: allocation,
-                              planQuantity: PlanBoard._planQuantity(plan),
-                              lowest: lowest,
-                              conditional: !plan.valid,
-                              showSupplier: true,
-                            ),
+                            child: _Allocations(plan: plan, lowest: lowest),
                           ),
                         _SelectButton(
                           plan: plan,

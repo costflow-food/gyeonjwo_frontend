@@ -628,7 +628,7 @@ void main() {
       expect(find.text("최저"), findsOneWidget);
       // Open on the chosen plan, not the lowest.
       expect(find.text("선택한 구매안"), findsOneWidget);
-      expect(find.text("이 안 선택"), findsNothing);
+      expect(find.text("선택"), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -640,8 +640,8 @@ void main() {
           plan("KEEP", "2559000"),
         ]),
       );
-      expect(find.text("이 안 선택"), findsOneWidget);
-      expect(find.text("수용하기"), findsNothing);
+      expect(find.text("선택"), findsOneWidget);
+      expect(find.text("수용"), findsNothing);
     });
 
     testWidgets("the open plan stays open over a reload, also without ids", (
@@ -670,7 +670,7 @@ void main() {
       expect(find.text("KEEP 사유"), findsNothing);
       // A new review without the open plan: back to the starting choice.
       await _pump(tester, card([plan("SPLIT", "2600000")]));
-      expect(find.text("이 안 선택"), findsOneWidget);
+      expect(find.text("선택"), findsOneWidget);
     });
 
     testWidgets("a long total leaves the name readable at text scale 2", (
@@ -687,7 +687,7 @@ void main() {
 
     testWidgets("a single plan is simply open", (tester) async {
       await _pump(tester, card([plan("KEEP", "2559000")]));
-      expect(find.text("이 안 선택"), findsOneWidget);
+      expect(find.text("선택"), findsOneWidget);
       expect(find.byIcon(Icons.expand_less), findsNothing);
       expect(find.byIcon(Icons.expand_more), findsNothing);
     });
