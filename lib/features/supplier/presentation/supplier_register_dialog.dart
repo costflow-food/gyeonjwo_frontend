@@ -12,7 +12,11 @@ import "widgets/supplier_register_header.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/workspace_dialog.dart";
 
-Future<SupplierDetail?> showSupplierRegisterDialog(BuildContext context) {
+/// Opens the supplier form: empty to register, filled from [initial] to edit.
+Future<SupplierDetail?> showSupplierRegisterDialog(
+  BuildContext context, {
+  SupplierDetail? initial,
+}) {
   return showDialog<SupplierDetail>(
     context: context,
     // Full screen on a phone: the dialog paints behind the system bars and
@@ -20,12 +24,15 @@ Future<SupplierDetail?> showSupplierRegisterDialog(BuildContext context) {
     useSafeArea: !isCompactLayout(context),
     barrierDismissible: false,
     barrierColor: Colors.black.withValues(alpha: .30),
-    builder: (context) => const SupplierRegisterDialog(),
+    builder: (context) => SupplierRegisterDialog(initial: initial),
   );
 }
 
 class SupplierRegisterDialog extends ConsumerStatefulWidget {
-  const SupplierRegisterDialog({super.key});
+  const SupplierRegisterDialog({super.key, this.initial});
+
+  /// The supplier being edited. Null when registering a new one.
+  final SupplierDetail? initial;
 
   @override
   ConsumerState<SupplierRegisterDialog> createState() =>
@@ -35,8 +42,16 @@ class SupplierRegisterDialog extends ConsumerStatefulWidget {
 class _SupplierRegisterDialogState
     extends ConsumerState<SupplierRegisterDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _basic = SupplierBasicFields();
-  final List<SupplierItemFields> _items = [SupplierItemFields()];
+  late final SupplierBasicFields _basic = SupplierBasicFields.of(
+    widget.initial,
+  );
+  late final List<SupplierItemFields> _items = [
+    for (final item in widget.initial?.items ?? const <SupplierItem>[])
+      SupplierItemFields.of(item),
+    if (widget.initial?.items.isEmpty ?? true) SupplierItemFields(),
+  ];
+
+  bool get _editing => widget.initial != null;
 
   bool _dirty = false;
   bool _submitting = false;
@@ -62,9 +77,10 @@ class _SupplierRegisterDialogState
     final draft = _basic.toDraft([for (final item in _items) item.toDraft()]);
     setState(() => _submitting = true);
     try {
-      final created = await ref
-          .read(supplierListViewModelProvider.notifier)
-          .register(draft);
+      final viewModel = ref.read(supplierListViewModelProvider.notifier);
+      final created = _editing
+          ? await viewModel.updateSupplier(widget.initial!.id, draft)
+          : await viewModel.register(draft);
       if (!mounted) return;
       Navigator.of(context).pop(created);
     } on SupplierFailure catch (failure) {
@@ -77,7 +93,9 @@ class _SupplierRegisterDialogState
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = "등록 결과를 확인하지 못했습니다. 다시 등록을 누르면 같은 요청으로 확인합니다.";
+        _error = _editing
+            ? "수정 결과를 확인하지 못했습니다."
+            : "등록 결과를 확인하지 못했습니다. 다시 등록을 누르면 같은 요청으로 확인합니다.";
       });
     }
   }
@@ -92,7 +110,9 @@ class _SupplierRegisterDialogState
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("입력한 내용을 버리시겠습니까?"),
-        content: const Text("등록하지 않은 거래처 정보는 저장되지 않습니다."),
+        content: Text(
+          _editing ? "저장하지 않은 수정 내용은 사라집니다." : "등록하지 않은 거래처 정보는 저장되지 않습니다.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -140,7 +160,10 @@ class _SupplierRegisterDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SupplierRegisterHeader(onClose: _close),
+              SupplierRegisterHeader(
+                title: _editing ? "거래처 수정" : "거래처 등록",
+                onClose: _close,
+              ),
               Divider(height: 1, color: context.palette.line),
               DialogScrollArea(
                 child: SingleChildScrollView(
@@ -166,6 +189,7 @@ class _SupplierRegisterDialogState
               SupplierRegisterFooter(
                 error: _error,
                 submitting: _submitting,
+                submitLabel: _editing ? "저장" : "등록",
                 onCancel: _close,
                 onSubmit: _submit,
               ),

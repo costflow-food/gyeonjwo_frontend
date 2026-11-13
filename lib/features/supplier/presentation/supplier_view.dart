@@ -6,6 +6,7 @@ import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/note_line.dart";
 import "../../../shared/widgets/workspace_shell.dart";
 import "../domain/supplier_list_state.dart";
+import "supplier_register_dialog.dart";
 import "supplier_view_model.dart";
 import "../../../shared/widgets/outline_panel.dart";
 import "widgets/supplier_content.dart";
@@ -49,7 +50,10 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SupplierHeader(onRefresh: viewModel.refresh),
+          SupplierHeader(
+            onRefresh: viewModel.refresh,
+            onRegister: () => showSupplierRegisterDialog(context),
+          ),
           const SizedBox(height: 24),
           AsyncContent<SupplierListState>(
             value: value,
@@ -77,6 +81,11 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
   ) => MobileTabScaffold(
     title: "거래처",
     actions: [
+      IconButton(
+        tooltip: "거래처 등록",
+        onPressed: () => showSupplierRegisterDialog(context),
+        icon: const Icon(Icons.add_business_outlined),
+      ),
       IconButton(
         tooltip: "새로고침",
         onPressed: viewModel.refresh,
