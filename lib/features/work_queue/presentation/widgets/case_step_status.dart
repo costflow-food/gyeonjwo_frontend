@@ -6,6 +6,7 @@ import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
+import "../../../supplier/presentation/supplier_register_dialog.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
@@ -175,9 +176,7 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
             child: SizedBox(
               height: 44,
               child: OutlinedButton.icon(
-                // The server has no supplier registration: not pressable.
-                // Reconnect showSupplierRegisterDialog once it has.
-                onPressed: null,
+                onPressed: () => showSupplierRegisterDialog(context),
                 style: WorkspaceButtonStyles.outlined(context),
                 icon: const Icon(Icons.store_outlined, size: 16),
                 label: const Text("거래처 등록"),

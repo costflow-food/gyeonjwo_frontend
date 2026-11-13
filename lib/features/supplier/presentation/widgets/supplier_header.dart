@@ -5,9 +5,14 @@ import "../../../../shared/widgets/preview_button.dart";
 import "../../../../shared/workspace_colors.dart";
 
 class SupplierHeader extends StatelessWidget {
-  const SupplierHeader({super.key, required this.onRefresh});
+  const SupplierHeader({
+    super.key,
+    required this.onRefresh,
+    required this.onRegister,
+  });
 
   final VoidCallback onRefresh;
+  final VoidCallback onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +42,19 @@ class SupplierHeader extends StatelessWidget {
             ),
           ],
         ),
-        PreviewButton("새로고침", icon: Icons.refresh, onPressed: onRefresh),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            PreviewButton("새로고침", icon: Icons.refresh, onPressed: onRefresh),
+            PreviewButton(
+              "거래처 등록",
+              icon: Icons.add_business_outlined,
+              filled: true,
+              onPressed: onRegister,
+            ),
+          ],
+        ),
       ],
     );
   }

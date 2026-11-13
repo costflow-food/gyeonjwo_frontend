@@ -4,6 +4,21 @@ import "../domain/supplier.dart";
 import "../domain/supplier_form_rules.dart";
 
 class SupplierBasicFields {
+  SupplierBasicFields();
+
+  /// Filled from [supplier] when editing; empty for null.
+  factory SupplierBasicFields.of(SupplierDetail? supplier) {
+    final fields = SupplierBasicFields();
+    if (supplier == null) return fields;
+    fields.name.text = supplier.name;
+    fields.registrationNo.text = supplier.businessRegistrationNo ?? "";
+    fields.email.text = supplier.contactEmail ?? "";
+    fields.contactName.text = supplier.contact.name ?? "";
+    fields.phone.text = supplier.contact.phone ?? "";
+    fields.location.text = supplier.location ?? "";
+    return fields;
+  }
+
   final name = TextEditingController();
   final registrationNo = TextEditingController();
   final email = TextEditingController();
@@ -47,6 +62,23 @@ class SupplierBasicFields {
 }
 
 class SupplierItemFields {
+  SupplierItemFields();
+
+  factory SupplierItemFields.of(SupplierItem item) {
+    final fields = SupplierItemFields();
+    fields.name.text = item.itemName;
+    fields.specification.text = item.specification ?? "";
+    fields.unit.text = item.unit ?? "";
+    fields.unitsPerBox.text = item.unitsPerBox ?? "";
+    fields.weightPerBox.text = item.weightPerBox ?? "";
+    fields.origin.text = item.origin ?? "";
+    fields.certifications.text = [
+      for (final certification in item.certifications) certification.name,
+    ].join(", ");
+    fields.notes.text = item.notes ?? "";
+    return fields;
+  }
+
   final name = TextEditingController();
   final specification = TextEditingController();
   final unit = TextEditingController();

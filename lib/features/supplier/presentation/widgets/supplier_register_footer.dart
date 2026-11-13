@@ -10,7 +10,11 @@ class SupplierRegisterFooter extends StatelessWidget {
     required this.submitting,
     required this.onCancel,
     required this.onSubmit,
+    this.submitLabel = "등록",
   });
+
+  /// "등록" for a new supplier, "저장" when editing.
+  final String submitLabel;
 
   final String? error;
   final bool submitting;
@@ -71,7 +75,7 @@ class SupplierRegisterFooter extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.check, size: 16),
-                label: Text(submitting ? "등록 중" : "등록"),
+                label: Text(submitting ? "$submitLabel 중" : submitLabel),
               ),
             ],
           ),
