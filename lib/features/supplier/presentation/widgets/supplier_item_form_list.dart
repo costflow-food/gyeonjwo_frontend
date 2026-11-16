@@ -13,8 +13,10 @@ class SupplierItemFormList extends StatelessWidget {
     required this.items,
     required this.onAdd,
     required this.onRemove,
+    this.editing = false,
   });
 
+  final bool editing;
   final List<SupplierItemFields> items;
   final VoidCallback onAdd;
   final ValueChanged<SupplierItemFields> onRemove;
@@ -29,7 +31,7 @@ class SupplierItemFormList extends StatelessWidget {
             Expanded(
               child: SupplierFormGroupTitle(
                 "취급 품목 ${items.length}",
-                "후보 선정은 취급 품목을 근거로 합니다. 인증은 증빙 확인 전까지 미확인으로 저장됩니다.",
+                "후보 선정은 취급 품목을 근거로 합니다.",
               ),
             ),
             const SizedBox(width: 12),
@@ -56,6 +58,7 @@ class SupplierItemFormList extends StatelessWidget {
         for (final (index, item) in items.indexed) ...[
           // ObjectKey keeps each item's fields attached after a removal.
           SupplierItemForm(
+            editing: editing,
             key: ObjectKey(item),
             index: index,
             fields: item,

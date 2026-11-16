@@ -2,6 +2,8 @@ import "package:dio/dio.dart";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 
 import "../../../shared/network/api_client.dart";
+import "../../../shared/network/api_request.dart"
+    show sendApiRequest, ApiException;
 import "../../../shared/network/authorized_json_get.dart";
 import "../../auth/data/auth_session_data_source.dart";
 
@@ -17,8 +19,6 @@ SupplierDataSource supplierDataSource(Ref ref) => ApiSupplierDataSource(
 ///
 /// Reads: API-29 `GET /suppliers`, API-30 `GET /suppliers/{supplier_id}`,
 /// API-31 `GET /supplier-items/{supplier_item_id}/price-history`.
-/// Create: 08에 없는 계약입니다(거래처 CRUD는 Must 밖). 서버 지원이 합의되기
-/// 전에는 [ApiSupplierDataSource]가 요청을 보내지 않고 거절합니다.
 /// Failures use the 08 error shape via [SupplierApiException].
 abstract interface class SupplierDataSource {
   Future<Map<String, dynamic>> fetchSuppliers({
@@ -75,18 +75,25 @@ class ApiSupplierDataSource implements SupplierDataSource {
     "$_supplierItems/${Uri.encodeComponent(supplierItemId)}/price-history",
   );
 
-  /// `POST /suppliers`는 08에 없어 서버에 보내지 않습니다.
   @override
   Future<Map<String, dynamic>> createSupplier(
     Map<String, Object?> body, {
     required String idempotencyKey,
   }) async {
-    throw const SupplierApiException(501, {
-      "error": {
-        "code": "SUPPLIER_REGISTRATION_UNSUPPORTED",
-        "message": "거래처를 등록하지 못했습니다.",
-      },
-    });
+    try {
+      return await sendApiRequest(
+        _accessToken,
+        (headers) => _dio.post<Map<String, dynamic>>(
+          _suppliers,
+          data: body,
+          options: Options(headers: headers),
+        ),
+      );
+    } on ApiException catch (error) {
+      throw SupplierApiException(error.statusCode, {
+        "error": {"code": error.code, "message": error.message},
+      });
+    }
   }
 
   Future<Map<String, dynamic>> _get(

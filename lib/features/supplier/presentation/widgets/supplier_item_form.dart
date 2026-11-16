@@ -13,8 +13,10 @@ class SupplierItemForm extends StatelessWidget {
     required this.index,
     required this.fields,
     required this.onRemove,
+    this.editing = false,
   });
 
+  final bool editing;
   final int index;
   final SupplierItemFields fields;
   final VoidCallback onRemove;
@@ -64,48 +66,55 @@ class SupplierItemForm extends StatelessWidget {
                       controller: fields.name,
                       validator: SupplierFormRules.validateItemName,
                     ),
-                    SupplierFormField(
-                      label: "규격",
-                      hint: "예: IQF 홀 / 10kg 박스",
-                      controller: fields.specification,
-                    ),
-                    SupplierFormField(
-                      label: "단위",
-                      hint: "예: kg, box, EA",
-                      controller: fields.unit,
-                    ),
-                    SupplierFormField(
-                      label: "박스당 수량",
-                      controller: fields.unitsPerBox,
-                      validator: SupplierFormRules.validatePositiveDecimal,
-                      keyboardType: decimal,
-                    ),
-                    SupplierFormField(
-                      label: "박스당 중량 (kg)",
-                      controller: fields.weightPerBox,
-                      validator: SupplierFormRules.validatePositiveDecimal,
-                      keyboardType: decimal,
-                    ),
-                    SupplierFormField(
-                      label: "원산지",
-                      hint: "예: 국산(충남 논산)",
-                      controller: fields.origin,
-                    ),
+                    if (editing)
+                      SupplierFormField(
+                        label: "규격",
+                        hint: "예: IQF 홀 / 10kg 박스",
+                        controller: fields.specification,
+                      ),
+                    if (editing)
+                      SupplierFormField(
+                        label: "단위",
+                        hint: "예: kg, box, EA",
+                        controller: fields.unit,
+                      ),
+                    if (editing)
+                      SupplierFormField(
+                        label: "박스당 수량",
+                        controller: fields.unitsPerBox,
+                        validator: SupplierFormRules.validatePositiveDecimal,
+                        keyboardType: decimal,
+                      ),
+                    if (editing)
+                      SupplierFormField(
+                        label: "박스당 중량 (kg)",
+                        controller: fields.weightPerBox,
+                        validator: SupplierFormRules.validatePositiveDecimal,
+                        keyboardType: decimal,
+                      ),
+                    if (editing)
+                      SupplierFormField(
+                        label: "원산지",
+                        hint: "예: 국산(충남 논산)",
+                        controller: fields.origin,
+                      ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                SupplierFormField(
-                  label: "인증",
-                  hint: "쉼표로 구분. 예: HACCP, 유기농",
-                  controller: fields.certifications,
-                ),
-                const SizedBox(height: 12),
-                SupplierFormField(
-                  label: "품목 비고",
-                  hint: "특이사항 메모. 후보를 자동으로 제외하는 규칙으로 쓰이지 않습니다.",
-                  controller: fields.notes,
-                  maxLines: 2,
-                ),
+                if (editing) const SizedBox(height: 12),
+                if (editing)
+                  SupplierFormField(
+                    label: "인증",
+                    hint: "쉼표로 구분. 예: HACCP, 유기농",
+                    controller: fields.certifications,
+                  ),
+                if (editing) const SizedBox(height: 12),
+                if (editing)
+                  SupplierFormField(
+                    label: "품목 비고",
+                    hint: "특이사항 메모. 후보를 자동으로 제외하는 규칙으로 쓰이지 않습니다.",
+                    controller: fields.notes,
+                    maxLines: 2,
+                  ),
               ],
             ),
           ),

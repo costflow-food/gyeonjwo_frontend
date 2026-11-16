@@ -83,24 +83,11 @@ class SupplierRepositoryImpl implements SupplierRepository {
 
   static Map<String, Object?> _draftJson(SupplierDraft draft) => {
     "name": draft.name,
-    "business_registration_no": draft.businessRegistrationNo,
     "contact_email": draft.contactEmail,
-    "contact": {"name": draft.contactName, "phone": draft.contactPhone},
+    "contact_name": draft.contactName,
+    "contact_phone": draft.contactPhone,
     "location": draft.location,
-    "evidence": {"memo": draft.evidenceMemo},
-    "items": [
-      for (final item in draft.items)
-        {
-          "item_name": item.itemName,
-          "specification": item.specification,
-          "unit": item.unit,
-          "units_per_box": item.unitsPerBox,
-          "weight_per_box": item.weightPerBox,
-          "origin": item.origin,
-          "certifications": item.certifications,
-          "notes": item.notes,
-        },
-    ],
+    "item_names": [for (final item in draft.items) item.itemName],
   };
 
   Future<T> _guard<T>(Future<T> Function() request) async {

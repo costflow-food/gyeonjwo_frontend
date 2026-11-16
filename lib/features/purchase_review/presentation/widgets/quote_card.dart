@@ -10,6 +10,9 @@ import "review_format.dart";
 const _tax = {"EXCLUDED": "부가세 별도", "INCLUDED": "부가세 포함", "EXEMPT": "면세"};
 const _checkStates = {"STATED": "원문 확인", "MISSING": "원문에 없음", "UNCLEAR": "불명확"};
 
+/// Checks already shown on the fixed 부가세 line above the check list.
+const _taxFields = {"tax_terms", "tax_basis"};
+
 class QuoteCard extends StatelessWidget {
   const QuoteCard({super.key, required this.quote});
 
@@ -17,6 +20,12 @@ class QuoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // One 부가세 line: the stored basis, else the quote's own wording.
+    final taxWording = quote.checks
+        .where((check) => _taxFields.contains(check.field))
+        .map((check) => check.value)
+        .whereType<String>()
+        .firstOrNull;
     return OutlinePanel(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -41,7 +50,7 @@ class QuoteCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           DetailLine("단가", perUnit(quote.unitPrice, quote.unit)),
-          DetailLine("부가세", _tax[quote.taxBasis] ?? "미확인"),
+          DetailLine("부가세", _tax[quote.taxBasis] ?? taxWording ?? "미확인"),
           DetailLine(
             "공급 가능량",
             quote.availableQuantity == null
@@ -67,11 +76,12 @@ class QuoteCard extends StatelessWidget {
               caption: cost.sourceText,
             ),
           for (final check in quote.checks)
-            DetailLine(
-              check.label,
-              check.value ?? (_checkStates[check.state] ?? check.state),
-              mutedValue: check.value == null,
-            ),
+            if (!_taxFields.contains(check.field))
+              DetailLine(
+                check.label,
+                check.value ?? (_checkStates[check.state] ?? check.state),
+                mutedValue: check.value == null,
+              ),
           for (final note in quote.itemNotes)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
