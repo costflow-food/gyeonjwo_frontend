@@ -2,6 +2,7 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
 
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/workspace_colors.dart";
@@ -14,6 +15,7 @@ import "widgets/mail_draft_footer.dart";
 import "widgets/mail_draft_header.dart";
 import "widgets/mail_draft_tabs.dart";
 import "widgets/send_policy_banner.dart";
+import "../../../shared/widgets/close_on_case_leave.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/workspace_dialog.dart";
 
@@ -23,6 +25,8 @@ Future<void> showMailDraftDialog(
   String? draftId,
   Map<String, DraftDispatchState> dispatchStates = const {},
 }) {
+  // Captured before the dialog opens so it can follow later navigation.
+  final router = GoRouter.maybeOf(context);
   return showDialog<void>(
     context: context,
     // Full screen on a phone: the dialog paints behind the system bars and
@@ -36,6 +40,7 @@ Future<void> showMailDraftDialog(
         caseId: caseId,
         initialDraftId: draftId,
         dispatchStates: dispatchStates,
+        router: router,
       ),
     ),
   );
@@ -47,6 +52,7 @@ class MailDraftDialog extends ConsumerStatefulWidget {
     required this.caseId,
     this.initialDraftId,
     this.dispatchStates = const {},
+    this.router,
   });
 
   final String caseId;
@@ -54,6 +60,10 @@ class MailDraftDialog extends ConsumerStatefulWidget {
 
   /// draft_id → API-12 dispatch_state.
   final Map<String, DraftDispatchState> dispatchStates;
+
+  /// When given, the dialog closes itself once the app moves to a screen that
+  /// is not this case, unless there are unsaved edits or a send in flight.
+  final GoRouter? router;
 
   @override
   ConsumerState<MailDraftDialog> createState() => _MailDraftDialogState();
@@ -250,94 +260,99 @@ class _MailDraftDialogState extends ConsumerState<MailDraftDialog> {
     // Keep showing the last drafts while a send-status poll reloads.
     final drafts = value.value ?? const <MailDraft>[];
     final draft = _selected(drafts);
-    return PopScope(
-      canPop: !_dirty && !_busy,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _close();
-      },
-      child: WorkspaceDialog(
-        maxWidth: 860,
-        child: Form(
-          key: _formKey,
-          // Rebuild so canPop follows unsaved edits.
-          onChanged: () => setState(() {}),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              MailDraftHeader(onClose: _close),
-              Divider(height: 1, color: context.palette.line),
-              DialogScrollArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(28),
-                  child: AsyncContent<List<MailDraft>>(
-                    value: value.hasValue ? AsyncData(drafts) : value,
-                    onRetry: ref.read(provider.notifier).refresh,
-                    builder: (drafts) => drafts.isEmpty || draft == null
-                        ? const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 32),
-                            child: Center(
-                              child: Text("이 업무에는 아직 메일 초안이 없습니다."),
-                            ),
-                          )
-                        : AbsorbPointer(
-                            absorbing: _busy,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Switching tabs while editing would lose edits.
-                                IgnorePointer(
-                                  ignoring: _editing,
-                                  child: MailDraftTabs(
-                                    drafts: drafts,
-                                    dispatchStates: widget.dispatchStates,
-                                    selectedId: draft.id,
-                                    onSelect: (id) => setState(() {
-                                      _selectedId = id;
-                                      _error = null;
-                                    }),
+    return CloseOnCaseLeave(
+      router: widget.router,
+      caseId: widget.caseId,
+      keepOpen: () => _dirty || _busy,
+      child: PopScope(
+        canPop: !_dirty && !_busy,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _close();
+        },
+        child: WorkspaceDialog(
+          maxWidth: 860,
+          child: Form(
+            key: _formKey,
+            // Rebuild so canPop follows unsaved edits.
+            onChanged: () => setState(() {}),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                MailDraftHeader(onClose: _close),
+                Divider(height: 1, color: context.palette.line),
+                DialogScrollArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(28),
+                    child: AsyncContent<List<MailDraft>>(
+                      value: value.hasValue ? AsyncData(drafts) : value,
+                      onRetry: ref.read(provider.notifier).refresh,
+                      builder: (drafts) => drafts.isEmpty || draft == null
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32),
+                              child: Center(
+                                child: Text("이 업무에는 아직 메일 초안이 없습니다."),
+                              ),
+                            )
+                          : AbsorbPointer(
+                              absorbing: _busy,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Switching tabs while editing would lose edits.
+                                  IgnorePointer(
+                                    ignoring: _editing,
+                                    child: MailDraftTabs(
+                                      drafts: drafts,
+                                      dispatchStates: widget.dispatchStates,
+                                      selectedId: draft.id,
+                                      onSelect: (id) => setState(() {
+                                        _selectedId = id;
+                                        _error = null;
+                                      }),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 18),
-                                SendPolicyBanner(
-                                  draft: draft,
-                                  editing: _editing,
-                                  dispatchState:
-                                      widget.dispatchStates[draft.id],
-                                  onOpenSettings: _editing
-                                      ? null
-                                      : _openSettings,
-                                ),
-                                const SizedBox(height: 16),
-                                MailDraftBody(
-                                  draft: draft,
-                                  editing: _editing,
-                                  recipient: _recipient,
-                                  subject: _subject,
-                                  body: _body,
-                                  editReason: _editReason,
-                                ),
-                              ],
+                                  const SizedBox(height: 18),
+                                  SendPolicyBanner(
+                                    draft: draft,
+                                    editing: _editing,
+                                    dispatchState:
+                                        widget.dispatchStates[draft.id],
+                                    onOpenSettings: _editing
+                                        ? null
+                                        : _openSettings,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  MailDraftBody(
+                                    draft: draft,
+                                    editing: _editing,
+                                    recipient: _recipient,
+                                    subject: _subject,
+                                    body: _body,
+                                    editReason: _editReason,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                    ),
                   ),
                 ),
-              ),
-              Divider(height: 1, color: context.palette.line),
-              MailDraftFooter(
-                draft: draft,
-                editing: _editing,
-                busy: _busy,
-                error: _error,
-                onEdit: () => _startEdit(draft!),
-                onCancelEdit: _cancelEdit,
-                onSaveRevision: () => _saveRevision(draft!),
-                onApprove: () => _approve(draft!),
-                onReconcile: () => _reconcile(draft!),
-                onWithdraw: () => _withdraw(draft!),
-                onClose: _close,
-              ),
-            ],
+                Divider(height: 1, color: context.palette.line),
+                MailDraftFooter(
+                  draft: draft,
+                  editing: _editing,
+                  busy: _busy,
+                  error: _error,
+                  onEdit: () => _startEdit(draft!),
+                  onCancelEdit: _cancelEdit,
+                  onSaveRevision: () => _saveRevision(draft!),
+                  onApprove: () => _approve(draft!),
+                  onReconcile: () => _reconcile(draft!),
+                  onWithdraw: () => _withdraw(draft!),
+                  onClose: _close,
+                ),
+              ],
+            ),
           ),
         ),
       ),
