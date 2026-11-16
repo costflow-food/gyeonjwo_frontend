@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../shared/widgets/close_on_case_leave.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/workspace_colors.dart";
 import "../domain/review_progress_repository.dart";
@@ -76,18 +77,10 @@ class ReviewProgressView extends ConsumerStatefulWidget {
 
 class _ReviewProgressViewState extends ConsumerState<ReviewProgressView> {
   late final AppLifecycleListener _lifecycle;
-  String? _openedAt;
-  ModalRoute<Object?>? _route;
-  bool _closing = false;
 
   @override
   void initState() {
     super.initState();
-    final router = widget.router;
-    if (router != null) {
-      _openedAt = router.routerDelegate.currentConfiguration.uri.path;
-      router.routerDelegate.addListener(_onRouteChanged);
-    }
     // A hidden tab or a backgrounded app asks nothing until it is back.
     _lifecycle = AppLifecycleListener(
       onStateChange: (lifecycle) {
@@ -109,36 +102,9 @@ class _ReviewProgressViewState extends ConsumerState<ReviewProgressView> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _route = ModalRoute.of(context);
-  }
-
-  @override
   void dispose() {
-    widget.router?.routerDelegate.removeListener(_onRouteChanged);
     _lifecycle.dispose();
     super.dispose();
-  }
-
-  /// Closes this view when the screen behind it is no longer this case.
-  /// Opening the case itself (업무 보기, /cases/:id/review) keeps it.
-  void _onRouteChanged() {
-    final router = widget.router;
-    if (router == null || _closing || !mounted) return;
-    final path = router.routerDelegate.currentConfiguration.uri.path;
-    final ownCase = "/cases/${widget.caseId}";
-    if (path == _openedAt || path == ownCase || path.startsWith("$ownCase/")) {
-      return;
-    }
-    _closing = true;
-    // Not during the router's own notification: remove only this route,
-    // whatever else is open on top of it.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final route = _route;
-      if (!mounted || route == null || !route.isActive) return;
-      route.navigator?.removeRoute(route);
-    });
   }
 
   @override
@@ -148,26 +114,30 @@ class _ReviewProgressViewState extends ConsumerState<ReviewProgressView> {
     final retry = ref
         .read(reviewProgressViewModelProvider(widget.caseId).notifier)
         .refresh;
-    return ReviewProgressDialog(
-      title: widget.title,
-      outcome: current?.outcome,
-      onClose: () => Navigator.of(context).pop(),
-      onViewCase: widget.onViewCase,
-      body: switch (value) {
-        // Keep the steps on screen while a check reloads.
-        _ when current != null => ReviewProgressBody(
-          state: current,
-          onRetry: retry,
-        ),
-        AsyncError(:final error) => ReviewProgressError(
-          failure: error is ReviewProgressFailure ? error : null,
-          onRetry: retry,
-        ),
-        _ => const Padding(
-          padding: EdgeInsets.all(32),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      },
+    return CloseOnCaseLeave(
+      router: widget.router,
+      caseId: widget.caseId,
+      child: ReviewProgressDialog(
+        title: widget.title,
+        outcome: current?.outcome,
+        onClose: () => Navigator.of(context).pop(),
+        onViewCase: widget.onViewCase,
+        body: switch (value) {
+          // Keep the steps on screen while a check reloads.
+          _ when current != null => ReviewProgressBody(
+            state: current,
+            onRetry: retry,
+          ),
+          AsyncError(:final error) => ReviewProgressError(
+            failure: error is ReviewProgressFailure ? error : null,
+            onRetry: retry,
+          ),
+          _ => const Padding(
+            padding: EdgeInsets.all(32),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        },
+      ),
     );
   }
 }
