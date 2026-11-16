@@ -16,7 +16,9 @@ class WorkQueueState {
   final List<WorkCase> items;
   final WorkQueueCounts counts;
 
-  /// 페이지 상한을 넘어 아직 받지 않은 업무가 있을 때만 값이 있습니다.
+  /// Set while cases are still on the server: the pages after the first
+  /// are on their way ([loadingMore] is true), a page failed, or the list
+  /// is past the page limit of one load.
   final String? nextCursor;
 
   /// null은 전체 탭입니다.

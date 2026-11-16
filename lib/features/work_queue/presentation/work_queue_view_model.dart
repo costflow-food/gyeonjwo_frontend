@@ -20,10 +20,19 @@ Duration? _noRetry(int retryCount, Object error) => null;
 
 @Riverpod(keepAlive: true, retry: _noRetry)
 class WorkQueueViewModel extends _$WorkQueueViewModel {
-  /// Fallback when Realtime is down or misses a change (08 §11: 15 seconds).
-  /// Any reload restarts it, so it only fires after a quiet interval. It
-  /// waits while the browser tab is hidden.
-  static const pollInterval = Duration(seconds: 15);
+  /// Fallback when Realtime is down or misses a change. Any reload restarts
+  /// it, so it only fires after a quiet interval. It waits while the browser
+  /// tab is hidden.
+  ///
+  /// 08 §11 suggests 15 seconds, but one poll re-reads every page (up to
+  /// [maxPages] requests) and Realtime already covers the usual cases: a
+  /// changed case is re-read alone and every (re)connect asks for a whole
+  /// re-read. So the fallback runs once a minute.
+  static const pollInterval = Duration(seconds: 60);
+
+  /// After a failed load the queue tries again this soon (the 15 seconds of
+  /// 08 §11), so an error does not stay for a whole [pollInterval].
+  static const retryInterval = Duration(seconds: 15);
 
   /// Changed cases re-read one by one (API-02) per burst; past this the
   /// whole queue is cheaper to re-read.
@@ -38,6 +47,18 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   /// in memory; past that, "더 불러오기" reads the rest.
   static const pageSize = 100;
   static const maxPages = 10;
+
+  /// The search whose list is on screen; null before the first list. A load
+  /// for another search shows its first page at once ([_loadRest] reads the
+  /// rest); a reload of the same search swaps the whole list in one step,
+  /// so a long list never shrinks to one page and grows back.
+  String? _listedQuery;
+
+  /// [_loadRest] is still reading the pages after the first one. Unlike
+  /// [WorkQueueState.loadingMore] it is not set by "더 불러오기", and a
+  /// reload clears it.
+  bool _loadingRest = false;
+  bool get loadingRest => _loadingRest;
 
   /// More pages were loaded; a poll would drop them, so it waits.
   bool _extended = false;
@@ -73,6 +94,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       _poll?.cancel();
     });
     _extended = false;
+    _loadingRest = false;
     // This load covers every change signalled so far.
     _changed.clear();
     _reloadAll = false;
@@ -86,11 +108,48 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.listen(appVisibleProvider, (_, visible) {
       if (visible) _catchUp();
     });
+    final generation = _generation;
+    final query = _query;
+    final repository = ref.watch(workQueueRepositoryProvider);
+    var failed = false;
     try {
-      return _fromPage(await _fetchAll(ref.watch(workQueueRepositoryProvider)));
+      if (_listedQuery == query) {
+        final page = await _fetchAll(repository);
+        return _fromPage(page);
+      }
+      final first = await repository.getCases(query: query, limit: pageSize);
+      if (generation != _generation || query != _query) {
+        // A newer load took over and this result is dropped: leave the
+        // selection and the home summary to that load.
+        return WorkQueueState(
+          items: first.items,
+          counts: first.counts,
+          nextCursor: first.nextCursor,
+          query: query,
+        );
+      }
+      _listedQuery = query;
+      if (first.nextCursor == null) return _fromPage(first);
+      // After this build's result is in [state] (a timer runs after every
+      // pending microtask), so the rest lands on top of the first page.
+      _loadingRest = true;
+      Timer.run(() => _loadRest(generation, query, first));
+      final shown = _fromPage(first, keepSelection: true);
+      return shown.withMore(
+        items: shown.items,
+        nextCursor: shown.nextCursor,
+        // Blocks polls, changed-case reads and "더 불러오기" until the rest
+        // is in, and shows the spinner under the list.
+        loadingMore: true,
+      );
+    } catch (_) {
+      failed = true;
+      // Once the error is in [state].
+      Timer.run(() => _endLoadingMore(generation));
+      rethrow;
     } finally {
       // Also after a failed first load, so the queue recovers by itself.
-      _schedulePoll();
+      _schedulePoll(failed: failed);
       // Changes that arrived while this load was running.
       if ((_changed.isNotEmpty || _reloadAll) && ref.read(appVisibleProvider)) {
         _readChangesSoon();
@@ -120,18 +179,101 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     );
   }
 
-  /// Tab counts from the cases in hand, so held and failed cases (Pending)
-  /// count under 진행 중 like the tab shows them. With cases still on the
-  /// server, the server's counts are the only complete ones.
+  /// A failed reload keeps the previous list on screen. If that list was
+  /// still waiting for its other pages, nobody reads them any more
+  /// ([_loadRest] stopped for the reload), so end that state: "더 불러오기"
+  /// and changed-case reads work again. The error stays for the retry.
+  void _endLoadingMore(int generation) {
+    if (!ref.mounted || generation != _generation) return;
+    if (state.isLoading || !state.hasError || !state.hasValue) return;
+    final shown = state.requireValue;
+    if (!shown.loadingMore) return;
+    final error = state.error!;
+    final stackTrace = state.stackTrace ?? StackTrace.current;
+    state = AsyncData(
+      shown.withMore(
+        items: shown.items,
+        nextCursor: shown.nextCursor,
+        loadingMore: false,
+      ),
+    );
+    // Keeps the value just set.
+    state = AsyncError(error, stackTrace);
+  }
+
+  /// Reads the pages after [first] behind the list that already shows it,
+  /// then adds them in one step so rows move at most once. The tab counts
+  /// are the server's until every case is in hand ([_counts]). A failed
+  /// page keeps the pages read so far; "더 불러오기" continues from there.
+  Future<void> _loadRest(
+    int generation,
+    String query,
+    WorkQueuePage first,
+  ) async {
+    // A newer load (another search, a refresh) took over: stop reading.
+    bool stale() =>
+        !ref.mounted || generation != _generation || query != _query;
+    if (stale()) return;
+    final repository = ref.read(workQueueRepositoryProvider);
+    final items = [...first.items];
+    var cursor = first.nextCursor;
+    try {
+      for (var pages = 1; cursor != null && pages < maxPages; pages++) {
+        final page = await repository.getCases(
+          query: query,
+          cursor: cursor,
+          limit: pageSize,
+        );
+        if (stale()) return;
+        items.addAll(page.items);
+        cursor = page.nextCursor;
+      }
+    } catch (_) {
+      if (stale()) return;
+    }
+    _loadingRest = false;
+    // A reload has started; its list replaces this one.
+    final current = state.hasValue && !state.isLoading
+        ? state.requireValue
+        : null;
+    if (current == null) return;
+    final all = List<WorkCase>.unmodifiable(items);
+    final counts = _counts(all, cursor, first.counts);
+    if (query.isEmpty) _allWaiting = counts.waiting;
+    if (!all.any((workCase) => workCase.id == _selectedId)) _selectedId = null;
+    // The tab or the selection may have changed meanwhile.
+    state = AsyncData(
+      current
+          .withStatus(_status)
+          .select(_selectedId)
+          .withMore(
+            items: all,
+            nextCursor: cursor,
+            loadingMore: false,
+            counts: counts,
+            allWaiting: _allWaiting,
+          ),
+    );
+    // Changes that arrived while the pages were loading.
+    if (_changed.isNotEmpty || _reloadAll) _readChangesSoon();
+    _schedulePoll();
+  }
+
+  /// Tab counts from the cases in hand, by the rule of the tabs
+  /// ([WorkCaseStatus.tab]); the server counts by the same rule (Pending
+  /// under 진행 중, Confirm under 대기). With cases still on the server, the
+  /// server's counts are the only complete ones.
   static WorkQueueCounts _counts(
     List<WorkCase> items,
     String? nextCursor,
     WorkQueueCounts server,
   ) => nextCursor == null ? WorkQueueCounts.fromCases(items) : server;
 
-  WorkQueueState _fromPage(WorkQueuePage page) {
-    // A case accepted elsewhere disappears; drop a selection that no longer exists.
-    if (!page.items.any((workCase) => workCase.id == _selectedId)) {
+  WorkQueueState _fromPage(WorkQueuePage page, {bool keepSelection = false}) {
+    // A case accepted elsewhere disappears; drop a selection that no longer
+    // exists. With pages still on the way ([_loadRest]) it may be in those.
+    if (!keepSelection &&
+        !page.items.any((workCase) => workCase.id == _selectedId)) {
       _selectedId = null;
     }
     final counts = _counts(page.items, page.nextCursor, page.counts);
@@ -167,9 +309,9 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     ref.invalidateSelf();
   }
 
-  void _schedulePoll() {
+  void _schedulePoll({bool failed = false}) {
     _poll?.cancel();
-    _poll = Timer(pollInterval, _pollNow);
+    _poll = Timer(failed ? retryInterval : pollInterval, _pollNow);
   }
 
   /// Replaces the list without a loading state, so the queue does not
@@ -189,6 +331,12 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         ? state.requireValue
         : null;
     final failed = state.hasError && !state.isLoading;
+    if (signedIn && failed && !state.hasValue) {
+      // Nothing on screen: a load shows the first page after one request,
+      // and it schedules the next poll.
+      ref.invalidateSelf();
+      return;
+    }
     if (signedIn &&
         (failed || (current != null && !_extended && !current.loadingMore))) {
       final generation = ++_generation;
@@ -204,7 +352,10 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         if (!ref.mounted) return;
         applied = generation == _generation;
         dropped = !applied;
-        if (applied) state = AsyncData(_fromPage(page));
+        if (applied) {
+          _listedQuery = _query;
+          state = AsyncData(_fromPage(page));
+        }
       } catch (_) {
         if (!ref.mounted) return;
       }
@@ -218,7 +369,9 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         if (dropped && (_changed.isNotEmpty || _reloadAll)) _readChangesSoon();
       }
     }
-    if (ref.mounted) _schedulePoll();
+    if (ref.mounted) {
+      _schedulePoll(failed: state.hasError && !state.isLoading);
+    }
   }
 
   /// The tab shows again: run the poll that came due, or the changes that
@@ -419,6 +572,12 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         : null;
     final cursor = current?.nextCursor;
     if (current == null || cursor == null || current.loadingMore) return;
+    if (current.query != _query) {
+      // The list of the previous search is still shown because the load
+      // for the new one failed; its cursor is not for this search.
+      ref.invalidateSelf();
+      return;
+    }
     final generation = ++_generation;
     _extended = true;
     state = AsyncData(
@@ -440,6 +599,11 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       ]);
       final counts = _counts(items, page.nextCursor, page.counts);
       if (_query.isEmpty) _allWaiting = counts.waiting;
+      // Every case is in hand within what one poll reads: polls can run
+      // again without dropping anything.
+      if (page.nextCursor == null && items.length <= maxPages * pageSize) {
+        _extended = false;
+      }
       // The tab may have changed while this page was loading.
       state = AsyncData(
         current

@@ -121,7 +121,9 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
     final groups = data.groups;
     // Cards are the phone's look; the narrow web list keeps its indent.
     final cards = widget.shrinkWrap && isCompactLayout(context);
-    if (groups.isEmpty) {
+    // With cases still on the server (pages on their way, or one failed)
+    // the tab is not known to be empty: show "더 불러오기" instead.
+    if (groups.isEmpty && data.nextCursor == null) {
       return _Message(
         data.status == null && data.query.isEmpty
             ? "아직 도착한 업무가 없습니다."

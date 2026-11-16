@@ -148,6 +148,17 @@ void main() {
 
     WorkQueueViewModel viewModel() =>
         container.read(workQueueViewModelProvider.notifier);
+    // The load shows its first page first; the other nine follow.
+    Future<void> loaded() async {
+      await container.read(workQueueViewModelProvider.future);
+      while (container
+          .read(workQueueViewModelProvider)
+          .requireValue
+          .loadingMore) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
     List<String> ids() => [
       for (final workCase
           in container.read(workQueueViewModelProvider).requireValue.items)
@@ -156,7 +167,7 @@ void main() {
 
     test("a late page for the previous search never comes back", () async {
       viewModel().setQuery("a");
-      await container.read(workQueueViewModelProvider.future);
+      await loaded();
       final loading = viewModel().loadMore();
 
       viewModel().setQuery("b");
@@ -177,7 +188,7 @@ void main() {
     });
 
     test("a changed case is re-read alone", () async {
-      await container.read(workQueueViewModelProvider.future);
+      await loaded();
       final reads = queue.listReads;
 
       changes.add(const WorkCaseChange(1, WorkCaseChangeKind.updated, "-3"));
@@ -193,7 +204,7 @@ void main() {
     });
 
     test("a hidden tab reads changes only once it shows", () async {
-      await container.read(workQueueViewModelProvider.future);
+      await loaded();
       final visible = container.read(appVisibleProvider.notifier) as _Visible;
       visible.set(false);
 
@@ -207,7 +218,7 @@ void main() {
     });
 
     test("a deleted case leaves without a read", () async {
-      await container.read(workQueueViewModelProvider.future);
+      await loaded();
       final reads = queue.listReads;
 
       changes.add(const WorkCaseChange(1, WorkCaseChangeKind.deleted, "-2"));
