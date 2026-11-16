@@ -28,6 +28,7 @@ Future<void> showReviewProgressDialog(
       builder: (sheetContext) => ReviewProgressView(
         caseId: caseId,
         title: title,
+        router: router,
         onViewCase: () {
           Navigator.of(sheetContext).pop();
           router.go("/cases/$caseId");
@@ -43,6 +44,7 @@ Future<void> showReviewProgressDialog(
       child: ReviewProgressView(
         caseId: caseId,
         title: title,
+        router: router,
         onViewCase: () {
           Navigator.of(dialogContext).pop();
           router.go("/cases/$caseId");
@@ -58,10 +60,15 @@ class ReviewProgressView extends ConsumerStatefulWidget {
     required this.caseId,
     required this.title,
     required this.onViewCase,
+    this.router,
   });
 
   final String caseId, title;
   final VoidCallback onViewCase;
+
+  /// When given, the view closes itself once the app moves to a screen that
+  /// is not this case (e.g. another case picked in the queue).
+  final GoRouter? router;
 
   @override
   ConsumerState<ReviewProgressView> createState() => _ReviewProgressViewState();
@@ -69,10 +76,18 @@ class ReviewProgressView extends ConsumerStatefulWidget {
 
 class _ReviewProgressViewState extends ConsumerState<ReviewProgressView> {
   late final AppLifecycleListener _lifecycle;
+  String? _openedAt;
+  ModalRoute<Object?>? _route;
+  bool _closing = false;
 
   @override
   void initState() {
     super.initState();
+    final router = widget.router;
+    if (router != null) {
+      _openedAt = router.routerDelegate.currentConfiguration.uri.path;
+      router.routerDelegate.addListener(_onRouteChanged);
+    }
     // A hidden tab or a backgrounded app asks nothing until it is back.
     _lifecycle = AppLifecycleListener(
       onStateChange: (lifecycle) {
@@ -94,9 +109,36 @@ class _ReviewProgressViewState extends ConsumerState<ReviewProgressView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+  }
+
+  @override
   void dispose() {
+    widget.router?.routerDelegate.removeListener(_onRouteChanged);
     _lifecycle.dispose();
     super.dispose();
+  }
+
+  /// Closes this view when the screen behind it is no longer this case.
+  /// Opening the case itself (업무 보기, /cases/:id/review) keeps it.
+  void _onRouteChanged() {
+    final router = widget.router;
+    if (router == null || _closing || !mounted) return;
+    final path = router.routerDelegate.currentConfiguration.uri.path;
+    final ownCase = "/cases/${widget.caseId}";
+    if (path == _openedAt || path == ownCase || path.startsWith("$ownCase/")) {
+      return;
+    }
+    _closing = true;
+    // Not during the router's own notification: remove only this route,
+    // whatever else is open on top of it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final route = _route;
+      if (!mounted || route == null || !route.isActive) return;
+      route.navigator?.removeRoute(route);
+    });
   }
 
   @override
