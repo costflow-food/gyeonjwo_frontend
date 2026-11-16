@@ -58,6 +58,9 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
     final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
     final data = value.hasValue ? value.requireValue : null;
+    // While the other pages are on their way the case may be in those:
+    // wait for them instead of reading it alone and swapping panels later.
+    final listRead = (data != null && !viewModel.loadingRest) || value.hasError;
     final caseId = widget.caseId;
     final listed = caseId == null
         ? null
@@ -67,7 +70,7 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
       if (listed != null) {
         return WorkCasePanel(key: ValueKey(listed.id), workCase: listed);
       }
-      if (data != null || value.hasError) return _CaseDetail(caseId: caseId);
+      if (listRead) return _CaseDetail(caseId: caseId);
       return MobilePageScaffold(
         onBack: () => context.go("/"),
         body: const Center(child: CircularProgressIndicator()),
@@ -86,7 +89,7 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
             if (listed != null)
               WorkCasePanel(key: ValueKey(listed.id), workCase: listed)
             // Not in this tab, search, or page: read the case itself.
-            else if (caseId != null && (data != null || value.hasError))
+            else if (caseId != null && listRead)
               _CaseDetail(caseId: caseId)
             else if (caseId != null)
               const Padding(

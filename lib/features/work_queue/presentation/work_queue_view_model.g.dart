@@ -34,7 +34,7 @@ final class WorkQueueViewModelProvider
 }
 
 String _$workQueueViewModelHash() =>
-    r'5ad9c3c93bb08f171acdfe8fed7d1d6d83bc5529';
+    r'266d13fe11708fcc03b2666dffa57b9e2d36298e';
 
 abstract class _$WorkQueueViewModel extends $AsyncNotifier<WorkQueueState> {
   FutureOr<WorkQueueState> build();
