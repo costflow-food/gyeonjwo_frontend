@@ -38,6 +38,7 @@ app.*.map.json
 /macos/
 /windows/
 /linux/
+/test/
 
 # Build outputs and dependencies from the archived React comparison.
 /react/node_modules/
