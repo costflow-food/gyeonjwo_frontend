@@ -213,6 +213,19 @@ class _WidgetPreviewViewState extends State<WidgetPreviewView> {
                 ],
               ),
               _Section(
+                title: 'Tab round (6.1)',
+                children: [
+                  LdsRoundTabs<String>(
+                    tabs: const [
+                      LdsTabItem(value: 'formal', label: '격식체'),
+                      LdsTabItem(value: 'polite', label: '부드러운 존댓말'),
+                    ],
+                    selected: 'formal',
+                    onSelected: (_) {},
+                  ),
+                ],
+              ),
+              _Section(
                 title: '안내 띠',
                 children: [
                   for (final tone in LdsNoticeTone.values)

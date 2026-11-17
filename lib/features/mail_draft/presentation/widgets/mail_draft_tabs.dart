@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../../../shared/widgets/mobile_scaffold.dart";
-import "../../../../shared/workspace_colors.dart";
 import "../../domain/mail_draft.dart";
 import "draft_status_badge.dart";
 
@@ -69,46 +69,51 @@ class _MailDraftTabsState extends State<MailDraftTabs> {
           key: draft.id == selectedId ? _selectedKey : null,
           selected: draft.id == selectedId,
           button: true,
-          child: InkWell(
-            onTap: () => onSelect(draft.id),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
-              decoration: BoxDecoration(
-                color: draft.id == selectedId
-                    ? context.palette.blush
-                    : context.palette.surface,
-                border: Border.all(
+          // 업체별 탭: 모서리 6, 고른 탭 = 연한 주황 바탕 + 주황 테두리.
+          child: LdsFocusRing(
+            radius: 6,
+            child: InkWell(
+              onTap: () => onSelect(draft.id),
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+                decoration: BoxDecoration(
                   color: draft.id == selectedId
-                      ? context.palette.accentText
-                      : context.palette.line,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "${draft.displayName} · ${draft.purpose.label}",
-                    style: const TextStyle(
-                      fontSize: AppFontSizes.body,
-                      fontWeight: FontWeight.w700,
-                    ),
+                      ? LdsColors.primaryRow
+                      : Colors.white,
+                  border: Border.all(
+                    color: draft.id == selectedId
+                        ? LdsColors.primary
+                        : LdsColors.line,
                   ),
-                  const SizedBox(width: 8),
-                  DraftStatusBadge(draft.status),
-                  if (dispatchStates[draft.id] case final dispatch?
-                      when draft.status == DraftStatus.draft) ...[
-                    const SizedBox(width: 6),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      dispatch.label,
-                      style: TextStyle(
-                        fontSize: AppFontSizes.caption,
-                        color: context.palette.muted,
+                      "${draft.displayName} · ${draft.purpose.label}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: LdsColors.ink,
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    DraftStatusBadge(draft.status),
+                    if (dispatchStates[draft.id] case final dispatch?
+                        when draft.status == DraftStatus.draft) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        dispatch.label,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: LdsColors.mutedStrong,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

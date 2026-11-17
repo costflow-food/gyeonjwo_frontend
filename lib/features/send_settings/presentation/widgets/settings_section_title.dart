@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
 
 class SettingsSectionTitle extends StatelessWidget {
   const SettingsSectionTitle(this.title, this.description, {super.key});
@@ -17,16 +16,18 @@ class SettingsSectionTitle extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            fontSize: AppFontSizes.bodyLarge,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
+            color: LdsColors.ink,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           description,
-          style: TextStyle(
-            fontSize: AppFontSizes.secondary,
-            color: context.palette.muted,
+          style: const TextStyle(
+            fontSize: 13,
+            height: 1.5,
+            color: LdsColors.mutedStrong,
           ),
         ),
       ],

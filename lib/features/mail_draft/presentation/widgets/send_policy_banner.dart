@@ -1,9 +1,8 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/formatters.dart";
-import "../../../../shared/widgets/workspace_button_styles.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/mail_draft.dart";
 
 class SendPolicyBanner extends StatelessWidget {
@@ -44,27 +43,27 @@ class SendPolicyBanner extends StatelessWidget {
     final (icon, color, message) = switch (draft.status) {
       DraftStatus.draft when draft.recipientNotRegistered => (
         Icons.warning_amber_rounded,
-        const Color(0xFF8A6516),
+        LdsColors.cautionText,
         "받는 주소가 등록된 업체 주소와 달라 발송할 수 없습니다. 거래처 연락처를 확인해 주세요.",
       ),
       DraftStatus.draft when !draft.settingsConfigured => (
         Icons.warning_amber_rounded,
-        const Color(0xFF8A6516),
+        LdsColors.cautionText,
         '설정 → 메일 발송 설정을 완료해야 발송할 수 있습니다.',
       ),
       DraftStatus.draft when draft.isStale => (
         Icons.warning_amber_rounded,
-        const Color(0xFF8A6516),
+        LdsColors.cautionText,
         "업무 내용이 바뀌어 이 초안은 발송할 수 없습니다.",
       ),
       _ when draft.awaitingResult => (
         Icons.hourglass_top,
-        const Color(0xFF2F5E8C),
+        LdsColors.infoText,
         "요청을 접수했습니다. 결과가 나오면 자동으로 표시됩니다.",
       ),
       DraftStatus.draft || DraftStatus.unknown when draft.resultTimedOut => (
         Icons.warning_amber_rounded,
-        const Color(0xFF8A6516),
+        LdsColors.cautionText,
         "요청은 접수됐지만 1분이 지나도록 결과가 나오지 않았습니다. 아직 처리되지 않았을 수 있으니 "
             "메일함 연결과 발송 설정을 확인한 뒤 다시 열어 확인해 주세요.",
       ),
@@ -75,64 +74,65 @@ class SendPolicyBanner extends StatelessWidget {
             : Icons.info_outline,
         dispatch == DraftDispatchState.blockedPolicy ||
                 dispatch == DraftDispatchState.cautionRequired
-            ? const Color(0xFF8A6516)
-            : context.palette.muted,
+            ? LdsColors.cautionText
+            : LdsColors.mutedStrong,
         "${dispatch.label} · ${dispatch.message}",
       ),
       _ when editing && draft.approvalRequired == false => (
         Icons.warning_amber_rounded,
-        const Color(0xFF8A6516),
+        LdsColors.cautionText,
         "저장하면 새 초안으로 다시 검증한 뒤 설정에 따라 자동 발송됩니다.",
       ),
       _ when editing => (
         Icons.info_outline,
-        context.palette.muted,
+        LdsColors.mutedStrong,
         "저장하면 새 초안이 됩니다. 이전 승인은 이어지지 않습니다.",
       ),
       DraftStatus.draft when draft.manualApprovalUnderAutoSend => (
         Icons.warning_amber_rounded,
-        const Color(0xFF8A6516),
+        LdsColors.cautionText,
         "이 초안은 자동 발송 대상이 아닙니다. 내용을 확인한 뒤 승인 후 발송을 눌러 주세요.",
       ),
       DraftStatus.draft => (
         Icons.info_outline,
-        context.palette.muted,
+        LdsColors.mutedStrong,
         draft.approvalRequired == true
             ? "내용을 확인한 뒤 승인 후 발송을 눌러 주세요."
             : "별도 버튼 없이 서버가 자동 발송합니다.",
       ),
       DraftStatus.sending => (
         Icons.outgoing_mail,
-        const Color(0xFF2F5E8C),
+        LdsColors.infoText,
         "발송 중입니다. 결과가 나오면 자동으로 표시됩니다.",
       ),
       DraftStatus.sent => (
         Icons.check_circle_outline,
-        const Color(0xFF00754A),
+        LdsColors.successText,
         "발송됨 · ${draft.sentAt == null ? "시각 미확인" : formatSeoulDateTime(draft.sentAt!)}",
       ),
       DraftStatus.failed => (
         Icons.error_outline,
-        danger,
+        LdsColors.errorText,
         "발송하지 못했습니다. 수신자와 발송 설정을 확인한 뒤 수정본 만들기로 고쳐 다시 보내 주세요.",
       ),
       DraftStatus.withdrawn => (
         Icons.block,
-        context.palette.muted,
+        LdsColors.mutedStrong,
         "보내지 않기로 닫은 초안입니다. 다시 보내려면 새 초안이 필요합니다.",
       ),
       DraftStatus.unknown => (
         Icons.help_outline,
-        const Color(0xFF8A6516),
+        LdsColors.cautionText,
         "발송 여부를 확인 중입니다. 이미 전송됐을 수 있어 발신함 대조 전에는 다시 보내지 않습니다.",
       ),
     };
+    // 자동 발송 안내 띠: 흰 바탕 1px 선, 모서리 8.
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: context.palette.surface,
-        border: Border.all(color: context.palette.line),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        border: Border.all(color: LdsColors.line),
+        borderRadius: BorderRadius.circular(LdsRadius.table),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,22 +146,24 @@ class SendPolicyBanner extends StatelessWidget {
                 Text(
                   policy,
                   style: const TextStyle(
-                    fontSize: AppFontSizes.body,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
+                    color: LdsColors.ink,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   message,
-                  style: TextStyle(fontSize: AppFontSizes.body, color: color),
+                  style: TextStyle(fontSize: 14, height: 1.5, color: color),
                 ),
                 if (needsSettings && onOpenSettings != null) ...[
                   const SizedBox(height: 8),
-                  OutlinedButton.icon(
+                  LdsButton(
                     onPressed: onOpenSettings,
-                    style: WorkspaceButtonStyles.outlined(context),
-                    icon: const Icon(Icons.tune, size: 16),
-                    label: const Text("메일 발송 설정 열기"),
+                    size: LdsButtonSize.small,
+                    variant: LdsButtonVariant.outlinedNeutral,
+                    icon: Icons.tune,
+                    label: "메일 발송 설정 열기",
                   ),
                 ],
               ],

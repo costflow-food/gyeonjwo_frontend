@@ -75,6 +75,8 @@ class _Tab<T> extends StatelessWidget {
       selected: selected,
       button: true,
       label: count == null ? tab.label : '${tab.label} $count건',
+      // 자식 의미를 빼므로 누르기 동작은 여기서 다시 붙입니다.
+      onTap: onTap,
       excludeSemantics: true,
       child: LdsFocusRing(
         radius: 4,
@@ -123,4 +125,94 @@ class _Tab<T> extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Tab round (`docs/design-ssot.md` 6.1): 둥근 칩형 탭. 문체 선택·빠른 기간
+/// 선택처럼 몇 개 중 하나를 고를 때.
+///
+/// 높이 32, 모서리 16. 고른 칩 = `#333D4B` 바탕 흰 글자 700, 나머지 = 흰 바탕
+/// 1px `#D1D6DC` · `#4E5968` 글자.
+class LdsRoundTabs<T> extends StatelessWidget {
+  const LdsRoundTabs({
+    super.key,
+    required this.tabs,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<LdsTabItem<T>> tabs;
+  final T selected;
+
+  /// null이면 누를 수 없습니다.
+  final ValueChanged<T>? onSelected;
+
+  static const height = 32.0;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      for (final tab in tabs)
+        _RoundTab(
+          label: tab.label,
+          selected: tab.value == selected,
+          onTap: onSelected == null ? null : () => onSelected!(tab.value),
+        ),
+    ],
+  );
+}
+
+class _RoundTab extends StatelessWidget {
+  const _RoundTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    selected: selected,
+    button: true,
+    enabled: onTap != null,
+    label: label,
+    onTap: onTap,
+    excludeSemantics: true,
+    child: LdsFocusRing(
+      radius: LdsRoundTabs.height / 2,
+      child: Material(
+        color: selected ? LdsColors.title : Colors.white,
+        shape: StadiumBorder(
+          side: BorderSide(
+            color: selected ? LdsColors.title : LdsColors.borderStrong,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const StadiumBorder(),
+          hoverColor: selected ? Colors.transparent : LdsColors.canvas,
+          child: Container(
+            height: LdsRoundTabs.height,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            // widthFactor 1: 글자 폭만큼만.
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                  color: selected ? Colors.white : LdsColors.label,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

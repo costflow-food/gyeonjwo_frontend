@@ -24,6 +24,7 @@ class LdsDialog extends StatelessWidget {
     this.maxWidth = 560,
     this.onClose,
     this.footerNote,
+    this.footer,
     this.inSheet = false,
   });
 
@@ -47,6 +48,10 @@ class LdsDialog extends StatelessWidget {
 
   /// 아래 줄 왼쪽 안내(예: '창을 닫아도 검토는 서버에서 계속됩니다.'). 13px `#6B7583`.
   final String? footerNote;
+
+  /// 아래 줄을 통째로 바꿀 때(예: 오류 줄 + 버튼). 주면 [actions]·[footerNote]는
+  /// 쓰지 않습니다.
+  final Widget? footer;
 
   /// 시트 안에 넣을 때: [Dialog] 틀 없이 내용만.
   final bool inSheet;
@@ -121,13 +126,13 @@ class LdsDialog extends StatelessWidget {
             child: child,
           ),
         ),
-        if (actions.isNotEmpty || footerNote != null)
+        if (actions.isNotEmpty || footerNote != null || footer != null)
           Container(
             padding: const EdgeInsets.fromLTRB(_padding, 16, _padding, 16),
             decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: LdsColors.line)),
             ),
-            child: _footer(),
+            child: footer ?? _footer(),
           ),
       ],
     );
