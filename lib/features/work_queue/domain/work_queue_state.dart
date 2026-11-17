@@ -10,7 +10,7 @@ class WorkQueueState {
     this.query = "",
     this.selectedId,
     this.loadingMore = false,
-    this.allConfirm,
+    this.allCounts,
   });
 
   /// 검색어에 맞는 보관 전 업무 전체(모든 탭). 탭은 이 목록을 화면에서
@@ -29,9 +29,9 @@ class WorkQueueState {
   final String? selectedId;
   final bool loadingMore;
 
-  /// 검색과 무관한 확인 필요 건수(첫 화면 요약용). 검색 중에는 마지막으로
+  /// 검색과 무관한 상태 탭 건수(Dashboard 카드용). 검색 중에는 마지막으로
   /// 본 검색 없는 값을 유지합니다. 아직 모르면 null.
-  final int? allConfirm;
+  final WorkQueueCounts? allCounts;
 
   List<WorkCase> get visibleItems => status == null
       ? items
@@ -54,7 +54,7 @@ class WorkQueueState {
     query: query,
     selectedId: id,
     loadingMore: loadingMore,
-    allConfirm: allConfirm,
+    allCounts: allCounts,
   );
 
   WorkQueueState withStatus(TaskGroup? tab) => WorkQueueState(
@@ -65,7 +65,7 @@ class WorkQueueState {
     query: query,
     selectedId: selectedId,
     loadingMore: loadingMore,
-    allConfirm: allConfirm,
+    allCounts: allCounts,
   );
 
   WorkQueueState withMore({
@@ -73,7 +73,7 @@ class WorkQueueState {
     required String? nextCursor,
     required bool loadingMore,
     WorkQueueCounts? counts,
-    int? allConfirm,
+    WorkQueueCounts? allCounts,
   }) => WorkQueueState(
     items: items,
     counts: counts ?? this.counts,
@@ -82,7 +82,7 @@ class WorkQueueState {
     query: query,
     selectedId: selectedId,
     loadingMore: loadingMore,
-    allConfirm: allConfirm ?? this.allConfirm,
+    allCounts: allCounts ?? this.allCounts,
   );
 }
 

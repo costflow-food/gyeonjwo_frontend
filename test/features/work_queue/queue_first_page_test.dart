@@ -144,7 +144,7 @@ void main() {
     expect(state().counts.total, 6);
     expect(state().counts.confirm, 2);
     expect(state().counts.running, 0);
-    expect(state().allConfirm, 2);
+    expect(state().allCounts!.confirm, 2);
     // A tab and a selection made meanwhile survive the rest landing.
     viewModel().setStatus(TaskGroup.running);
     viewModel().select("-2-1");
@@ -159,7 +159,7 @@ void main() {
     expect(state().counts.confirm, 5);
     expect(state().counts.running, 1);
     expect(state().counts.total, 6);
-    expect(state().allConfirm, 5);
+    expect(state().allCounts!.confirm, 5);
     expect(state().status, TaskGroup.running);
     expect(state().selectedId, "-2-1");
     expect(queue.requests, ["|null", "|1", "|2"]);

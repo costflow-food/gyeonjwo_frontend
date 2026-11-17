@@ -69,9 +69,9 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
   TaskGroup? _status;
   String _query = "";
 
-  /// counts.confirm from the last list without a search (the tab does not
-  /// change counts), for the home summary.
-  int? _allConfirm;
+  /// Counts from the last list without a search (the tab does not change
+  /// counts), for the Dashboard cards.
+  WorkQueueCounts? _allCounts;
 
   /// Bumped by every read that replaces or extends the list (load, poll,
   /// load more, changed cases). A response is applied only while its
@@ -240,7 +240,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     if (current == null) return;
     final all = List<WorkCase>.unmodifiable(items);
     final counts = _counts(all, cursor, first.counts);
-    if (query.isEmpty) _allConfirm = counts.confirm;
+    if (query.isEmpty) _allCounts = counts;
     if (!all.any((workCase) => workCase.id == _selectedId)) _selectedId = null;
     // The tab or the selection may have changed meanwhile.
     state = AsyncData(
@@ -252,7 +252,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
             nextCursor: cursor,
             loadingMore: false,
             counts: counts,
-            allConfirm: _allConfirm,
+            allCounts: _allCounts,
           ),
     );
     // Changes that arrived while the pages were loading.
@@ -280,7 +280,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       _selectedId = null;
     }
     final counts = _counts(page.items, page.nextCursor, page.counts);
-    if (_query.isEmpty) _allConfirm = counts.confirm;
+    if (_query.isEmpty) _allCounts = counts;
     return WorkQueueState(
       items: page.items,
       counts: counts,
@@ -288,7 +288,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       status: _status,
       query: _query,
       selectedId: _selectedId,
-      allConfirm: _allConfirm,
+      allCounts: _allCounts,
     );
   }
 
@@ -510,7 +510,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
           ? null
           : current.counts.total - gone,
     );
-    if (_query.isEmpty) _allConfirm = counts.confirm;
+    if (_query.isEmpty) _allCounts = counts;
     if (deleted.contains(_selectedId)) _selectedId = null;
     state = AsyncData(
       WorkQueueState(
@@ -520,7 +520,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         status: _status,
         query: current.query,
         selectedId: _selectedId,
-        allConfirm: _allConfirm,
+        allCounts: _allCounts,
       ),
     );
   }
@@ -563,7 +563,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         ...page.items,
       ]);
       final counts = _counts(items, page.nextCursor, page.counts);
-      if (_query.isEmpty) _allConfirm = counts.confirm;
+      if (_query.isEmpty) _allCounts = counts;
       // Every case is in hand within what one poll reads: polls can run
       // again without dropping anything.
       if (page.nextCursor == null && items.length <= maxPages * pageSize) {
@@ -578,7 +578,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
               nextCursor: page.nextCursor,
               loadingMore: false,
               counts: counts,
-              allConfirm: _allConfirm,
+              allCounts: _allCounts,
             ),
       );
     } catch (_) {
