@@ -289,7 +289,9 @@ void main() {
       final latest = find.ancestor(
         of: find.text("2026.11.01"),
         matching: find.byWidgetPredicate(
-          (w) => w is Container && w.color == LdsColors.primaryRow,
+          (w) =>
+              w is Container &&
+              (w.decoration as BoxDecoration?)?.color == LdsColors.primaryRow,
         ),
       );
       expect(latest, findsOneWidget);

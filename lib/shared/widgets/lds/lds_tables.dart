@@ -141,12 +141,27 @@ class LdsColumn {
 }
 
 class LdsListRow {
-  const LdsListRow(this.cells, {this.latest = false});
+  const LdsListRow(
+    this.cells, {
+    this.latest = false,
+    this.selected = false,
+    this.onTap,
+    this.semanticLabel,
+  });
 
   final List<Widget> cells;
 
   /// 가장 최근 줄: 배경 `#FFF7F2`. '최신' 라벨은 날짜 칸 등에 [LdsLatestTag]로 붙입니다.
   final bool latest;
+
+  /// 고른 줄(목록·상세 화면): 배경 `#FFF4EC` + 왼쪽 주황 3px.
+  final bool selected;
+
+  /// 있으면 줄 전체가 누를 수 있는 단추입니다(hover `#F9FAFB`).
+  final VoidCallback? onTap;
+
+  /// 줄을 단추로 읽을 때의 이름.
+  final String? semanticLabel;
 }
 
 /// 목록 표 (`docs/design-ssot.md` 9.2): 같은 종류 기록 여러 건.
@@ -204,21 +219,46 @@ class LdsListTable extends StatelessWidget {
             ],
           ),
         ),
-        for (final row in rows)
-          Container(
-            constraints: const BoxConstraints(minHeight: 48),
-            color: row.latest ? LdsColors.primaryRow : null,
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (i, column) in columns.indexed)
-                    cell(column, row.cells[i]),
-                ],
-              ),
-            ),
-          ),
+        for (final row in rows) _row(row, cell),
       ],
+    );
+  }
+}
+
+extension on LdsListTable {
+  Widget _row(LdsListRow row, Widget Function(LdsColumn, Widget) cell) {
+    final line = Container(
+      constraints: const BoxConstraints(minHeight: 48),
+      decoration: BoxDecoration(
+        color: row.selected
+            ? LdsColors.selectedRow
+            : row.latest
+            ? LdsColors.primaryRow
+            : null,
+        border: row.selected
+            ? const Border(left: BorderSide(color: LdsColors.primary, width: 3))
+            : null,
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final (i, column) in columns.indexed)
+              cell(column, row.cells[i]),
+          ],
+        ),
+      ),
+    );
+    final onTap = row.onTap;
+    if (onTap == null) return line;
+    return Semantics(
+      button: true,
+      selected: row.selected,
+      label: row.semanticLabel,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(onTap: onTap, hoverColor: LdsColors.canvas, child: line),
+      ),
     );
   }
 }

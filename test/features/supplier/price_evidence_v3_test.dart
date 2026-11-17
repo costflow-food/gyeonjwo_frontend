@@ -158,7 +158,10 @@ void main() {
       _in("quote-table", find.byType(Container)),
     );
     expect(
-      rows.where((row) => row.color == LdsColors.primaryRow),
+      rows.where(
+        (row) =>
+            (row.decoration as BoxDecoration?)?.color == LdsColors.primaryRow,
+      ),
       hasLength(1),
     );
   });
