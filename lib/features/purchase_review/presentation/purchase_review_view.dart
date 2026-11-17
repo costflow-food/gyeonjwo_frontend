@@ -40,14 +40,19 @@ class PurchaseReviewView extends ConsumerWidget {
         },
       );
     }
+    // 카드는 스스로 스크롤하고 아래 고정 줄(보류·확인하고 보관)을 둡니다.
     return WorkspaceShell(
+      scrollable: false,
       child: switch (value) {
         // Keep the card on screen while it reloads after a decision.
         _ when current != null => ReviewCardContent(review: current),
-        AsyncError(:final error) => _Unavailable(
-          caseId: caseId,
-          failure: error is PurchaseReviewFailure ? error : null,
-          onRetry: ref.read(provider.notifier).refresh,
+        AsyncError(:final error) => SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: _Unavailable(
+            caseId: caseId,
+            failure: error is PurchaseReviewFailure ? error : null,
+            onRetry: ref.read(provider.notifier).refresh,
+          ),
         ),
         _ => const Padding(
           padding: EdgeInsets.all(32),

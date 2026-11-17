@@ -184,6 +184,44 @@ class _WidgetPreviewViewState extends State<WidgetPreviewView> {
                   ),
                 ],
               ),
+              const _Section(
+                title: '비율 막대 (3)',
+                children: [
+                  LdsRatioBar(
+                    segments: [
+                      LdsRatioSegment(
+                        label: '바른채소',
+                        value: 600,
+                        color: LdsColors.primary,
+                      ),
+                      LdsRatioSegment(
+                        label: '한라푸드',
+                        value: 400,
+                        color: LdsColors.title,
+                      ),
+                    ],
+                  ),
+                  LdsRatioBar(
+                    segments: [
+                      LdsRatioSegment(
+                        label: '바른채소',
+                        value: 500,
+                        color: LdsColors.primary,
+                      ),
+                      LdsRatioSegment(
+                        label: '한라푸드',
+                        value: 300,
+                        color: LdsColors.title,
+                      ),
+                      LdsRatioSegment(
+                        label: '남도청과',
+                        value: 200,
+                        color: LdsColors.disabled,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               _Section(
                 title: '진행 단계 (8.2)',
                 children: [

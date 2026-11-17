@@ -89,16 +89,9 @@ Future<void> _pump(
               .copyWith(textScaler: TextScaler.linear(textScale)),
           child: child!,
         ),
-        // A phone gets the card's own screen; wider, the card sits in a
-        // scrolling page as it does on the web.
-        home: size.width < 600
-            ? content
-            : Scaffold(
-                body: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: content,
-                ),
-              ),
+        // A phone gets the card's own screen; wider, the card scrolls
+        // itself above its pinned action bar, as it does on the web.
+        home: size.width < 600 ? content : Scaffold(body: content),
       ),
     ),
   );
@@ -391,10 +384,11 @@ void main() {
       expect(reason.hitTestable(), findsOneWidget);
     });
 
-    testWidgets("web, two columns: the panel in view is marked, not moved", (
+    testWidgets("web: a panel already in view is marked, not moved", (
       tester,
     ) async {
-      await _pump(tester, _card(), size: const Size(1280, 900));
+      // Tall enough that the whole card, panel included, is on screen.
+      await _pump(tester, _card(), size: const Size(1280, 2400));
       final reason = find.text(_reason);
       final before = tester.getRect(reason);
       double mark() =>
@@ -586,7 +580,7 @@ void main() {
     });
   });
 
-  group("phone plan list", () {
+  group("plan cards on a phone", () {
     ResponsePlan plan(String type, String? total, {String status = "VALID"}) =>
         ResponsePlan(
           planId: "p-$type",
@@ -610,9 +604,7 @@ void main() {
     double top(WidgetTester tester, String text) =>
         tester.getRect(find.text(text)).top;
 
-    testWidgets("plans keep the server's order; the chosen plan is open", (
-      tester,
-    ) async {
+    testWidgets("one card per row, in the server's order", (tester) async {
       await _pump(
         tester,
         card([
@@ -623,16 +615,25 @@ void main() {
       );
       expect(top(tester, "기존 업체 유지"), lessThan(top(tester, "분산 구매")));
       expect(top(tester, "분산 구매"), lessThan(top(tester, "전량 전환")));
+      // Stacked: every card starts on the same left edge.
+      // (The lowest card's 2px border moves its text by 1.)
+      expect(
+        tester.getTopLeft(find.text("기존 업체 유지")).dx,
+        closeTo(tester.getTopLeft(find.text("전량 전환")).dx, 1),
+      );
       expect(find.text("미확인"), findsOneWidget);
-      expect(find.text("+57,000"), findsOneWidget);
-      expect(find.text("최저"), findsOneWidget);
-      // Open on the chosen plan, not the lowest.
+      expect(find.text("+57,000원"), findsOneWidget);
+      expect(find.text("가장 낮음"), findsOneWidget);
+      expect(find.text("최저 총액"), findsOneWidget);
+      // The chosen plan says so; the lowest can still be chosen.
       expect(find.text("선택한 구매안"), findsOneWidget);
-      expect(find.text("선택"), findsNothing);
+      expect(find.text("선택"), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets("starts on the first plan that can be chosen", (tester) async {
+    testWidgets("a plan that cannot be confirmed says why, without a button", (
+      tester,
+    ) async {
       await _pump(
         tester,
         card([
@@ -642,11 +643,10 @@ void main() {
       );
       expect(find.text("선택"), findsOneWidget);
       expect(find.text("수용"), findsNothing);
+      expect(find.text("선택 불가 · 조건부 안은 아직 확정할 수 없습니다."), findsOneWidget);
     });
 
-    testWidgets("the open plan stays open over a reload, also without ids", (
-      tester,
-    ) async {
+    testWidgets("every plan is shown whole: nothing folds", (tester) async {
       ResponsePlan bare(String type, String total) => ResponsePlan(
         planId: null,
         planType: type,
@@ -655,22 +655,14 @@ void main() {
         allocations: const [],
         reason: "$type 사유",
       );
-      List<ResponsePlan> plans() => [
-        bare("KEEP", "2559000"),
-        bare("SWITCH", "2502000"),
-      ];
-      await _pump(tester, card(plans()));
+      await _pump(
+        tester,
+        card([bare("KEEP", "2559000"), bare("SWITCH", "2502000")]),
+      );
       expect(find.text("KEEP 사유"), findsOneWidget);
-      await tester.tap(find.text("전량 전환"));
-      await tester.pumpAndSettle();
       expect(find.text("SWITCH 사유"), findsOneWidget);
-      // The same card again, as new objects.
-      await _pump(tester, card(plans()));
-      expect(find.text("SWITCH 사유"), findsOneWidget);
-      expect(find.text("KEEP 사유"), findsNothing);
-      // A new review without the open plan: back to the starting choice.
-      await _pump(tester, card([plan("SPLIT", "2600000")]));
-      expect(find.text("선택"), findsOneWidget);
+      expect(find.byIcon(Icons.expand_less), findsNothing);
+      expect(find.byIcon(Icons.expand_more), findsNothing);
     });
 
     testWidgets("a long total leaves the name readable at text scale 2", (

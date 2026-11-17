@@ -26,7 +26,12 @@ class AppSection {
   static AppSection of(String path) {
     bool under(String root) => path == root || path.startsWith('$root/');
     if (under(AppPaths.tasks)) {
-      return const AppSection('Tasks', AppMenu.tasks, startsWide: false);
+      // 검토 카드(/tasks/:id/review)는 화면 제목을 따로 둡니다.
+      return AppSection(
+        path.endsWith('/review') ? '검토 카드' : 'Tasks',
+        AppMenu.tasks,
+        startsWide: false,
+      );
     }
     if (under(AppPaths.transactions)) {
       return const AppSection(

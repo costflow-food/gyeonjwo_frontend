@@ -225,9 +225,20 @@ class LdsListTable extends StatelessWidget {
 
 /// 비교 표의 한 안(업체).
 class LdsCompareOption {
-  const LdsCompareOption(this.title, {this.recommended = false});
+  const LdsCompareOption(
+    this.title, {
+    this.recommended = false,
+    this.marker,
+    this.caption,
+  });
 
   final String title;
+
+  /// 이름 앞 업체 색 사각(10). 같은 업체는 화면 안에서 같은 색입니다(3장).
+  final Color? marker;
+
+  /// 이름 아래 짧은 설명(예: '기존 거래처', '견적 1번째').
+  final String? caption;
 
   /// 추천 안: 열 전체 `#FFF7F2` + 머리 칸 위 주황 3px + '추천' 라벨.
   final bool recommended;
@@ -311,14 +322,43 @@ class LdsCompareTable extends StatelessWidget {
                   const LdsTag('추천', style: LdsTagStyle.solid),
                   const SizedBox(height: 4),
                 ],
-                Text(
-                  option.title,
-                  textAlign: TextAlign.center,
-                  style: _labelStyle.copyWith(
-                    fontSize: 15,
-                    color: LdsColors.ink,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (option.marker != null) ...[
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: option.marker,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Flexible(
+                      child: Text(
+                        option.title,
+                        textAlign: TextAlign.center,
+                        style: _labelStyle.copyWith(
+                          fontSize: 15,
+                          color: LdsColors.ink,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                if (option.caption != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    option.caption!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: LdsColors.mutedStrong,
+                    ),
+                  ),
+                ],
               ],
             ),
         ], head: true),

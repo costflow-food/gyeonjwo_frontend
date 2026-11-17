@@ -4,10 +4,11 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../../app/app_paths.dart";
 import "../../../../shared/formatters.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../../../shared/widgets/mobile_scaffold.dart";
-import "../../../../shared/widgets/preview_button.dart";
-import "../../../../shared/widgets/responsive_columns.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
@@ -16,9 +17,9 @@ import "../../domain/unresolved_line.dart";
 import "../purchase_review_view_model.dart";
 import "counter_offer_panel.dart";
 import "plan_board.dart";
-import "quote_card.dart";
+import "plan_card.dart";
+import "quote_compare.dart";
 import "review_format.dart";
-import "../../../../app/app_paths.dart";
 
 class ReviewCardContent extends ConsumerStatefulWidget {
   const ReviewCardContent({super.key, required this.review});
@@ -35,6 +36,9 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
 
   /// The counter-offer panel, which the notice's "사유 보기" scrolls to.
   final _counterOfferKey = GlobalKey();
+
+  /// The 확인할 항목 section, which "확인할 항목 보기" scrolls to.
+  final _questionsKey = GlobalKey();
 
   /// The panel is marked for a moment after "사유 보기": on a wide screen it
   /// is already in view and nothing would move.
@@ -150,6 +154,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
     await _run((viewModel) => viewModel.confirmReview());
   }
 
+  /// 맨 위 한 줄 상태 띠(7.16): 이전 카드 · 확인할 것 · 결정 · 오류.
   List<Widget> _notices(ReviewCard card) {
     final lines = unresolvedLines(card, quotes: widget.review.quotes);
     return [
@@ -161,19 +166,23 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         ),
         const SizedBox(height: 12),
       ],
-      if (!card.outcome.ready || lines.isNotEmpty) ...[
+      if (!card.outcome.ready ||
+          lines.isNotEmpty ||
+          card.questions.isNotEmpty) ...[
         _Notice(
           icon: Icons.pause_circle_outline,
           text: card.outcome.message,
           // Red only when there is no plan at all; something left to check
-          // is a caution.
-          tone: card.outcome.ready
-              ? _Tone.info
-              : card.outcome.noPlan
-              ? _Tone.danger
-              : _Tone.caution,
+          // (확인할 항목) is a caution; otherwise grey.
+          tone: !card.outcome.ready
+              ? (card.outcome.noPlan ? _Tone.danger : _Tone.caution)
+              : card.questions.isNotEmpty
+              ? _Tone.caution
+              : _Tone.info,
           lines: lines,
           onCounterOffer: _showCounterOffer,
+          count: card.questions.length,
+          onQuestions: card.questions.isEmpty ? null : _showQuestions,
         ),
         const SizedBox(height: 12),
       ],
@@ -195,234 +204,173 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
     ];
   }
 
-  /// Phone: the card as its own screen; 보류 / 확인하고 보관 pinned below.
-  Widget _page(BuildContext context) {
+  /// '확인할 항목 보기': 확인할 항목 영역으로 내려갑니다.
+  Future<void> _showQuestions() async {
+    final target = _questionsKey.currentContext;
+    if (target == null) return;
+    await Scrollable.ensureVisible(
+      target,
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  /// 영역 순서(7.16): 상태 띠 · 구매안 비교 · 확인할 항목 · 역제안 · 견적과
+  /// 근거. 영역 사이 40, 제목→내용 16.
+  List<Widget> _sections(BuildContext context, {required bool compact}) {
     final card = _card;
     final quotes = widget.review.sourceQuotes;
+    final colors = SupplierColors.of(
+      card,
+      lowest: PlanBoard.lowestPlan(card.plans),
+    );
+    final offer = card.counterOffer;
+    return [
+      if (!compact) ...[
+        _Head(card: card),
+        const SizedBox(height: 20),
+      ] else ...[
+        Text(
+          [
+            "검토 ${card.reviewRevision}회차",
+            if (card.createdAt != null)
+              "${formatSeoulDateTime(card.createdAt!)} 저장",
+          ].join(" · "),
+          style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+        ),
+        const SizedBox(height: 12),
+      ],
+      ..._notices(card),
+      const SizedBox(height: 28),
+      const _SectionTitle(
+        "구매안 비교",
+        caption: "가장 낮은 안을 자동으로 고르지 않습니다. 조건을 보고 직접 선택해 주세요. 총액은 서버 계산값입니다.",
+      ),
+      const SizedBox(height: 16),
+      if (card.plans.isEmpty)
+        const Text(
+          "보여 줄 구매안이 없습니다.",
+          style: TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+        )
+      else
+        PlanBoard(
+          card: card,
+          busy: _busy,
+          colors: colors,
+          onSelect: (plan) => _run((viewModel) => viewModel.selectPlan(plan)),
+        ),
+      if (card.questions.isNotEmpty) ...[
+        const SizedBox(height: 40),
+        _SectionTitle(
+          "확인할 항목",
+          key: _questionsKey,
+          count: card.questions.length,
+          caption: "답에 따라 순위가 바뀔 수 있는 값입니다. 보완 질문은 메일 초안에서 보냅니다.",
+        ),
+        const SizedBox(height: 16),
+        _Questions(questions: card.questions),
+      ],
+      if (offer != null) ...[
+        const SizedBox(height: 40),
+        AnimatedContainer(
+          key: _counterOfferKey,
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 300),
+          // A spread shadow: a wash that reaches past the panel without
+          // moving it.
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(LdsRadius.panel),
+            boxShadow: [
+              BoxShadow(
+                color: caution.withValues(alpha: _offerMarked ? .16 : 0),
+                spreadRadius: 10,
+              ),
+            ],
+          ),
+          child: CounterOfferPanel(
+            offer: offer,
+            onMailDraft: () =>
+                showMailDraftDialog(context, caseId: card.caseId),
+            plansSelectable:
+                card.can(ReviewAction.selectPlan) &&
+                card.plans.any((plan) => plan.selectable),
+          ),
+        ),
+      ],
+      const SizedBox(height: 40),
+      const _SectionTitle("견적과 근거", caption: "업체별 최신 견적을 같은 항목끼리 나란히 봅니다."),
+      const SizedBox(height: 16),
+      if (quotes.isEmpty)
+        const Text(
+          "이 카드에 연결된 견적이 없습니다.",
+          style: TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+        )
+      else
+        QuoteCompare(quotes: quotes, colors: colors),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final card = _card;
+    final compact = isCompactLayout(context);
     final actions = _ReviewActions(
       card: card,
       busy: _busy,
       onHold: _hold,
       onConfirm: _confirm,
+      compact: compact,
     );
-    return MobilePageScaffold(
-      title: "검토 카드",
-      onBack: () => context.go(AppPaths.task(card.caseId)),
-      actions: [
-        IconButton(
-          tooltip: "메일 초안",
-          onPressed: () => showMailDraftDialog(context, caseId: card.caseId),
-          icon: const Icon(Icons.mail_outline),
-        ),
-      ],
-      // Not a lazy list: "사유 보기" scrolls to the counter-offer panel, which
-      // must exist while it is off screen.
-      body: SingleChildScrollView(
-        key: const ValueKey("review-card-scroll"),
-        // Without the pinned bar nothing else keeps the end of the page
-        // clear of the system navigation bar.
-        padding: EdgeInsets.fromLTRB(
-          16,
-          0,
-          16,
-          24 + (actions.visible ? 0 : MediaQuery.paddingOf(context).bottom),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              [
-                "검토 ${card.reviewRevision}회차",
-                if (card.createdAt != null)
-                  "${formatSeoulDateTime(card.createdAt!)} 저장",
-              ].join(" · "),
-              style: TextStyle(fontSize: 13, color: context.palette.muted),
-            ),
-            const SizedBox(height: 10),
-            if (_RaiseCard.from(card, widget.review.quotes, compact: true)
-                case final raise?) ...[
-              raise,
-              const SizedBox(height: 12),
-            ],
-            ..._notices(card),
-            if (card.plans.isEmpty)
-              Text(
-                "보여 줄 구매안이 없습니다.",
-                style: TextStyle(fontSize: 13, color: context.palette.muted),
-              )
-            else
-              PlanBoard(
-                card: card,
-                busy: _busy,
-                folding: true,
-                onSelect: (plan) =>
-                    _run((viewModel) => viewModel.selectPlan(plan)),
-              ),
-            const SizedBox(height: 20),
-            _SidePanel(
-              card: card,
-              busy: _busy,
-              showActions: false,
-              counterOfferKey: _counterOfferKey,
-              counterOfferMarked: _offerMarked,
-              onHold: _hold,
-              onConfirm: _confirm,
-              onMailDraft: () =>
-                  showMailDraftDialog(context, caseId: card.caseId),
-            ),
-            const SizedBox(height: 28),
-            const _Heading("견적과 근거"),
-            const SizedBox(height: 12),
-            if (quotes.isEmpty)
-              Text(
-                "이 카드에 연결된 견적이 없습니다.",
-                style: TextStyle(fontSize: 13, color: context.palette.muted),
-              )
-            else
-              for (final quote in quotes) ...[
-                QuoteCard(
-                  key: ValueKey("quote-${quote.quoteId}"),
-                  quote: quote,
-                ),
-                const SizedBox(height: 12),
-              ],
-          ],
-        ),
-      ),
-      bottomBar: actions.visible ? actions : null,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (isCompactLayout(context)) return _page(context);
-    final card = _card;
-    final textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
-    final quotes = widget.review.sourceQuotes;
-    final main = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.end,
-          spacing: 16,
-          runSpacing: 12,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  [
-                    "검토 ${card.reviewRevision}회차",
-                    if (card.createdAt != null)
-                      "${formatSeoulDateTime(card.createdAt!)} 저장",
-                  ].join(" · "),
-                  style: TextStyle(fontSize: 13, color: context.palette.muted),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  "검토 카드",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -.5,
-                  ),
-                ),
-              ],
-            ),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                PreviewButton(
-                  "업무로 돌아가기",
-                  onPressed: () => context.go(AppPaths.task(card.caseId)),
-                ),
-                PreviewButton(
-                  "메일 초안",
-                  onPressed: () =>
-                      showMailDraftDialog(context, caseId: card.caseId),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        ..._notices(card),
-        const SizedBox(height: 8),
-        if (card.plans.isEmpty)
-          Text(
-            "보여 줄 구매안이 없습니다.",
-            style: TextStyle(fontSize: 13, color: context.palette.muted),
-          )
-        else
-          PlanBoard(
-            card: card,
-            busy: _busy,
-            onSelect: (plan) => _run((viewModel) => viewModel.selectPlan(plan)),
+    if (compact) {
+      // Phone: the card as its own screen; 보류 / 확인하고 보관 pinned below.
+      return MobilePageScaffold(
+        title: "검토 카드",
+        onBack: () => context.go(AppPaths.task(card.caseId)),
+        actions: [
+          IconButton(
+            tooltip: "메일 초안",
+            onPressed: () => showMailDraftDialog(context, caseId: card.caseId),
+            icon: const Icon(Icons.mail_outline),
           ),
-      ],
-    );
-    final side = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (_RaiseCard.from(card, widget.review.quotes) case final raise?) ...[
-          raise,
-          const SizedBox(height: 16),
         ],
-        _SidePanel(
-          card: card,
-          busy: _busy,
-          counterOfferKey: _counterOfferKey,
-          counterOfferMarked: _offerMarked,
-          onHold: _hold,
-          onConfirm: _confirm,
-          onMailDraft: () => showMailDraftDialog(context, caseId: card.caseId),
+        // Not a lazy list: "사유 보기" scrolls to the counter-offer panel,
+        // which must exist while it is off screen.
+        body: SingleChildScrollView(
+          key: const ValueKey("review-card-scroll"),
+          // Without the pinned bar nothing else keeps the end of the page
+          // clear of the system navigation bar.
+          padding: EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            24 + (actions.visible ? 0 : MediaQuery.paddingOf(context).bottom),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: _sections(context, compact: true),
+          ),
         ),
-      ],
-    );
+        bottomBar: actions.visible ? actions : null,
+      );
+    }
+    // Web: the page scrolls; 보류 / 확인하고 보관 stay at the bottom.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final sideWidth = 320 * textScale;
-            if (constraints.maxWidth < 640 * textScale + sideWidth) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [main, const SizedBox(height: 24), side],
-              );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: main),
-                const SizedBox(width: 20),
-                SizedBox(width: sideWidth, child: side),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 32),
-        const _Heading("견적과 근거"),
-        const SizedBox(height: 12),
-        if (quotes.isEmpty)
-          Text(
-            "이 카드에 연결된 견적이 없습니다.",
-            style: TextStyle(fontSize: 13, color: context.palette.muted),
-          )
-        else
-          ResponsiveColumns(
-            minItemWidth: 280 * textScale,
-            children: [
-              for (final quote in quotes)
-                QuoteCard(
-                  key: ValueKey("quote-${quote.quoteId}"),
-                  quote: quote,
-                ),
-            ],
+        Expanded(
+          child: SingleChildScrollView(
+            key: const ValueKey("review-card-scroll"),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _sections(context, compact: false),
+            ),
           ),
-        const SizedBox(height: 16),
+        ),
+        if (actions.visible) actions,
       ],
     );
   }
@@ -444,275 +392,262 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
   }
 }
 
-class _RaiseCard extends StatelessWidget {
-  const _RaiseCard({
-    required this.supplierName,
-    required this.previous,
-    required this.requested,
-    required this.unit,
-    required this.effectiveFrom,
-    this.compact = false,
-  });
-
-  final String supplierName;
-  final String previous, requested;
-  final String? unit, effectiveFrom;
-
-  /// Phone: prices on one line, smaller.
-  final bool compact;
-
-  static _RaiseCard? from(
-    ReviewCard card,
-    List<QuoteVersion> quotes, {
-    bool compact = false,
-  }) {
-    final offer = card.counterOffer;
-    final reference = offer?.reference;
-    final target = offer?.target;
-    if (target == null ||
-        reference?.previousUnitPrice == null ||
-        reference?.requestedUnitPrice == null) {
-      return null;
-    }
-    final quote = quotes
-        .where((quote) => quote.supplierId == target.supplierId)
-        .firstOrNull;
-    return _RaiseCard(
-      supplierName: target.supplierName,
-      previous: reference!.previousUnitPrice!,
-      requested: reference.requestedUnitPrice!,
-      unit: reference.unit,
-      effectiveFrom: quote?.effectiveFrom,
-      compact: compact,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.all(compact ? 18 : 24),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(16),
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [context.palette.accentText, context.palette.deep],
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: context.palette.ink.withValues(alpha: 0.18),
-          blurRadius: 16,
-          offset: Offset(0, 4),
-        ),
-      ],
-    ),
-    child: DefaultTextStyle.merge(
-      style: const TextStyle(color: Colors.white),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "$supplierName 인상 요청",
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            compact
-                ? "${decimal(previous)} → ${decimal(requested)}"
-                : "${decimal(previous)}\n→ ${decimal(requested)}",
-            style: TextStyle(
-              fontSize: compact ? 28 : 52,
-              fontWeight: FontWeight.w600,
-              height: 1.05,
-              letterSpacing: -.5,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            [
-              "원${unit == null ? "" : "/$unit"}",
-              if (effectiveFrom != null)
-                "${effectiveFrom!.replaceAll("-", ".")}부터",
-            ].join(" · "),
-            style: TextStyle(fontSize: 14, color: context.palette.onDeepMuted),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _SidePanel extends StatelessWidget {
-  const _SidePanel({
-    required this.card,
-    required this.busy,
-    required this.counterOfferKey,
-    required this.counterOfferMarked,
-    required this.onHold,
-    required this.onConfirm,
-    required this.onMailDraft,
-    this.showActions = true,
-  });
+/// 머리: '← 업무 / 검토 카드' · 회차 · 저장 시각 · 입력 버전, 오른쪽 메일 초안.
+class _Head extends StatelessWidget {
+  const _Head({required this.card});
 
   final ReviewCard card;
-  final bool busy;
-  final Key counterOfferKey;
-
-  /// Draws a soft caution wash behind the counter-offer panel.
-  final bool counterOfferMarked;
-  final VoidCallback onHold, onConfirm, onMailDraft;
-
-  /// False on a phone, where the buttons are pinned to the bottom instead.
-  final bool showActions;
 
   @override
-  Widget build(BuildContext context) {
-    final actions = _ReviewActions(
-      card: card,
-      busy: busy,
-      onHold: onHold,
-      onConfirm: onConfirm,
-    );
-    final offer = card.counterOffer;
-    if (offer == null && card.questions.isEmpty && !showActions) {
-      return const SizedBox.shrink();
-    }
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: context.palette.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: context.palette.ink.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (offer != null) ...[
-            AnimatedContainer(
-              key: counterOfferKey,
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 300),
-              // A spread shadow: a wash that reaches past the panel without
-              // moving it.
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: caution.withValues(
-                      alpha: counterOfferMarked ? .16 : 0,
-                    ),
-                    spreadRadius: 10,
-                  ),
-                ],
-              ),
-              child: CounterOfferPanel(
-                offer: offer,
-                onMailDraft: onMailDraft,
-                plansSelectable:
-                    card.can(ReviewAction.selectPlan) &&
-                    card.plans.any((plan) => plan.selectable),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-          if (card.questions.isNotEmpty) ...[
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const _Heading("확인할 항목"),
-                const SizedBox(width: 8),
+                LdsFocusRing(
+                  radius: 4,
+                  child: InkWell(
+                    onTap: () => context.go(AppPaths.task(card.caseId)),
+                    borderRadius: BorderRadius.circular(4),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.arrow_back,
+                            size: 16,
+                            color: LdsColors.mutedStrong,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            "업무",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: LdsColors.mutedStrong,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const Text(
+                  "  /  검토 카드",
+                  style: TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
                 Container(
-                  constraints: const BoxConstraints(minWidth: 22),
-                  height: 22,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: context.palette.accent,
-                    borderRadius: BorderRadius.circular(999),
+                    color: LdsColors.lineSoft,
+                    borderRadius: BorderRadius.circular(LdsRadius.button),
                   ),
                   child: Text(
-                    "${card.questions.length}",
-                    style: TextStyle(
-                      fontSize: 12,
+                    "${card.reviewRevision}회차",
+                    style: const TextStyle(
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: context.palette.onAccent,
+                      color: LdsColors.ink,
                     ),
+                  ),
+                ),
+                Text(
+                  [
+                    if (card.createdAt != null)
+                      "${formatSeoulDateTime(card.createdAt!)} 저장",
+                    "입력 버전 ${card.inputRevision}",
+                  ].join("   "),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: LdsColors.mutedStrong,
                   ),
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+      const SizedBox(width: 16),
+      LdsButton(
+        label: "메일 초안",
+        icon: Icons.mail_outline,
+        variant: LdsButtonVariant.outlinedNeutral,
+        onPressed: () => showMailDraftDialog(context, caseId: card.caseId),
+      ),
+    ],
+  );
+}
+
+/// 영역 제목 20/700 + 선택 배지 + 옆 설명 13.
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text, {super.key, this.caption, this.count});
+
+  final String text;
+  final String? caption;
+  final int? count;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: 12,
+    runSpacing: 4,
+    children: [
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+                color: LdsColors.ink,
+              ),
+            ),
+          ),
+          if (count != null) ...[
+            const SizedBox(width: 8),
+            LdsBadge(count!, tone: LdsBadgeTone.primary),
+          ],
+        ],
+      ),
+      if (caption != null)
+        Text(
+          caption!,
+          style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+        ),
+    ],
+  );
+}
+
+/// 확인할 항목: 업체·항목, 이유, 역전 기준·계산식.
+class _Questions extends StatelessWidget {
+  const _Questions({required this.questions});
+
+  final List<ReviewQuestion> questions;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final perRow = constraints.maxWidth >= 1000
+          ? 3
+          : constraints.maxWidth >= 640
+          ? 2
+          : 1;
+      final width = (constraints.maxWidth - 16 * (perRow - 1)) / perRow;
+      return Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          for (final question in questions)
+            SizedBox(width: width, child: _QuestionCard(question)),
+        ],
+      );
+    },
+  );
+}
+
+class _QuestionCard extends StatelessWidget {
+  const _QuestionCard(this.question);
+
+  final ReviewQuestion question;
+
+  @override
+  Widget build(BuildContext context) {
+    final detail = [
+      ?question.formula,
+      if (question.breakEvenAmount != null)
+        "역전 기준 ${won(question.breakEvenAmount)}",
+    ];
+    // 왼쪽 경고 막대 3: 모서리가 둥근 틀은 테두리 색이 한 가지여야 해서
+    // 막대를 안쪽에 그립니다.
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(LdsRadius.panel),
+        border: Border.all(color: LdsColors.line),
+      ),
+      foregroundDecoration: const BoxDecoration(
+        border: Border(left: BorderSide(color: LdsColors.warning, width: 3)),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            "${question.supplierName} · ${question.fieldLabel}",
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: LdsColors.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            question.reason,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.6,
+              color: LdsColors.ink,
+            ),
+          ),
+          if (detail.isNotEmpty) ...[
             const SizedBox(height: 12),
-            for (final question in card.questions)
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: context.palette.line),
-                    bottom: BorderSide(color: context.palette.line),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "${question.supplierName} ${question.fieldLabel}",
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        if (question.breakEvenAmount != null)
-                          Text(
-                            "역전 기준 ${won(question.breakEvenAmount)}",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: context.palette.muted,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      question.reason,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: context.palette.muted,
-                      ),
-                    ),
-                  ],
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: LdsColors.canvas,
+                borderRadius: BorderRadius.circular(LdsRadius.table),
+              ),
+              child: Text(
+                detail.join("\n"),
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: LdsColors.mutedStrong,
                 ),
               ),
-            const SizedBox(height: 24),
+            ),
           ],
-          if (showActions && actions.visible) actions,
         ],
       ),
     );
   }
 }
 
-/// 보류 / 확인하고 보관, with the reason when one is blocked.
+/// 보류 / 확인하고 보관, with the reason when one is blocked. On the web a
+/// bar at the bottom of the page with a one-line guide (7.16).
 class _ReviewActions extends StatelessWidget {
   const _ReviewActions({
     required this.card,
     required this.busy,
     required this.onHold,
     required this.onConfirm,
+    this.compact = false,
   });
 
   final ReviewCard card;
   final bool busy;
   final VoidCallback onHold, onConfirm;
+  final bool compact;
 
   String? get _holdBlocked => card.disabledMessage(ReviewAction.hold);
   String? get _confirmBlocked =>
@@ -728,47 +663,94 @@ class _ReviewActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final canHold = card.can(ReviewAction.hold);
     final canConfirm = card.can(ReviewAction.confirmReview);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                style: WorkspaceButtonStyles.outlined(context).copyWith(
-                  minimumSize: const WidgetStatePropertyAll(
-                    Size.fromHeight(48),
-                  ),
-                ),
-                onPressed: canHold && !busy ? onHold : null,
-                child: const Text("보류"),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: FilledButton(
-                style: WorkspaceButtonStyles.filled(context).copyWith(
-                  minimumSize: const WidgetStatePropertyAll(
-                    Size.fromHeight(48),
-                  ),
-                ),
-                onPressed: canConfirm && !busy ? onConfirm : null,
-                child: const Text("확인하고 보관"),
-              ),
-            ),
-          ],
-        ),
-        for (final message in {?_holdBlocked, ?_confirmBlocked})
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              message,
-              style: TextStyle(fontSize: 12, color: context.palette.muted),
-            ),
+    final blocked = [
+      for (final message in {?_holdBlocked, ?_confirmBlocked})
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            message,
+            style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
           ),
-      ],
+        ),
+    ];
+    if (compact) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: WorkspaceButtonStyles.outlined(context).copyWith(
+                    minimumSize: const WidgetStatePropertyAll(
+                      Size.fromHeight(48),
+                    ),
+                  ),
+                  onPressed: canHold && !busy ? onHold : null,
+                  child: const Text("보류"),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: FilledButton(
+                  style: WorkspaceButtonStyles.filled(context).copyWith(
+                    minimumSize: const WidgetStatePropertyAll(
+                      Size.fromHeight(48),
+                    ),
+                  ),
+                  onPressed: canConfirm && !busy ? onConfirm : null,
+                  child: const Text("확인하고 보관"),
+                ),
+              ),
+            ],
+          ),
+          ...blocked,
+        ],
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: LdsColors.line)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.touch_app_outlined,
+                size: 18,
+                color: LdsColors.mutedStrong,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  "구매안을 고르거나, 근거가 부족하면 보류해 주세요.",
+                  style: TextStyle(fontSize: 15, color: LdsColors.ink),
+                ),
+              ),
+              const SizedBox(width: 12),
+              LdsButton(
+                label: "보류",
+                variant: LdsButtonVariant.outlinedNeutral,
+                onPressed: canHold && !busy ? onHold : null,
+              ),
+              const SizedBox(width: 8),
+              LdsButton(
+                label: "확인하고 보관",
+                icon: Icons.check,
+                onPressed: canConfirm && !busy ? onConfirm : null,
+              ),
+            ],
+          ),
+          ...blocked,
+        ],
+      ),
     );
   }
 }
@@ -824,32 +806,20 @@ class _HoldDialogState extends State<_HoldDialog> {
   }
 }
 
-class _Heading extends StatelessWidget {
-  const _Heading(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-  );
-}
-
 enum _Tone {
-  /// Plain information.
+  /// Plain information: grey.
   info,
 
-  /// Something is left to check.
+  /// Something is left to check: warning `#FFF8E4`/`#745300`.
   caution,
 
   /// A stop: an error, an outdated card, no plan.
   danger,
 }
 
-/// Text on the fixed caution and danger tints, which stay light in dark mode.
-const _onTint = Color(0xFF26302D);
-
+/// 한 줄 상태 띠 (`docs/design-ssot.md` 7.16): 확인할 항목이 있으면 경고,
+/// 없으면 회색. 남은 것은 제목 아래 줄로, 역제안에 사유가 있는 것은 그리로
+/// 가는 단추로 둡니다.
 class _Notice extends StatelessWidget {
   const _Notice({
     required this.icon,
@@ -857,6 +827,8 @@ class _Notice extends StatelessWidget {
     this.tone = _Tone.info,
     this.lines = const [],
     this.onCounterOffer,
+    this.count = 0,
+    this.onQuestions,
   });
 
   final IconData icon;
@@ -869,44 +841,71 @@ class _Notice extends StatelessWidget {
   /// Shows the counter-offer panel, for a line whose reason is written there.
   final VoidCallback? onCounterOffer;
 
+  /// 확인할 항목 수와 그 영역으로 가는 '확인할 항목 보기'.
+  final int count;
+  final VoidCallback? onQuestions;
+
   @override
   Widget build(BuildContext context) {
-    final (color, background, body) = switch (tone) {
-      _Tone.info => (context.palette.ink, context.palette.blush, null),
-      _Tone.caution => (caution, cautionTint, _onTint),
-      _Tone.danger => (danger, dangerTint, _onTint),
+    final (iconColor, background, border, body) = switch (tone) {
+      _Tone.info => (
+        context.palette.ink,
+        LdsColors.lineSoft,
+        LdsColors.line,
+        LdsColors.ink,
+      ),
+      _Tone.caution => (
+        caution,
+        LdsColors.warningBg,
+        const Color(0xFFFFE7A3),
+        LdsColors.warningText,
+      ),
+      _Tone.danger => (
+        danger,
+        LdsColors.errorBg,
+        const Color(0xFFFBD0D4),
+        LdsColors.ink,
+      ),
     };
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(LdsRadius.table),
+        border: Border.all(color: border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: color),
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Icon(icon, size: 16, color: iconColor),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: color,
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      if (count > 0) ...[
+                        TextSpan(
+                          text: "확인할 항목 $count건",
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        const TextSpan(text: " · "),
+                      ],
+                      TextSpan(text: text),
+                    ],
                   ),
+                  style: TextStyle(fontSize: 15, height: 1.5, color: body),
                 ),
                 for (final line in lines)
                   if (line.inCounterOffer && onCounterOffer != null)
                     _JumpLine(
                       label: line.label ?? line.text,
-                      color: body ?? context.palette.ink,
-                      background: body == null
-                          ? context.palette.surface
-                          : Colors.white,
+                      color: body,
                       onTap: onCounterOffer!,
                     )
                   else
@@ -922,14 +921,14 @@ class _Notice extends StatelessWidget {
                                     ? line.label
                                     : "${line.label} · ",
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             TextSpan(text: line.text),
                           ],
                         ),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           height: 1.5,
                           color: body,
                         ),
@@ -938,6 +937,29 @@ class _Notice extends StatelessWidget {
               ],
             ),
           ),
+          if (onQuestions != null) ...[
+            const SizedBox(width: 12),
+            LdsFocusRing(
+              radius: 4,
+              child: InkWell(
+                onTap: onQuestions,
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    "확인할 항목 보기",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: body,
+                      decoration: TextDecoration.underline,
+                      decorationColor: body,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -950,12 +972,11 @@ class _JumpLine extends StatelessWidget {
   const _JumpLine({
     required this.label,
     required this.color,
-    required this.background,
     required this.onTap,
   });
 
   final String label;
-  final Color color, background;
+  final Color color;
   final VoidCallback onTap;
 
   @override
@@ -964,14 +985,14 @@ class _JumpLine extends StatelessWidget {
     child: Semantics(
       button: true,
       child: Material(
-        color: background.withValues(alpha: .6),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white.withValues(alpha: .7),
+        borderRadius: BorderRadius.circular(LdsRadius.table),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Container(
             constraints: const BoxConstraints(minHeight: 44),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
                 Expanded(
@@ -979,24 +1000,14 @@ class _JumpLine extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       color: color,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  "사유 보기",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: color.withValues(alpha: .75),
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 16,
-                  color: color.withValues(alpha: .75),
-                ),
+                Text("사유 보기", style: TextStyle(fontSize: 13, color: color)),
+                Icon(Icons.chevron_right, size: 16, color: color),
               ],
             ),
           ),
