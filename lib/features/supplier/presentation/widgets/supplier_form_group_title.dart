@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
 
 class SupplierFormGroupTitle extends StatelessWidget {
   const SupplierFormGroupTitle(this.title, this.description, {super.key});
@@ -17,17 +16,15 @@ class SupplierFormGroupTitle extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            fontSize: AppFontSizes.bodyLarge,
+            fontSize: 17,
             fontWeight: FontWeight.w700,
+            color: LdsColors.ink,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           description,
-          style: TextStyle(
-            fontSize: AppFontSizes.secondary,
-            color: context.palette.muted,
-          ),
+          style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
         ),
       ],
     );

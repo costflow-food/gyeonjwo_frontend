@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/preview_button.dart';
+import '../../../../shared/widgets/lds/lds.dart';
 import '../../../work_queue/domain/work_case.dart';
 
 class SourceDocumentError extends StatelessWidget {
@@ -24,7 +24,11 @@ class SourceDocumentError extends StatelessWidget {
           _ => '원문을 불러오지 못했습니다.',
         }, textAlign: TextAlign.center),
         const SizedBox(height: 16),
-        PreviewButton('다시 시도', onPressed: onRetry),
+        LdsButton(
+          label: '다시 시도',
+          variant: LdsButtonVariant.outlinedNeutral,
+          onPressed: onRetry,
+        ),
       ],
     );
   }

@@ -135,3 +135,41 @@ class LdsTextField extends StatelessWidget {
     );
   }
 }
+
+/// [LdsTextField]를 `Form` 안에서 검사(validator)와 함께 씁니다. 검사에 걸리면
+/// 칸 아래 빨간 안내와 빨간 테두리. 입력하면 바로 다시 검사합니다.
+class LdsTextFormField extends FormField<String> {
+  LdsTextFormField({
+    super.key,
+    required TextEditingController controller,
+    String? label,
+    bool required = false,
+    String? hintText,
+    FormFieldValidator<String>? validator,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    bool autofocus = false,
+    ValueChanged<String>? onChanged,
+    super.autovalidateMode = AutovalidateMode.onUserInteraction,
+  }) : super(
+         initialValue: controller.text,
+         // 값은 늘 칸의 글자에서 읽습니다(코드로 바꾼 값도 포함).
+         validator: validator == null
+             ? null
+             : (_) => validator(controller.text),
+         builder: (state) => LdsTextField(
+           controller: controller,
+           label: label,
+           required: required,
+           hintText: hintText,
+           errorText: state.errorText,
+           keyboardType: keyboardType,
+           maxLines: maxLines,
+           autofocus: autofocus,
+           onChanged: (value) {
+             state.didChange(value);
+             onChanged?.call(value);
+           },
+         ),
+       );
+}

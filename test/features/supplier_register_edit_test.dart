@@ -5,6 +5,7 @@ import "package:gyeonjwo_frontend/features/supplier/domain/supplier.dart";
 import "package:gyeonjwo_frontend/features/supplier/presentation/supplier_register_dialog.dart";
 import "package:gyeonjwo_frontend/features/supplier/presentation/widgets/supplier_detail_content.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 
 const _supplier = SupplierDetail(
   id: "s1",
@@ -42,8 +43,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("거래처 수정"), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, "서산참농산"), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, "깐마늘"), findsOneWidget);
+    expect(find.widgetWithText(LdsTextFormField, "서산참농산"), findsOneWidget);
+    expect(find.widgetWithText(LdsTextFormField, "깐마늘"), findsOneWidget);
     expect(find.text("저장"), findsOneWidget);
   });
 
@@ -77,6 +78,6 @@ void main() {
 
     expect(find.text("거래처 등록"), findsOneWidget);
     expect(find.text("등록"), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, "서산참농산"), findsNothing);
+    expect(find.widgetWithText(LdsTextFormField, "서산참농산"), findsNothing);
   });
 }

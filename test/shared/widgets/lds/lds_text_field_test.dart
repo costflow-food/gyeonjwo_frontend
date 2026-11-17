@@ -48,4 +48,34 @@ void main() {
       greaterThan(tester.getBottomLeft(find.byType(TextField)).dy),
     );
   });
+
+  testWidgets("form field: validate shows the error, typing re-checks", (
+    tester,
+  ) async {
+    final form = GlobalKey<FormState>();
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    await _pump(
+      tester,
+      Form(
+        key: form,
+        child: LdsTextFormField(
+          controller: controller,
+          label: "업체명",
+          required: true,
+          validator: (value) =>
+              (value ?? "").trim().isEmpty ? "업체명을 입력해 주세요." : null,
+        ),
+      ),
+    );
+    expect(find.text("업체명을 입력해 주세요."), findsNothing);
+    expect(form.currentState!.validate(), isFalse);
+    await tester.pump();
+    expect(find.text("업체명을 입력해 주세요."), findsOneWidget);
+    expect(_border(tester).borderSide.color, LdsColors.error);
+    await tester.enterText(find.byType(TextField), "한빛농산");
+    await tester.pump();
+    expect(find.text("업체명을 입력해 주세요."), findsNothing);
+    expect(form.currentState!.validate(), isTrue);
+  });
 }

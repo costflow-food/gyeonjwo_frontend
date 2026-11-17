@@ -25,6 +25,7 @@ class LdsDialog extends StatelessWidget {
     this.onClose,
     this.footerNote,
     this.footer,
+    this.headerAction,
     this.inSheet = false,
   });
 
@@ -53,6 +54,9 @@ class LdsDialog extends StatelessWidget {
   /// 쓰지 않습니다.
   final Widget? footer;
 
+  /// 닫기 버튼 왼쪽 작은 단추(예: 새로고침 `LdsIconButton`).
+  final Widget? headerAction;
+
   /// 시트 안에 넣을 때: [Dialog] 틀 없이 내용만.
   final bool inSheet;
 
@@ -69,7 +73,12 @@ class LdsDialog extends StatelessWidget {
           fit: StackFit.passthrough,
           children: [
             Container(
-              padding: const EdgeInsets.fromLTRB(_padding, _padding, 60, 16),
+              padding: EdgeInsets.fromLTRB(
+                _padding,
+                _padding,
+                headerAction == null ? 60 : 104,
+                16,
+              ),
               decoration: const BoxDecoration(
                 border: Border(bottom: BorderSide(color: LdsColors.line)),
               ),
@@ -108,6 +117,8 @@ class LdsDialog extends StatelessWidget {
                 ],
               ),
             ),
+            if (headerAction != null)
+              Positioned(top: 16, right: 56, child: headerAction!),
             Positioned(
               top: 16,
               right: 16,

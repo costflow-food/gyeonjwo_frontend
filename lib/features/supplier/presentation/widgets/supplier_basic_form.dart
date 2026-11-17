@@ -29,7 +29,8 @@ class SupplierBasicForm extends StatelessWidget {
         SupplierFieldGrid(
           children: [
             SupplierFormField(
-              label: "업체명 *",
+              label: "업체명",
+              required: true,
               controller: fields.name,
               validator: SupplierFormRules.validateName,
               autofocus: true,
