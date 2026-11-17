@@ -22,6 +22,7 @@ abstract final class WorkspaceButtonStyles {
     disabledBackgroundColor: LdsColors.lineSoft,
     disabledForegroundColor: LdsColors.disabled,
     elevation: 0,
+    visualDensity: VisualDensity.standard,
     minimumSize: _size,
     padding: _padding,
     shape: _shape,
@@ -41,6 +42,7 @@ abstract final class WorkspaceButtonStyles {
     foregroundColor: context.palette.accentText,
     disabledForegroundColor: LdsColors.disabled,
     elevation: 0,
+    visualDensity: VisualDensity.standard,
     minimumSize: _size,
     padding: _padding,
     shape: _shape,
@@ -65,6 +67,7 @@ abstract final class WorkspaceButtonStyles {
   static ButtonStyle text(BuildContext context) => TextButton.styleFrom(
     foregroundColor: LdsColors.title,
     disabledForegroundColor: LdsColors.disabled,
+    visualDensity: VisualDensity.standard,
     minimumSize: _size,
     padding: _padding,
     shape: _shape,

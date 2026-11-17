@@ -139,6 +139,8 @@ ThemeData buildAppTheme(WorkspacePalette p) {
         foregroundColor: p.onAccent,
         disabledForegroundColor: LdsColors.disabled,
         elevation: 0,
+        // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
+        visualDensity: VisualDensity.standard,
         minimumSize: buttonSize,
         padding: buttonPadding,
         shape: buttonShape,
@@ -159,6 +161,8 @@ ThemeData buildAppTheme(WorkspacePalette p) {
         foregroundColor: p.accentText,
         disabledForegroundColor: LdsColors.disabled,
         elevation: 0,
+        // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
+        visualDensity: VisualDensity.standard,
         minimumSize: buttonSize,
         padding: buttonPadding,
         shape: buttonShape,
@@ -185,6 +189,8 @@ ThemeData buildAppTheme(WorkspacePalette p) {
         foregroundColor: LdsColors.title,
         disabledForegroundColor: LdsColors.disabled,
         elevation: 0,
+        // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
+        visualDensity: VisualDensity.standard,
         minimumSize: buttonSize,
         padding: buttonPadding,
         shape: buttonShape,
