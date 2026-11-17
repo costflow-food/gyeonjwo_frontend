@@ -35,6 +35,12 @@ abstract interface class SupplierDataSource {
     Map<String, Object?> body, {
     required String idempotencyKey,
   });
+
+  Future<Map<String, dynamic>> updateSupplier(
+    String supplierId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  });
 }
 
 class SupplierApiException implements Exception {
@@ -88,6 +94,29 @@ class ApiSupplierDataSource implements SupplierDataSource {
           data: body,
           options: Options(headers: headers),
         ),
+      );
+    } on ApiException catch (error) {
+      throw SupplierApiException(error.statusCode, {
+        "error": {"code": error.code, "message": error.message},
+      });
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateSupplier(
+    String supplierId,
+    Map<String, Object?> body, {
+    required String idempotencyKey,
+  }) async {
+    try {
+      return await sendApiRequest(
+        _accessToken,
+        (headers) => _dio.patch<Map<String, dynamic>>(
+          "$_suppliers/${Uri.encodeComponent(supplierId)}",
+          data: body,
+          options: Options(headers: headers),
+        ),
+        idempotencyKey: idempotencyKey,
       );
     } on ApiException catch (error) {
       throw SupplierApiException(error.statusCode, {

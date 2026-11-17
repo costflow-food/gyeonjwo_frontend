@@ -13,6 +13,8 @@ class SupplierFormField extends StatelessWidget {
     this.keyboardType,
     this.maxLines = 1,
     this.autofocus = false,
+    this.readOnly = false,
+    this.helper,
   });
 
   final String label;
@@ -23,6 +25,10 @@ class SupplierFormField extends StatelessWidget {
   final int maxLines;
   final bool autofocus;
 
+  /// Shown but not editable (the server does not accept this value).
+  final bool readOnly;
+  final String? helper;
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -31,11 +37,15 @@ class SupplierFormField extends StatelessWidget {
       keyboardType: keyboardType,
       maxLines: maxLines,
       autofocus: autofocus,
+      readOnly: readOnly,
+      enabled: !readOnly,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       style: const TextStyle(fontSize: AppFontSizes.body),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        helperText: helper,
+        helperMaxLines: 2,
         labelStyle: const TextStyle(fontSize: AppFontSizes.body),
         hintStyle: TextStyle(
           fontSize: AppFontSizes.body,

@@ -45,10 +45,12 @@ class _SupplierRegisterDialogState
   late final SupplierBasicFields _basic = SupplierBasicFields.of(
     widget.initial,
   );
+  // A new supplier starts with one blank item. An edit starts with the saved
+  // items only, so a supplier without items can be saved without adding one.
   late final List<SupplierItemFields> _items = [
     for (final item in widget.initial?.items ?? const <SupplierItem>[])
       SupplierItemFields.of(item),
-    if (widget.initial?.items.isEmpty ?? true) SupplierItemFields(),
+    if (widget.initial == null) SupplierItemFields(),
   ];
 
   bool get _editing => widget.initial != null;
@@ -79,7 +81,7 @@ class _SupplierRegisterDialogState
     try {
       final viewModel = ref.read(supplierListViewModelProvider.notifier);
       final created = _editing
-          ? await viewModel.updateSupplier(widget.initial!.id, draft)
+          ? await viewModel.updateSupplier(widget.initial!, draft)
           : await viewModel.register(draft);
       if (!mounted) return;
       Navigator.of(context).pop(created);

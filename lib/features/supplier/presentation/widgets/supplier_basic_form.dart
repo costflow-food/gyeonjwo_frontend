@@ -34,13 +34,12 @@ class SupplierBasicForm extends StatelessWidget {
               validator: SupplierFormRules.validateName,
               autofocus: true,
             ),
+            // The update API does not take these; shown for reference only.
             if (editing)
               SupplierFormField(
                 label: "사업자번호",
-                hint: "000-00-00000",
                 controller: fields.registrationNo,
-                validator: SupplierFormRules.validateBusinessRegistrationNo,
-                keyboardType: TextInputType.number,
+                readOnly: true,
               ),
             SupplierFormField(
               label: "견적 요청 이메일",
@@ -67,9 +66,10 @@ class SupplierBasicForm extends StatelessWidget {
         if (editing)
           SupplierFormField(
             label: "기준자료 출처 메모",
-            hint: "예: 2026 상반기 공급 계약서",
             controller: fields.evidenceMemo,
             maxLines: 2,
+            readOnly: true,
+            helper: "사업자번호와 출처 메모는 여기서 바꿀 수 없습니다.",
           ),
       ],
     );
