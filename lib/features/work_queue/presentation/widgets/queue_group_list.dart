@@ -7,8 +7,10 @@ import "package:go_router/go_router.dart";
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/workspace_colors.dart";
+import "../../domain/task_group.dart";
 import "../../domain/work_case.dart";
 import "../../domain/work_queue_state.dart";
+import "../completed_tasks_view_model.dart";
 import "../work_queue_view_model.dart";
 import "request_row.dart";
 import "../../../../app/app_paths.dart";
@@ -82,6 +84,10 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
       onSearchChanged: _onSearchChanged,
       status: value.value?.status,
       counts: value.value?.counts,
+      completedCount: ref
+          .watch(completedTasksViewModelProvider(value.value?.query ?? ""))
+          .value
+          ?.total,
       loading: value.isLoading && value.hasValue,
       onStatus: viewModel.setStatus,
     );
@@ -119,12 +125,33 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
       );
     }
     final data = value.requireValue;
-    final groups = data.groups;
+    // 완료(보관된 업무)는 따로 읽은 목록입니다.
+    final completed = data.status == TaskGroup.complete
+        ? ref.watch(completedTasksViewModelProvider(data.query))
+        : null;
+    if (completed != null && !completed.hasValue) {
+      return completed.hasError
+          ? _Message(
+              "완료한 업무를 불러오지 못했습니다.",
+              action: TextButton(
+                onPressed: () =>
+                    ref.invalidate(completedTasksViewModelProvider(data.query)),
+                child: const Text("다시 시도"),
+              ),
+            )
+          : const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            );
+    }
+    final done = completed?.requireValue;
+    final groups = done == null ? data.groups : groupCases(done.items);
+    final nextCursor = done == null ? data.nextCursor : done.nextCursor;
     // Cards are the phone's look; the narrow web list keeps its indent.
     final cards = widget.shrinkWrap && isCompactLayout(context);
     // With cases still on the server (pages on their way, or one failed)
     // the tab is not known to be empty: show "더 불러오기" instead.
-    if (groups.isEmpty && data.nextCursor == null) {
+    if (groups.isEmpty && nextCursor == null) {
       return _Message(
         data.status == null && data.query.isEmpty
             ? "아직 도착한 업무가 없습니다."
@@ -161,8 +188,18 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
               ),
           const SizedBox(height: 8),
         ],
-        if (data.nextCursor != null)
-          _LoadMore(data: data, viewModel: viewModel),
+        if (done != null && done.nextCursor != null)
+          _LoadMoreButton(
+            loading: done.loadingMore,
+            onPressed: ref
+                .read(completedTasksViewModelProvider(data.query).notifier)
+                .loadMore,
+          )
+        else if (done == null && data.nextCursor != null)
+          _LoadMoreButton(
+            loading: data.loadingMore,
+            onPressed: viewModel.loadMore,
+          ),
       ],
     );
   }
@@ -251,16 +288,18 @@ class _QueueFilters extends StatelessWidget {
     required this.onSearchChanged,
     required this.status,
     required this.counts,
+    required this.completedCount,
     required this.loading,
     required this.onStatus,
   });
 
   final TextEditingController search;
   final ValueChanged<String> onSearchChanged;
-  final WorkCaseStatus? status;
+  final TaskGroup? status;
   final WorkQueueCounts? counts;
+  final int? completedCount;
   final bool loading;
-  final ValueChanged<WorkCaseStatus?> onStatus;
+  final ValueChanged<TaskGroup?> onStatus;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -303,14 +342,14 @@ class _QueueFilters extends StatelessWidget {
           spacing: 4,
           runSpacing: 4,
           children: [
-            for (final option in const <WorkCaseStatus?>[
-              null,
-              ...WorkCaseStatus.tabs,
-            ])
+            for (final option in <TaskGroup?>[null, ...TaskGroup.values])
               ChoiceChip(
                 label: Text(
                   "${option?.label ?? "전체"}"
-                  "${counts == null ? "" : " ${counts!.countFor(option)}"}",
+                  "${switch (option == TaskGroup.complete ? completedCount : counts?.countFor(option)) {
+                    final count? => " $count",
+                    null => "",
+                  }}",
                 ),
                 labelStyle: TextStyle(
                   fontSize: AppFontSizes.caption,
@@ -353,18 +392,18 @@ class _QueueFilters extends StatelessWidget {
   );
 }
 
-class _LoadMore extends StatelessWidget {
-  const _LoadMore({required this.data, required this.viewModel});
+class _LoadMoreButton extends StatelessWidget {
+  const _LoadMoreButton({required this.loading, required this.onPressed});
 
-  final WorkQueueState data;
-  final WorkQueueViewModel viewModel;
+  final bool loading;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) => Align(
     alignment: Alignment.centerLeft,
     child: TextButton.icon(
-      onPressed: data.loadingMore ? null : viewModel.loadMore,
-      icon: data.loadingMore
+      onPressed: loading ? null : onPressed,
+      icon: loading
           ? const SizedBox.square(
               dimension: 12,
               child: CircularProgressIndicator(strokeWidth: 2),

@@ -99,7 +99,7 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
               )
             else ...[
               QueueSummary(
-                waitingCount: data?.allWaiting ?? data?.counts.waiting ?? 0,
+                waitingCount: data?.allConfirm ?? data?.counts.confirm ?? 0,
               ),
               const SizedBox(height: 24),
               if (constraints.maxWidth < _inlineQueueWidth)

@@ -7,6 +7,7 @@ import "package:gyeonjwo_frontend/features/auth/domain/auth_session.dart";
 import "package:gyeonjwo_frontend/features/auth/presentation/auth_session_view_model.dart";
 import "package:gyeonjwo_frontend/features/work_queue/data/work_case_change_source.dart";
 import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_repository_impl.dart";
+import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_repository.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_state.dart";
@@ -25,27 +26,28 @@ class _SignedIn extends AuthSessionViewModel {
   AuthSession build() => const AuthSession(status: AuthSessionStatus.signedIn);
 }
 
-WorkCase _case(String id, {String status = "Waiting"}) => WorkCase(
-  id: id,
-  initialMailId: "mail-$id",
-  title: "제목 $id",
-  sender: "$id@example.invalid",
-  receivedAt: "2026-11-10T00:00:00Z",
-  status: WorkCaseStatus.fromCode(status),
-  statusCode: status,
-  processingStep: "A",
-  stepMessage: "A",
-  inputRevision: 1,
-  attachmentCount: 0,
-);
+WorkCase _case(String id, {String status = "Waiting", String step = "A"}) =>
+    WorkCase(
+      id: id,
+      initialMailId: "mail-$id",
+      title: "제목 $id",
+      sender: "$id@example.invalid",
+      receivedAt: "2026-11-10T00:00:00Z",
+      status: WorkCaseStatus.fromCode(status),
+      statusCode: status,
+      processingStep: step,
+      stepMessage: step,
+      inputRevision: 1,
+      attachmentCount: 0,
+    );
 
-/// The server counts by the rule of the tabs: the held case (Pending) is
-/// under 진행 중.
-const _serverCounts = WorkQueueCounts(waiting: 5, running: 1, total: 6);
+/// The server counts by its old tabs, so only its total is used.
+const _serverCounts = WorkQueueCounts(total: 6);
 
 /// Three pages of two cases per search: "q-0-0", "q-0-1", "q-1-0", ...
-/// The last case is held (Pending). A request listed in [gates] waits for
-/// its completer; one listed in [failing] fails once.
+/// The last case waits for supplier replies (진행 중), the others are the
+/// user's turn (확인 필요). A request listed in [gates] waits for its
+/// completer; one listed in [failing] fails once.
 class _Queue implements WorkQueueRepository {
   final gates = <String, Completer<void>>{};
   final failing = <String>{};
@@ -62,7 +64,12 @@ class _Queue implements WorkQueueRepository {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) async {
+    // 보관(완료) 목록은 비어 있습니다.
+    if (archived) {
+      return const WorkQueuePage(items: [], counts: WorkQueueCounts());
+    }
     final key = "$query|$cursor";
     requests.add(key);
     if (failing.remove(key)) throw StateError("timeout");
@@ -71,7 +78,9 @@ class _Queue implements WorkQueueRepository {
     return WorkQueuePage(
       items: [
         _case("$query-$page-0"),
-        _case("$query-$page-1", status: page == 2 ? "Pending" : "Waiting"),
+        page == 2
+            ? _case("$query-$page-1", status: "Running", step: "WAITING_REPLY")
+            : _case("$query-$page-1"),
       ],
       counts: _serverCounts,
       nextCursor: page == 2 ? null : "${page + 1}",
@@ -130,12 +139,14 @@ void main() {
     expect(ids(), ["-0-0", "-0-1"]);
     expect(state().loadingMore, isTrue);
     expect(state().nextCursor, isNotNull);
-    // Not every case is in hand yet: the server's counts.
-    expect(state().counts.waiting, 5);
-    expect(state().counts.running, 1);
-    expect(state().allWaiting, 5);
+    // Not every case is in hand yet: the server's total, and the groups
+    // of the cases in hand (the server does not count by group).
+    expect(state().counts.total, 6);
+    expect(state().counts.confirm, 2);
+    expect(state().counts.running, 0);
+    expect(state().allConfirm, 2);
     // A tab and a selection made meanwhile survive the rest landing.
-    viewModel().setStatus(WorkCaseStatus.running);
+    viewModel().setStatus(TaskGroup.running);
     viewModel().select("-2-1");
 
     second.complete();
@@ -144,11 +155,12 @@ void main() {
     expect(ids(), ["-0-0", "-0-1", "-1-0", "-1-1", "-2-0", "-2-1"]);
     expect(state().loadingMore, isFalse);
     expect(state().nextCursor, isNull);
-    // Every case is in hand: counted here, by the same rule.
-    expect(state().counts.waiting, 5);
+    // Every case is in hand: counted here, by group.
+    expect(state().counts.confirm, 5);
     expect(state().counts.running, 1);
     expect(state().counts.total, 6);
-    expect(state().status, WorkCaseStatus.running);
+    expect(state().allConfirm, 5);
+    expect(state().status, TaskGroup.running);
     expect(state().selectedId, "-2-1");
     expect(queue.requests, ["|null", "|1", "|2"]);
     // The rest is added in one step, so rows move at most once.
@@ -188,7 +200,8 @@ void main() {
     expect(ids(), ["-0-0", "-0-1", "-1-0", "-1-1"]);
     expect(state().loadingMore, isFalse);
     expect(state().nextCursor, "2");
-    expect(state().counts.waiting, 5);
+    expect(state().counts.total, 6);
+    expect(state().counts.confirm, 4);
 
     await viewModel().loadMore();
 
@@ -407,7 +420,8 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 1));
-    await tester.tap(find.textContaining("완료"));
+    // 진행 중 has no case on the first page; its case is on the last one.
+    await tester.tap(find.textContaining("진행 중"));
     await tester.pump();
 
     expect(find.text("조건에 맞는 업무가 없습니다."), findsNothing);
@@ -416,7 +430,7 @@ void main() {
     second.complete();
     await tester.pump(const Duration(milliseconds: 1));
     await tester.pump();
-    expect(find.text("조건에 맞는 업무가 없습니다."), findsOneWidget);
+    expect(find.text("제목 -2-1"), findsOneWidget);
     expect(find.text("더 불러오기"), findsNothing);
 
     await tester.pumpWidget(const SizedBox());

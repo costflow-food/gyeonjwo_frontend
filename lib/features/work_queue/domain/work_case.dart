@@ -1,3 +1,5 @@
+import "task_group.dart";
+
 enum WorkCaseStatus {
   waiting("Waiting", "대기"),
   running("Running", "진행 중"),
@@ -17,18 +19,6 @@ enum WorkCaseStatus {
     (status) => status != other && status.code == code,
     orElse: () => other,
   );
-
-  static const tabs = [waiting, running, complete];
-
-  /// 이 상태의 업무가 들어가는 큐 탭. 보류·실패·승인 대기(Pending)는
-  /// 08의 Running/ON_HOLD처럼 진행 중에, 메일만 확인한 업무(Confirm)는
-  /// 아직 검토 전이라 대기에 넣습니다. 모르는 상태는 전체에만 보입니다.
-  WorkCaseStatus? get tab => switch (this) {
-    waiting || confirm => waiting,
-    running || pending => running,
-    complete => complete,
-    other => null,
-  };
 }
 
 /// API 행동 코드(08 §3). 버튼 표시 여부는 서버의 allowed_actions를 따릅니다.
@@ -224,6 +214,7 @@ class WorkCase {
     this.replySummary,
     this.allowedActions = const [],
     this.disabledActions = const [],
+    this.archived = false,
   });
 
   final String id;
@@ -253,6 +244,9 @@ class WorkCase {
   final ReplySummary? replySummary;
   final List<String> allowedActions;
   final List<DisabledWorkCaseAction> disabledActions;
+
+  /// 보관된 업무(`archived_at`). 구매안을 확정하면 서버가 보관합니다.
+  final bool archived;
 
   bool get notStarted => status == WorkCaseStatus.waiting;
 
@@ -292,40 +286,45 @@ class WorkCaseGroup {
   int get waitingCount => cases.where((workCase) => workCase.notStarted).length;
 }
 
+/// 상태 탭 건수 (`task_group.dart`의 [TaskGroup] 기준, 보관 전 업무만).
+/// 완료(보관)는 따로 읽습니다.
 class WorkQueueCounts {
-  const WorkQueueCounts({
-    this.waiting = 0,
-    this.running = 0,
-    this.complete = 0,
-    this.total = 0,
-  });
+  const WorkQueueCounts({this.confirm = 0, this.running = 0, this.total = 0});
 
-  /// 받아 둔 업무로 탭 건수를 셉니다. 탭은 [WorkCaseStatus.tab]을 따릅니다.
-  factory WorkQueueCounts.fromCases(List<WorkCase> cases) {
-    int count(WorkCaseStatus tab) =>
-        cases.where((workCase) => workCase.status.tab == tab).length;
+  /// 받아 둔 업무로 셉니다. 서버에 업무가 더 남아 있으면 [total]만 서버가
+  /// 센 값([serverTotal])이고, 확인 필요·진행 중은 받아 둔 업무 안의 건수입니다.
+  factory WorkQueueCounts.fromCases(List<WorkCase> cases, {int? serverTotal}) {
+    var confirm = 0;
+    var running = 0;
+    for (final workCase in cases) {
+      switch (taskGroupOf(workCase)) {
+        case TaskGroup.confirm:
+          confirm++;
+        case TaskGroup.running:
+          running++;
+        case TaskGroup.complete:
+          break;
+      }
+    }
     return WorkQueueCounts(
-      waiting: count(WorkCaseStatus.waiting),
-      running: count(WorkCaseStatus.running),
-      complete: count(WorkCaseStatus.complete),
-      total: cases.length,
+      confirm: confirm,
+      running: running,
+      total: serverTotal ?? cases.length,
     );
   }
 
-  final int waiting;
+  final int confirm;
   final int running;
-  final int complete;
+
+  /// 전체 탭(보관 전 업무 전체).
   final int total;
 
-  /// null은 전체 탭입니다.
-  int countFor(WorkCaseStatus? status) => switch (status) {
-    null ||
-    WorkCaseStatus.pending ||
-    WorkCaseStatus.confirm ||
-    WorkCaseStatus.other => total,
-    WorkCaseStatus.waiting => waiting,
-    WorkCaseStatus.running => running,
-    WorkCaseStatus.complete => complete,
+  /// null은 전체 탭입니다. 완료는 보관 목록이 따로 셉니다.
+  int? countFor(TaskGroup? group) => switch (group) {
+    null => total,
+    TaskGroup.confirm => confirm,
+    TaskGroup.running => running,
+    TaskGroup.complete => null,
   };
 }
 

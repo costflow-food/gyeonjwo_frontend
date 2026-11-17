@@ -1,5 +1,6 @@
 import "package:flutter/widgets.dart";
 import "package:go_router/go_router.dart";
+
 import "../../app/app_paths.dart";
 
 /// Closes the modal route this widget sits in once the app moves to a screen

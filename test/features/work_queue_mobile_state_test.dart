@@ -51,12 +51,16 @@ class _Queue implements WorkQueueRepository {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) async => WorkQueuePage(
-    items: [
-      for (var i = 0; i < 20; i++) _case("a$i", itemName: "깐양파"),
-      for (var i = 0; i < 20; i++) _case("b$i", itemName: "대파"),
-    ],
-    counts: const WorkQueueCounts(waiting: 40, total: 40),
+    // 보관(완료) 목록은 비어 있습니다.
+    items: archived
+        ? const []
+        : [
+            for (var i = 0; i < 20; i++) _case("a$i", itemName: "깐양파"),
+            for (var i = 0; i < 20; i++) _case("b$i", itemName: "대파"),
+          ],
+    counts: const WorkQueueCounts(total: 40),
   );
 
   @override

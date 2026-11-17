@@ -114,10 +114,13 @@ CaseStage? caseStageOf(
   );
 }
 
-/// The ring for a queue row. Only cases in the 진행 중 tab (Running, Pending)
-/// get one; 대기 and 완료 are covered by the status badge.
+/// The ring for a queue row. Only Running and Pending cases get one; the
+/// others are covered by the status badge.
 CaseStage? ringStageOf(WorkCase workCase) {
-  if (workCase.status.tab != WorkCaseStatus.running) return null;
+  if (workCase.status != WorkCaseStatus.running &&
+      workCase.status != WorkCaseStatus.pending) {
+    return null;
+  }
   final blocked = workCase.disabledActions
       .where((disabled) => disabled.action == WorkCaseAction.selectCandidates)
       .firstOrNull;

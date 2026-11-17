@@ -79,7 +79,7 @@ class _MobileWorkQueueHomeState extends ConsumerState<MobileWorkQueueHome> {
               const GmailReadNotice(),
               const SizedBox(height: 12),
             ],
-            _Summary(waitingCount: data?.allWaiting ?? data?.counts.waiting),
+            _Summary(waitingCount: data?.allConfirm ?? data?.counts.confirm),
             const SizedBox(height: 14),
             _ListSwitch(
               intake: _intake,

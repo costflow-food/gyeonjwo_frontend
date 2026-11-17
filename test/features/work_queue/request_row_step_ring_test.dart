@@ -98,13 +98,17 @@ class _Queue implements WorkQueueRepository {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) async => WorkQueuePage(
-    items: [
-      _case("Running", "EXTRACTING", revision: 2, id: "c1"),
-      _case("Running", "WAITING_REPLY", id: "c2"),
-      _case("Running", "FAILED", id: "c3"),
-    ],
-    counts: const WorkQueueCounts(running: 3, total: 3),
+    // 보관(완료) 목록은 비어 있습니다.
+    items: archived
+        ? const []
+        : [
+            _case("Running", "EXTRACTING", revision: 2, id: "c1"),
+            _case("Running", "WAITING_REPLY", id: "c2"),
+            _case("Running", "FAILED", id: "c3"),
+          ],
+    counts: const WorkQueueCounts(total: 3),
   );
 
   @override
