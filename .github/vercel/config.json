@@ -11,6 +11,16 @@
         "Strict-Transport-Security": "max-age=63072000; includeSubDomains"
       },
       "continue": true
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "^/(?!.*\\.[^/]*$)(.+?)/?$",
+      "status": 302,
+      "headers": {
+        "Location": "/#/$1"
+      }
     }
   ]
 }
