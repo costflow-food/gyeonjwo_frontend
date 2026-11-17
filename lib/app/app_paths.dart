@@ -10,6 +10,12 @@ abstract final class AppPaths {
 
   static String task(String caseId) => "$tasks/$caseId";
   static String review(String caseId) => "$tasks/$caseId/review";
+
+  /// Tasks 주소에 상태 탭(`?tab=`)을 붙입니다. [tab]이 null이면 전체 탭입니다.
+  static String tasksAt({String? caseId, String? tab}) => Uri(
+    path: caseId == null ? tasks : task(caseId),
+    queryParameters: tab == null ? null : {"tab": tab},
+  ).toString();
 }
 
 /// 옛 업무 주소(`/cases/:id`, `/cases/:id/review`)를 새 주소로 바꿉니다.

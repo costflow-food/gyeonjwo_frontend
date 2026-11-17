@@ -3,7 +3,9 @@ library;
 
 export 'lds_button.dart';
 export 'lds_dialog.dart';
+export 'lds_focus_ring.dart';
 export 'lds_metrics.dart';
+export 'lds_tab_bar.dart';
 export 'lds_tables.dart';
 export 'lds_tag.dart';
 export 'lds_toggle.dart';

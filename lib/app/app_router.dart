@@ -15,6 +15,7 @@ import "../features/dashboard/presentation/dashboard_view.dart";
 import "../features/purchase_review/presentation/purchase_review_view.dart";
 import "../features/supplier/presentation/supplier_view.dart";
 import "../features/transactions/presentation/transactions_view.dart";
+import "../features/work_queue/domain/task_group.dart";
 import "../features/workflow_log/presentation/workflow_log_view.dart";
 import "../features/work_queue/presentation/work_queue_view.dart";
 import "app_paths.dart";
@@ -23,6 +24,10 @@ import "not_found_view.dart";
 
 /// LDS 공통 위젯 미리보기. debug 빌드에서만 있고 로그인 없이 열립니다.
 const devWidgetsPath = "/dev/widgets";
+
+/// `/tasks?tab=` 상태 탭. 없거나 `all`이면 전체입니다.
+TaskGroup? _tab(GoRouterState state) =>
+    TaskGroup.fromCode(state.uri.queryParameters['tab']);
 
 /// 옛 주소 `/cases/:id`, `/cases/:id/review`. 메일·로그에 남은 링크가 새
 /// `/tasks` 주소로 열립니다.
@@ -81,12 +86,14 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: AppPaths.tasks,
-      builder: (context, state) => const WorkQueueView(),
+      builder: (context, state) => WorkQueueView(tab: _tab(state)),
     ),
     GoRoute(
       path: '${AppPaths.tasks}/:caseId',
-      builder: (context, state) =>
-          WorkQueueView(caseId: state.pathParameters['caseId']),
+      builder: (context, state) => WorkQueueView(
+        caseId: state.pathParameters['caseId'],
+        tab: _tab(state),
+      ),
     ),
     GoRoute(
       path: '${AppPaths.tasks}/:caseId/review',

@@ -20,6 +20,7 @@ import 'auth_session_view_model.dart';
 import 'gmail_connection_view_model.dart';
 import 'widgets/auth_failure_message.dart';
 import 'widgets/sign_out_action.dart';
+import '../../../app/app_paths.dart';
 
 class AccountView extends StatefulWidget {
   const AccountView({super.key});
@@ -67,17 +68,7 @@ class _AccountViewState extends State<AccountView>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // On a phone the app bar already says 계정 설정.
-              if (!isCompactLayout(context)) ...[
-                const Text(
-                  '설정',
-                  style: TextStyle(
-                    fontSize: AppFontSizes.pageTitle,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
+              // 화면 제목 '설정'은 상단 바(웹)·앱 바(휴대폰)에 있습니다.
               TabBar(
                 controller: _tabs,
                 isScrollable: true,
@@ -124,6 +115,18 @@ class _AccountViewState extends State<AccountView>
                   ),
                 ),
               ),
+              // 휴대폰 아래 탭에는 실행 로그가 없어 여기서 들어갑니다.
+              if (isCompactLayout(context)) ...[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.go(AppPaths.logs),
+                    icon: const Icon(Icons.history, size: 18),
+                    label: const Text('실행 로그'),
+                  ),
+                ),
+              ],
               if (AppConfig.buildRevision.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 SelectableText(

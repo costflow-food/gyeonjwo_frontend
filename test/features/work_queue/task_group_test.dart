@@ -91,7 +91,7 @@ void main() {
         ),
         TaskGroup.running,
         TaskLabel.running,
-        2,
+        3,
       ),
       "no candidate can be picked": (
         _case(

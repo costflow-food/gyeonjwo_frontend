@@ -1,340 +1,246 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/presentation/widgets/sign_out_action.dart';
-import '../app_font_sizes.dart';
-import '../workspace_colors.dart';
-import 'brand_logo.dart';
+import '../../app/app_paths.dart';
+import '../../features/work_queue/presentation/task_search_request.dart';
+import '../lds_colors.dart';
+import 'app_sidebar.dart';
+import 'lds/lds.dart';
 import 'mobile_scaffold.dart';
-import 'workspace_sidebar.dart';
 
-class WorkspaceShell extends StatefulWidget {
-  const WorkspaceShell({super.key, required this.child});
-  final Widget child;
+/// 화면 주소별 상단 바 제목, 선택된 메뉴, 사이드바 시작 모양 (7.8, 7.17).
+class AppSection {
+  const AppSection(this.title, this.menu, {required this.startsWide});
 
-  @override
-  State<WorkspaceShell> createState() => _WorkspaceShellState();
+  final String title;
+
+  /// 메뉴에 없는 화면(실행 로그·설정)은 null: 선택 표시가 없습니다.
+  final AppMenu? menu;
+
+  /// 둘러보는 화면은 넓은 메뉴로, 작업 화면(Tasks·검토 카드·Suppliers)은
+  /// 아이콘 메뉴로 시작합니다.
+  final bool startsWide;
+
+  static AppSection of(String path) {
+    bool under(String root) => path == root || path.startsWith('$root/');
+    if (under(AppPaths.tasks)) {
+      return const AppSection('Tasks', AppMenu.tasks, startsWide: false);
+    }
+    if (under(AppPaths.transactions)) {
+      return const AppSection(
+        'Transactions',
+        AppMenu.transactions,
+        startsWide: true,
+      );
+    }
+    if (under(AppPaths.suppliers)) {
+      return const AppSection(
+        'Suppliers',
+        AppMenu.suppliers,
+        startsWide: false,
+      );
+    }
+    if (under(AppPaths.logs)) {
+      return const AppSection('실행 로그', null, startsWide: true);
+    }
+    if (under(AppPaths.account)) {
+      return const AppSection('설정', null, startsWide: true);
+    }
+    return const AppSection('Dashboard', AppMenu.dashboard, startsWide: true);
+  }
 }
 
-class _WorkspaceShellState extends State<WorkspaceShell> {
-  static const _minimumBodyWidth = 280.0;
-  static const _collapsedSidebarWidth = 56.0;
+/// 앱 틀: 사이드바 + 상단 바 + 본문 (`docs/design-ssot.md` 7.6, 7.8).
+///
+/// 900px 이하에서는 사이드바를 숨기고 상단 바의 메뉴 버튼으로 덮개를 엽니다.
+/// 휴대폰(Android 좁은 화면)은 [MobileTabScaffold]를 씁니다.
+class WorkspaceShell extends ConsumerStatefulWidget {
+  const WorkspaceShell({
+    super.key,
+    required this.child,
+    this.scrollable = true,
+  });
 
-  // Keep the user's choice separate from the space available to display it.
-  bool _sidebarOpen = true;
+  /// 이 폭 이하에서는 사이드바가 덮개로 열립니다(7.8.1, 7.8.5).
+  static const overlayWidth = 900.0;
+
+  /// 헤더 아래 첫 콘텐츠와 좌우 여백(7.6).
+  static const gutter = 24.0;
+
+  final Widget child;
+
+  /// false면 [child]가 스크롤과 여백을 직접 둡니다(Tasks 목록·상세).
+  final bool scrollable;
+
+  @override
+  ConsumerState<WorkspaceShell> createState() => _WorkspaceShellState();
+}
+
+class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
+  bool _overlayOpen = false;
+
+  void _setOverlay(bool open) {
+    if (_overlayOpen != open) setState(() => _overlayOpen = open);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final section = AppSection.of(GoRouterState.of(context).uri.path);
     if (isCompactLayout(context)) {
       return MobileTabScaffold(
-        title: _mobileTitle(GoRouterState.of(context).uri.path),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-          child: widget.child,
-        ),
+        title: section.menu == AppMenu.dashboard ? null : section.title,
+        body: widget.scrollable
+            ? SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                child: widget.child,
+              )
+            : widget.child,
       );
     }
+    final wide = ref.watch(sidebarChoiceProvider) ?? section.startsWide;
+    final body = widget.scrollable
+        ? SingleChildScrollView(
+            padding: const EdgeInsets.all(WorkspaceShell.gutter),
+            child: widget.child,
+          )
+        : widget.child;
     return Scaffold(
-      backgroundColor: context.palette.frame,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _TopBar(),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // Wide enough for the four status filters on one line.
-                  final sidebarWidth = (constraints.maxWidth * .22).clamp(
-                    330.0,
-                    360.0,
-                  );
-                  final canExpandSidebar =
-                      constraints.maxWidth >= sidebarWidth + _minimumBodyWidth;
-                  final showSidebar = _sidebarOpen && canExpandSidebar;
-                  final showCollapsedSidebar =
-                      !showSidebar &&
-                      constraints.maxWidth >=
-                          _collapsedSidebarWidth + _minimumBodyWidth;
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (showSidebar)
-                        SizedBox(
-                          width: sidebarWidth,
-                          child: WorkspaceSidebar(
-                            onCollapse: () =>
-                                setState(() => _sidebarOpen = false),
-                          ),
-                        )
-                      else if (showCollapsedSidebar)
-                        SizedBox(
-                          width: _collapsedSidebarWidth,
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            child: IconButton(
-                              tooltip: canExpandSidebar
-                                  ? '업무 큐 펼치기'
-                                  : '창을 넓히면 업무 큐를 펼칠 수 있습니다',
-                              onPressed: canExpandSidebar
-                                  ? () => setState(() => _sidebarOpen = true)
-                                  : null,
-                              icon: Icon(
-                                Icons.menu,
-                                color: context.palette.ink,
-                              ),
-                            ),
-                          ),
-                        ),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            showSidebar || showCollapsedSidebar ? 0 : 16,
-                            0,
-                            16,
-                            16,
-                          ),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: context.palette.panel,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [Expanded(child: _body())],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static String? _mobileTitle(String path) => path.startsWith('/suppliers')
-      ? '거래처'
-      : path.startsWith('/logs')
-      ? '로그'
-      : path.startsWith('/account')
-      ? '계정 설정'
-      : null;
-
-  Widget _body() => LayoutBuilder(
-    builder: (context, viewport) {
-      final padding = (viewport.maxWidth * .03).clamp(16.0, 32.0);
-      final content = SingleChildScrollView(
-        padding: EdgeInsets.all(padding),
-        child: widget.child,
-      );
-      if (viewport.maxWidth >= _minimumBodyWidth) {
-        return content;
-      }
-      // Preserve readable content in extremely narrow windows.
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: _minimumBodyWidth,
-          height: viewport.maxHeight,
-          child: content,
-        ),
-      );
-    },
-  );
-}
-
-class _TopBar extends ConsumerWidget {
-  const _TopBar();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final path = GoRouterState.of(context).uri.path;
-    final section = path.startsWith('/suppliers')
-        ? '/suppliers'
-        : path.startsWith('/logs')
-        ? '/logs'
-        : path.startsWith('/account')
-        ? '/account'
-        : '/';
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-      child: Row(
-        children: [
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => goToQueueHome(context, ref),
-              child: const SizedBox(width: 118, height: 40, child: BrandLogo()),
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: context.palette.surface.withValues(alpha: .5),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _NavTab(
-                        label: '업무 큐',
-                        icon: Icons.grid_view_rounded,
-                        selected: section == '/',
-                        onTap: () => goToQueueHome(context, ref),
-                      ),
-                      _NavTab(
-                        label: '거래처',
-                        icon: Icons.business_center_outlined,
-                        selected: section == '/suppliers',
-                        onTap: () => context.go('/suppliers'),
-                      ),
-                      _NavTab(
-                        label: '실행 로그',
-                        icon: Icons.receipt_long_outlined,
-                        selected: section == '/logs',
-                        onTap: () => context.go('/logs'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          const _AccountButton(),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavTab extends StatelessWidget {
-  const _NavTab({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    selected: selected,
-    button: true,
-    child: Material(
-      color: selected ? context.palette.accent : Colors.transparent,
-      shape: const StadiumBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+      backgroundColor: LdsColors.canvas,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final overlayMode =
+              constraints.maxWidth <= WorkspaceShell.overlayWidth;
+          final page = Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                icon,
-                size: 17,
-                color: selected
-                    ? context.palette.onAccent
-                    : context.palette.ink,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: AppFontSizes.navigation,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected
-                      ? context.palette.onAccent
-                      : context.palette.ink,
+              if (!overlayMode)
+                AppSidebar(
+                  wide: wide,
+                  selected: section.menu,
+                  onToggle: () =>
+                      ref.read(sidebarChoiceProvider.notifier).choose(!wide),
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _TopBar(
+                      title: section.title,
+                      onMenu: overlayMode ? () => _setOverlay(true) : null,
+                    ),
+                    Expanded(child: body),
+                  ],
                 ),
               ),
             ],
+          );
+          if (!overlayMode || !_overlayOpen) return page;
+          return Stack(
+            children: [
+              page,
+              Positioned.fill(
+                child: CallbackShortcuts(
+                  bindings: {
+                    const SingleActivator(LogicalKeyboardKey.escape): () =>
+                        _setOverlay(false),
+                  },
+                  child: FocusScope(
+                    autofocus: true,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Semantics(
+                            button: true,
+                            label: '메뉴 닫기',
+                            child: GestureDetector(
+                              onTap: () => _setOverlay(false),
+                              child: const ColoredBox(color: LdsColors.overlay),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          child: AppSidebar(
+                            wide: true,
+                            overlay: true,
+                            selected: section.menu,
+                            onToggle: () => _setOverlay(false),
+                            onNavigate: () => _setOverlay(false),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// 상단 바: 높이 64, 흰 바탕, 아래 1px `#E5E7EA`, 좌우 24. 화면 제목 24/700,
+/// 오른쪽 검색·알림 (3-2). 기간 선택은 5단계에서 검색 왼쪽에 들어옵니다.
+class _TopBar extends ConsumerWidget {
+  const _TopBar({required this.title, this.onMenu});
+
+  final String title;
+
+  /// 900px 이하: 제목 왼쪽 메뉴 열기 버튼.
+  final VoidCallback? onMenu;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Container(
+    height: AppSidebar.headerHeight,
+    padding: const EdgeInsets.symmetric(horizontal: WorkspaceShell.gutter),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      border: Border(bottom: BorderSide(color: LdsColors.line)),
+    ),
+    child: Row(
+      children: [
+        if (onMenu != null) ...[
+          LdsIconButton(icon: Icons.menu, tooltip: '메뉴 열기', onPressed: onMenu),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: Semantics(
+            header: true,
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: LdsColors.ink,
+              ),
+            ),
           ),
         ),
-      ),
+        LdsIconButton(
+          icon: Icons.search,
+          tooltip: '업무 검색',
+          onPressed: () {
+            ref.read(taskSearchRequestProvider.notifier).request();
+            final path = GoRouterState.of(context).uri.path;
+            if (!path.startsWith(AppPaths.tasks)) context.go(AppPaths.tasks);
+          },
+        ),
+        const SizedBox(width: 8),
+        // 알림 기능이 아직 없어 비활성으로 둡니다.
+        const LdsIconButton(
+          icon: Icons.notifications_none,
+          tooltip: '알림 (준비 중)',
+          onPressed: null,
+        ),
+      ],
     ),
   );
-}
-
-enum _AccountMenu { settings, signOut }
-
-class _AccountButton extends ConsumerWidget {
-  const _AccountButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      PopupMenuButton<_AccountMenu>(
-        tooltip: '계정 메뉴',
-        position: PopupMenuPosition.under,
-        // 눌림·hover 효과를 동그란 버튼 모양에 맞춰 사각 배경이 보이지 않게 합니다.
-        borderRadius: BorderRadius.circular(22),
-        onSelected: (choice) {
-          switch (choice) {
-            case _AccountMenu.settings:
-              context.go('/account');
-            case _AccountMenu.signOut:
-              signOutAndLeave(context, ref);
-          }
-        },
-        itemBuilder: (context) => const [
-          PopupMenuItem(
-            value: _AccountMenu.settings,
-            child: Row(
-              children: [
-                Icon(Icons.settings_outlined, size: 16),
-                SizedBox(width: 10),
-                Text('계정 설정', style: TextStyle(fontSize: AppFontSizes.body)),
-              ],
-            ),
-          ),
-          PopupMenuItem(
-            value: _AccountMenu.signOut,
-            child: Row(
-              children: [
-                Icon(Icons.logout, size: 16),
-                SizedBox(width: 10),
-                Text('로그아웃', style: TextStyle(fontSize: AppFontSizes.body)),
-              ],
-            ),
-          ),
-        ],
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: context.palette.surface,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: context.palette.ink.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Icon(Icons.person, size: 20, color: context.palette.ink),
-        ),
-      );
 }

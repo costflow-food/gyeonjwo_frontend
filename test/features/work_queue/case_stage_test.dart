@@ -1,5 +1,6 @@
 import "package:flutter_test/flutter_test.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/case_stage.dart";
+import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 
 WorkCase _case(
@@ -84,10 +85,8 @@ void main() {
   });
 
   test("a raised revision is a reply only after a quote request went out", () {
-    const working1 = CaseStage(index: 1, working: true, label: "요청 정보 확인 중");
-    const working4 = CaseStage(index: 4, working: true, label: "거래처 회신 확인 중");
     expect(
-      ringStageOf(
+      taskProgressOf(
         _case(
           "Running",
           "EXTRACTING",
@@ -95,10 +94,10 @@ void main() {
           replies: const ReplySummary(requested: 0, responded: 0),
         ),
       ),
-      working1,
+      1,
     );
     expect(
-      ringStageOf(
+      taskProgressOf(
         _case(
           "Running",
           "EXTRACTING",
@@ -106,35 +105,33 @@ void main() {
           replies: const ReplySummary(requested: 3, responded: 1),
         ),
       ),
-      working4,
+      4,
     );
     // No reply summary (API-02): the revision alone decides.
-    expect(ringStageOf(_case("Running", "EXTRACTING", revision: 2)), working4);
+    expect(taskProgressOf(_case("Running", "EXTRACTING", revision: 2)), 4);
   });
 
   test("CANDIDATES without a pick to wait for is the worker preparing", () {
     const preparing = CaseStage(index: 3, working: true, label: "견적 요청 준비 중");
-    expect(ringStageOf(_case("Running", "CANDIDATES")), preparing);
-    expect(
-      ringStageOf(
-        _case("Running", "CANDIDATES", blockedBy: "CANDIDATES_NOT_READY"),
-      ),
-      preparing,
-    );
+    expect(caseStageOf("CANDIDATES", preparingRfq: true), preparing);
     expect(preparing.doneCount, 2);
-    // Blocked for another reason: nothing is running.
-    expect(
-      ringStageOf(
-        _case(
-          "Running",
-          "CANDIDATES",
-          blockedBy: "CANDIDATE_SELECTION_INTEGRATION_REQUIRED",
-        ),
-      ),
-      const CaseStage(index: 2, working: false, label: "견적 요청 준비 중"),
+    for (final workCase in [
+      _case("Running", "CANDIDATES"),
+      _case("Running", "CANDIDATES", blockedBy: "CANDIDATES_NOT_READY"),
+    ]) {
+      expect(taskProgressOf(workCase), 3);
+      expect(taskGroupOf(workCase), TaskGroup.running);
+    }
+    // Blocked for another reason: nothing is running; the user has to look.
+    final blocked = _case(
+      "Running",
+      "CANDIDATES",
+      blockedBy: "CANDIDATE_SELECTION_INTEGRATION_REQUIRED",
     );
+    expect(taskProgressOf(blocked), 2);
+    expect(taskGroupOf(blocked), TaskGroup.confirm);
     // The flag only matters at CANDIDATES.
-    expect(ringStageOf(_case("Running", "WAITING_REPLY"))!.working, isFalse);
+    expect(taskProgressOf(_case("Running", "WAITING_REPLY")), 3);
   });
 
   test("steps without a known slice have no ring", () {
@@ -161,22 +158,5 @@ void main() {
     final resting = caseStageOf("WAITING_REPLY")!;
     expect(resting.doneCount, 3);
     expect(resting.semanticsLabel, "5단계 중 3단계 대기, 거래처 회신 대기");
-  });
-
-  test("only cases in the running tab get a ring", () {
-    expect(ringStageOf(_case("Running", "EXTRACTING"))!.index, 1);
-    expect(ringStageOf(_case("Pending", "WAITING_APPROVAL"))!.index, 3);
-    expect(
-      ringStageOf(
-        _case("Running", "CANDIDATES", actions: ["SELECT_CANDIDATES"]),
-      )!.label,
-      "업체 선택 대기",
-    );
-    expect(ringStageOf(_case("Waiting", "PENDING_START")), isNull);
-    expect(ringStageOf(_case("Confirm", "ACKNOWLEDGED")), isNull);
-    expect(ringStageOf(_case("Complete", "REVIEW_READY")), isNull);
-    expect(ringStageOf(_case("Archived", "EXTRACTING")), isNull);
-    expect(ringStageOf(_case("Running", "FAILED")), isNull);
-    expect(ringStageOf(_case("Pending", "ON_HOLD")), isNull);
   });
 }

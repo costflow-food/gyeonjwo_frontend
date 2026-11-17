@@ -2,122 +2,241 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../app/app_paths.dart";
 import "../../../shared/app_font_sizes.dart";
+import "../../../shared/lds_colors.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/outline_panel.dart";
 import "../../../shared/widgets/workspace_shell.dart";
 import "../../../shared/workspace_colors.dart";
 import "../../auth/presentation/gmail_connection_view_model.dart";
+import "../domain/task_group.dart";
 import "../domain/work_case.dart";
+import "completed_tasks_view_model.dart";
 import "mobile/mobile_work_queue_home.dart";
 import "widgets/gmail_read_notice.dart";
-import "widgets/queue_group_list.dart";
-import "widgets/queue_summary.dart";
+import "widgets/task_list.dart";
 import "widgets/work_case_panel.dart";
 import "work_queue_view_model.dart";
-import "../../../app/app_paths.dart";
 
-/// 메인 화면. 사이드바의 품목별 업무 큐에서 고른 업무의 원문과 처리 선택을 보여 줍니다.
+/// Tasks (`docs/design-ssot.md` 7.13, 7.18): 목록 + 상세.
 ///
-/// [caseId]는 `/tasks/{id}` 주소의 업무입니다. 주소가 선택의 기준이라
-/// 새로고침·링크로 같은 업무를 다시 엽니다.
+/// [caseId]는 `/tasks/{id}` 주소의 업무, [tab]은 `?tab=` 상태 탭입니다.
+/// 주소가 선택의 기준이라 새로고침·링크로 같은 업무·탭을 다시 엽니다.
 class WorkQueueView extends ConsumerStatefulWidget {
-  const WorkQueueView({super.key, this.caseId});
+  const WorkQueueView({super.key, this.caseId, this.tab});
 
   final String? caseId;
+  final TaskGroup? tab;
+
+  /// 이 폭 이하에서는 목록과 상세를 한 화면씩 보여 줍니다(7.18).
+  static const singlePaneWidth = 1100.0;
+
+  /// 상세 내용 최대 폭(7.18).
+  static const detailMaxWidth = 1040.0;
+
+  /// 목록 칸 = 화면 폭의 30%, 최소 400 · 최대 480 (7.18).
+  static double listWidth(double screenWidth) =>
+      (screenWidth * .3).clamp(400.0, 480.0);
 
   @override
   ConsumerState<WorkQueueView> createState() => _WorkQueueViewState();
 }
 
 class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
-  /// 이보다 좁으면 사이드바가 펼쳐지지 않으니 메인에 업무 큐를 직접 보여 줍니다.
-  static const _inlineQueueWidth = 480.0;
+  static const _gutter = WorkspaceShell.gutter;
 
   @override
   void initState() {
     super.initState();
-    _syncSelection();
+    _sync();
   }
 
   @override
   void didUpdateWidget(WorkQueueView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.caseId != widget.caseId) _syncSelection();
+    if (oldWidget.caseId != widget.caseId || oldWidget.tab != widget.tab) {
+      _sync();
+    }
   }
 
-  /// The sidebar highlight follows the address. Not during build.
-  void _syncSelection() => Future.microtask(() {
-    if (mounted) {
-      ref.read(workQueueViewModelProvider.notifier).select(widget.caseId);
-    }
+  /// The selection and the tab follow the address. Not during build.
+  void _sync() => Future.microtask(() {
+    if (!mounted) return;
+    ref.read(workQueueViewModelProvider.notifier)
+      ..select(widget.caseId)
+      ..setStatus(widget.tab);
   });
+
+  void _open(WorkCase workCase) =>
+      context.go(AppPaths.tasksAt(caseId: workCase.id, tab: widget.tab?.code));
+
+  void _changeTab(TaskGroup? tab) =>
+      context.go(AppPaths.tasksAt(caseId: widget.caseId, tab: tab?.code));
 
   @override
   Widget build(BuildContext context) {
     final value = ref.watch(workQueueViewModelProvider);
     final viewModel = ref.read(workQueueViewModelProvider.notifier);
-    final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
     final data = value.hasValue ? value.requireValue : null;
+    final caseId = widget.caseId;
+    // 열린 업무가 받아 둔 목록(보관 전·완료)에 있으면 그대로 씁니다.
+    final completed = ref
+        .watch(completedTasksViewModelProvider(data?.query ?? ""))
+        .value;
+    final listed = caseId == null
+        ? null
+        : [
+            ...?data?.items,
+            ...?completed?.items,
+          ].where((workCase) => workCase.id == caseId).firstOrNull;
     // While the other pages are on their way the case may be in those:
     // wait for them instead of reading it alone and swapping panels later.
     final listRead = (data != null && !viewModel.loadingRest) || value.hasError;
-    final caseId = widget.caseId;
-    final listed = caseId == null
-        ? null
-        : data?.items.where((workCase) => workCase.id == caseId).firstOrNull;
     if (isCompactLayout(context)) {
-      if (caseId == null) return const MobileWorkQueueHome();
+      if (caseId == null) return MobileWorkQueueHome(tab: widget.tab);
       if (listed != null) {
         return WorkCasePanel(key: ValueKey(listed.id), workCase: listed);
       }
       if (listRead) return _CaseDetail(caseId: caseId);
       return MobilePageScaffold(
-        onBack: () => context.go(AppPaths.tasks),
+        onBack: () => context.go(AppPaths.tasksAt(tab: widget.tab?.code)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
+    final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
+    Widget detail() {
+      if (listed != null) {
+        return WorkCasePanel(key: ValueKey(listed.id), workCase: listed);
+      }
+      // Not in this search or page: read the case itself.
+      if (caseId != null && listRead) return _CaseDetail(caseId: caseId);
+      if (caseId != null) {
+        return const Padding(
+          padding: EdgeInsets.all(40),
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+      return const _EmptyDetail();
+    }
+
+    Widget list({required EdgeInsets padding}) => TaskList(
+      status: widget.tab,
+      selectedId: caseId,
+      onOpen: _open,
+      onTab: _changeTab,
+      padding: padding,
+    );
+
     return WorkspaceShell(
-      child: LayoutBuilder(
-        builder: (context, constraints) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Outside the list state so it shows even when loading fails.
-            if (readDenied) ...[
-              const GmailReadNotice(),
-              const SizedBox(height: 16),
-            ],
-            if (listed != null)
-              WorkCasePanel(key: ValueKey(listed.id), workCase: listed)
-            // Not in this tab, search, or page: read the case itself.
-            else if (caseId != null && listRead)
-              _CaseDetail(caseId: caseId)
-            else if (caseId != null)
-              const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else ...[
-              QueueSummary(
-                waitingCount: data?.allConfirm ?? data?.counts.confirm ?? 0,
-              ),
-              const SizedBox(height: 24),
-              if (constraints.maxWidth < _inlineQueueWidth)
-                const OutlinePanel(
-                  padding: EdgeInsets.all(12),
-                  child: QueueGroupList(shrinkWrap: true),
-                )
-              else
-                _Guidance(
-                  failed: value.hasError && data == null,
-                  onRetry: viewModel.refresh,
-                ),
-            ],
-          ],
-        ),
+      scrollable: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Outside the list state so it shows even when loading fails.
+          if (readDenied)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(_gutter, _gutter, _gutter, 0),
+              child: GmailReadNotice(),
+            ),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final screen = MediaQuery.sizeOf(context).width;
+                if (screen <= WorkQueueView.singlePaneWidth) {
+                  // 한 화면씩: 목록, 또는 '목록으로'가 있는 상세.
+                  if (caseId == null) {
+                    return list(padding: const EdgeInsets.all(_gutter));
+                  }
+                  return _DetailScroll(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => context.go(
+                            AppPaths.tasksAt(tab: widget.tab?.code),
+                          ),
+                          icon: const Icon(Icons.arrow_back, size: 18),
+                          label: const Text("목록으로"),
+                        ),
+                        const SizedBox(height: 8),
+                        detail(),
+                      ],
+                    ),
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      width: WorkQueueView.listWidth(screen) + _gutter,
+                      child: list(
+                        padding: const EdgeInsets.fromLTRB(
+                          _gutter,
+                          _gutter,
+                          0,
+                          _gutter,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: _gutter),
+                    Expanded(
+                      child: _DetailScroll(leftGutter: 0, child: detail()),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+/// 상세 칸: 위 24에서 시작, 최대 1040을 목록 쪽에 붙이고 오른쪽 여백 24.
+/// 남는 폭은 상세 오른쪽 끝에만 둡니다(7.18).
+class _DetailScroll extends StatelessWidget {
+  const _DetailScroll({
+    required this.child,
+    this.leftGutter = WorkspaceShell.gutter,
+  });
+
+  final Widget child;
+  final double leftGutter;
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    padding: EdgeInsets.fromLTRB(
+      leftGutter,
+      WorkspaceShell.gutter,
+      WorkspaceShell.gutter,
+      WorkspaceShell.gutter,
+    ),
+    child: Align(
+      alignment: Alignment.topLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: WorkQueueView.detailMaxWidth,
+        ),
+        child: child,
+      ),
+    ),
+  );
+}
+
+/// 업무를 고르지 않았을 때 상세 칸.
+class _EmptyDetail extends StatelessWidget {
+  const _EmptyDetail();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.only(top: 12),
+    child: Text(
+      "왼쪽 목록에서 업무를 고르면 내용이 여기에 보입니다.",
+      style: TextStyle(fontSize: 15, color: LdsColors.muted),
+    ),
+  );
 }
 
 class _CaseDetail extends ConsumerWidget {
@@ -193,7 +312,7 @@ class _CaseDetail extends ConsumerWidget {
                     ),
                     TextButton(
                       onPressed: () => context.go(AppPaths.tasks),
-                      child: const Text("업무 큐로"),
+                      child: const Text("목록으로"),
                     ),
                   ],
                 ),
@@ -206,43 +325,4 @@ class _CaseDetail extends ConsumerWidget {
           WorkCasePanel(key: ValueKey(workCase.id), workCase: workCase),
     );
   }
-}
-
-class _Guidance extends StatelessWidget {
-  const _Guidance({required this.failed, required this.onRetry});
-
-  final bool failed;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) => OutlinePanel(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Column(
-        children: [
-          Icon(
-            failed ? Icons.error_outline : Icons.mark_email_read_outlined,
-            size: 32,
-            color: context.palette.muted,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            failed
-                ? "업무 큐를 불러오지 못했습니다."
-                : "왼쪽 업무 큐에서 품목별 업무를 선택하면\n메일 원문과 첨부파일을 볼 수 있습니다.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: AppFontSizes.bodyLarge,
-              color: context.palette.muted,
-              height: 1.7,
-            ),
-          ),
-          if (failed) ...[
-            const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: const Text("다시 시도")),
-          ],
-        ],
-      ),
-    ),
-  );
 }

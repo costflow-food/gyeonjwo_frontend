@@ -11,7 +11,7 @@ import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_repository.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_state.dart";
-import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/queue_group_list.dart";
+import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_list.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
 import "package:gyeonjwo_frontend/shared/app_visibility.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
@@ -406,6 +406,7 @@ void main() {
     tester,
   ) async {
     final second = queue.hold("", "1");
+    TaskGroup? tab;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -415,7 +416,16 @@ void main() {
         ],
         child: MaterialApp(
           theme: ThemeData(extensions: const [WorkspacePalette.lds]),
-          home: const Scaffold(body: QueueGroupList()),
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) => TaskList(
+                status: tab,
+                selectedId: null,
+                onOpen: (_) {},
+                onTab: (next) => setState(() => tab = next),
+              ),
+            ),
+          ),
         ),
       ),
     );

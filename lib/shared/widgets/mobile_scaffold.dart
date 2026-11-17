@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../app_font_sizes.dart';
 import '../workspace_colors.dart';
 import 'brand_logo.dart';
-import 'workspace_sidebar.dart';
+import '../../app/app_paths.dart';
 
 /// Phone layout: the Android app on a narrow screen. Web keeps its own
 /// responsive layout at every width.
@@ -40,11 +40,12 @@ class MobileTabScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final path = GoRouterState.of(context).uri.path;
-    // System back on another tab returns to 업무 큐 instead of leaving the app.
+    // System back on another tab returns to the Dashboard instead of leaving
+    // the app.
     return PopScope(
-      canPop: path == '/',
+      canPop: path == AppPaths.dashboard,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) context.go('/');
+        if (!didPop) context.go(AppPaths.dashboard);
       },
       child: _scaffold(context),
     );
@@ -89,14 +90,27 @@ class _CompactBrand extends StatelessWidget {
 class MobileNavigationBar extends ConsumerWidget {
   const MobileNavigationBar({super.key});
 
-  static const _paths = ['/', '/suppliers', '/logs', '/account'];
+  /// Dashboard · Tasks · Suppliers · 계정 설정. 실행 로그는 계정 설정에서
+  /// 들어가므로 계정 설정 탭에 둡니다.
+  static const _paths = [
+    AppPaths.dashboard,
+    AppPaths.tasks,
+    AppPaths.suppliers,
+    AppPaths.account,
+  ];
+
+  static int _indexOf(String path) {
+    if (path.startsWith(AppPaths.logs)) return 3;
+    final index = _paths.lastIndexWhere(
+      (section) => section != AppPaths.dashboard && path.startsWith(section),
+    );
+    return index < 0 ? 0 : index;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final path = GoRouterState.of(context).uri.path;
-    final index = _paths.lastIndexWhere(
-      (section) => section != '/' && path.startsWith(section),
-    );
+    final index = _indexOf(path);
     final palette = context.palette;
     return NavigationBarTheme(
       data: NavigationBarThemeData(
@@ -129,29 +143,22 @@ class MobileNavigationBar extends ConsumerWidget {
           border: Border(top: BorderSide(color: palette.line)),
         ),
         child: NavigationBar(
-          selectedIndex: index < 0 ? 0 : index,
-          onDestinationSelected: (selected) {
-            if (selected == 0) {
-              goToQueueHome(context, ref);
-            } else {
-              context.go(_paths[selected]);
-            }
-          },
+          selectedIndex: index,
+          onDestinationSelected: (selected) => context.go(_paths[selected]),
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.grid_view_outlined),
               selectedIcon: Icon(Icons.grid_view_rounded),
-              label: '업무 큐',
+              label: 'Dashboard',
             ),
             NavigationDestination(
-              icon: Icon(Icons.business_center_outlined),
-              selectedIcon: Icon(Icons.business_center),
-              label: '거래처',
+              icon: Icon(Icons.format_list_bulleted),
+              label: 'Tasks',
             ),
             NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long),
-              label: '로그',
+              icon: Icon(Icons.storefront_outlined),
+              selectedIcon: Icon(Icons.storefront),
+              label: 'Suppliers',
             ),
             NavigationDestination(
               icon: Icon(Icons.manage_accounts_outlined),

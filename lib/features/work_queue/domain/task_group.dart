@@ -129,8 +129,10 @@ int? taskProgressOf(WorkCase workCase) {
     step,
     inputRevision: workCase.inputRevision,
     canSelectCandidates: _userPicksCandidates(workCase),
-    // 막힌 이유가 없을 때만 서버가 견적 요청을 준비하는 중입니다.
-    preparingRfq: blocked == null,
+    // 막히지 않았거나 후보 세트 없이 넘어간 경우(옛 경로): 서버가 견적
+    // 요청을 준비하는 중입니다.
+    preparingRfq:
+        blocked == null || blocked.reasonCode == "CANDIDATES_NOT_READY",
     rfqSent: workCase.replySummary?.visible ?? true,
   )?.index;
 }

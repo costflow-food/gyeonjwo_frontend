@@ -113,26 +113,3 @@ CaseStage? caseStageOf(
     },
   );
 }
-
-/// The ring for a queue row. Only Running and Pending cases get one; the
-/// others are covered by the status badge.
-CaseStage? ringStageOf(WorkCase workCase) {
-  if (workCase.status != WorkCaseStatus.running &&
-      workCase.status != WorkCaseStatus.pending) {
-    return null;
-  }
-  final blocked = workCase.disabledActions
-      .where((disabled) => disabled.action == WorkCaseAction.selectCandidates)
-      .firstOrNull;
-  return caseStageOf(
-    workCase.processingStep,
-    inputRevision: workCase.inputRevision,
-    canSelectCandidates: workCase.can(WorkCaseAction.selectCandidates),
-    // Not offered and not blocked for another reason (missing integration,
-    // already picked): the worker went straight on to the quote requests.
-    preparingRfq:
-        blocked == null || blocked.reasonCode == "CANDIDATES_NOT_READY",
-    // Null (a case read through API-02) tells nothing; trust the revision.
-    rfqSent: workCase.replySummary?.visible ?? true,
-  );
-}
