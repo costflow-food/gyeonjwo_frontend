@@ -185,6 +185,34 @@ class _WidgetPreviewViewState extends State<WidgetPreviewView> {
                 ],
               ),
               const _Section(
+                title: '입력칸 (7.14b)',
+                children: [
+                  SizedBox(
+                    width: 360,
+                    child: LdsTextField(
+                      label: '업체명',
+                      required: true,
+                      hintText: '예: 한라푸드',
+                    ),
+                  ),
+                  SizedBox(
+                    width: 360,
+                    child: LdsTextField(
+                      label: '업체명',
+                      required: true,
+                      errorText: '업체명을 입력해 주세요.',
+                    ),
+                  ),
+                  SizedBox(
+                    width: 360,
+                    child: LdsTextField(
+                      hintText: '업체명, 품목, 담당자, 지역 검색',
+                      prefixIcon: Icons.search,
+                    ),
+                  ),
+                ],
+              ),
+              const _Section(
                 title: '비율 막대 (3)',
                 children: [
                   LdsRatioBar(

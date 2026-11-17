@@ -1,8 +1,7 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/widgets/outline_panel.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/supplier_list_state.dart";
 import "../supplier_view_model.dart";
 import "supplier_detail_panel.dart";
@@ -50,7 +49,7 @@ class _SupplierContentState extends State<SupplierContent> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final narrow = constraints.maxWidth < 920;
-        final list = OutlinePanel(
+        final list = LdsPanel(
           key: _listKey,
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -62,8 +61,7 @@ class _SupplierContentState extends State<SupplierContent> {
               ),
               const SizedBox(height: 12),
               SupplierListStatus(data: data, onRetry: viewModel.refresh),
-              const SizedBox(height: 8),
-              Divider(height: 1, color: context.palette.muted),
+              const SizedBox(height: 12),
               SupplierListPanel(
                 data: data,
                 onSelect: (id) {
@@ -77,15 +75,15 @@ class _SupplierContentState extends State<SupplierContent> {
         );
         final selectedId = data.selectedId;
         final detail = selectedId == null
-            ? OutlinePanel(
+            ? const LdsPanel(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(
                     child: Text(
                       "거래처를 선택하면 상세 정보를 볼 수 있습니다.",
                       style: TextStyle(
-                        fontSize: AppFontSizes.body,
-                        color: context.palette.muted,
+                        fontSize: 15,
+                        color: LdsColors.mutedStrong,
                       ),
                     ),
                   ),
@@ -122,7 +120,7 @@ class _SupplierContentState extends State<SupplierContent> {
                       icon: const Icon(Icons.arrow_back, size: 16),
                       label: const Text("목록으로"),
                       style: TextButton.styleFrom(
-                        foregroundColor: context.palette.ink,
+                        foregroundColor: LdsColors.title,
                       ),
                     ),
                   ),
