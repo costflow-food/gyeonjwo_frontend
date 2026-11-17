@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
-import '../../../shared/workspace_colors.dart';
+import '../../../shared/lds_colors.dart';
 import '../domain/auth_failure.dart';
 import '../domain/gmail_connection.dart';
 import 'auth_layout.dart';
@@ -138,45 +138,20 @@ class _ConnectionCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: connected
-                      ? context.palette.blush
-                      : context.palette.blush,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  preview.icon,
-                  size: 24,
-                  color: connected
-                      ? const Color(0xFF00754A)
-                      : context.palette.accentText,
-                ),
+              AuthIconBox(
+                icon: preview.icon,
+                size: 48,
+                background: connected
+                    ? LdsColors.successBg
+                    : LdsColors.primarySoft,
+                color: connected ? LdsColors.successText : LdsColors.primary,
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.palette.blush,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '03 / 계정 연결',
-                        style: TextStyle(
-                          color: context.palette.accentText,
-                          fontSize: AppFontSizes.caption,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                    const AuthStep('03 / 계정 연결'),
                     const SizedBox(height: 8),
                     Text(
                       preview.title,
@@ -197,15 +172,15 @@ class _ConnectionCard extends StatelessWidget {
             description,
             style: TextStyle(
               fontSize: AppFontSizes.bodyLarge,
-              color: context.palette.muted,
+              color: LdsColors.mutedStrong,
               height: 1.8,
             ),
           ),
           const SizedBox(height: 16),
           if (phase == GmailConnectionPhase.connecting) ...[
-            LinearProgressIndicator(
-              color: context.palette.accent,
-              backgroundColor: context.palette.blush,
+            const LinearProgressIndicator(
+              color: LdsColors.primary,
+              backgroundColor: LdsColors.primarySoft,
               minHeight: 4,
             ),
             const SizedBox(height: 16),
@@ -224,7 +199,7 @@ class _ConnectionCard extends StatelessWidget {
               enabled: loggedIn,
               status: loggedIn ? '로그인 완료' : '확인 필요',
             ),
-            Divider(height: 1, color: context.palette.line),
+            Divider(height: 1, color: LdsColors.line),
             _ConnectionPermissionRow(
               icon: Icons.inbox_outlined,
               title: 'Gmail 자동 수신',
@@ -234,7 +209,7 @@ class _ConnectionCard extends StatelessWidget {
               enabled: preview.canRead,
               status: preview.canRead ? '사용 가능' : '사용 불가',
             ),
-            Divider(height: 1, color: context.palette.line),
+            Divider(height: 1, color: LdsColors.line),
             _ConnectionPermissionRow(
               icon: Icons.send_outlined,
               title: 'Gmail 발송',
@@ -305,28 +280,15 @@ class _ConnectionPermissionRow extends StatelessWidget {
           textAlign: inline ? TextAlign.right : TextAlign.left,
           style: TextStyle(
             fontSize: AppFontSizes.secondary,
-            fontWeight: FontWeight.w600,
-            color: enabled ? const Color(0xFF00754A) : context.palette.muted,
+            fontWeight: FontWeight.w700,
+            color: enabled ? LdsColors.successText : LdsColors.mutedStrong,
             height: 1.5,
           ),
         );
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: enabled ? context.palette.blush : context.palette.canvas,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                icon,
-                size: 18,
-                color: enabled
-                    ? context.palette.accentText
-                    : context.palette.muted,
-              ),
-            ),
+            AuthIconBox(icon: icon, enabled: enabled, size: 36),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -337,9 +299,7 @@ class _ConnectionPermissionRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: AppFontSizes.bodyLarge,
                       fontWeight: FontWeight.w700,
-                      color: enabled
-                          ? context.palette.ink
-                          : context.palette.muted,
+                      color: enabled ? LdsColors.ink : LdsColors.mutedStrong,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -347,7 +307,7 @@ class _ConnectionPermissionRow extends StatelessWidget {
                     description,
                     style: TextStyle(
                       fontSize: AppFontSizes.body,
-                      color: context.palette.muted,
+                      color: LdsColors.mutedStrong,
                       height: 1.5,
                     ),
                   ),

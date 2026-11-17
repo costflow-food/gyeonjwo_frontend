@@ -46,6 +46,7 @@ class LdsButton extends StatelessWidget {
     this.variant = LdsButtonVariant.filled,
     this.size = LdsButtonSize.medium,
     this.icon,
+    this.trailingIcon,
     this.loading = false,
   });
 
@@ -56,6 +57,9 @@ class LdsButton extends StatelessWidget {
   final LdsButtonVariant variant;
   final LdsButtonSize size;
   final IconData? icon;
+
+  /// 글자 뒤 아이콘(예: 다음 화면으로 가는 화살표).
+  final IconData? trailingIcon;
   final bool loading;
 
   @override
@@ -126,6 +130,10 @@ class LdsButton extends StatelessWidget {
           SizedBox(width: gap),
         ],
         Text(label),
+        if (trailingIcon != null) ...[
+          SizedBox(width: gap),
+          Icon(trailingIcon, size: size == LdsButtonSize.small ? 16 : 20),
+        ],
       ],
     );
     final child = Stack(

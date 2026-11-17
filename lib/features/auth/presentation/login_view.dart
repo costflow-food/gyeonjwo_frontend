@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
-import '../../../shared/workspace_colors.dart';
+import '../../../shared/lds_colors.dart';
 import 'auth_layout.dart';
 import 'auth_session_view_model.dart';
 import 'widgets/auth_failure_message.dart';
@@ -35,7 +35,7 @@ class LoginView extends ConsumerWidget {
                 '메일로 받은 요청부터 구매 판단에 필요한 근거까지.\n견줘와 함께 차근차근 확인하십시오.',
                 style: TextStyle(
                   fontSize: AppFontSizes.bodyLarge,
-                  color: context.palette.muted,
+                  color: LdsColors.mutedStrong,
                   height: 1.9,
                 ),
               ),

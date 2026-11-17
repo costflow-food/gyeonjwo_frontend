@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/app_font_sizes.dart';
-import '../../../shared/workspace_colors.dart';
+import '../../../shared/lds_colors.dart';
 import '../domain/auth_failure.dart';
 import 'auth_layout.dart';
 import 'auth_session_view_model.dart';
@@ -115,7 +115,7 @@ class _AuthPermissionsViewState extends ConsumerState<AuthPermissionsView> {
                 '계속하면 Google 계정 선택·권한 동의 화면으로 이동합니다.\n읽기·발송 권한은 Google 화면에서 각각 선택할 수 있습니다.',
                 style: TextStyle(
                   fontSize: AppFontSizes.secondary,
-                  color: context.palette.muted,
+                  color: LdsColors.mutedStrong,
                   height: 1.8,
                 ),
               );
@@ -166,13 +166,13 @@ class _RequestedPermissions extends StatelessWidget {
           title: 'Google 계정으로 가입·로그인',
           description: 'Google 계정의 기본 프로필과 이메일 주소로 사용자를 식별하고 견줘 계정을 만듭니다. 인증은 Supabase Auth가 처리합니다.',
         ),
-        Divider(height: 1, color: context.palette.line),
+        Divider(height: 1, color: LdsColors.line),
         AuthInfoTile(
           icon: Icons.mark_email_read_outlined,
           title: 'Gmail 읽기',
           description: '수신 메일을 읽어 구매 요청을 업무 큐로 가져오고 검토에 활용합니다. 읽기 권한을 허용하지 않으면 자동 수신을 사용할 수 없습니다.',
         ),
-        Divider(height: 1, color: context.palette.line),
+        Divider(height: 1, color: LdsColors.line),
         AuthInfoTile(
           icon: Icons.send_outlined,
           title: 'Gmail 발송',
@@ -208,7 +208,7 @@ class _DataProcessing extends StatelessWidget {
           'Google은 계정 인증과 Gmail 접근을, Supabase는 로그인 세션을 처리합니다. 견줘 서버는 계정 연결과 메일 수신·발송을 처리합니다. Google 연결 정보는 HTTPS로 견줘 서버에만 전달하고 브라우저에 저장하지 않습니다.',
           style: TextStyle(
             fontSize: AppFontSizes.bodyLarge,
-            color: context.palette.muted,
+            color: LdsColors.mutedStrong,
             height: 1.8,
           ),
         ),
@@ -217,7 +217,7 @@ class _DataProcessing extends StatelessWidget {
           '요청 분석에 필요한 메일 내용은 외부 LLM 제공업체에 전달될 수 있습니다.',
           style: TextStyle(
             fontSize: AppFontSizes.bodyLarge,
-            color: context.palette.muted,
+            color: LdsColors.mutedStrong,
             height: 1.8,
           ),
         ),
