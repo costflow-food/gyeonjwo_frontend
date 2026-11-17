@@ -162,20 +162,13 @@ class _Allocations extends StatelessWidget {
           : palette.ink.withValues(alpha: 0.3);
     }
     // Later suppliers: fixed hues that stay apart from the first colour and
-    // from each other on the cell, in either brightness.
-    const light = [
+    // from each other on the cell.
+    const hues = [
       Color(0xFF5FA98A),
       Color(0xFF7C9CC4),
       Color(0xFFB07FB0),
       Color(0xFF8A8F98),
     ];
-    const dark = [
-      Color(0xFFA9DCC0),
-      Color(0xFFA9C1E6),
-      Color(0xFFD9B3D9),
-      Color(0xFFB5BAC2),
-    ];
-    final hues = palette.isDark ? dark : light;
     return hues[(index - 1) % hues.length];
   }
 
@@ -728,7 +721,7 @@ class _PlanRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: palette.isDark ? palette.gold : caution,
+                        color: caution,
                       ),
                     )
                   else if (difference != null)

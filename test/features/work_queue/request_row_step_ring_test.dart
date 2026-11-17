@@ -43,7 +43,7 @@ Future<void> _pump(
   bool disableAnimations = false,
   bool card = true,
   bool selected = false,
-  WorkspacePalette palette = WorkspacePalette.houseGreen,
+  WorkspacePalette palette = WorkspacePalette.lds,
 }) => tester.pumpWidget(
   MaterialApp(
     theme: ThemeData(extensions: [palette]),
@@ -161,8 +161,24 @@ void main() {
   });
 
   testWidgets("a working ring is accent, a resting one grey", (tester) async {
-    // A light accent: arcs must take the darker accentText.
-    const palette = WorkspacePalette.charcoalAmber;
+    // A light accent: arcs must take the darker accentText. Built here since
+    // the app has one palette; the ring must follow whatever palette it gets.
+    const palette = WorkspacePalette(
+      id: "test-amber",
+      name: "Test amber",
+      ink: Color(0xFF393E46),
+      muted: Color(0xFF656A70),
+      line: Color(0xFFE5E6E7),
+      accent: Color(0xFFF8B500),
+      accentText: Color(0xFF856E2A),
+      onAccent: Color(0xFF393E46),
+      canvas: Color(0xFFF2F2F0),
+      blush: Color(0xFFFEF7E3),
+      frame: Color(0xFFF3E9D0),
+      panel: Color(0xFFFFFDF7),
+      deepLight: Color(0xFF51555C),
+      onDeepMuted: Color(0xFFFFEDBD),
+    );
     expect(palette.accent, isNot(palette.accentText));
 
     await _pump(
@@ -247,7 +263,7 @@ void main() {
           appVisibleProvider.overrideWith(_Visible.new),
         ],
         child: MaterialApp(
-          theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+          theme: ThemeData(extensions: const [WorkspacePalette.lds]),
           home: const Scaffold(
             body: Align(
               alignment: Alignment.topLeft,
@@ -354,7 +370,7 @@ void main() {
     var taps = 0;
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+        theme: ThemeData(extensions: const [WorkspacePalette.lds]),
         home: Scaffold(
           body: RequestRow(
             _case("Running", "EXTRACTING"),
@@ -382,7 +398,7 @@ void main() {
                 as RoundedRectangleBorder)
             .side;
     expect(outline().width, 1.5);
-    expect(outline().color, WorkspacePalette.houseGreen.accentText);
+    expect(outline().color, WorkspacePalette.lds.accentText);
 
     await _pump(tester, _case("Running", "EXTRACTING"));
     expect(

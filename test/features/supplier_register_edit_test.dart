@@ -25,7 +25,7 @@ Future<void> _pump(WidgetTester tester, Widget child) {
   return tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
-        theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+        theme: ThemeData(extensions: const [WorkspacePalette.lds]),
         home: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     ),

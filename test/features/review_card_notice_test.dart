@@ -83,7 +83,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
-        theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+        theme: ThemeData(extensions: const [WorkspacePalette.lds]),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: TextScaler.linear(textScale)),
@@ -561,7 +561,7 @@ void main() {
           outcome: ReviewOutcome.completed,
         ),
       );
-      expect(tone(), WorkspacePalette.houseGreen.ink);
+      expect(tone(), WorkspacePalette.lds.ink);
       // No leftovers, comparison finished: no notice at all.
       await _pump(
         tester,

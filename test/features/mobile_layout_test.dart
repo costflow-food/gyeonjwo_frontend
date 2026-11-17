@@ -171,7 +171,7 @@ Future<void> _pumpPhone(
     ProviderScope(
       overrides: [...overrides],
       child: MaterialApp(
-        theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+        theme: ThemeData(extensions: const [WorkspacePalette.lds]),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: TextScaler.linear(textScale)),
@@ -320,7 +320,7 @@ void main() {
           workCaseChangesProvider.overrideWith((ref) => const Stream.empty()),
         ],
         child: MaterialApp.router(
-          theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+          theme: ThemeData(extensions: const [WorkspacePalette.lds]),
           routerConfig: router,
         ),
       ),

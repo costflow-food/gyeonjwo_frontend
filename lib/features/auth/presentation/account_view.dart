@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_config.dart';
 import '../../../shared/app_font_sizes.dart';
 import '../../../shared/formatters.dart';
-import '../../../shared/theme/theme_picker.dart';
 import '../../../shared/widgets/mobile_scaffold.dart';
 import '../../../shared/widgets/workspace_shell.dart';
 import '../../../shared/workspace_colors.dart';
@@ -31,7 +30,7 @@ class AccountView extends StatefulWidget {
 
 class _AccountViewState extends State<AccountView>
     with SingleTickerProviderStateMixin {
-  static const _pages = ['권한', '메일 발송 설정', '화면 테마'];
+  static const _pages = ['권한', '메일 발송 설정'];
 
   late final TabController _tabs = TabController(
     length: _pages.length,
@@ -105,7 +104,6 @@ class _AccountViewState extends State<AccountView>
                       for (final (index, page) in const [
                         _PermissionsPage(),
                         _SendSettingsPage(),
-                        _ThemePage(),
                       ].indexed)
                         Visibility(
                           visible: index == _index,
@@ -316,11 +314,4 @@ class _SendSettingsPage extends StatelessWidget {
     padding: EdgeInsets.only(top: 24),
     child: SendSettingsDialog(embedded: true),
   );
-}
-
-class _ThemePage extends StatelessWidget {
-  const _ThemePage();
-
-  @override
-  Widget build(BuildContext context) => const AuthCard(child: ThemePicker());
 }

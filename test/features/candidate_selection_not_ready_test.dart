@@ -50,7 +50,7 @@ void main() {
             workQueueRepositoryProvider.overrideWithValue(_NotReady()),
           ],
           child: MaterialApp(
-            theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+            theme: ThemeData(extensions: const [WorkspacePalette.lds]),
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(
                 context,

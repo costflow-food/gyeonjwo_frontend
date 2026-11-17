@@ -134,7 +134,7 @@ void main() {
           ),
         ],
         child: MaterialApp.router(
-          theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+          theme: ThemeData(extensions: const [WorkspacePalette.lds]),
           routerConfig: router,
         ),
       ),
@@ -188,7 +188,7 @@ void main() {
       ProviderScope(
         overrides: [workQueueRepositoryProvider.overrideWithValue(queue)],
         child: MaterialApp(
-          theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+          theme: ThemeData(extensions: const [WorkspacePalette.lds]),
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: const TextScaler.linear(1.3)),

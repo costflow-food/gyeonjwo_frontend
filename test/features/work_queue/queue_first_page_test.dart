@@ -401,7 +401,7 @@ void main() {
           appVisibleProvider.overrideWith(_Visible.new),
         ],
         child: MaterialApp(
-          theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+          theme: ThemeData(extensions: const [WorkspacePalette.lds]),
           home: const Scaffold(body: QueueGroupList()),
         ),
       ),
