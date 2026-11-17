@@ -7,6 +7,7 @@ import '../../features/auth/presentation/auth_session_view_model.dart';
 import '../../features/auth/presentation/widgets/sign_out_action.dart';
 import '../../features/send_settings/presentation/send_settings_dialog.dart';
 import '../lds_colors.dart';
+import 'brand_logo.dart';
 import 'lds/lds.dart';
 
 /// 왼쪽 메뉴 (`docs/design-ssot.md` 7.17). 숫자 배지는 두지 않습니다(4.2).
@@ -169,44 +170,24 @@ class _Logo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: '견줘 Dashboard',
+    label: 'Thoner Dashboard',
     excludeSemantics: true,
     child: LdsFocusRing(
       radius: 4,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/branding/logo.png',
-              width: 30,
-              height: 30,
-              color: LdsColors.primary,
-              colorBlendMode: BlendMode.srcIn,
-              filterQuality: FilterQuality.medium,
-              excludeFromSemantics: true,
-            ),
-            const SizedBox(width: 6),
-            const Text(
-              '견줘',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: LdsColors.primary,
-                letterSpacing: -.5,
-              ),
-            ),
-          ],
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: BrandLogo(height: 28),
         ),
       ),
     ),
   );
 }
 
-/// 아이콘 메뉴 로고 'T' 심볼 30×30 (7.8.2). 전용 에셋이 없어 주황 둥근 사각에
-/// 흰 'T'로 그립니다.
+/// 아이콘 메뉴 로고 'T' 심볼 30×30 (7.8.2). 전용 심볼 에셋이 없어 주황 둥근
+/// 사각에 흰 'T'로 그립니다(시안과 같은 모양).
 class _Symbol extends StatelessWidget {
   const _Symbol({required this.onTap});
 
@@ -217,7 +198,7 @@ class _Symbol extends StatelessWidget {
     message: 'Dashboard',
     child: Semantics(
       button: true,
-      label: '견줘 Dashboard',
+      label: 'Thoner Dashboard',
       excludeSemantics: true,
       child: LdsFocusRing(
         radius: 8,
