@@ -111,7 +111,7 @@ void main() {
       routes: [
         GoRoute(path: "/", builder: (_, _) => const MobileWorkQueueHome()),
         GoRoute(
-          path: "/cases/:caseId",
+          path: "/tasks/:caseId",
           builder: (context, _) => Scaffold(
             body: TextButton(
               onPressed: () => context.go("/"),
@@ -168,7 +168,7 @@ void main() {
     await tester.tap(find.text("접수 확인"));
     await tester.pumpAndSettle();
     expect(find.byType(QueueGroupList), findsNothing);
-    router.go("/cases/a1");
+    router.go("/tasks/a1");
     await tester.pumpAndSettle();
     await tester.tap(find.text("back"));
     await tester.pumpAndSettle();

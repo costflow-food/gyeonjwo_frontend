@@ -10,6 +10,7 @@ import 'auth_layout.dart';
 import 'auth_session_view_model.dart';
 import 'gmail_connection_view_model.dart';
 import 'widgets/auth_failure_message.dart';
+import "../../../app/app_paths.dart";
 
 extension GmailConnectionPhaseCopy on GmailConnectionPhase {
   String get label => switch (this) {
@@ -245,7 +246,10 @@ class _ConnectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (preview.hasConnection || serverNotReady)
-              AuthButton(label: '업무 큐로 이동', onPressed: () => context.go('/'))
+              AuthButton(
+                label: '시작하기',
+                onPressed: () => context.go(AppPaths.dashboard),
+              )
             else if (phase == GmailConnectionPhase.failed && onRetry != null)
               AuthButton(
                 label: '다시 시도하기',

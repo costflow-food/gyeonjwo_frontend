@@ -8,6 +8,7 @@ import '../../features/mail_intake/presentation/widgets/intake_sidebar_list.dart
 import '../../features/work_queue/presentation/widgets/queue_group_list.dart';
 import '../../features/work_queue/presentation/work_queue_view_model.dart';
 import '../workspace_colors.dart';
+import "../../app/app_paths.dart";
 
 class WorkspaceSidebar extends StatelessWidget {
   const WorkspaceSidebar({super.key, required this.onCollapse});
@@ -178,5 +179,7 @@ class _CountTab extends StatelessWidget {
 /// 첫 화면(업무 큐 요약)으로: 선택한 업무를 닫고 업무 큐로 이동합니다.
 void goToQueueHome(BuildContext context, WidgetRef ref) {
   ref.read(workQueueViewModelProvider.notifier).select(null);
-  if (GoRouterState.of(context).uri.path != '/') context.go('/');
+  if (GoRouterState.of(context).uri.path != AppPaths.tasks) {
+    context.go(AppPaths.tasks);
+  }
 }

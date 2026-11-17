@@ -20,6 +20,7 @@ import "attachment_viewer.dart";
 import "candidate_selection.dart";
 import "case_step_status.dart";
 import "status_badge.dart";
+import "../../../../app/app_paths.dart";
 
 class WorkCasePanel extends ConsumerStatefulWidget {
   const WorkCasePanel({super.key, required this.workCase});
@@ -128,7 +129,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
       () => _viewModel.acceptIncrease(widget.workCase),
       done: "수용했습니다. 업무 큐에서 정리했습니다.",
     )) {
-      router.go("/");
+      router.go(AppPaths.tasks);
     }
   }
 
@@ -256,7 +257,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
     } else if (workCase.hasReviewCard) {
       bar = FilledButton.icon(
         style: MobileButtons.filled(context),
-        onPressed: () => context.go("/cases/${workCase.id}/review"),
+        onPressed: () => context.go(AppPaths.review(workCase.id)),
         icon: const Icon(Icons.fact_check_outlined, size: 18),
         label: const Text("검토 카드 보기"),
       );
@@ -266,7 +267,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
     return MobilePageScaffold(
       onBack: () {
         ref.read(workQueueViewModelProvider.notifier).select(null);
-        context.go("/");
+        context.go(AppPaths.tasks);
       },
       titleWidget: Row(
         children: [
@@ -370,7 +371,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               ),
               IconButton(
                 tooltip: "닫기",
-                onPressed: () => context.go("/"),
+                onPressed: () => context.go(AppPaths.tasks),
                 icon: const Icon(Icons.close, size: 20),
               ),
             ],
@@ -417,7 +418,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
                 style: WorkspaceButtonStyles.filled(context),
-                onPressed: () => context.go("/cases/${workCase.id}/review"),
+                onPressed: () => context.go(AppPaths.review(workCase.id)),
                 icon: const Icon(Icons.fact_check_outlined, size: 16),
                 label: const Text("검토 카드 보기"),
               ),

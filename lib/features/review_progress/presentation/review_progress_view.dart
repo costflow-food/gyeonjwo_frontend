@@ -11,6 +11,7 @@ import "../domain/review_progress_repository.dart";
 import "review_progress_view_model.dart";
 import "widgets/review_progress_body.dart";
 import "widgets/review_progress_dialog.dart";
+import "../../../app/app_paths.dart";
 
 Future<void> showReviewProgressDialog(
   BuildContext context, {
@@ -32,7 +33,7 @@ Future<void> showReviewProgressDialog(
         router: router,
         onViewCase: () {
           Navigator.of(sheetContext).pop();
-          router.go("/cases/$caseId");
+          router.go(AppPaths.task(caseId));
         },
       ),
     );
@@ -48,7 +49,7 @@ Future<void> showReviewProgressDialog(
         router: router,
         onViewCase: () {
           Navigator.of(dialogContext).pop();
-          router.go("/cases/$caseId");
+          router.go(AppPaths.task(caseId));
         },
       ),
     ),

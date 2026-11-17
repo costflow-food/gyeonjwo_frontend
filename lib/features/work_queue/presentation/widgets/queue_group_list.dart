@@ -11,6 +11,7 @@ import "../../domain/work_case.dart";
 import "../../domain/work_queue_state.dart";
 import "../work_queue_view_model.dart";
 import "request_row.dart";
+import "../../../../app/app_paths.dart";
 
 /// What the phone home screen remembers while a case is open. Opening a case
 /// replaces the home page, so its own state would start over on the way back.
@@ -70,7 +71,7 @@ class _QueueGroupListState extends ConsumerState<QueueGroupList> {
   }
 
   /// The address drives the selection, from any screen.
-  void _open(WorkCase workCase) => context.go("/cases/${workCase.id}");
+  void _open(WorkCase workCase) => context.go(AppPaths.task(workCase.id));
 
   @override
   Widget build(BuildContext context) {

@@ -18,6 +18,7 @@ import "counter_offer_panel.dart";
 import "plan_board.dart";
 import "quote_card.dart";
 import "review_format.dart";
+import "../../../../app/app_paths.dart";
 
 class ReviewCardContent extends ConsumerStatefulWidget {
   const ReviewCardContent({super.key, required this.review});
@@ -206,7 +207,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
     );
     return MobilePageScaffold(
       title: "검토 카드",
-      onBack: () => context.go("/cases/${card.caseId}"),
+      onBack: () => context.go(AppPaths.task(card.caseId)),
       actions: [
         IconButton(
           tooltip: "메일 초안",
@@ -335,7 +336,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
               children: [
                 PreviewButton(
                   "업무로 돌아가기",
-                  onPressed: () => context.go("/cases/${card.caseId}"),
+                  onPressed: () => context.go(AppPaths.task(card.caseId)),
                 ),
                 PreviewButton(
                   "메일 초안",

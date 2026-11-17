@@ -11,15 +11,31 @@ import '../features/auth/presentation/account_view.dart';
 import '../features/auth/presentation/auth_permissions_view.dart';
 import '../features/auth/presentation/auth_connection_view.dart';
 
+import "../features/dashboard/presentation/dashboard_view.dart";
 import "../features/purchase_review/presentation/purchase_review_view.dart";
 import "../features/supplier/presentation/supplier_view.dart";
+import "../features/transactions/presentation/transactions_view.dart";
 import "../features/workflow_log/presentation/workflow_log_view.dart";
 import "../features/work_queue/presentation/work_queue_view.dart";
+import "app_paths.dart";
 import "dev/widget_preview_view.dart";
 import "not_found_view.dart";
 
 /// LDS 공통 위젯 미리보기. debug 빌드에서만 있고 로그인 없이 열립니다.
 const devWidgetsPath = "/dev/widgets";
+
+/// 옛 주소 `/cases/:id`, `/cases/:id/review`. 메일·로그에 남은 링크가 새
+/// `/tasks` 주소로 열립니다.
+final legacyCaseRoute = GoRoute(
+  path: '/cases/:caseId',
+  redirect: (context, state) => legacyCaseRedirect(state.uri),
+  routes: [
+    GoRoute(
+      path: 'review',
+      redirect: (context, state) => legacyCaseRedirect(state.uri),
+    ),
+  ],
+);
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -55,25 +71,40 @@ final appRouter = GoRouter(
       path: '/login/connection',
       builder: (context, state) => const AuthConnectionView(),
     ),
-    GoRoute(path: '/account', builder: (context, state) => const AccountView()),
-    GoRoute(path: '/', builder: (context, state) => const WorkQueueView()),
     GoRoute(
-      path: '/cases/:caseId',
+      path: AppPaths.account,
+      builder: (context, state) => const AccountView(),
+    ),
+    GoRoute(
+      path: AppPaths.dashboard,
+      builder: (context, state) => const DashboardView(),
+    ),
+    GoRoute(
+      path: AppPaths.tasks,
+      builder: (context, state) => const WorkQueueView(),
+    ),
+    GoRoute(
+      path: '${AppPaths.tasks}/:caseId',
       builder: (context, state) =>
           WorkQueueView(caseId: state.pathParameters['caseId']),
     ),
     GoRoute(
-      path: '/logs',
-      builder: (context, state) => const WorkflowLogView(),
-    ),
-    GoRoute(
-      path: '/suppliers',
-      builder: (context, state) => const SupplierView(),
-    ),
-    GoRoute(
-      path: '/cases/:caseId/review',
+      path: '${AppPaths.tasks}/:caseId/review',
       builder: (context, state) =>
           PurchaseReviewView(caseId: state.pathParameters['caseId']!),
     ),
+    GoRoute(
+      path: AppPaths.transactions,
+      builder: (context, state) => const TransactionsView(),
+    ),
+    GoRoute(
+      path: AppPaths.suppliers,
+      builder: (context, state) => const SupplierView(),
+    ),
+    GoRoute(
+      path: AppPaths.logs,
+      builder: (context, state) => const WorkflowLogView(),
+    ),
+    legacyCaseRoute,
   ],
 );

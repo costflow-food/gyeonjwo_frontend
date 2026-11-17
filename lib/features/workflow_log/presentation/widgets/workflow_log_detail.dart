@@ -10,6 +10,7 @@ import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../source_document/presentation/source_document_dialog.dart";
 import "../../domain/workflow_log.dart";
 import "log_outcome_badge.dart";
+import "../../../../app/app_paths.dart";
 
 class WorkflowLogDetail extends StatelessWidget {
   const WorkflowLogDetail({
@@ -118,7 +119,7 @@ class WorkflowLogDetail extends StatelessWidget {
                 if (caseId != null)
                   OutlinedButton.icon(
                     style: WorkspaceButtonStyles.outlined(context),
-                    onPressed: () => context.go("/cases/$caseId"),
+                    onPressed: () => context.go(AppPaths.task(caseId)),
                     icon: const Icon(Icons.open_in_new, size: 16),
                     label: const Text("업무 보기"),
                   ),

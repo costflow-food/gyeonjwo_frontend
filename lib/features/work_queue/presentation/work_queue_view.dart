@@ -15,10 +15,11 @@ import "widgets/queue_group_list.dart";
 import "widgets/queue_summary.dart";
 import "widgets/work_case_panel.dart";
 import "work_queue_view_model.dart";
+import "../../../app/app_paths.dart";
 
 /// 메인 화면. 사이드바의 품목별 업무 큐에서 고른 업무의 원문과 처리 선택을 보여 줍니다.
 ///
-/// [caseId]는 `/cases/{id}` 주소의 업무입니다. 주소가 선택의 기준이라
+/// [caseId]는 `/tasks/{id}` 주소의 업무입니다. 주소가 선택의 기준이라
 /// 새로고침·링크로 같은 업무를 다시 엽니다.
 class WorkQueueView extends ConsumerStatefulWidget {
   const WorkQueueView({super.key, this.caseId});
@@ -72,7 +73,7 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
       }
       if (listRead) return _CaseDetail(caseId: caseId);
       return MobilePageScaffold(
-        onBack: () => context.go("/"),
+        onBack: () => context.go(AppPaths.tasks),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -141,7 +142,7 @@ class _CaseDetail extends ConsumerWidget {
     // get the same back button.
     Widget page(Widget body) => compact
         ? MobilePageScaffold(
-            onBack: () => context.go("/"),
+            onBack: () => context.go(AppPaths.tasks),
             body: SingleChildScrollView(
               // No bottom bar here, so keep clear of the system navigation.
               padding: EdgeInsets.fromLTRB(
@@ -191,7 +192,7 @@ class _CaseDetail extends ConsumerWidget {
                       child: const Text("다시 시도"),
                     ),
                     TextButton(
-                      onPressed: () => context.go("/"),
+                      onPressed: () => context.go(AppPaths.tasks),
                       child: const Text("업무 큐로"),
                     ),
                   ],

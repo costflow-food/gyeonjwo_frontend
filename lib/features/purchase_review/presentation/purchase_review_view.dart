@@ -9,6 +9,7 @@ import "../../../shared/workspace_colors.dart";
 import "../domain/purchase_review.dart";
 import "purchase_review_view_model.dart";
 import "widgets/review_card_content.dart";
+import "../../../app/app_paths.dart";
 
 class PurchaseReviewView extends ConsumerWidget {
   const PurchaseReviewView({super.key, required this.caseId});
@@ -25,7 +26,7 @@ class PurchaseReviewView extends ConsumerWidget {
       if (current != null) return ReviewCardContent(review: current);
       return MobilePageScaffold(
         title: "검토 카드",
-        onBack: () => context.go("/cases/$caseId"),
+        onBack: () => context.go(AppPaths.task(caseId)),
         body: switch (value) {
           AsyncError(:final error) => Padding(
             padding: const EdgeInsets.all(24),
@@ -105,7 +106,7 @@ class _Unavailable extends StatelessWidget {
               children: [
                 OutlinedButton(
                   style: WorkspaceButtonStyles.outlined(context),
-                  onPressed: () => context.go("/cases/$caseId"),
+                  onPressed: () => context.go(AppPaths.task(caseId)),
                   child: const Text("업무 보기"),
                 ),
                 FilledButton(
