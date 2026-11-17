@@ -6,7 +6,6 @@ import "package:go_router/go_router.dart";
 
 import "../../../shared/widgets/close_on_case_leave.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
-import "../../../shared/workspace_colors.dart";
 import "../domain/review_progress_repository.dart";
 import "review_progress_view_model.dart";
 import "widgets/review_progress_body.dart";
@@ -26,7 +25,7 @@ Future<void> showReviewProgressDialog(
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: context.palette.surface,
+      backgroundColor: Colors.white,
       builder: (sheetContext) => ReviewProgressView(
         caseId: caseId,
         title: title,

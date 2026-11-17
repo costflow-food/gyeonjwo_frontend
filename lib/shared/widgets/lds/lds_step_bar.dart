@@ -18,14 +18,22 @@ enum LdsStepState { done, current, upcoming }
 /// 남은 단계 = 흰 원 + 연한 주황 테두리. 잇는 선은 지난 구간 주황 실선 2,
 /// 남은 구간 `#FFBF99` 점선. 첫 단계는 왼쪽, 마지막 단계는 오른쪽 끝에 맞춥니다.
 class LdsStepBar extends StatelessWidget {
-  const LdsStepBar({super.key, required this.steps, required this.current})
-    : assert(steps.length >= 2);
+  const LdsStepBar({
+    super.key,
+    required this.steps,
+    required this.current,
+    this.verticalBelow,
+  }) : assert(steps.length >= 2);
 
   final List<LdsStep> steps;
 
   /// 지금 단계(0부터). [steps] 길이면 모두 완료, null이면 지금 단계를
   /// 모릅니다(모두 남은 단계로 그립니다).
   final int? current;
+
+  /// 폭이 이보다 좁으면 단계를 세로로 쌓습니다(이름이 겹치지 않게). null이면
+  /// 늘 가로.
+  final double? verticalBelow;
 
   static const circle = 28.0;
 
@@ -40,6 +48,9 @@ class LdsStepBar extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final width = constraints.maxWidth;
+      if (verticalBelow case final below? when width < below) {
+        return _vertical();
+      }
       final gap = (width - circle) / (steps.length - 1);
       // 이름 칸 폭: 가운데 단계는 원을 가운데 두고 한 칸, 끝 단계는 안쪽으로.
       final labelWidth = gap < circle ? circle : gap;
@@ -84,6 +95,90 @@ class LdsStepBar extends StatelessWidget {
     },
   );
 
+  String _semantics(int index, LdsStep step) => [
+    "${steps.length}단계 중 ${index + 1}단계 ${step.label}",
+    switch (stateOf(index)) {
+      LdsStepState.done => "완료",
+      LdsStepState.current => "지금 단계",
+      LdsStepState.upcoming => "남은 단계",
+    },
+    ?step.caption,
+  ].join(", ");
+
+  /// 좁은 폭: 원과 이름을 한 줄씩, 원 사이를 세로 선으로 잇습니다.
+  Widget _vertical() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (final (index, step) in steps.indexed)
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: circle,
+                child: Column(
+                  children: [
+                    _Circle(number: index + 1, state: stateOf(index)),
+                    if (index < steps.length - 1)
+                      Expanded(
+                        child: CustomPaint(
+                          size: const Size(2, double.infinity),
+                          painter: _LinePainter(
+                            segments: 1,
+                            doneSegments: index < (current ?? 0) ? 1 : 0,
+                            vertical: true,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: 4,
+                    bottom: index < steps.length - 1 ? 16 : 0,
+                  ),
+                  child: Semantics(
+                    label: _semantics(index, step),
+                    excludeSemantics: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          step.label,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                            color: stateOf(index) == LdsStepState.upcoming
+                                ? LdsColors.muted
+                                : LdsColors.ink,
+                          ),
+                        ),
+                        if (step.caption != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            step.caption!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.3,
+                              color: LdsColors.mutedStrong,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+    ],
+  );
+
   Widget _label(
     int index,
     LdsStep step,
@@ -105,21 +200,12 @@ class LdsStepBar extends StatelessWidget {
         ? (CrossAxisAlignment.end, TextAlign.end)
         : (CrossAxisAlignment.center, TextAlign.center);
     final state = stateOf(index);
-    final stateText = switch (state) {
-      LdsStepState.done => "완료",
-      LdsStepState.current => "지금 단계",
-      LdsStepState.upcoming => "남은 단계",
-    };
     return Positioned(
       left: left,
       width: labelWidth,
       top: circle + 10,
       child: Semantics(
-        label: [
-          "${steps.length}단계 중 ${index + 1}단계 ${step.label}",
-          stateText,
-          ?step.caption,
-        ].join(", "),
+        label: _semantics(index, step),
         excludeSemantics: true,
         child: Column(
           crossAxisAlignment: align,
@@ -220,32 +306,43 @@ class _Circle extends StatelessWidget {
 
 /// 지난 구간 주황 실선, 남은 구간 `#FFBF99` 점선(두께 2).
 class _LinePainter extends CustomPainter {
-  const _LinePainter({required this.segments, required this.doneSegments});
+  const _LinePainter({
+    required this.segments,
+    required this.doneSegments,
+    this.vertical = false,
+  });
 
   final int segments;
   final int doneSegments;
 
+  /// 세로 배치의 단계 사이 선(위에서 아래로).
+  final bool vertical;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final y = size.height / 2;
-    final split = size.width / segments * doneSegments;
+    final length = vertical ? size.height : size.width;
+    final across = (vertical ? size.width : size.height) / 2;
+    Offset at(double along) =>
+        vertical ? Offset(across, along) : Offset(along, across);
+    final split = length / segments * doneSegments;
     final paint = Paint()
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
     if (split > 0) {
       paint.color = LdsColors.primary;
-      canvas.drawLine(Offset(0, y), Offset(split, y), paint);
+      canvas.drawLine(at(0), at(split), paint);
     }
     paint.color = LdsColors.primaryLight;
     const dash = 6.0, gap = 4.0;
-    for (var x = split; x < size.width; x += dash + gap) {
-      final end = x + dash > size.width ? size.width : x + dash;
-      canvas.drawLine(Offset(x, y), Offset(end, y), paint);
+    for (var x = split; x < length; x += dash + gap) {
+      final end = x + dash > length ? length : x + dash;
+      canvas.drawLine(at(x), at(end), paint);
     }
   }
 
   @override
   bool shouldRepaint(_LinePainter oldDelegate) =>
       oldDelegate.segments != segments ||
-      oldDelegate.doneSegments != doneSegments;
+      oldDelegate.doneSegments != doneSegments ||
+      oldDelegate.vertical != vertical;
 }

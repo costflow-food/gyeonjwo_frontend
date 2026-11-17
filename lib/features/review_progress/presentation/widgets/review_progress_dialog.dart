@@ -1,11 +1,11 @@
 import "package:flutter/material.dart";
 
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../../../shared/widgets/mobile_scaffold.dart";
-import "../../../../shared/workspace_colors.dart";
 import "../../domain/review_phase.dart";
-import "review_progress_header.dart";
-import "review_progress_footer.dart";
 
+/// 검토 진행 창 (`docs/design-ssot.md` 8.2): 모달 틀 + 아래 줄(서버에서 계속
+/// 안내 + 닫기). 휴대폰은 아래에서 올라오는 시트 안에 틀 없이 그립니다.
 class ReviewProgressDialog extends StatelessWidget {
   const ReviewProgressDialog({
     super.key,
@@ -23,43 +23,29 @@ class ReviewProgressDialog extends StatelessWidget {
   final Widget body;
   final VoidCallback onClose, onViewCase;
 
-  @override
-  Widget build(BuildContext context) {
-    final content = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ReviewProgressHeader(title: title, onClose: onClose),
-        Divider(height: 1, color: context.palette.line),
-        body,
-        Divider(height: 1, color: context.palette.line),
-        ReviewProgressFooter(outcome: outcome, onViewCase: onViewCase),
-      ],
-    );
-    // Phone: shown in a bottom sheet, which brings its own frame.
-    if (isCompactLayout(context)) {
-      return SingleChildScrollView(child: SafeArea(top: false, child: content));
-    }
-    return _dialog(context, content);
-  }
+  static String footerNote(ReviewOutcome? outcome) => switch (outcome) {
+    null => "창을 닫아도 검토는 서버에서 계속됩니다.",
+    ReviewOutcome(stopped: true) => "멈춘 이유는 업무에서 확인할 수 있습니다.",
+    ReviewOutcome.waitingReply => "회신이 오면 업무 큐에서 이어서 볼 수 있습니다.",
+    _ => "다음 단계는 업무에서 진행해 주세요.",
+  };
 
-  Widget _dialog(BuildContext context, Widget content) => Dialog(
-    backgroundColor: context.palette.surface,
-    surfaceTintColor: Colors.transparent,
-    insetPadding: const EdgeInsets.all(20),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    child: ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 760,
-        maxHeight: MediaQuery.sizeOf(context).height - 40,
+  @override
+  Widget build(BuildContext context) => LdsDialog(
+    title: "검토 진행",
+    subtitle: title,
+    maxWidth: 880,
+    inSheet: isCompactLayout(context),
+    onClose: onClose,
+    footerNote: footerNote(outcome),
+    actions: [
+      LdsButton(
+        label: "닫기",
+        variant: LdsButtonVariant.outlinedNeutral,
+        // 결과가 나왔으면 창을 닫고 그 업무로 갑니다(이전 '업무 보기').
+        onPressed: outcome == null ? onClose : onViewCase,
       ),
-      child: Semantics(
-        scopesRoute: true,
-        explicitChildNodes: true,
-        namesRoute: true,
-        label: "검토 진행",
-        child: SingleChildScrollView(child: content),
-      ),
-    ),
+    ],
+    child: body,
   );
 }

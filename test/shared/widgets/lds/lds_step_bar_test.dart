@@ -106,4 +106,28 @@ void main() {
     );
     expect(find.bySemanticsLabel("5단계 중 5단계 검토 카드, 남은 단계"), findsOneWidget);
   });
+
+  testWidgets("narrower than verticalBelow: steps stack top to bottom", (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(WorkspacePalette.lds),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              child: LdsStepBar(steps: _steps, current: 2, verticalBelow: 520),
+            ),
+          ),
+        ),
+      ),
+    );
+    final first = tester.getTopLeft(find.text("요청 확인"));
+    final last = tester.getTopLeft(find.text("검토 카드"));
+    expect(last.dx, first.dx);
+    expect(last.dy, greaterThan(first.dy));
+    expect(find.bySemanticsLabel("5단계 중 3단계 견적 요청, 지금 단계, 지금"), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

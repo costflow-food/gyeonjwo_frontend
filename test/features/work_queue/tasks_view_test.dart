@@ -7,7 +7,6 @@ import "package:gyeonjwo_frontend/features/auth/domain/auth_session.dart";
 import "package:gyeonjwo_frontend/features/auth/domain/gmail_connection.dart";
 import "package:gyeonjwo_frontend/features/auth/presentation/auth_session_view_model.dart";
 import "package:gyeonjwo_frontend/features/auth/presentation/gmail_connection_view_model.dart";
-import "package:gyeonjwo_frontend/features/work_queue/data/work_case_change_source.dart";
 import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_repository_impl.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";

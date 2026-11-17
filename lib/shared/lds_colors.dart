@@ -23,8 +23,10 @@ abstract final class LdsColors {
   static const badgeNeutralBg = Color(0xFFF2F4F6);
   static const error = Color(0xFFF64C4C);
   static const errorBg = Color(0xFFFDF0F3);
+  static const errorText = Color(0xFFC8202F); // 연한 바탕 위 오류 글자(4.5:1)
   static const info = Color(0xFF3D94FF);
   static const infoBg = Color(0xFFE5F5FF);
+  static const infoText = Color(0xFF1B64DA); // 연한 바탕 위 안내 글자(4.5:1)
   static const warning = Color(0xFFFFB700);
   static const warningBg = Color(0xFFFFF8E4);
   static const warningText = Color(0xFF745300);

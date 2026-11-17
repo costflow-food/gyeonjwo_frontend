@@ -212,6 +212,44 @@ class _WidgetPreviewViewState extends State<WidgetPreviewView> {
                   ),
                 ],
               ),
+              _Section(
+                title: '안내 띠',
+                children: [
+                  for (final tone in LdsNoticeTone.values)
+                    SizedBox(
+                      width: 640,
+                      child: LdsNotice(
+                        tone: tone,
+                        title: tone.name,
+                        message: '지금은 하실 일이 없습니다. 검토는 서버에서 이어집니다.',
+                      ),
+                    ),
+                  SizedBox(
+                    width: 640,
+                    child: LdsNotice(
+                      tone: LdsNoticeTone.error,
+                      icon: Icons.error_outline,
+                      title: '검토 실행 준비 안 됨',
+                      message: '준비되면 이 안내는 저절로 사라집니다.',
+                      action: LdsButton(
+                        label: '다시 확인',
+                        size: LdsButtonSize.small,
+                        variant: LdsButtonVariant.outlinedNeutral,
+                        onPressed: () {},
+                      ),
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 640,
+                    child: LdsNotice(
+                      banner: true,
+                      tone: LdsNoticeTone.warning,
+                      title: '메일함 연결 확인 필요',
+                      message: '새 메일을 읽지 못하고 있습니다.',
+                    ),
+                  ),
+                ],
+              ),
               const _Section(
                 title: '비율 막대 (3)',
                 children: [
