@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,7 +15,11 @@ import "../features/purchase_review/presentation/purchase_review_view.dart";
 import "../features/supplier/presentation/supplier_view.dart";
 import "../features/workflow_log/presentation/workflow_log_view.dart";
 import "../features/work_queue/presentation/work_queue_view.dart";
+import "dev/widget_preview_view.dart";
 import "not_found_view.dart";
+
+/// LDS 공통 위젯 미리보기. debug 빌드에서만 있고 로그인 없이 열립니다.
+const devWidgetsPath = "/dev/widgets";
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -25,6 +30,7 @@ final appRouter = GoRouter(
     final container = ProviderScope.containerOf(context, listen: false);
     final session = container.read(authSessionViewModelProvider).asData?.value;
     final path = state.uri.path;
+    if (kDebugMode && path == devWidgetsPath) return null;
     // Read the Gmail connection only on the connection screen, where it is
     // being established anyway.
     final gmailReady =
@@ -35,6 +41,11 @@ final appRouter = GoRouter(
     return authRedirect(session?.status, path, gmailReady: gmailReady);
   },
   routes: [
+    if (kDebugMode)
+      GoRoute(
+        path: devWidgetsPath,
+        builder: (context, state) => const WidgetPreviewView(),
+      ),
     GoRoute(path: '/login', builder: (context, state) => const LoginView()),
     GoRoute(
       path: '/login/permissions',
