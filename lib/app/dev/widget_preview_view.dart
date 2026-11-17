@@ -185,6 +185,22 @@ class _WidgetPreviewViewState extends State<WidgetPreviewView> {
                 ],
               ),
               _Section(
+                title: '진행 단계 (8.2)',
+                children: [
+                  for (final current in [3, 5, null])
+                    LdsStepBar(
+                      current: current,
+                      steps: const [
+                        LdsStep('요청 확인', caption: '10.19 11:10'),
+                        LdsStep('후보 찾기'),
+                        LdsStep('견적 요청'),
+                        LdsStep('회신'),
+                        LdsStep('검토 카드'),
+                      ],
+                    ),
+                ],
+              ),
+              _Section(
                 title: '모달 틀 (8.1)',
                 children: [
                   LdsButton(

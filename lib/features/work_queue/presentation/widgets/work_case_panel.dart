@@ -6,10 +6,13 @@ import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/file_save/file_save.dart";
 import "../../../../shared/formatters.dart";
 import "../../../../shared/widgets/mobile_scaffold.dart";
-import "../../../../shared/widgets/outline_panel.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
+import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
+import "../../../source_document/presentation/source_document_dialog.dart";
 import "../../../voice_import/data/recording_supplier_source.dart";
 import "../../../voice_import/presentation/voice_import_flow.dart";
 import "../../../voice_import/presentation/widgets/call_recording_section.dart";
@@ -18,6 +21,7 @@ import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 import "attachment_viewer.dart";
 import "candidate_selection.dart";
+import "case_progress.dart";
 import "case_step_status.dart";
 import "status_badge.dart";
 import "../../../../app/app_paths.dart";
@@ -279,7 +283,6 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: AppFontSizes.secondary,
-                fontWeight: FontWeight.w500,
                 color: context.palette.muted,
               ),
             ),
@@ -295,6 +298,8 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
           24 + (bar == null ? MediaQuery.paddingOf(context).bottom : 0),
         ),
         children: [
+          CaseProgressSteps(workCase: workCase),
+          const SizedBox(height: 20),
           mailContent,
           // A call is a supplier's reply, so only once requests went out.
           if (recordings != null && showRecordings) ...[
@@ -349,35 +354,75 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
     if (isCompactLayout(context)) return _page(context, mail);
     final loadedMail = mail.asData?.value;
     final openAttachment = _openAttachment(loadedMail);
-    final panel = OutlinePanel(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+    // 머리 · 진행 상황(가로 진행 단계 + 지금 할 일) · 받은 메일 (SSOT 7.5).
+    final panel = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _DetailHeader(
+          workCase: workCase,
+          subject: loadedMail?.subject,
+          sender: loadedMail?.sender,
+          hasDrafts: caseHasMailDrafts(ref, workCase),
+        ),
+        const SizedBox(height: 24),
+        CaseSectionCard(
+          title: "진행 상황",
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              StatusBadge(workCase.status, rawCode: workCase.statusCode),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  workCase.itemName == null
-                      ? "품목 미확인"
-                      : "${workCase.itemName} 품목",
-                  style: TextStyle(
-                    fontSize: AppFontSizes.secondary,
-                    color: context.palette.muted,
-                  ),
+              CaseProgressSteps(workCase: workCase),
+              const SizedBox(height: 24),
+              NowToDoBox(
+                workCase: workCase,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_atCandidates)
+                      CandidateSelection(workCase: workCase)
+                    else if (workCase.notStarted)
+                      _Decision(
+                        workCase: workCase,
+                        busy: _busy,
+                        onAccept: _acceptIncrease,
+                        onStart: _start,
+                      )
+                    else
+                      CaseStepStatus(
+                        workCase: workCase,
+                        showDraftButton: false,
+                      ),
+                    if (workCase.hasReviewCard) ...[
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: LdsButton(
+                          label: "검토 카드 열기",
+                          icon: Icons.fact_check_outlined,
+                          onPressed: () =>
+                              context.go(AppPaths.review(workCase.id)),
+                        ),
+                      ),
+                    ],
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _error!,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.body,
+                          color: LdsColors.error,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ),
-              IconButton(
-                tooltip: "닫기",
-                onPressed: () => context.go(AppPaths.tasks),
-                icon: const Icon(Icons.close, size: 20),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          mail.when(
+        ),
+        const SizedBox(height: 24),
+        CaseSectionCard(
+          title: "받은 메일",
+          child: mail.when(
             skipLoadingOnRefresh: false,
             loading: () => const Padding(
               padding: EdgeInsets.all(40),
@@ -392,50 +437,15 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
             ),
             data: (mail) => _MailContent(
               mail: mail,
+              showSubject: false,
               openAttachmentId: openAttachment?.id,
               downloadingIds: _downloading,
               onOpen: _openViewer,
               onDownload: (attachment) => _download(mail.id, attachment),
             ),
           ),
-          const SizedBox(height: 24),
-          Divider(height: 1, color: context.palette.line),
-          const SizedBox(height: 20),
-          if (_atCandidates)
-            CandidateSelection(workCase: workCase)
-          else if (workCase.notStarted)
-            _Decision(
-              workCase: workCase,
-              busy: _busy,
-              onAccept: _acceptIncrease,
-              onStart: _start,
-            )
-          else
-            CaseStepStatus(workCase: workCase),
-          if (workCase.hasReviewCard) ...[
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.icon(
-                style: WorkspaceButtonStyles.filled(context),
-                onPressed: () => context.go(AppPaths.review(workCase.id)),
-                icon: const Icon(Icons.fact_check_outlined, size: 16),
-                label: const Text("검토 카드 보기"),
-              ),
-            ),
-          ],
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: const TextStyle(
-                fontSize: AppFontSizes.body,
-                color: danger,
-              ),
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
     if (loadedMail == null || openAttachment == null) return panel;
 
@@ -480,10 +490,14 @@ class _MailContent extends StatelessWidget {
     required this.onOpen,
     required this.onDownload,
     this.compact = false,
+    this.showSubject = true,
   });
 
   /// Phone: smaller title, folded body, attachments in one sliding row.
   final bool compact;
+
+  /// false: 제목은 상세 머리에 있어 여기서는 빼고 메타 줄부터 시작합니다.
+  final bool showSubject;
 
   final OriginalMail mail;
   final String? openAttachmentId;
@@ -509,17 +523,19 @@ class _MailContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SelectableText(
-          mail.subject,
-          style: TextStyle(
-            fontSize: compact
-                ? AppFontSizes.cardTitle
-                : AppFontSizes.dialogTitle,
-            fontWeight: FontWeight.w700,
-            height: 1.4,
+        if (showSubject) ...[
+          SelectableText(
+            mail.subject,
+            style: TextStyle(
+              fontSize: compact
+                  ? AppFontSizes.cardTitle
+                  : AppFontSizes.dialogTitle,
+              fontWeight: FontWeight.w700,
+              height: 1.4,
+            ),
           ),
-        ),
-        SizedBox(height: compact ? 10 : 14),
+          SizedBox(height: compact ? 10 : 14),
+        ],
         _MetaRow(label: "보낸 사람", value: mail.sender),
         _MetaRow(label: "받는 사람", value: mail.recipients.join(", ")),
         _MetaRow(label: "받은 시각", value: formatSeoulDateTime(mail.receivedAt)),
@@ -808,7 +824,7 @@ class _AttachmentTile extends StatelessWidget {
         border: Border.all(
           color: selected ? context.palette.accentText : context.palette.line,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(LdsRadius.table),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -845,7 +861,7 @@ class _AttachmentTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: AppFontSizes.body,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1010,4 +1026,93 @@ class _Choice extends StatelessWidget {
       ],
     ],
   );
+}
+
+/// Tasks 상세 머리 (SSOT 7.5 시안): 품목 · 메일 제목(20/700) · 보낸 사람과
+/// 받은 시각(13 `#5E6876`), 오른쪽에 원문 보기 · 메일 초안 · 닫기.
+class _DetailHeader extends StatelessWidget {
+  const _DetailHeader({
+    required this.workCase,
+    required this.subject,
+    required this.sender,
+    required this.hasDrafts,
+  });
+
+  final WorkCase workCase;
+
+  /// 메일 제목. 원문을 불러오기 전에는 null.
+  final String? subject;
+  final String? sender;
+
+  /// 볼 메일 초안이 있을 때만 '메일 초안'을 둡니다.
+  final bool hasDrafts;
+
+  @override
+  Widget build(BuildContext context) {
+    final received = formatSeoulDateTime(workCase.receivedAt);
+    final title = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          workCase.itemName ?? "품목 미확인",
+          style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+        ),
+        const SizedBox(height: 4),
+        SelectableText(
+          subject ?? "메일을 불러오는 중입니다",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            height: 1.3,
+            color: subject == null ? LdsColors.muted : LdsColors.ink,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "${workCase.senderName ?? sender ?? workCase.sender} · "
+          "${received.length > 5 ? received.substring(5) : received} 수신",
+          style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+        ),
+      ],
+    );
+    final actions = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        LdsButton(
+          label: "원문 보기",
+          variant: LdsButtonVariant.outlinedNeutral,
+          onPressed: () =>
+              showSourceDocument(context, requestId: workCase.initialMailId),
+        ),
+        if (hasDrafts)
+          LdsButton(
+            label: "메일 초안",
+            variant: LdsButtonVariant.outlinedNeutral,
+            onPressed: () => showMailDraftDialog(context, caseId: workCase.id),
+          ),
+        LdsIconButton(
+          icon: Icons.close,
+          tooltip: "닫기",
+          onPressed: () => context.go(AppPaths.tasks),
+        ),
+      ],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) => constraints.maxWidth < 560
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [title, const SizedBox(height: 12), actions],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: title),
+                const SizedBox(width: 16),
+                actions,
+              ],
+            ),
+    );
+  }
 }

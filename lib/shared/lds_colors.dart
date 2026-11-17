@@ -6,6 +6,7 @@ abstract final class LdsColors {
   static const primary = Color(0xFFFF6000);
   static const primaryHover = Color(0xFFCC4D00);
   static const primarySoft = Color(0xFFFFEFE5);
+  static const primaryLight = Color(0xFFFFBF99); // 진행 단계 남은 구간·테두리
   static const primaryRow = Color(0xFFFFF7F2); // 최신·추천 줄
   static const selectedRow = Color(0xFFFFF4EC); // 고른 업무 행
   static const ink = Color(0xFF191F28);
