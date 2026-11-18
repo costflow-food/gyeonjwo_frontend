@@ -13,6 +13,7 @@ class WorkflowLogContent extends StatefulWidget {
     required this.data,
     required this.viewModel,
     this.onOpenDetail,
+    this.onLeave,
   });
 
   final WorkflowLogState data;
@@ -20,6 +21,9 @@ class WorkflowLogContent extends StatefulWidget {
 
   /// Phone: the list only; a selected log opens on its own screen.
   final VoidCallback? onOpenDetail;
+
+  /// 상세의 '업무 보기'로 다른 화면에 가기 직전.
+  final VoidCallback? onLeave;
 
   @override
   State<WorkflowLogContent> createState() => _WorkflowLogContentState();
@@ -116,6 +120,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
           entry: data.selected,
           caseFiltered: data.filter.caseId != null,
           onFilterCase: viewModel.filterCase,
+          onLeave: widget.onLeave,
         );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
