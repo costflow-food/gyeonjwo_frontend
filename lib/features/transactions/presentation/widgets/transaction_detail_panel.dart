@@ -107,38 +107,14 @@ class TransactionDetailPanel extends StatelessWidget {
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final left = [
-                  LdsKeyValueRow('확정일', text: dateText(record)),
-                  LdsKeyValueRow('단가', text: unitPriceText(record)),
-                ];
-                final right = [
-                  LdsKeyValueRow('수량', text: quantityText(record)),
-                  LdsKeyValueRow('총액', text: totalText(record)),
-                ];
-                if (constraints.maxWidth < 560) {
-                  return LdsKeyValueTable(
-                    labelWidth: 96,
-                    rows: [...left, ...right],
-                  );
-                }
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: LdsKeyValueTable(labelWidth: 96, rows: left),
-                    ),
-                    Expanded(
-                      child: LdsKeyValueTable(labelWidth: 96, rows: right),
-                    ),
-                  ],
-                );
-              },
-            ),
+            // 거래 정보는 표 하나: 확정일 · 단가 · 수량 · 총액 · 직전 대비 · 확정 방식.
             LdsKeyValueTable(
               labelWidth: 96,
               rows: [
+                LdsKeyValueRow('확정일', text: dateText(record)),
+                LdsKeyValueRow('단가', text: unitPriceText(record)),
+                LdsKeyValueRow('수량', text: quantityText(record)),
+                LdsKeyValueRow('총액', text: totalText(record)),
                 LdsKeyValueRow(
                   '직전 대비',
                   child: Wrap(
@@ -192,9 +168,25 @@ class TransactionDetailPanel extends StatelessWidget {
             if (record.relatedTaskTitle != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  '검토 카드 · ${record.relatedTaskTitle}',
-                  style: const TextStyle(fontSize: 13),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '연결된 업무',
+                      style: TextStyle(fontSize: 13, color: LdsColors.muted),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        record.relatedTaskTitle!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: LdsColors.title,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               )
             else
@@ -206,7 +198,7 @@ class TransactionDetailPanel extends StatelessWidget {
                 ),
               ),
             _LinkButton(
-              label: 'Suppliers에서 ${record.supplierName} 보기',
+              label: '${record.supplierName} 거래처 정보 보기',
               onTap: onOpenSupplier,
             ),
             const Divider(height: 48, color: LdsColors.line),

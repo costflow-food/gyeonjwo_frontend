@@ -5,11 +5,12 @@ import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../../source_document/presentation/source_document_dialog.dart";
 import "../../domain/purchase_review.dart";
+import "dashed_border.dart";
 import "plan_card.dart";
 import "review_format.dart";
 
 const _tax = {"EXCLUDED": "부가세 별도", "INCLUDED": "부가세 포함", "EXEMPT": "면세"};
-const _checkStates = {"STATED": "원문 확인", "MISSING": "원문에 없음", "UNCLEAR": "불명확"};
+const _checkStates = {"MISSING": "원문에 없음", "UNCLEAR": "불명확"};
 
 /// Checks already shown on the fixed 부가세 line.
 const _taxFields = {"tax_terms", "tax_basis"};
@@ -26,18 +27,21 @@ class _Line {
   final _Value Function(QuoteVersion quote) value;
 }
 
-/// 한 칸의 값. [missing]이면 '미확인' 표시입니다(0원·빈칸으로 채우지 않음).
+/// 한 칸의 값. [missing]이면 점선 알약('미확인', '원문에 없음')으로 보입니다
+/// (0원·빈칸으로 채우지 않음). [included]는 '단가에 포함'처럼 초록 체크.
 class _Value {
-  const _Value(this.text, {this.caption}) : missing = false;
+  const _Value(this.text, {this.caption, this.included = false})
+    : missing = false;
 
-  const _Value.missing([String ignored = ""])
-    : text = "",
-      caption = null,
+  const _Value.missing([this.text = "미확인"])
+    : caption = null,
+      included = false,
       missing = true;
 
   final String text;
   final String? caption;
   final bool missing;
+  final bool included;
 }
 
 /// 견적과 근거 = 비교 표 (`docs/design-ssot.md` 9.3, 7.16).
@@ -113,10 +117,14 @@ class QuoteCompare extends StatelessWidget {
               .firstOrNull;
           if (cost == null) return const _Value.missing("원문에 없음");
           if (cost.includedInPrice == true) {
-            return _Value("단가에 포함", caption: cost.sourceText);
+            return _Value(
+              "단가에 포함",
+              caption: cost.sourceText,
+              included: true,
+            );
           }
           return cost.amount == null
-              ? _Value.missing(cost.sourceText ?? "미확인")
+              ? const _Value.missing()
               : _Value(won(cost.amount), caption: cost.sourceText);
         }),
       );
@@ -137,7 +145,7 @@ class QuoteCompare extends StatelessWidget {
               .firstOrNull;
           if (check == null) return const _Value.missing();
           return check.value == null
-              ? _Value.missing(_checkStates[check.state] ?? check.state)
+              ? _Value.missing(_checkStates[check.state] ?? "미확인")
               : _Value(check.value!);
         }),
       );
@@ -179,21 +187,43 @@ class QuoteCompare extends StatelessWidget {
     return lines;
   }
 
+  /// 모든 업체가 같은 규격이면 표에서 빼고 영역 설명에 한 번 적습니다.
+  List<_Line> _common(List<_Line> lines) => quotes.isEmpty
+      ? const []
+      : lines
+            .where(
+              (line) =>
+                  line.fields.contains('specification') &&
+                  quotes.every(
+                    (q) =>
+                        !line.value(q).missing &&
+                        line.value(q).text == line.value(quotes.first).text,
+                  ),
+            )
+            .toList();
+
+  /// 영역 설명 뒤에 붙일 공통 규격 문장. 예: '규격은 세 업체 모두 IQF 홀
+  /// 10kg/박스예요.' 없으면 null.
+  static String? commonNote(List<QuoteVersion> quotes) {
+    final compare = QuoteCompare(quotes: quotes, colors: SupplierColors.none);
+    final common = compare._common(compare._lines());
+    if (common.isEmpty) return null;
+    const counts = {2: "두", 3: "세", 4: "네"};
+    final who = counts[quotes.length] == null
+        ? "모든 업체"
+        : "${counts[quotes.length]} 업체";
+    return [
+      for (final line in common)
+        "${josa(line.label, "은", "는")} $who 모두 "
+            "${josa(line.value(quotes.first).text, "이에요", "예요")}.",
+    ].join(" ");
+  }
+
   @override
   Widget build(BuildContext context) {
     final allLines = _lines();
-    // Repeated specification/quality values are stated once above the table.
-    final common = allLines
-        .where(
-          (line) =>
-              line.fields.contains('specification') &&
-              quotes.every(
-                (q) =>
-                    !line.value(q).missing &&
-                    line.value(q).text == line.value(quotes.first).text,
-              ),
-        )
-        .toList();
+    // Repeated specification/quality values are stated once, in the caption.
+    final common = _common(allLines);
     final lines = allLines.where((line) => !common.contains(line)).toList();
     final used = {for (final line in lines) ...line.fields};
     // 표의 어느 줄에도 붙지 않는 근거는 마지막 줄에 모읍니다.
@@ -229,6 +259,7 @@ class QuoteCompare extends StatelessWidget {
                   caption: quote.isIncumbent
                       ? "기존 거래처"
                       : "견적 ${quote.versionNo}번째",
+                  captionStrong: quote.isIncumbent,
                 ),
             ],
             rows: [
@@ -272,17 +303,6 @@ class QuoteCompare extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final line in common)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              '${line.label} · ${line.value(quotes.first).text}',
-              style: const TextStyle(
-                fontSize: 13,
-                color: LdsColors.mutedStrong,
-              ),
-            ),
-          ),
         LayoutBuilder(
           builder: (context, constraints) => constraints.maxWidth >= minWidth
               ? table
@@ -320,7 +340,7 @@ class QuoteCompare extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         const Text(
-          "근거 단추를 누르면 원문 메일을 엽니다.",
+          "근거 단추를 누르면 원문 메일을 열어요.",
           style: TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
         ),
       ],
@@ -341,64 +361,110 @@ class _Cell extends StatelessWidget {
   /// 이름표-값 표 안: 왼쪽 정렬(7.11). 비교 표에서는 가운데(9.3).
   final bool start;
 
+  /// 값과 근거 단추는 한 줄에 나란히(좁으면 아래로), 설명은 그 아래.
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: start
-        ? CrossAxisAlignment.start
-        : CrossAxisAlignment.center,
-    children: [
-      if (value.text.isNotEmpty)
-        value.missing
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.help_outline,
-                    size: 14,
-                    color: LdsColors.mutedStrong,
+  Widget build(BuildContext context) {
+    final align = start ? WrapAlignment.start : WrapAlignment.center;
+    final Widget? main = value.text.isEmpty
+        ? null
+        : value.missing
+        ? _MissingPill(value.text)
+        : value.included
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check, size: 16, color: LdsColors.successText),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  value.text,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                    color: LdsColors.successText,
                   ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      value.text,
-                      textAlign: start ? TextAlign.start : TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: LdsColors.mutedStrong,
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : Text(
-                value.text,
-                textAlign: start ? TextAlign.start : TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  height: 1.5,
-                  color: LdsColors.ink,
                 ),
               ),
-      if (value.caption != null) ...[
-        const SizedBox(height: 2),
-        Text(
-          value.caption!,
-          textAlign: start ? TextAlign.start : TextAlign.center,
-          style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
-        ),
+            ],
+          )
+        : Text(
+            value.text,
+            textAlign: start ? TextAlign.start : TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              height: 1.5,
+              color: LdsColors.ink,
+            ),
+          );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: start
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
+      children: [
+        if (main != null || evidence.isNotEmpty)
+          Wrap(
+            alignment: align,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              ?main,
+              for (final item in evidence) _EvidenceButton(item),
+            ],
+          ),
+        if (value.caption != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            value.caption!,
+            textAlign: start ? TextAlign.start : TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+          ),
+        ],
       ],
-      if (evidence.isNotEmpty) ...[
-        const SizedBox(height: 6),
-        Wrap(
-          alignment: start ? WrapAlignment.start : WrapAlignment.center,
-          spacing: 4,
-          runSpacing: 4,
-          children: [for (final item in evidence) _EvidenceButton(item)],
-        ),
-      ],
-    ],
+    );
+  }
+}
+
+/// 값이 없을 때: 점선 알약 안에 물음표 + '미확인'(또는 '원문에 없음').
+class _MissingPill extends StatelessWidget {
+  const _MissingPill(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+    foregroundPainter: const DashedBorderPainter(
+      color: LdsColors.borderStrong,
+      radius: 12,
+    ),
+    child: Container(
+      constraints: const BoxConstraints(minHeight: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: LdsColors.canvas,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.help_outline, size: 14, color: LdsColors.title),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: LdsColors.title,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 }
 

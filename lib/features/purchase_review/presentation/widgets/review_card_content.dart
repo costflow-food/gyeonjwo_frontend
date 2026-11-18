@@ -164,9 +164,50 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
     await _run((viewModel) => viewModel.confirmReview());
   }
 
-  /// 맨 위 한 줄 상태 띠(7.16): 이전 카드 · 확인할 것 · 결정 · 오류.
+  /// 상태 띠 아래 작은 줄: '견적 3곳 비교 · 확정 가능 2안 · 남도청과는 운송비
+  /// 미확인으로 비교에서 제외'. 어느 안에도 들지 않은 업체의 미확인 줄은 이
+  /// 문장으로 옮기고 목록에서 뺍니다.
+  (String?, List<UnresolvedLine>) _summary(
+    ReviewCard card,
+    List<UnresolvedLine> lines,
+  ) {
+    final quotes = widget.review.sourceQuotes;
+    if (quotes.isEmpty) return (null, lines);
+    final rest = [...lines];
+    final inPlans = {
+      for (final plan in card.plans)
+        for (final allocation in plan.allocations) allocation.supplierId,
+    };
+    final excluded = [
+      if (card.plans.isNotEmpty)
+        for (final quote in quotes)
+          if (!inPlans.contains(quote.supplierId)) quote.supplierName,
+    ];
+    final parts = [
+      "견적 ${quotes.length}곳 비교",
+      if (card.plans.isNotEmpty)
+        "확정 가능 ${card.plans.where((plan) => plan.valid).length}안",
+      for (final name in {...excluded})
+        () {
+          final line = rest
+              .where(
+                (line) => line.label == name && line.text.endsWith("미확인"),
+              )
+              .firstOrNull;
+          if (line == null) return "${josa(name, "은", "는")} 비교에서 제외";
+          rest.remove(line);
+          return "${josa(name, "은", "는")} ${line.text}으로 비교에서 제외";
+        }(),
+    ];
+    return (parts.join(" · "), rest);
+  }
+
+  /// 맨 위 상태 띠(7.16): 이전 카드 · 확인할 것 · 결정 · 오류.
   List<Widget> _notices(ReviewCard card) {
-    final lines = unresolvedLines(card, quotes: widget.review.quotes);
+    final (summary, lines) = _summary(
+      card,
+      unresolvedLines(card, quotes: widget.review.quotes),
+    );
     return [
       if (card.isStale) ...[
         const _Notice(
@@ -180,8 +221,12 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
           lines.isNotEmpty ||
           card.questions.isNotEmpty) ...[
         _Notice(
-          icon: Icons.pause_circle_outline,
+          icon: card.questions.isNotEmpty
+              ? Icons.error_outline
+              : Icons.pause_circle_outline,
           text: card.outcome.message,
+          questionCount: card.questions.length,
+          summary: summary,
           // Red only when there is no plan at all; something left to check
           // (확인할 항목) is a caution; otherwise grey.
           tone: !card.outcome.ready
@@ -242,7 +287,7 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
       const SizedBox(height: 28),
       const _SectionTitle(
         "구매안 비교",
-        caption: "가장 낮은 안을 자동으로 고르지 않습니다. 조건을 보고 직접 선택해 주세요. 총액은 서버 계산값입니다.",
+        caption: "가장 낮은 안을 자동으로 고르지 않아요. 조건을 보고 직접 선택해 주세요. 총액은 서버 계산값이에요.",
       ),
       const SizedBox(height: 16),
       if (card.plans.isEmpty)
@@ -291,7 +336,13 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         ),
       ],
       const SizedBox(height: 40),
-      const _SectionTitle("견적과 근거", caption: "업체별 최신 견적을 같은 항목끼리 나란히 봅니다."),
+      _SectionTitle(
+        "견적과 근거",
+        caption: [
+          "업체별 최신 견적을 같은 항목끼리 나란히 봐요.",
+          ?QuoteCompare.commonNote(quotes),
+        ].join(" "),
+      ),
       const SizedBox(height: 16),
       if (quotes.isEmpty)
         const Text(
@@ -479,7 +530,7 @@ class _Head extends StatelessWidget {
       LdsButton(
         label: "메일 초안",
         icon: Icons.mail_outline,
-        variant: LdsButtonVariant.outlinedNeutral,
+        variant: LdsButtonVariant.outlined,
         onPressed: () => showMailDraftDialog(context, caseId: card.caseId),
       ),
     ],
@@ -520,58 +571,6 @@ class _SectionTitle extends StatelessWidget {
         Text(
           caption!,
           style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
-        ),
-    ],
-  );
-}
-
-/// 확인할 항목: 업체·항목, 이유, 역전 기준·계산식.
-class _Questions extends StatefulWidget {
-  const _Questions({required this.questions});
-  final List<ReviewQuestion> questions;
-  @override
-  State<_Questions> createState() => _QuestionsState();
-}
-
-class _QuestionsState extends State<_Questions> {
-  bool _expanded = false;
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      for (final q in widget.questions.take(
-        !_expanded && widget.questions.length > 3 ? 2 : widget.questions.length,
-      ))
-        Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: '${q.supplierName} · ${q.fieldLabel} ',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(
-                  text: [
-                    q.reason,
-                    if (q.breakEvenAmount != null)
-                      '역전 기준 ${won(q.breakEvenAmount)}',
-                    ?q.formula,
-                  ].join(' · '),
-                ),
-              ],
-            ),
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.6,
-              color: LdsColors.ink,
-            ),
-          ),
-        ),
-      if (widget.questions.length > 3)
-        TextButton(
-          onPressed: () => setState(() => _expanded = !_expanded),
-          child: Text(_expanded ? '접기' : '더 보기'),
         ),
     ],
   );
@@ -787,12 +786,21 @@ class _Notice extends StatelessWidget {
     this.tone = _Tone.info,
     this.lines = const [],
     this.questions = const [],
+    this.questionCount = 0,
+    this.summary,
     this.onCounterOffer,
   });
 
   final IconData icon;
   final String text;
   final _Tone tone;
+
+  /// 확인할 항목 수. 있으면 제목이 '확인할 항목 N건 · 답에 따라 1위가 바뀔 수
+  /// 있어요.'가 됩니다.
+  final int questionCount;
+
+  /// 맨 아래 작은 줄(견적 수 · 확정 가능 안 수 · 비교 제외).
+  final String? summary;
 
   /// What is left unresolved, under the title.
   final List<UnresolvedLine> lines;
@@ -831,21 +839,33 @@ class _Notice extends StatelessWidget {
         border: Border.all(color: border),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        // 아이콘은 띠의 세로 가운데.
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 3),
-            child: Icon(icon, size: 16, color: iconColor),
-          ),
+          Icon(icon, size: 16, color: iconColor),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text.rich(
-                  TextSpan(children: [TextSpan(text: text)]),
+                  questionCount > 0
+                      ? TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "확인할 항목 $questionCount건",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const TextSpan(text: " · 답에 따라 1위가 바뀔 수 있어요."),
+                          ],
+                        )
+                      : TextSpan(children: [TextSpan(text: text)]),
                   style: TextStyle(fontSize: 15, height: 1.5, color: body),
                 ),
+                for (final question in questions)
+                  _QuestionRow(question: question),
                 for (final line in lines)
                   if (line.inCounterOffer && onCounterOffer != null)
                     _JumpLine(
@@ -879,18 +899,16 @@ class _Notice extends StatelessWidget {
                         ),
                       ),
                     ),
-                if (questions.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    '우선 확인',
+                if (summary != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    summary!,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: LdsColors.cautionText,
+                      height: 1.5,
+                      color: body.withValues(alpha: .85),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  _Questions(questions: questions),
                 ],
               ],
             ),
@@ -899,6 +917,60 @@ class _Notice extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 확인할 항목 한 줄: '우선 확인' 칩 + 업체·항목(굵게) + 이유·역전 기준.
+class _QuestionRow extends StatelessWidget {
+  const _QuestionRow({required this.question});
+
+  final ReviewQuestion question;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 6),
+    child: Text.rich(
+      TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEDB8),
+                borderRadius: BorderRadius.circular(LdsRadius.button),
+              ),
+              child: const Text(
+                "우선 확인",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: LdsColors.warningText,
+                ),
+              ),
+            ),
+          ),
+          TextSpan(
+            text: "${question.supplierName} · ${question.fieldLabel}  ",
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: LdsColors.ink,
+            ),
+          ),
+          TextSpan(
+            text: [
+              question.reason,
+              if (question.breakEvenAmount != null)
+                "역전 기준 ${won(question.breakEvenAmount)}",
+              ?question.formula,
+            ].join(" · "),
+          ),
+        ],
+      ),
+      style: const TextStyle(fontSize: 15, height: 1.6, color: LdsColors.ink),
+    ),
+  );
 }
 
 /// One unresolved item whose reason is in the counter-offer panel: its name

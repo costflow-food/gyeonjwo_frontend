@@ -202,7 +202,7 @@ void main() {
     );
     final name = find.descendant(
       of: find.byType(CounterOfferPanel),
-      matching: find.text(_longName),
+      matching: find.textContaining(_longName, findRichText: true),
     );
     expect(name, findsOneWidget);
     expect(tester.getRect(name).right, lessThanOrEqualTo(360));
