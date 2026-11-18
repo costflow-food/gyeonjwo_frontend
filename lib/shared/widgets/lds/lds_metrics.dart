@@ -34,3 +34,9 @@ abstract final class LdsSpace {
   /// 이름표 칸과 값 사이 (7.11).
   static const double labelValueGap = 16;
 }
+
+abstract final class LdsText {
+  /// 목록 위 조작 단추(필터·정렬·기간, outlinedPlain)의 글자 크기.
+  /// Invoices·Suppliers가 같은 값을 씁니다.
+  static const double control = 14;
+}
