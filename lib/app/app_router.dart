@@ -14,6 +14,7 @@ import '../features/auth/presentation/auth_connection_view.dart';
 import "../features/dashboard/presentation/dashboard_view.dart";
 import "../features/purchase_review/presentation/purchase_review_view.dart";
 import "../features/supplier/presentation/supplier_view.dart";
+import "../features/transactions/domain/transaction_listing.dart";
 import "../features/transactions/presentation/transactions_view.dart";
 import "../features/work_queue/domain/task_group.dart";
 import "../features/workflow_log/presentation/workflow_log_view.dart";
@@ -102,7 +103,13 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: AppPaths.transactions,
-      builder: (context, state) => const TransactionsView(),
+      builder: (context, state) => TransactionsView(
+        entry: TransactionsEntry(
+          supplierItemId: state.uri.queryParameters["supplier_item"],
+          itemName: state.uri.queryParameters["item"],
+          date: state.uri.queryParameters["date"],
+        ),
+      ),
     ),
     GoRoute(
       path: AppPaths.suppliers,

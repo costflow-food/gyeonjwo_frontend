@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_paths.dart';
-import '../../features/work_queue/presentation/task_search_request.dart';
+import '../../features/notifications/presentation/notification_bell.dart';
+import '../../features/work_queue/presentation/task_search_dialog.dart';
 import '../lds_colors.dart';
 import 'app_sidebar.dart';
 import 'lds/lds.dart';
@@ -19,8 +20,8 @@ class AppSection {
   /// 메뉴에 없는 화면(실행 로그·설정)은 null: 선택 표시가 없습니다.
   final AppMenu? menu;
 
-  /// 둘러보는 화면은 넓은 메뉴로, 작업 화면(Tasks·검토 카드·Suppliers)은
-  /// 아이콘 메뉴로 시작합니다.
+  /// 둘러보는 화면은 넓은 메뉴로, 작업 화면(Tasks·검토 카드·Transactions·
+  /// Suppliers)은 아이콘 메뉴로 시작합니다.
   final bool startsWide;
 
   static AppSection of(String path) {
@@ -37,7 +38,7 @@ class AppSection {
       return const AppSection(
         'Transactions',
         AppMenu.transactions,
-        startsWide: true,
+        startsWide: false,
       );
     }
     if (under(AppPaths.suppliers)) {
@@ -243,19 +244,10 @@ class _TopBar extends ConsumerWidget {
         LdsIconButton(
           icon: Icons.search,
           tooltip: '업무 검색',
-          onPressed: () {
-            ref.read(taskSearchRequestProvider.notifier).request();
-            final path = GoRouterState.of(context).uri.path;
-            if (!path.startsWith(AppPaths.tasks)) context.go(AppPaths.tasks);
-          },
+          onPressed: () => showTaskSearchDialog(context),
         ),
         const SizedBox(width: 8),
-        // 알림 기능이 아직 없어 비활성으로 둡니다.
-        const LdsIconButton(
-          icon: Icons.notifications_none,
-          tooltip: '알림 (준비 중)',
-          onPressed: null,
-        ),
+        const NotificationBell(),
       ],
     ),
   );

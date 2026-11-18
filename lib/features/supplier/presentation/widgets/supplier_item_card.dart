@@ -1,5 +1,7 @@
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 
+import "../../../../app/app_paths.dart";
 import "../../../../shared/formatters.dart";
 import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
@@ -176,8 +178,7 @@ class _Body extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // 나중에 Transactions 입구가 됩니다(KAN-323). 지금은 누를 수
-              // 없습니다.
+              // Transactions 입구(7.12): 이 거래처·품목으로 걸러 그 거래를 엽니다.
               Expanded(
                 child: _Summary(
                   label: "마지막 실거래",
@@ -188,6 +189,15 @@ class _Body extends StatelessWidget {
                   caption: purchase == null
                       ? null
                       : formatIsoDate(purchase.transactionDate),
+                  onTap: purchase == null
+                      ? null
+                      : () => context.go(
+                          AppPaths.transactionsFor(
+                            supplierItemId: item.id,
+                            itemName: item.itemName,
+                            date: purchase.transactionDate,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -275,19 +285,44 @@ class _Body extends StatelessWidget {
 }
 
 /// 요약 칸(표 아님): 이름 + 출처 꼬리표, 가격 19/700, 날짜.
+/// [onTap]이 있으면 칸 전체가 단추이고 아래 '거래내역 보기 ›'(13px `#C24A00`).
 class _Summary extends StatelessWidget {
   const _Summary({
     required this.label,
     required this.source,
     required this.value,
     required this.caption,
+    this.onTap,
   });
 
   final String label, source;
   final String? value, caption;
+  final VoidCallback? onTap;
+
+  static const _goColor = Color(0xFFC24A00);
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final box = _box();
+    final tap = onTap;
+    if (tap == null) return box;
+    final radius = BorderRadius.circular(LdsRadius.table);
+    return Semantics(
+      button: true,
+      label: "$label $value, Transactions에서 거래 내역 보기",
+      excludeSemantics: true,
+      onTap: tap,
+      child: LdsFocusRing(
+        radius: LdsRadius.table,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(onTap: tap, borderRadius: radius, child: box),
+        ),
+      ),
+    );
+  }
+
+  Widget _box() => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
       color: LdsColors.canvas,
@@ -334,6 +369,13 @@ class _Summary extends StatelessWidget {
           Text(
             caption!,
             style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+          ),
+        ],
+        if (onTap != null) ...[
+          const SizedBox(height: 2),
+          const Text(
+            "거래내역 보기 ›",
+            style: TextStyle(fontSize: 13, color: _goColor),
           ),
         ],
       ],

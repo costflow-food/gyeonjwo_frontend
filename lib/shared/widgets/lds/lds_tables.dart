@@ -129,15 +129,30 @@ class LdsKeyValueTable extends StatelessWidget {
   );
 }
 
+/// 목록 표 열의 정렬 상태.
+enum LdsSortState { none, ascending, descending }
+
 /// 목록 표의 열. 날짜·단가·수량·금액·짧은 상태는 가운데, 이름·글은 왼쪽(9.2).
 class LdsColumn {
-  const LdsColumn(this.label, {this.flex = 1, this.alignStart = false});
+  const LdsColumn(
+    this.label, {
+    this.flex = 1,
+    this.alignStart = false,
+    this.sort,
+    this.onSort,
+  });
 
   final String label;
   final int flex;
 
   /// 품목·거래처·출처·증빙처럼 이름·글이면 true(왼쪽 정렬).
   final bool alignStart;
+
+  /// 정렬할 수 있는 열이면 지금 상태(7.12). null이면 정렬 없는 열.
+  final LdsSortState? sort;
+
+  /// 머리를 누르면 부릅니다. [sort]와 함께 둡니다.
+  final VoidCallback? onSort;
 }
 
 class LdsListRow {
@@ -169,10 +184,27 @@ class LdsListRow {
 /// 머리 줄 높이 40·배경 `#F9FAFB`·13px/700 `#4E5968`·모든 칸 가운데·아래 1px `#E5E7EA`.
 /// 줄 높이 최소 48. 여러 건을 카드로 쌓지 않습니다.
 class LdsListTable extends StatelessWidget {
-  const LdsListTable({super.key, required this.columns, required this.rows});
+  const LdsListTable({
+    super.key,
+    required this.columns,
+    required this.rows,
+    this.header,
+    this.minWidth,
+    this.empty,
+  });
 
   final List<LdsColumn> columns;
   final List<LdsListRow> rows;
+
+  /// 표 틀 안 맨 위(머리 줄 위) 요약 줄. 아래 1px `#F3F4F6`.
+  final Widget? header;
+
+  /// 있으면 폭이 이보다 좁을 때 머리 줄과 줄들이 가로로 스크롤됩니다.
+  /// [header]는 스크롤하지 않습니다.
+  final double? minWidth;
+
+  /// 줄이 없을 때 머리 줄 아래에 보일 안내.
+  final Widget? empty;
 
   @override
   Widget build(BuildContext context) {
@@ -196,31 +228,112 @@ class LdsListTable extends StatelessWidget {
         ),
       ),
     );
+    final head = Container(
+      height: 40,
+      decoration: const BoxDecoration(
+        color: LdsColors.canvas,
+        border: Border(bottom: BorderSide(color: LdsColors.line)),
+      ),
+      child: Row(
+        children: [
+          for (final column in columns)
+            Expanded(flex: column.flex, child: _HeadCell(column)),
+        ],
+      ),
+    );
+    final lines = [
+      head,
+      for (final row in rows) _row(row, cell),
+      if (rows.isEmpty && empty != null) empty!,
+    ];
+    final width = minWidth;
+    if (width == null) {
+      return _TableFrame(rows: [?header, ...lines]);
+    }
     return _TableFrame(
       rows: [
-        Container(
-          height: 40,
-          decoration: const BoxDecoration(
-            color: LdsColors.canvas,
-            border: Border(bottom: BorderSide(color: LdsColors.line)),
-          ),
-          child: Row(
-            children: [
-              for (final column in columns)
-                Expanded(
-                  flex: column.flex,
-                  child: Text(
-                    column.label,
-                    textAlign: TextAlign.center,
-                    textScaler: TextScaler.noScaling,
-                    style: _labelStyle.copyWith(fontSize: 13),
-                  ),
-                ),
-            ],
-          ),
+        ?header,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final body = Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final (i, line) in lines.indexed) ...[
+                  if (i > 0)
+                    const Divider(height: 1, color: LdsColors.lineSoft),
+                  line,
+                ],
+              ],
+            );
+            if (constraints.maxWidth >= width) return body;
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(width: width, child: body),
+            );
+          },
         ),
-        for (final row in rows) _row(row, cell),
       ],
+    );
+  }
+}
+
+/// 머리 칸. 정렬 열은 단추: 정렬 중이면 주황 ↓/↑, 아니면 회색 ↕ 12px(7.12).
+class _HeadCell extends StatelessWidget {
+  const _HeadCell(this.column);
+
+  final LdsColumn column;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _labelStyle.copyWith(fontSize: 13);
+    final label = Text(
+      column.label,
+      textAlign: TextAlign.center,
+      textScaler: TextScaler.noScaling,
+      style: style,
+    );
+    final sort = column.sort;
+    final onSort = column.onSort;
+    if (sort == null || onSort == null) return label;
+    final arrow = switch (sort) {
+      LdsSortState.descending => const Text(
+        '↓',
+        textScaler: TextScaler.noScaling,
+        style: TextStyle(fontSize: 13, color: LdsColors.primary),
+      ),
+      LdsSortState.ascending => const Text(
+        '↑',
+        textScaler: TextScaler.noScaling,
+        style: TextStyle(fontSize: 13, color: LdsColors.primary),
+      ),
+      LdsSortState.none => const Text(
+        '↕',
+        textScaler: TextScaler.noScaling,
+        style: TextStyle(fontSize: 12, color: LdsColors.disabled),
+      ),
+    };
+    final state = switch (sort) {
+      LdsSortState.descending => '내림차순 정렬됨',
+      LdsSortState.ascending => '오름차순 정렬됨',
+      LdsSortState.none => '정렬 안 됨',
+    };
+    return Semantics(
+      button: true,
+      label: '${column.label}, $state',
+      excludeSemantics: true,
+      onTap: onSort,
+      child: InkWell(
+        onTap: onSort,
+        hoverColor: LdsColors.lineSoft,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(child: label),
+            const SizedBox(width: 4),
+            ExcludeSemantics(child: arrow),
+          ],
+        ),
+      ),
     );
   }
 }

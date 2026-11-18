@@ -11,6 +11,22 @@ abstract final class AppPaths {
   static String task(String caseId) => "$tasks/$caseId";
   static String review(String caseId) => "$tasks/$caseId/review";
 
+  /// Suppliers 품목 카드 '마지막 실거래'에서 여는 Transactions(7.12):
+  /// 그 거래처 품목(`supplier_item`)·품목 이름(`item`)·거래일(`date`)로
+  /// 걸러 그 거래를 고릅니다.
+  static String transactionsFor({
+    required String supplierItemId,
+    String? itemName,
+    String? date,
+  }) => Uri(
+    path: transactions,
+    queryParameters: {
+      "supplier_item": supplierItemId,
+      "item": ?itemName,
+      "date": ?date,
+    },
+  ).toString();
+
   /// Tasks 주소에 상태 탭(`?tab=`)을 붙입니다. [tab]이 null이면 전체 탭입니다.
   static String tasksAt({String? caseId, String? tab}) => Uri(
     path: caseId == null ? tasks : task(caseId),

@@ -87,21 +87,22 @@ class _CompactBrand extends StatelessWidget {
   );
 }
 
-/// 업무 큐 / 거래처 / 로그 / 계정 설정.
+/// 휴대폰 아래 탭.
 class MobileNavigationBar extends ConsumerWidget {
   const MobileNavigationBar({super.key});
 
-  /// Dashboard · Tasks · Suppliers · 계정 설정. 실행 로그는 계정 설정에서
-  /// 들어가므로 계정 설정 탭에 둡니다.
+  /// Dashboard · Tasks · Transactions · Suppliers · 계정 설정. 실행 로그는
+  /// 계정 설정에서 들어가므로 계정 설정 탭에 둡니다.
   static const _paths = [
     AppPaths.dashboard,
     AppPaths.tasks,
+    AppPaths.transactions,
     AppPaths.suppliers,
     AppPaths.account,
   ];
 
   static int _indexOf(String path) {
-    if (path.startsWith(AppPaths.logs)) return 3;
+    if (path.startsWith(AppPaths.logs)) return _paths.length - 1;
     final index = _paths.lastIndexWhere(
       (section) => section != AppPaths.dashboard && path.startsWith(section),
     );
@@ -154,6 +155,10 @@ class MobileNavigationBar extends ConsumerWidget {
             NavigationDestination(
               icon: AppIconView(AppIcon.tasks),
               label: 'Tasks',
+            ),
+            NavigationDestination(
+              icon: AppIconView(AppIcon.transactions),
+              label: 'Transactions',
             ),
             NavigationDestination(
               icon: AppIconView(AppIcon.suppliers),
