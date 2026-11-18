@@ -162,7 +162,7 @@ void main() {
       // flush against the sidebar.
       expect(_listPane, findsOneWidget);
       expect(tester.getSize(_listPane).width, ListDetailLayout.listWidth(1440));
-      expect(tester.getTopLeft(_listPane).dx, AppSidebar.iconWidth);
+      expect(tester.getTopLeft(_listPane).dx, AppSidebar.wideWidth);
       expect(
         tester.getSize(find.byType(SupplierListRow).first).width,
         ListDetailLayout.listWidth(1440) - 35,

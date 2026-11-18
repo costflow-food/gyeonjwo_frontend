@@ -309,8 +309,8 @@ void main() {
     );
     expect(WorkQueueView.listWidth(1000), 400);
     expect(WorkQueueView.listWidth(2000), 400);
-    // Tasks starts with the icon menu.
-    expect(tester.getSize(find.byType(AppSidebar)).width, AppSidebar.iconWidth);
+    // All screens share the expanded initial sidebar state.
+    expect(tester.getSize(find.byType(AppSidebar)).width, AppSidebar.wideWidth);
     // The list pane is #F3F4F6 with a line on its right; the detail #F9FAFB.
     expect(
       find.byWidgetPredicate(
