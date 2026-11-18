@@ -2,7 +2,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:go_router/go_router.dart";
 import "package:gyeonjwo_frontend/app/app_paths.dart";
 import "package:gyeonjwo_frontend/features/auth/domain/auth_session.dart";
@@ -21,6 +21,8 @@ import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/app_sidebar.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../../helpers/platform_override.dart";
 
 class _SignedIn extends AuthSessionViewModel {
   @override
@@ -64,7 +66,6 @@ Future<GoRouter> _pump(
   List<PurchaseRecord>? records,
 }) async {
   debugDefaultTargetPlatformOverride = platform;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = Size(width, 1000);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -426,7 +427,6 @@ void main() {
 
   testWidgets("Suppliers '마지막 실거래'는 Transactions 입구", (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     final router = GoRouter(
       initialLocation: "/suppliers",
       routes: [

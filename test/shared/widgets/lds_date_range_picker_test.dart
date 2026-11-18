@@ -1,10 +1,12 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../../helpers/platform_override.dart";
 
 /// 2026-11-18 is a Wednesday.
 final _today = DateTime(2026, 11, 18);
@@ -14,7 +16,6 @@ Future<List<DateTimeRange>> _pump(
   double width = 1440,
 }) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = Size(width, 900);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

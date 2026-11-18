@@ -1,16 +1,17 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
 
+import "../../../helpers/platform_override.dart";
+
 /// The web app runs on desktop browsers, so sizes are checked under a desktop
 /// platform (compact visual density by default).
 Future<void> _pump(WidgetTester tester, Widget child) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   await tester.pumpWidget(
     MaterialApp(
       theme: buildAppTheme(WorkspacePalette.lds),

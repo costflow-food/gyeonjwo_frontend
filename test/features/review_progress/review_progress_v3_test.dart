@@ -1,6 +1,6 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/features/review_progress/domain/review_phase.dart";
 import "package:gyeonjwo_frontend/features/review_progress/domain/review_progress_state.dart";
 import "package:gyeonjwo_frontend/features/review_progress/presentation/widgets/review_progress_body.dart";
@@ -9,6 +9,8 @@ import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../../helpers/platform_override.dart";
 
 ReviewProgress _state(String step) => ReviewProgress(
   progress: CaseProgress(
@@ -26,7 +28,6 @@ Future<void> _pump(
   VoidCallback? onViewCase,
 }) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = const Size(1440, 1000);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

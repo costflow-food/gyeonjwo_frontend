@@ -2,7 +2,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:go_router/go_router.dart";
 import "package:gyeonjwo_frontend/features/auth/domain/auth_session.dart";
 import "package:gyeonjwo_frontend/features/auth/presentation/auth_session_view_model.dart";
@@ -12,6 +12,8 @@ import "package:gyeonjwo_frontend/shared/widgets/app_sidebar.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/widgets/workspace_shell.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../../helpers/platform_override.dart";
 
 class _SignedIn extends AuthSessionViewModel {
   @override
@@ -29,7 +31,6 @@ Future<GoRouter> _pump(
   double width = 1440,
 }) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = Size(width, 900);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

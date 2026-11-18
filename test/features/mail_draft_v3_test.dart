@@ -1,7 +1,7 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/features/mail_draft/domain/mail_draft.dart";
 import "package:gyeonjwo_frontend/features/mail_draft/presentation/mail_draft_dialog.dart";
 import "package:gyeonjwo_frontend/features/mail_draft/presentation/mail_draft_view_model.dart";
@@ -11,6 +11,8 @@ import "package:gyeonjwo_frontend/features/send_settings/presentation/send_setti
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../helpers/platform_override.dart";
 
 MailDraft _draft(String id) => MailDraft(
   id: id,
@@ -59,7 +61,6 @@ class _Settings extends SendSettingsViewModel {
 
 Future<void> _pump(WidgetTester tester, Widget dialog) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = const Size(1440, 1000);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

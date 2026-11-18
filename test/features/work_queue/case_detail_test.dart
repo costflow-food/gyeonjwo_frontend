@@ -1,7 +1,7 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:go_router/go_router.dart";
 import "package:gyeonjwo_frontend/features/purchase_review/domain/purchase_review.dart";
 import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_repository_impl.dart";
@@ -15,6 +15,8 @@ import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_vi
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../../helpers/platform_override.dart";
 
 WorkCase _case(
   String status,
@@ -104,7 +106,6 @@ Future<void> _pump(
   VoidCallback? onNext,
 }) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = const Size(1100, 1800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

@@ -1,7 +1,7 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/features/mail_intake/domain/intake_mail.dart";
 import "package:gyeonjwo_frontend/features/mail_intake/presentation/mail_intake_dialog.dart";
 import "package:gyeonjwo_frontend/features/mail_intake/presentation/mail_intake_view_model.dart";
@@ -14,6 +14,8 @@ import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../helpers/platform_override.dart";
 
 class _Intake extends MailIntakeViewModel {
   @override
@@ -66,7 +68,6 @@ class _Source implements SourceDocumentRepository {
 
 Future<void> _pump(WidgetTester tester, Widget dialog) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = const Size(1440, 1200);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

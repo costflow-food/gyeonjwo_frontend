@@ -1,7 +1,7 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/features/purchase_review/domain/purchase_review.dart";
 import "package:gyeonjwo_frontend/features/purchase_review/presentation/widgets/plan_board.dart";
 import "package:gyeonjwo_frontend/features/purchase_review/presentation/widgets/plan_card.dart";
@@ -10,6 +10,8 @@ import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../../helpers/platform_override.dart";
 
 PlanAllocation _alloc(String id, String name, String quantity, String price) =>
     PlanAllocation(
@@ -104,7 +106,6 @@ final _quotes = [
 
 Future<void> _pump(WidgetTester tester, {double width = 1440}) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = Size(width, 2600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

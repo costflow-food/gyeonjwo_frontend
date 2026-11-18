@@ -1,6 +1,6 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_row_text.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_row.dart";
@@ -8,6 +8,8 @@ import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+
+import "../../helpers/platform_override.dart";
 
 WorkCase _case({
   String title = "한라푸드",
@@ -38,7 +40,6 @@ Future<void> _pump(
   double textScale = 1,
 }) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   await tester.pumpWidget(
     MaterialApp(
       theme: buildAppTheme(WorkspacePalette.lds),

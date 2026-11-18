@@ -1,6 +1,6 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-import "package:flutter_test/flutter_test.dart";
+import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/features/auth/presentation/auth_layout.dart";
 import "package:gyeonjwo_frontend/features/auth/presentation/widgets/google_sign_in_button.dart";
 import "package:gyeonjwo_frontend/main.dart";
@@ -8,9 +8,10 @@ import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
 
+import "../helpers/platform_override.dart";
+
 Future<void> _pump(WidgetTester tester, Widget child) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
   tester.view.physicalSize = const Size(1440, 900);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
