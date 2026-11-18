@@ -25,17 +25,16 @@ enum AppMenu {
   final String path;
 }
 
-/// 사용자가 사이드바를 접거나 편 선택. null이면 화면별 기본값(7.8)을
-/// 따르고, 한 번 고르면 화면을 옮겨도 유지합니다.
-class SidebarChoice extends Notifier<bool?> {
+/// 메뉴는 펼친 상태로 시작하며, 사용자의 접기·펼치기 선택을 화면 이동 중 유지합니다.
+class SidebarChoice extends Notifier<bool> {
   @override
-  bool? build() => null;
+  bool build() => true;
 
   // ignore: use_setters_to_change_properties
   void choose(bool wide) => state = wide;
 }
 
-final sidebarChoiceProvider = NotifierProvider<SidebarChoice, bool?>(
+final sidebarChoiceProvider = NotifierProvider<SidebarChoice, bool>(
   SidebarChoice.new,
 );
 
