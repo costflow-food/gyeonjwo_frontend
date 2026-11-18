@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/page_lead_text.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 
 /// Suppliers 맨 위 줄 (7.14b): 왼쪽 화면 설명, 오른쪽 '새로고침' 다음
@@ -23,17 +23,9 @@ class SupplierHeader extends StatelessWidget {
     alignment: WrapAlignment.spaceBetween,
     crossAxisAlignment: WrapCrossAlignment.center,
     spacing: 16,
-    runSpacing: 12,
+    runSpacing: PageLeadText.gap,
     children: [
-      const Text(
-        lead,
-        style: TextStyle(
-          fontSize: 13,
-          height: 1.6,
-          letterSpacing: -.3,
-          color: LdsColors.muted,
-        ),
-      ),
+      const PageLeadText(lead),
       Row(
         mainAxisSize: MainAxisSize.min,
         children: [

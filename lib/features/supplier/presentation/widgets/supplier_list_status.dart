@@ -21,24 +21,13 @@ class SupplierListStatus extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        // Invoices '확정 거래 N건 · 총 …원'과 같은 모양: 한 줄 13px `#4E5968` 보통 굵기.
         Expanded(
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: data.query.isEmpty ? "총 " : "'${data.query}' 검색 결과 ",
-                ),
-                TextSpan(
-                  text: "${data.total}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: LdsColors.ink,
-                  ),
-                ),
-                const TextSpan(text: "곳"),
-              ],
-            ),
-            style: const TextStyle(fontSize: 13, color: LdsColors.muted),
+          child: Text(
+            data.query.isEmpty
+                ? "총 ${data.total}곳"
+                : "'${data.query}' 검색 결과 ${data.total}곳",
+            style: const TextStyle(fontSize: 13, color: LdsColors.label),
           ),
         ),
         if (data.isSearching)

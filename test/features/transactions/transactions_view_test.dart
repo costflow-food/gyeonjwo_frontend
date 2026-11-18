@@ -19,6 +19,7 @@ import "package:gyeonjwo_frontend/features/transactions/presentation/transaction
 import "package:gyeonjwo_frontend/features/transactions/presentation/widgets/transaction_detail_panel.dart";
 import "package:gyeonjwo_frontend/features/transactions/presentation/widgets/transaction_list_row.dart";
 import "package:gyeonjwo_frontend/main.dart";
+import "package:gyeonjwo_frontend/shared/widgets/page_lead_text.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/app_sidebar.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
@@ -142,7 +143,20 @@ TransactionListRow _row(WidgetTester tester, int index) => tester
     .widget<TransactionListRow>(find.byType(TransactionListRow).at(index));
 
 void main() {
-  testWidgets("기본 기간은 최근 3개월, 목록 위는 건수·총액, 설명 줄 없음", (tester) async {
+  testWidgets("목록 칸 맨 위에 Suppliers처럼 화면 설명 한 줄", (tester) async {
+    await _pump(tester);
+    final lead = find.widgetWithText(PageLeadText, TransactionsView.lead);
+    expect(lead, findsOneWidget);
+    // 필터 단추 위, 같은 왼쪽 선.
+    final filter = find.widgetWithText(LdsFilterButton, "품목");
+    expect(
+      tester.getBottomLeft(lead).dy,
+      lessThan(tester.getTopLeft(filter).dy),
+    );
+    expect(tester.getTopLeft(lead).dx, tester.getTopLeft(filter).dx);
+  });
+
+  testWidgets("기본 기간은 최근 3개월, 목록 위는 건수·총액", (tester) async {
     await _pump(tester);
     final button = tester.widget<LdsDateRangeButton>(
       find.byType(LdsDateRangeButton),
