@@ -455,7 +455,7 @@ void main() {
     final panel = find.byType(TransactionDetailPanel);
     expect(panel, findsOneWidget);
     expect(find.text("냉동 딸기 · 바른채소"), findsOneWidget);
-    expect(find.text("확정"), findsOneWidget);
+    expect(find.text("확정"), findsNothing); // 머리에 확정 라벨 없음
     expect(find.text("확정 정보"), findsOneWidget);
     expect(find.text("2026.10.10 · 한라푸드 · 5,000원/kg"), findsOneWidget);
     expect(find.text("Suppliers에서 바른채소 보기"), findsOneWidget);

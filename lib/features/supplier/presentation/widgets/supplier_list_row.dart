@@ -7,9 +7,9 @@ import "supplier_source_badge.dart";
 
 /// 거래처 목록 카드 한 장 (시안 Suppliers).
 ///
-/// 1줄 = 업체명(17/700) + 오른쪽 출처 라벨(빈 정보가 있으면 '정보 부족 · N개
-/// 미확인'), 2줄 = 취급 품목 칩(높이 28, 검색어와 맞으면 주황), 3줄 = 위치
-/// 아이콘 + 지역(13 `#6B7583`). 카드: 흰 바탕, 1px `#E5E7EA`, 모서리 8, 안쪽
+/// 왼쪽 = 업체명(17/700) → 취급 품목 칩(높이 28, 검색어와 맞으면 주황) → 위치
+/// 아이콘 + 지역(13 `#6B7583`). 오른쪽 = 출처 라벨(빈 정보가 있으면 '정보 부족
+/// · N개 미확인'), 카드 세로 가운데. 카드: 흰 바탕, 1px `#E5E7EA`, 모서리 8, 안쪽
 /// 14·16. 고른 카드는 주황 2px 테두리 + 연한 주황 그림자.
 class SupplierListRow extends StatefulWidget {
   const SupplierListRow({
@@ -90,13 +90,13 @@ class _SupplierListRowState extends State<SupplierListRow> {
                 padding: selected
                     ? const EdgeInsets.symmetric(horizontal: 15, vertical: 13)
                     : const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
                             supplier.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -108,59 +108,60 @@ class _SupplierListRowState extends State<SupplierListRow> {
                               color: LdsColors.ink,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (missing > 0)
-                          SupplierMissingInfoBadge(missing)
-                        else
-                          SupplierSourceBadge(supplier.sourceType),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    if (items.isEmpty)
-                      const Text(
-                        "취급 품목 미등록",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: LdsColors.outline,
-                        ),
-                      )
-                    else
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          for (final item in items)
-                            _ItemChip(
-                              item,
-                              hit:
-                                  needle.isNotEmpty &&
-                                  _fold(item).contains(needle),
+                          const SizedBox(height: 10),
+                          if (items.isEmpty)
+                            const Text(
+                              "취급 품목 미등록",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: LdsColors.outline,
+                              ),
+                            )
+                          else
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                for (final item in items)
+                                  _ItemChip(
+                                    item,
+                                    hit:
+                                        needle.isNotEmpty &&
+                                        _fold(item).contains(needle),
+                                  ),
+                              ],
                             ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 14,
+                                color: LdsColors.muted,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  location,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: LdsColors.muted,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: LdsColors.muted,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            location,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: LdsColors.muted,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
+                    const SizedBox(width: 8),
+                    // 라벨은 카드 세로 가운데.
+                    if (missing > 0)
+                      SupplierMissingInfoBadge(missing)
+                    else
+                      SupplierSourceBadge(supplier.sourceType),
                   ],
                 ),
               ),
