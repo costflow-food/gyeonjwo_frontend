@@ -11,18 +11,14 @@ import 'app_sidebar.dart';
 import 'lds/lds.dart';
 import 'mobile_scaffold.dart';
 
-/// 화면 주소별 상단 바 제목, 선택된 메뉴, 사이드바 시작 모양 (7.8, 7.17).
+/// 화면 주소별 상단 바 제목과 선택된 메뉴.
 class AppSection {
-  const AppSection(this.title, this.menu, {required this.startsWide});
+  const AppSection(this.title, this.menu);
 
   final String title;
 
   /// 메뉴에 없는 화면(실행 로그·설정)은 null: 선택 표시가 없습니다.
   final AppMenu? menu;
-
-  /// 둘러보는 화면은 넓은 메뉴로, 작업 화면(Tasks·검토 카드·Transactions·
-  /// Suppliers)은 아이콘 메뉴로 시작합니다.
-  final bool startsWide;
 
   static AppSection of(String path) {
     bool under(String root) => path == root || path.startsWith('$root/');
@@ -31,30 +27,21 @@ class AppSection {
       return AppSection(
         path.endsWith('/review') ? '검토 카드' : 'Tasks',
         AppMenu.tasks,
-        startsWide: false,
       );
     }
     if (under(AppPaths.transactions)) {
-      return const AppSection(
-        'Invoices',
-        AppMenu.transactions,
-        startsWide: false,
-      );
+      return const AppSection('Invoices', AppMenu.transactions);
     }
     if (under(AppPaths.suppliers)) {
-      return const AppSection(
-        'Suppliers',
-        AppMenu.suppliers,
-        startsWide: false,
-      );
+      return const AppSection('Suppliers', AppMenu.suppliers);
     }
     if (under(AppPaths.logs)) {
-      return const AppSection('실행 로그', null, startsWide: true);
+      return const AppSection('실행 로그', null);
     }
     if (under(AppPaths.account)) {
-      return const AppSection('설정', null, startsWide: true);
+      return const AppSection('설정', null);
     }
-    return const AppSection('Dashboard', AppMenu.dashboard, startsWide: true);
+    return const AppSection('Dashboard', AppMenu.dashboard);
   }
 }
 
@@ -109,7 +96,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
             : widget.child,
       );
     }
-    final wide = ref.watch(sidebarChoiceProvider) ?? section.startsWide;
+    final wide = ref.watch(sidebarChoiceProvider);
     final body = widget.scrollable
         ? SingleChildScrollView(
             padding: const EdgeInsets.all(WorkspaceShell.gutter),
