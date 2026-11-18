@@ -1,0 +1,164 @@
+diff --git a/lib/app/app_config.dart b/lib/app/app_config.dart
+index 58ce53c..2dc9c2f 100644
+--- a/lib/app/app_config.dart
++++ b/lib/app/app_config.dart
+@@ -12,6 +12,17 @@ abstract final class AppConfig {
+   /// 배포 워크플로가 넣는 커밋 앞 7자리. 로컬 실행에서는 비어 있습니다.
+   static const buildRevision = String.fromEnvironment("BUILD_REVISION");
+ 
++  /// 운영(PRD) Supabase 프로젝트 ref. 이 DB를 가리키면 로그인 생략은 켜지지 않습니다.
++  static const productionSupabaseRef = "qlabhitzpdiawtbdmlgw";
++
++  /// DEV 존 전용 로그인 생략. DEV 배포 워크플로만 `AUTH_DISABLED=true`로 빌드합니다.
++  static const _authDisabled = bool.fromEnvironment("AUTH_DISABLED");
++
++  /// 로그인 화면 없이 바로 메인으로 엽니다. 서버(DEV)도 `DEV_NO_AUTH_USER_ID`로
++  /// 같은 고정 사용자를 씁니다. 운영 Supabase를 가리키면 값과 무관하게 꺼집니다.
++  static bool get loginDisabled =>
++      _authDisabled && !supabaseUrl.contains(productionSupabaseRef);
++
+   static List<String> get missingKeys => [
+     if (supabaseUrl.isEmpty) "SUPABASE_URL",
+     if (supabasePublishableKey.isEmpty) "SUPABASE_PUBLISHABLE_KEY",
+diff --git a/lib/app/app_router.dart b/lib/app/app_router.dart
+index de20436..a2ffe38 100644
+--- a/lib/app/app_router.dart
++++ b/lib/app/app_router.dart
+@@ -19,6 +19,7 @@ import "../features/transactions/presentation/transactions_view.dart";
+ import "../features/work_queue/domain/task_group.dart";
+ import "../features/workflow_log/presentation/workflow_log_view.dart";
+ import "../features/work_queue/presentation/work_queue_view.dart";
++import "app_config.dart";
+ import "app_paths.dart";
+ import "dev/widget_preview_view.dart";
+ import "not_found_view.dart";
+@@ -53,6 +54,8 @@ final appRouter = GoRouter(
+     final session = container.read(authSessionViewModelProvider).asData?.value;
+     final path = state.uri.path;
+     if (kDebugMode && path == devWidgetsPath) return null;
++    // DEV 존은 로그인 없이 고정 DEV 사용자로 바로 엽니다.
++    if (AppConfig.loginDisabled) return noLoginRedirect(path);
+     // Read the Gmail connection only on the connection screen, where it is
+     // being established anyway.
+     final gmailReady =
+diff --git a/lib/features/auth/data/auth_session_data_source.dart b/lib/features/auth/data/auth_session_data_source.dart
+index bafcc2a..94e5049 100644
+--- a/lib/features/auth/data/auth_session_data_source.dart
++++ b/lib/features/auth/data/auth_session_data_source.dart
+@@ -5,7 +5,9 @@ import "package:flutter/foundation.dart";
+ import "package:riverpod_annotation/riverpod_annotation.dart";
+ import "package:supabase_flutter/supabase_flutter.dart";
+ 
++import "../../../app/app_config.dart";
+ import "../../../shared/navigation/page_navigation.dart";
++import "dev_no_login_session_data_source.dart";
+ 
+ part "auth_session_data_source.g.dart";
+ 
+@@ -61,8 +63,9 @@ abstract final class OAuthRedirectGrant {
+ }
+ 
+ @Riverpod(keepAlive: true)
+-AuthSessionDataSource authSessionDataSource(Ref ref) =>
+-    SupabaseAuthSessionDataSource(Supabase.instance.client.auth);
++AuthSessionDataSource authSessionDataSource(Ref ref) => AppConfig.loginDisabled
++    ? const DevNoLoginSessionDataSource()
++    : SupabaseAuthSessionDataSource(Supabase.instance.client.auth);
+ 
+ /// Session values as a JSON-like map, mirroring the other DataSources.
+ ///
+diff --git a/lib/features/auth/data/dev_no_login_session_data_source.dart b/lib/features/auth/data/dev_no_login_session_data_source.dart
+new file mode 100644
+index 0000000..0638929
+--- /dev/null
++++ b/lib/features/auth/data/dev_no_login_session_data_source.dart
+@@ -0,0 +1,37 @@
++import "auth_session_data_source.dart";
++
++/// DEV 존(로그인 생략) 세션. 항상 로그인된 고정 DEV 사용자입니다.
++///
++/// DEV 서버는 `DEV_NO_AUTH_USER_ID`가 있으면 토큰을 보지 않고 같은 사용자로
++/// 처리합니다. 운영 빌드에서는 쓰이지 않습니다(`AppConfig.loginDisabled`).
++class DevNoLoginSessionDataSource implements AuthSessionDataSource {
++  const DevNoLoginSessionDataSource();
++
++  static const email = "dev@thoner.local";
++
++  /// 서버는 값을 보지 않지만 요청 형식(`Authorization: Bearer`)을 맞추려고 보냅니다.
++  static const token = "dev-no-login";
++
++  static Map<String, dynamic> _session() => <String, dynamic>{
++    "email": email,
++    "access_token": token,
++  };
++
++  @override
++  Map<String, dynamic>? currentSession() => _session();
++
++  @override
++  Future<String?> freshAccessToken({bool forceRefresh = false}) async => token;
++
++  @override
++  Stream<Map<String, dynamic>?> watchSession() => Stream.value(_session());
++
++  @override
++  Map<String, String> redirectError() => const {};
++
++  @override
++  Future<Map<String, String>> signInWithGoogle() async => const {};
++
++  @override
++  Future<void> signOut() async {}
++}
+diff --git a/lib/features/auth/domain/auth_route_policy.dart b/lib/features/auth/domain/auth_route_policy.dart
+index c6d0f60..433e53b 100644
+--- a/lib/features/auth/domain/auth_route_policy.dart
++++ b/lib/features/auth/domain/auth_route_policy.dart
+@@ -23,3 +23,7 @@ String? authRedirect(
+     _ => null,
+   },
+ };
++
++/// DEV 존(로그인 생략): 로그인 화면 주소는 메인(Dashboard)으로 보냅니다.
++String? noLoginRedirect(String path) =>
++    path == "/login" || path.startsWith("/login/") ? "/" : null;
+diff --git a/test/features/auth/dev_no_login_test.dart b/test/features/auth/dev_no_login_test.dart
+new file mode 100644
+index 0000000..5c0fc3c
+--- /dev/null
++++ b/test/features/auth/dev_no_login_test.dart
+@@ -0,0 +1,34 @@
++import "package:flutter_test/flutter_test.dart";
++import "package:gyeonjwo_frontend/app/app_config.dart";
++import "package:gyeonjwo_frontend/features/auth/data/dev_no_login_session_data_source.dart";
++import "package:gyeonjwo_frontend/features/auth/domain/auth_route_policy.dart";
++
++void main() {
++  test("login is on unless the DEV build turns it off", () {
++    expect(AppConfig.loginDisabled, isFalse);
++  });
++
++  test("login addresses go to the main page in the DEV zone", () {
++    expect(noLoginRedirect("/login"), "/");
++    expect(noLoginRedirect("/login/connection"), "/");
++    expect(noLoginRedirect("/login/permissions"), "/");
++    expect(noLoginRedirect("/"), isNull);
++    expect(noLoginRedirect("/tasks/x"), isNull);
++    expect(noLoginRedirect("/loginx"), isNull);
++  });
++
++  test("the DEV session is always signed in with a fixed token", () async {
++    const source = DevNoLoginSessionDataSource();
++    expect(source.currentSession()?["email"], DevNoLoginSessionDataSource.email);
++    expect(await source.freshAccessToken(), DevNoLoginSessionDataSource.token);
++    expect(
++      await source.freshAccessToken(forceRefresh: true),
++      DevNoLoginSessionDataSource.token,
++    );
++    expect(
++      (await source.watchSession().first)?["email"],
++      DevNoLoginSessionDataSource.email,
++    );
++    expect(source.redirectError(), isEmpty);
++  });
++}
