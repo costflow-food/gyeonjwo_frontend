@@ -141,69 +141,98 @@ Finder _detailName(String name) => find.descendant(
 );
 
 void main() {
-  testWidgets("wide: list pane 30% beside the detail, no description line", (
-    tester,
-  ) async {
-    await _pump(tester);
-    expect(find.text("업체·연락처·취급 품목·인증·기준자료 출처를 확인합니다."), findsNothing);
-    // List pane: 30% (400~480) + 24 left + 16 right + 1px line, #F3F4F6,
-    // flush against the sidebar.
-    expect(_listPane, findsOneWidget);
-    expect(
-      tester.getSize(_listPane).width,
-      ListDetailLayout.listWidth(1440) + 24 + 16 + 1,
-    );
-    expect(tester.getTopLeft(_listPane).dx, AppSidebar.iconWidth);
-    expect(
-      tester.getSize(find.byType(ListGroupBox)).width,
-      ListDetailLayout.listWidth(1440),
-    );
-    expect(
-      find.byWidgetPredicate(
-        (widget) => widget is ColoredBox && widget.color == LdsColors.canvas,
-      ),
-      findsWidgets,
-    );
-    // Search, then the count, inside the list pane.
-    expect(
-      find.descendant(
-        of: _listPane,
-        matching: find.text("업체명, 품목, 담당자, 지역 검색"),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: _listPane, matching: find.textContaining("곳 · 이름순")),
-      findsOneWidget,
-    );
-    // Compact rows, the first one selected and open.
-    expect(find.byType(SupplierListRow), findsNWidgets(3));
-    expect(_row(tester, 0).selected, isTrue);
-    expect(_detailName("글로벌베리"), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.byType(SupplierDetailPanel)).dx,
-      greaterThan(tester.getTopRight(_listPane).dx),
-    );
-    expect(find.byTooltip("거래처 수정"), findsOneWidget);
-  });
-
-  testWidgets("refresh and register sit in the top bar, left of search", (
-    tester,
-  ) async {
-    await _pump(tester);
-    for (final label in ["새로고침", "거래처 등록"]) {
-      final button = find.text(label);
-      expect(button, findsOneWidget);
-      expect(tester.getCenter(button).dy, lessThan(AppSidebar.headerHeight));
+  testWidgets(
+    "wide: description line on top, list pane 30% beside the detail",
+    (tester) async {
+      await _pump(tester);
+      final lead = find.text("업체·연락처·취급 품목·인증·기준자료 출처를 확인합니다.");
+      expect(lead, findsOneWidget);
       expect(
-        tester.getTopRight(button).dx,
+        tester.getBottomLeft(lead).dy,
+        lessThan(tester.getTopLeft(_listPane).dy),
+      );
+      // The price note sits below both panes.
+      final note = find.text("견적과 실거래 가격의 적용일·조건을 함께 확인하세요.");
+      expect(note, findsOneWidget);
+      expect(
+        tester.getTopLeft(note).dy,
+        greaterThan(tester.getBottomLeft(_listPane).dy - 1),
+      );
+      // List pane: 30% (400~480) + 24 left + 16 right + 1px line, #F3F4F6,
+      // flush against the sidebar.
+      expect(_listPane, findsOneWidget);
+      expect(
+        tester.getSize(_listPane).width,
+        ListDetailLayout.listWidth(1440) + 24 + 16 + 1,
+      );
+      expect(tester.getTopLeft(_listPane).dx, AppSidebar.iconWidth);
+      expect(
+        tester.getSize(find.byType(SupplierListRow).first).width,
+        ListDetailLayout.listWidth(1440),
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is ColoredBox && widget.color == LdsColors.canvas,
+        ),
+        findsWidgets,
+      );
+      // Search, then the count, inside the list pane.
+      expect(
+        find.descendant(
+          of: _listPane,
+          matching: find.text("업체명, 품목, 담당자, 지역 검색"),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: _listPane, matching: find.textContaining("곳")),
+        findsWidgets,
+      );
+      expect(
+        find.descendant(of: _listPane, matching: find.text("이름순")),
+        findsWidgets,
+      );
+      // Compact rows, the first one selected and open.
+      expect(find.byType(SupplierListRow), findsNWidgets(3));
+      expect(_row(tester, 0).selected, isTrue);
+      expect(_detailName("글로벌베리"), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byType(SupplierDetailPanel)).dx,
+        greaterThan(tester.getTopRight(_listPane).dx),
+      );
+      expect(find.byTooltip("거래처 수정"), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    "refresh and register sit on the description line; the top bar has the date button",
+    (tester) async {
+      await _pump(tester);
+      final lead = find.text("업체·연락처·취급 품목·인증·기준자료 출처를 확인합니다.");
+      for (final label in ["새로고침", "거래처 등록"]) {
+        final button = find.text(label);
+        expect(button, findsOneWidget);
+        expect(
+          tester.getCenter(button).dy,
+          greaterThan(AppSidebar.headerHeight),
+        );
+        expect(
+          tester.getTopLeft(button).dx,
+          greaterThan(tester.getTopRight(lead).dx),
+        );
+      }
+      final date = find.byIcon(Icons.calendar_today_outlined);
+      expect(date, findsOneWidget);
+      expect(tester.getCenter(date).dy, lessThan(AppSidebar.headerHeight));
+      expect(
+        tester.getTopRight(date).dx,
         lessThan(tester.getTopLeft(find.byTooltip("업무 검색")).dx),
       );
-    }
-    await tester.tap(find.text("거래처 등록"));
-    await tester.pumpAndSettle();
-    expect(find.byType(SupplierRegisterDialog), findsOneWidget);
-  });
+      await tester.tap(find.text("거래처 등록"));
+      await tester.pumpAndSettle();
+      expect(find.byType(SupplierRegisterDialog), findsOneWidget);
+    },
+  );
 
   testWidgets("tap a row or use ↑/↓ to open another supplier", (tester) async {
     await _pump(tester);

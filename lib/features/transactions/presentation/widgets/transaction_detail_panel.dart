@@ -8,7 +8,7 @@ import "../transaction_format.dart";
 import "price_change_text.dart";
 
 /// 고른 거래의 상세 (`docs/design-ssot.md` 7.12, 상세 칸 전체): 머리
-/// '{품목} · {거래처}' + '확정' 라벨 + 아래 규격 → 카드 '확정 정보'(이름표-값
+/// '{품목} · {거래처}' + 아래 규격 → 카드 '확정 정보'(이름표-값
 /// 표 + Suppliers 링크) → 카드 '{품목} 확정 단가 흐름'.
 ///
 /// 넓은 화면은 늘 고른 거래를 보여 주고, 좁은 화면은 '목록으로'가 있어
@@ -38,25 +38,17 @@ class TransactionDetailPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Wrap(
-            spacing: 10,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Semantics(
-                header: true,
-                child: Text(
-                  "${record.itemName} · ${record.supplierName}",
-                  style: const TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
-                    color: LdsColors.ink,
-                  ),
-                ),
+          Semantics(
+            header: true,
+            child: Text(
+              "${record.itemName} · ${record.supplierName}",
+              style: const TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+                color: LdsColors.ink,
               ),
-              const LdsTag("확정", tone: LdsTagTone.success),
-            ],
+            ),
           ),
           if (record.specification case final spec?) ...[
             const SizedBox(height: 4),

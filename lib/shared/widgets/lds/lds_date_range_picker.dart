@@ -392,7 +392,7 @@ class _MonthCalendar extends StatelessWidget {
     required this.start,
     required this.end,
     required this.today,
-    required this.onPick,
+    this.onPick,
     this.onPrevious,
     this.onNext,
   });
@@ -401,7 +401,9 @@ class _MonthCalendar extends StatelessWidget {
   final DateTime? start;
   final DateTime? end;
   final DateTime today;
-  final ValueChanged<DateTime> onPick;
+
+  /// 없으면 보기 전용: 날짜를 누를 수 없고 오늘만 주황 글자 + 연주황 원.
+  final ValueChanged<DateTime>? onPick;
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
 
@@ -486,6 +488,10 @@ class _MonthCalendar extends StatelessWidget {
       return const SizedBox(height: _DayCell.height);
     }
     final day = DateTime(month.year, month.month, dayNumber);
+    final pick = onPick;
+    if (pick == null) {
+      return _ViewDayCell(day: day, today: DateUtils.isSameDay(day, today));
+    }
     final start = this.start;
     final end = this.end;
     final isStart = start != null && DateUtils.isSameDay(day, start);
@@ -499,7 +505,7 @@ class _MonthCalendar extends StatelessWidget {
       bandLeft: inside || (ranged && isEnd),
       bandRight: inside || (ranged && isStart),
       today: DateUtils.isSameDay(day, today),
-      onTap: () => onPick(day),
+      onTap: () => pick(day),
     );
   }
 }
@@ -646,6 +652,115 @@ class _DayCell extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+/// 보기 전용 날짜 칸: 누를 수 없음. 오늘 = `#FFEFE5` 원 + 주황 700 글자.
+class _ViewDayCell extends StatelessWidget {
+  const _ViewDayCell({required this.day, required this.today});
+
+  final DateTime day;
+  final bool today;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label:
+        '${day.year}년 ${day.month}월 ${day.day}일'
+        '${today ? ', 오늘' : ''}',
+    excludeSemantics: true,
+    child: SizedBox(
+      height: _DayCell.height,
+      child: Center(
+        child: Container(
+          width: _DayCell.circle,
+          height: _DayCell.circle,
+          alignment: Alignment.center,
+          decoration: today
+              ? const BoxDecoration(
+                  color: LdsColors.primarySoft,
+                  shape: BoxShape.circle,
+                )
+              : null,
+          child: Text(
+            '${day.day}',
+            style: TextStyle(
+              fontSize: 15,
+              height: 1,
+              fontWeight: today ? FontWeight.w700 : FontWeight.w400,
+              color: today ? LdsColors.primary : LdsColors.ink,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// 상단 바 날짜 확인 단추 (7.9.3 보완, 2026-11-18): 검색 왼쪽 36px 달력 아이콘.
+///
+/// 거르기 기능 없음. 누르면 단추 오른쪽 끝에 맞춘 팝오버(폭 320)에 이번 달
+/// 달력 1개 + 이전·다음 달 넘기기. 오늘은 주황. 마우스를 올리면 '오늘
+/// yyyy. M. d'. Esc·바깥 누르기로 닫습니다.
+class LdsDateViewButton extends StatelessWidget {
+  const LdsDateViewButton({super.key, this.today});
+
+  /// 없으면 지금 날짜.
+  final DateTime? today;
+
+  static const panelWidth = 320.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final day = ldsDateOnly(today ?? DateTime.now());
+    final label = '오늘 ${day.year}. ${day.month}. ${day.day}';
+    return Builder(
+      builder: (context) => LdsIconButton(
+        icon: Icons.calendar_today_outlined,
+        tooltip: label,
+        onPressed: () => Navigator.of(context).push(
+          LdsPopoverRoute<void>(
+            anchor: LdsPopoverRoute.anchorOf(context),
+            label: '날짜 확인 닫기',
+            child: _DateViewPanel(today: day),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DateViewPanel extends StatefulWidget {
+  const _DateViewPanel({required this.today});
+
+  final DateTime today;
+
+  @override
+  State<_DateViewPanel> createState() => _DateViewPanelState();
+}
+
+class _DateViewPanelState extends State<_DateViewPanel> {
+  late DateTime _month = DateTime(widget.today.year, widget.today.month);
+
+  void _move(int step) =>
+      setState(() => _month = DateTime(_month.year, _month.month + step));
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    scopesRoute: true,
+    namesRoute: true,
+    label: '날짜 확인',
+    child: Container(
+      width: LdsDateViewButton.panelWidth,
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      child: _MonthCalendar(
+        month: _month,
+        start: null,
+        end: null,
+        today: widget.today,
+        onPrevious: () => _move(-1),
+        onNext: () => _move(1),
       ),
     ),
   );

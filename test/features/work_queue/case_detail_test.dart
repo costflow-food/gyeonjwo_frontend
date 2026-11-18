@@ -10,6 +10,7 @@ import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_reposito
 import "package:gyeonjwo_frontend/features/work_queue/presentation/case_todo_data.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/attachment_viewer.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/case_progress.dart";
+import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_row.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/work_case_panel.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
 import "package:gyeonjwo_frontend/main.dart";
@@ -173,7 +174,7 @@ void main() {
     // In the header and again on the mail card, as in the design.
     expect(find.text("[단가인상] 냉동 딸기 IQF 홀 10kg 단가 조정"), findsNWidgets(2));
     expect(find.text("냉동 딸기"), findsNothing);
-    expect(find.widgetWithText(LdsTag, "진행 중"), findsOneWidget);
+    expect(find.widgetWithText(TaskStatusLabel, "진행 중"), findsOneWidget);
     expect(find.text("접수 2026.10.19 11:10"), findsOneWidget);
     expect(find.widgetWithText(LdsButton, "원문 보기"), findsNothing);
     expect(find.widgetWithText(LdsButton, "메일 초안"), findsNothing);
@@ -223,7 +224,7 @@ void main() {
       ),
     );
     expect(_bar(tester).stage!.index, 1);
-    expect(find.widgetWithText(LdsTag, "대기"), findsOneWidget);
+    expect(find.widgetWithText(TaskStatusLabel, "대기"), findsOneWidget);
     expect(_inTodo(find.text("메일을 받았어요")), findsOneWidget);
     expect(_inTodo(find.text("원문을 확인하면 검토를 시작해요.")), findsOneWidget);
     expect(_inTodo(find.text("10.19 11:10")), findsOneWidget);
@@ -266,7 +267,7 @@ void main() {
     expect(stage.error, isTrue);
     expect(stage.index, 2);
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
-    expect(find.widgetWithText(LdsTag, "오류"), findsOneWidget);
+    expect(find.widgetWithText(TaskStatusLabel, "오류"), findsOneWidget);
     expect(_inTodo(find.widgetWithText(LdsButton, "다시 시도")), findsOneWidget);
   });
 
@@ -280,7 +281,7 @@ void main() {
       onNext: () => next++,
     );
     expect(_bar(tester).stage!.index, 5);
-    expect(find.widgetWithText(LdsTag, "진행 중"), findsOneWidget);
+    expect(find.widgetWithText(TaskStatusLabel, "진행 중"), findsOneWidget);
     expect(_inTodo(find.text("구매안을 골라 주세요")), findsOneWidget);
     expect(_inTodo(find.text("구매안 2개")), findsOneWidget);
     expect(_inTodo(find.textContaining("「전량 전환」")), findsOneWidget);

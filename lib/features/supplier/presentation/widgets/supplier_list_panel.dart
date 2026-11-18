@@ -1,13 +1,12 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/lds_colors.dart";
-import "../../../../shared/widgets/list_detail_layout.dart";
 import "../../domain/supplier.dart";
 import "../../domain/supplier_list_state.dart";
 import "supplier_list_row.dart";
 
-/// 거래처 목록: 흰 묶음 상자 하나(모서리 12, 줄 사이 1px `#F3F4F6`)와
-/// '더 보기'. 스크롤은 감싸는 쪽이 둡니다.
+/// 거래처 목록: 카드(사이 8)를 [SupplierListState.sortedSuppliers] 순서로
+/// 쌓고 '더 보기'. 스크롤은 감싸는 쪽이 둡니다.
 class SupplierListPanel extends StatelessWidget {
   const SupplierListPanel({
     super.key,
@@ -47,9 +46,10 @@ class SupplierListPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ListGroupBox(
-          children: [for (final supplier in data.suppliers) _row(supplier)],
-        ),
+        for (final (index, supplier) in data.sortedSuppliers.indexed) ...[
+          if (index > 0) const SizedBox(height: 8),
+          _row(supplier),
+        ],
         if (data.hasMore)
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -75,6 +75,7 @@ class SupplierListPanel extends StatelessWidget {
       key: selected ? selectedKey : null,
       supplier: supplier,
       selected: selected,
+      query: data.query,
       onTap: () => onSelect(supplier.id),
     );
   }
