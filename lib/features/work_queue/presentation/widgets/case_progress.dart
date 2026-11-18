@@ -414,6 +414,7 @@ class TodoBox extends StatelessWidget {
   }
 
   Widget _actionRow() {
+    final leading = this.leading;
     if (actions.isEmpty && leading == null) {
       return const SizedBox(
         height: 36,
@@ -430,20 +431,23 @@ class TodoBox extends StatelessWidget {
         ),
       );
     }
+    // 버튼은 상자 오른쪽 끝에 붙입니다. 왼쪽 글자([leading], 'n / N곳 선택'
+    // 같은 짧은 글)는 제 폭만 쓰고, 버튼이 남는 폭을 다 써서 좁으면 오른쪽
+    // 정렬로 줄바꿈됩니다.
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 36),
       child: Row(
         children: [
+          if (leading != null) ...[leading, const SizedBox(width: 12)],
           Expanded(
-            child: Align(alignment: Alignment.centerLeft, child: leading),
-          ),
-          Flexible(
-            flex: 3,
-            child: Wrap(
-              alignment: WrapAlignment.end,
-              spacing: 8,
-              runSpacing: 8,
-              children: actions,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
+                children: actions,
+              ),
             ),
           ),
         ],

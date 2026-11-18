@@ -243,7 +243,7 @@ void main() {
     // 냉동 딸기: 2 cases, one not started yet.
     final header = find.ancestor(
       of: find.text("냉동 딸기"),
-      matching: find.byType(Row),
+      matching: find.byType(InkWell),
     );
     expect(
       find.descendant(of: header.first, matching: find.text("2")),
@@ -255,6 +255,11 @@ void main() {
     );
     expect(tester.widget<GroupWaitingBadge>(badge).count, 1);
     expect(find.byType(GroupWaitingBadge), findsOneWidget);
+    // The badge sits at the header's right edge (12 in), not after the count.
+    expect(
+      tester.getTopRight(badge).dx,
+      closeTo(tester.getTopRight(header.first).dx - 12, 1),
+    );
 
     // Folding: the chevron turns -90°.
     await tester.tap(find.text("냉동 딸기"));
