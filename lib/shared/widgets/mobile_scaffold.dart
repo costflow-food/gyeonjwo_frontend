@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../app_font_sizes.dart';
 import '../workspace_colors.dart';
+import 'app_icons.dart';
 import 'brand_logo.dart';
 import '../../app/app_paths.dart';
 
@@ -147,17 +148,15 @@ class MobileNavigationBar extends ConsumerWidget {
           onDestinationSelected: (selected) => context.go(_paths[selected]),
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.grid_view_outlined),
-              selectedIcon: Icon(Icons.grid_view_rounded),
+              icon: AppIconView(AppIcon.dashboard),
               label: 'Dashboard',
             ),
             NavigationDestination(
-              icon: Icon(Icons.format_list_bulleted),
+              icon: AppIconView(AppIcon.tasks),
               label: 'Tasks',
             ),
             NavigationDestination(
-              icon: Icon(Icons.storefront_outlined),
-              selectedIcon: Icon(Icons.storefront),
+              icon: AppIconView(AppIcon.suppliers),
               label: 'Suppliers',
             ),
             NavigationDestination(

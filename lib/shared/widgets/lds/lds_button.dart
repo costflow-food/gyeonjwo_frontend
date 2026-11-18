@@ -170,12 +170,16 @@ class LdsButton extends StatelessWidget {
 class LdsIconButton extends StatelessWidget {
   const LdsIconButton({
     super.key,
-    required this.icon,
+    this.icon,
+    this.iconWidget,
     required this.tooltip,
     required this.onPressed,
-  });
+  }) : assert((icon == null) != (iconWidget == null), 'icon이나 iconWidget 하나만');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// [icon] 대신 직접 그린 아이콘(20×20).
+  final Widget? iconWidget;
 
   /// 화면 낭독기와 마우스 툴팁에 쓰는 이름.
   final String tooltip;
@@ -216,7 +220,7 @@ class LdsIconButton extends StatelessWidget {
         ),
       ),
       onPressed: onPressed,
-      child: Icon(icon, size: 20, semanticLabel: tooltip),
+      child: iconWidget ?? Icon(icon, size: 20, semanticLabel: tooltip),
     ),
   );
 }

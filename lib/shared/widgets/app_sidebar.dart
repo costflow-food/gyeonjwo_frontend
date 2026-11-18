@@ -7,23 +7,20 @@ import '../../features/auth/presentation/auth_session_view_model.dart';
 import '../../features/auth/presentation/widgets/sign_out_action.dart';
 import '../../features/send_settings/presentation/send_settings_dialog.dart';
 import '../lds_colors.dart';
+import 'app_icons.dart';
 import 'brand_logo.dart';
 import 'lds/lds.dart';
 
 /// 왼쪽 메뉴 (`docs/design-ssot.md` 7.17). 숫자 배지는 두지 않습니다(4.2).
 enum AppMenu {
-  dashboard('Dashboard', Icons.grid_view_outlined, AppPaths.dashboard),
-  tasks('Tasks', Icons.format_list_bulleted, AppPaths.tasks),
-  transactions(
-    'Transactions',
-    Icons.receipt_long_outlined,
-    AppPaths.transactions,
-  ),
-  suppliers('Suppliers', Icons.storefront_outlined, AppPaths.suppliers);
+  dashboard('Dashboard', AppIcon.dashboard, AppPaths.dashboard),
+  tasks('Tasks', AppIcon.tasks, AppPaths.tasks),
+  transactions('Transactions', AppIcon.transactions, AppPaths.transactions),
+  suppliers('Suppliers', AppIcon.suppliers, AppPaths.suppliers);
 
   const AppMenu(this.label, this.icon, this.path);
   final String label;
-  final IconData icon;
+  final AppIcon icon;
   final String path;
 }
 
@@ -100,11 +97,20 @@ class AppSidebar extends StatelessWidget {
             const SizedBox(width: 20),
             _Logo(onTap: () => _go(context, AppPaths.dashboard)),
             const Spacer(),
-            LdsIconButton(
-              icon: overlay ? Icons.close : Icons.keyboard_double_arrow_left,
-              tooltip: overlay ? '메뉴 닫기' : '메뉴 접기',
-              onPressed: onToggle,
-            ),
+            overlay
+                ? LdsIconButton(
+                    icon: Icons.close,
+                    tooltip: '메뉴 닫기',
+                    onPressed: onToggle,
+                  )
+                : LdsIconButton(
+                    iconWidget: const AppIconView(
+                      AppIcon.sidebarCollapse,
+                      size: 20,
+                    ),
+                    tooltip: '메뉴 접기',
+                    onPressed: onToggle,
+                  ),
             const SizedBox(width: 14),
           ],
         ),
@@ -139,7 +145,7 @@ class AppSidebar extends StatelessWidget {
       ),
       const SizedBox(height: 16),
       LdsIconButton(
-        icon: Icons.keyboard_double_arrow_right,
+        iconWidget: const AppIconView(AppIcon.sidebarExpand, size: 20),
         tooltip: '메뉴 펼치기',
         onPressed: onToggle,
       ),
@@ -186,8 +192,7 @@ class _Logo extends StatelessWidget {
   );
 }
 
-/// 아이콘 메뉴 로고 'T' 심볼 30×30 (7.8.2). 전용 심볼 에셋이 없어 주황 둥근
-/// 사각에 흰 'T'로 그립니다(시안과 같은 모양).
+/// 아이콘 메뉴 로고: 로고의 'T' 글자(주황, 높이 30) (7.8.2).
 class _Symbol extends StatelessWidget {
   const _Symbol({required this.onTap});
 
@@ -201,27 +206,19 @@ class _Symbol extends StatelessWidget {
       label: 'Thoner Dashboard',
       excludeSemantics: true,
       child: LdsFocusRing(
-        radius: 8,
+        radius: 4,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Image.asset(
+              'assets/branding/thoner_symbol.png',
+              height: 30,
               color: LdsColors.primary,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'T',
-              textScaler: TextScaler.noScaling,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                height: 1,
-              ),
+              colorBlendMode: BlendMode.srcIn,
+              filterQuality: FilterQuality.medium,
+              excludeFromSemantics: true,
             ),
           ),
         ),
@@ -265,7 +262,7 @@ class _MenuItem extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Row(
                   children: [
-                    Icon(menu.icon, size: 22, color: color),
+                    AppIconView(menu.icon, size: 22, color: color),
                     const SizedBox(width: 14),
                     Text(
                       menu.label,
@@ -318,10 +315,12 @@ class _MenuIcon extends StatelessWidget {
             hoverColor: selected ? Colors.transparent : LdsColors.canvas,
             child: SizedBox.square(
               dimension: 44,
-              child: Icon(
-                menu.icon,
-                size: 22,
-                color: selected ? LdsColors.primary : LdsColors.label,
+              child: Center(
+                child: AppIconView(
+                  menu.icon,
+                  size: 22,
+                  color: selected ? LdsColors.primary : LdsColors.label,
+                ),
               ),
             ),
           ),
