@@ -46,28 +46,16 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
     final viewModel = ref.read(supplierListViewModelProvider.notifier);
     if (isCompactLayout(context)) return _phone(context, value, viewModel);
     return WorkspaceShell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SupplierHeader(
-            onRefresh: viewModel.refresh,
-            onRegister: () => showSupplierRegisterDialog(context),
-          ),
-          const SizedBox(height: 24),
-          AsyncContent<SupplierListState>(
-            value: value,
-            onRetry: viewModel.refresh,
-            builder: (data) => SupplierContent(
-              data: data,
-              search: _search,
-              viewModel: viewModel,
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(4, 20, 4, 32),
-            child: NoteLine("견적과 실거래 가격의 적용일·조건을 함께 확인하십시오."),
-          ),
-        ],
+      scrollable: false,
+      topAction: SupplierHeader(
+        onRefresh: viewModel.refresh,
+        onRegister: () => showSupplierRegisterDialog(context),
+      ),
+      child: AsyncContent<SupplierListState>(
+        value: value,
+        onRetry: viewModel.refresh,
+        builder: (data) =>
+            SupplierContent(data: data, search: _search, viewModel: viewModel),
       ),
     );
   }
@@ -104,7 +92,6 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
             children: [
               SupplierListStatus(data: data, onRetry: viewModel.refresh),
               const SizedBox(height: 8),
-              // 카드마다 테두리가 있어 바깥 틀은 두지 않습니다.
               SupplierListPanel(
                 data: data,
                 showSelection: false,

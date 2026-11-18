@@ -205,7 +205,7 @@ void main() {
     tester,
   ) async {
     await _pump(tester, at: "/transactions");
-    final title = find.text("Transactions").last;
+    final title = find.text("Invoices").last;
     final bar = find
         .ancestor(of: title, matching: find.byType(Container))
         .first;

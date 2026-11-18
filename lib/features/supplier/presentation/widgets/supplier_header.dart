@@ -1,10 +1,9 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 
-/// Suppliers 위쪽 설명 줄: 화면 제목은 상단 바에 있고, 오른쪽에 새로고침 ·
-/// 거래처 등록(7.14b, 외곽선 + 아이콘).
+/// Suppliers 상단 바 단추(검색 왼쪽): 새로고침 · 거래처 등록 (7.14b, 외곽선 +
+/// 아이콘). 화면 제목은 상단 바에 있어 위쪽 설명 줄은 두지 않습니다.
 class SupplierHeader extends StatelessWidget {
   const SupplierHeader({
     super.key,
@@ -16,33 +15,21 @@ class SupplierHeader extends StatelessWidget {
   final VoidCallback onRegister;
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    alignment: WrapAlignment.spaceBetween,
-    crossAxisAlignment: WrapCrossAlignment.center,
-    spacing: 16,
-    runSpacing: 12,
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
     children: [
-      const Text(
-        "업체·연락처·취급 품목·인증·기준자료 출처를 확인합니다.",
-        style: TextStyle(fontSize: 15, color: LdsColors.mutedStrong),
+      LdsButton(
+        label: "새로고침",
+        icon: Icons.refresh,
+        variant: LdsButtonVariant.outlinedNeutral,
+        onPressed: onRefresh,
       ),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          LdsButton(
-            label: "새로고침",
-            icon: Icons.refresh,
-            variant: LdsButtonVariant.outlinedNeutral,
-            onPressed: onRefresh,
-          ),
-          LdsButton(
-            label: "거래처 등록",
-            icon: Icons.add,
-            variant: LdsButtonVariant.outlined,
-            onPressed: onRegister,
-          ),
-        ],
+      const SizedBox(width: 8),
+      LdsButton(
+        label: "거래처 등록",
+        icon: Icons.add,
+        variant: LdsButtonVariant.outlined,
+        onPressed: onRegister,
       ),
     ],
   );

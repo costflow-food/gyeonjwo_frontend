@@ -158,7 +158,7 @@ class MobileNavigationBar extends ConsumerWidget {
             ),
             NavigationDestination(
               icon: AppIconView(AppIcon.transactions),
-              label: 'Transactions',
+              label: 'Invoices',
             ),
             NavigationDestination(
               icon: AppIconView(AppIcon.suppliers),

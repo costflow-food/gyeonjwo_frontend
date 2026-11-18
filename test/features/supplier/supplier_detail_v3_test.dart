@@ -174,52 +174,56 @@ void main() {
     expect(find.bySemanticsLabel("기준자료 기존 거래 계약서, 원문 보기"), findsOneWidget);
   });
 
-  testWidgets("a selected supplier card has an orange 2px border", (
-    tester,
-  ) async {
-    const summary = SupplierSummary(
-      id: "s1",
-      name: "한라푸드",
-      sourceType: SupplierSourceType.registered,
-      itemNames: ["냉동 딸기", "냉동 블루베리", "깐마늘", "대파"],
-      location: "경기 이천시",
-    );
-    await _pump(
-      tester,
-      SupplierListRow(supplier: summary, selected: true, onTap: () {}),
-      width: 400,
-    );
-    final shape =
+  testWidgets(
+    "a supplier is a compact two-line row; selected is #FFF4EC + 3px",
+    (tester) async {
+      const summary = SupplierSummary(
+        id: "s1",
+        name: "한라푸드",
+        sourceType: SupplierSourceType.registered,
+        itemNames: ["냉동 딸기", "냉동 블루베리", "깐마늘", "대파"],
+        location: "경기 이천시",
+        contactEmail: "sales@a-supplier.example.com",
+      );
+      await _pump(
+        tester,
+        SupplierListRow(supplier: summary, selected: true, onTap: () {}),
+        width: 400,
+      );
+      final row = find.byType(SupplierListRow);
+      expect(
         tester
-                .widget<Material>(
-                  find
-                      .descendant(
-                        of: find.byType(SupplierListRow),
-                        matching: find.byType(Material),
-                      )
-                      .first,
-                )
-                .shape!
-            as RoundedRectangleBorder;
-    expect(shape.side.color, LdsColors.primary);
-    expect(shape.side.width, 2);
-    // Three chips and the rest counted; a chip is as wide as its name.
-    expect(find.text("+1"), findsOneWidget);
-    expect(
-      tester.getSize(find.text("깐마늘")).width + 20 + 2,
-      closeTo(
-        tester
-            .getSize(
-              find
-                  .ancestor(
-                    of: find.text("깐마늘"),
-                    matching: find.byType(Container),
-                  )
-                  .first,
+            .widget<Material>(
+              find.descendant(of: row, matching: find.byType(Material)).first,
             )
-            .width,
-        1,
-      ),
-    );
-  });
+            .color,
+        LdsColors.selectedRow,
+      );
+      final bar = find.descendant(
+        of: row,
+        matching: find.byWidgetPredicate(
+          (widget) => widget is ColoredBox && widget.color == LdsColors.primary,
+        ),
+      );
+      expect(tester.getSize(bar).width, 3);
+      // Line 1: name 15/700, items 13 #6B7583 in one line, the source label.
+      final name = tester.widget<Text>(find.text("한라푸드"));
+      expect(name.style!.fontSize, 15);
+      expect(name.style!.fontWeight, FontWeight.w700);
+      final items = find.text("냉동 딸기 · 냉동 블루베리 · 깐마늘 · 대파");
+      expect(tester.widget<Text>(items).style!.color, LdsColors.muted);
+      expect(tester.widget<Text>(items).maxLines, 1);
+      expect(tester.widget<Text>(items).overflow, TextOverflow.ellipsis);
+      expect(find.text("직접 등록"), findsOneWidget);
+      // Line 2: region · email.
+      final where = find.text("경기 이천시 · sales@a-supplier.example.com");
+      expect(tester.widget<Text>(where).style!.fontSize, 13);
+      expect(
+        tester.getTopLeft(where).dy,
+        greaterThan(tester.getBottomLeft(find.text("한라푸드")).dy - 1),
+      );
+      // No chips any more.
+      expect(find.text("+1"), findsNothing);
+    },
+  );
 }
