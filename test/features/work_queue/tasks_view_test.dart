@@ -182,6 +182,15 @@ void main() {
     tester,
   ) async {
     final router = await _pump(tester);
+    final bar = find.byType(LdsTabBar<TaskGroup?>);
+    final tabs = find.descendant(of: bar, matching: find.byType(InkWell));
+    expect(tabs, findsNWidgets(4));
+    for (var index = 0; index < 4; index++) {
+      expect(
+        tester.getSize(tabs.at(index)).width,
+        closeTo(tester.getSize(bar).width / 4, .01),
+      );
+    }
     expect(_badge(tester, "전체"), LdsBadgeTone.dark);
     expect(_badge(tester, "확인 필요"), LdsBadgeTone.primary);
     expect(_badge(tester, "진행 중"), LdsBadgeTone.neutral);
