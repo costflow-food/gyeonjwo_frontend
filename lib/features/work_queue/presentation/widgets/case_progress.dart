@@ -11,10 +11,10 @@ const caseStepLabels = caseStepNames;
 /// 단계 바에만 쓰는 시안 색(토큰에 없음).
 abstract final class _StepColors {
   /// 끝난 단계 원·선.
-  static const done = Color(0xFFFF8033);
+  static const done = LdsColors.primary;
 
   /// 남은 단계 아이콘.
-  static const todoIcon = Color(0xFFFFA066);
+  static const todoIcon = LdsColors.outline;
 
   /// 오류 원·이름.
   static const error = Color(0xFFE12337);
@@ -24,16 +24,18 @@ abstract final class _StepColors {
 /// (시안의 Remix 아이콘과 비슷한 Material 아이콘).
 const caseStepIcons = [
   Icons.inbox_outlined,
-  Icons.article_outlined,
-  Icons.search,
-  Icons.forward_to_inbox_outlined,
-  Icons.task_outlined,
+  Icons.find_in_page_outlined,
+  Icons.storefront_outlined,
+  Icons.swap_horiz,
+  Icons.balance_outlined,
 ];
 
 /// Tasks 상세 '진행 상황'의 가로 단계 바 (Tasks 시안, Tasks 전용).
 ///
-/// 원 28: 끝난 단계 `#FF8033` + 체크, 지금 단계 `#FF6000` 32 + 연한 테두리,
-/// 남은 단계 흰 원 + `#FFBF99` 테두리·아이콘. 오류면 지금 단계를 빨간 원 +
+/// 원 28: 끝난 단계 `#FF6000` + 체크, 지금 단계 `#FF6000` 32 + 연한 테두리,
+/// 남은 단계 흰 원 + 회색 `#D1D6DC` 테두리 · `#8A95A0` 아이콘. 아이콘: 접수 받은편지함 ·
+/// 정보 추출 문서 찾기 · 후보 찾기 가게 · 견적 요청·회신 주고받기 · 검토 카드 저울.
+/// 오류면 지금 단계를 빨간 원 +
 /// 오류 아이콘으로 그립니다. 이름 아래에는 다른 글을 두지 않습니다. 단계를
 /// 모르면(모르는 단계 코드) 모두 남은 단계로 그립니다.
 class CaseStepBar extends StatelessWidget {
@@ -131,7 +133,7 @@ class CaseStepBar extends StatelessWidget {
       ),
       _StepState.todo => (
         Colors.white,
-        LdsColors.primaryLight,
+        LdsColors.borderStrong,
         null,
         _StepColors.todoIcon,
       ),
@@ -204,7 +206,7 @@ class CaseStepBar extends StatelessWidget {
 
 enum _StepState { done, now, error, todo }
 
-/// 단계 사이 선: 끝난 쪽은 `#FF8033` 실선, 남은 쪽은 `#FFBF99` 점선.
+/// 단계 사이 선: 끝난 쪽은 `#FF6000` 실선, 남은 쪽은 `#D1D6DC` 점선.
 class _LinesPainter extends CustomPainter {
   const _LinesPainter({
     required this.centers,
@@ -233,7 +235,7 @@ class _LinesPainter extends CustomPainter {
         paint.color = _StepColors.done;
         canvas.drawLine(Offset(from, y), Offset(to, y), paint);
       } else {
-        paint.color = LdsColors.primaryLight;
+        paint.color = LdsColors.borderStrong;
         for (var x = from; x < to; x += 8) {
           canvas.drawLine(
             Offset(x, y),
