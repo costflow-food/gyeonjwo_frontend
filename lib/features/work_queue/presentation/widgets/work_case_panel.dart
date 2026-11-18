@@ -119,7 +119,7 @@ class _WorkCasePanelState extends ConsumerState<WorkCasePanel> {
           ),
         ),
         content: const Text(
-          "수용하면 이 업무와 연결된 메일이 견줘에서 삭제되고 되돌릴 수 없습니다.\n"
+          "수용하면 이 업무와 연결된 메일이 Thoner에서 삭제되고 되돌릴 수 없습니다.\n"
           "견적 수락 메일이나 발주는 보내지 않습니다.",
           style: TextStyle(fontSize: AppFontSizes.body, height: 1.7),
         ),
