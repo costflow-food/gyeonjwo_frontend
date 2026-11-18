@@ -220,12 +220,13 @@ void main() {
 
   testWidgets("a trend item switches the chart", (tester) async {
     await _pump(tester);
-    expect(find.text("12월 27건"), findsOneWidget); // 접수 first
+    // 접수 first; the legend has no "12월 N건" total.
+    expect(find.text("견적 요청"), findsOneWidget); // tab only
+    expect(find.textContaining("12월 "), findsNothing);
     final tab = find.text("견적 요청");
     await tester.ensureVisible(tab);
     await tester.tap(tab);
     await tester.pumpAndSettle();
-    expect(find.text("12월 20건"), findsOneWidget);
     expect(find.text("견적 요청"), findsNWidgets(2)); // tab + legend
   });
 
