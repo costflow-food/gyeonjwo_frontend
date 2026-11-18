@@ -427,7 +427,7 @@ void main() {
     expect(find.text("확정"), findsNothing); // 머리에 확정 라벨 없음
     expect(find.text("거래 정보"), findsOneWidget);
     expect(find.text("직전 2026.10.10 · 한라푸드 · 5,000원/kg"), findsOneWidget);
-    expect(find.text("Suppliers에서 바른채소 보기"), findsOneWidget);
+    expect(find.text("바른채소 거래처 정보 보기"), findsOneWidget);
     expect(find.text("냉동 딸기 확정 단가 흐름"), findsOneWidget);
     // 넓은 화면은 늘 고른 거래를 보여 주므로 닫기 단추가 없습니다.
     expect(find.byTooltip("상세 닫기"), findsNothing);
@@ -455,7 +455,7 @@ void main() {
     expect(find.text("냉동 딸기 · 한라푸드"), findsOneWidget);
 
     // Suppliers 링크.
-    await tester.tap(find.text("Suppliers에서 한라푸드 보기"));
+    await tester.tap(find.text("한라푸드 거래처 정보 보기"));
     await tester.pumpAndSettle();
     expect(find.text("page /suppliers"), findsOneWidget);
   });
