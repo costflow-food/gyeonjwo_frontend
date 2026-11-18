@@ -383,9 +383,13 @@ class LdsCompareOption {
     this.recommended = false,
     this.marker,
     this.caption,
+    this.captionStrong = false,
   });
 
   final String title;
+
+  /// 설명 칩을 먹색 바탕 흰 글자로(예: '기존 거래처'). 아니면 연회색 칩.
+  final bool captionStrong;
 
   /// 이름 앞 업체 색 사각(10). 같은 업체는 화면 안에서 같은 색입니다(3장).
   final Color? marker;
@@ -504,13 +508,29 @@ class LdsCompareTable extends StatelessWidget {
                   ],
                 ),
                 if (option.caption != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    option.caption!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: LdsColors.mutedStrong,
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: option.captionStrong
+                          ? LdsColors.ink
+                          : LdsColors.lineSoft,
+                      borderRadius: BorderRadius.circular(LdsRadius.button),
+                    ),
+                    child: Text(
+                      option.caption!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        color: option.captionStrong
+                            ? Colors.white
+                            : LdsColors.title,
+                      ),
                     ),
                   ),
                 ],

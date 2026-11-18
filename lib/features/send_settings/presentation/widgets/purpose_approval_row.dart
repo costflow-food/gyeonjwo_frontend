@@ -8,9 +8,10 @@ import "../../domain/send_settings.dart";
 ///
 /// [value] is the edited approval (`approval_required`); null falls back to the
 /// stored effective value, and an unset effective value uses the team default:
-/// auto-send off (approval required).
+/// auto-send on (no approval needed), so mail can go out without a separate
+/// approval step.
 bool autoSendShown(PurposeApproval approval, bool? value) =>
-    !(value ?? approval.effectiveValue ?? true);
+    !(value ?? approval.effectiveValue ?? false);
 
 /// Auto-send on/off for one purpose. ON maps to `approval_required: false`,
 /// OFF to `approval_required: true`.

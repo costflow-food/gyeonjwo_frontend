@@ -121,11 +121,11 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     if (_saving || version == null || mailboxRef == null || loaded == null) {
       return;
     }
-    // The mailbox default stores the team default (auto-send off) for any
+    // The mailbox default stores the team default (auto-send on) for any
     // purpose still unset; a case keeps null so it inherits the mailbox.
     final approval = {
       for (final entry in _approval.entries)
-        entry.key: widget.caseId == null ? entry.value ?? true : entry.value,
+        entry.key: widget.caseId == null ? entry.value ?? false : entry.value,
     };
     final update = SendSettingsUpdate(
       mailboxRef: mailboxRef,
@@ -312,7 +312,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           settings.isCaseScope
               ? "이 업무에만 적용됩니다. 바꾸지 않은 항목은 메일함 기본값을 따릅니다."
               : "켜면 후보 선택에서 고른 업체의 등록된 주소로 자동 발송하고, 끄면 담당자가 승인한 초안만 발송합니다. "
-                    "기본값은 꺼짐이며, 바꾼 설정은 앞으로 만드는 초안부터 적용됩니다.",
+                    "기본값은 켜짐이며, 바꾼 설정은 앞으로 만드는 초안부터 적용됩니다.",
         ),
         const SizedBox(height: 14),
         for (final approval in settings.approvals)
