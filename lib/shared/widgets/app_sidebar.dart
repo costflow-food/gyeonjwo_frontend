@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_paths.dart';
+import '../../features/auth/presentation/account_settings_dialog.dart';
 import '../../features/auth/presentation/auth_session_view_model.dart';
 import '../../features/auth/presentation/widgets/sign_out_action.dart';
 import '../../features/send_settings/presentation/send_settings_dialog.dart';
@@ -474,7 +475,7 @@ class _AccountCard extends ConsumerWidget {
     onNavigate?.call();
     switch (action) {
       case _AccountAction.settings:
-        context.go(AppPaths.account);
+        showAccountSettingsDialog(context);
       case _AccountAction.sendSettings:
         showSendSettingsDialog(context);
       case _AccountAction.logs:
