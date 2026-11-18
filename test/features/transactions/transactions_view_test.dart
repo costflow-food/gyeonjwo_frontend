@@ -599,7 +599,7 @@ void main() {
         for (final destination in bar.destinations)
           (destination as NavigationDestination).label,
       ],
-      ["Dashboard", "Tasks", "Transactions", "Suppliers", "계정 설정"],
+      ["Dashboard", "Tasks", "Invoices", "Suppliers", "계정 설정"],
     );
     expect(bar.selectedIndex, 2);
     expect(tester.takeException(), isNull);

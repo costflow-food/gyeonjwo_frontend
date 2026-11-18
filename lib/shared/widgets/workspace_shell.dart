@@ -36,7 +36,7 @@ class AppSection {
     }
     if (under(AppPaths.transactions)) {
       return const AppSection(
-        'Transactions',
+        'Invoices',
         AppMenu.transactions,
         startsWide: false,
       );

@@ -309,7 +309,7 @@ class _Summary extends StatelessWidget {
     final radius = BorderRadius.circular(LdsRadius.table);
     return Semantics(
       button: true,
-      label: "$label $value, Transactions에서 거래 내역 보기",
+      label: "$label $value, Invoices에서 거래 내역 보기",
       excludeSemantics: true,
       onTap: tap,
       child: LdsFocusRing(
