@@ -16,7 +16,7 @@ import 'lds/lds.dart';
 enum AppMenu {
   dashboard('Dashboard', AppIcon.dashboard, AppPaths.dashboard),
   tasks('Tasks', AppIcon.tasks, AppPaths.tasks),
-  transactions('Transactions', AppIcon.transactions, AppPaths.transactions),
+  transactions('Invoices', AppIcon.transactions, AppPaths.transactions),
   suppliers('Suppliers', AppIcon.suppliers, AppPaths.suppliers);
 
   const AppMenu(this.label, this.icon, this.path);

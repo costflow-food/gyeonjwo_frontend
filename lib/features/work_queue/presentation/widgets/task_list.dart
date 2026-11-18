@@ -573,31 +573,41 @@ class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
                 ),
                 // 간격 6 + 여백 4: 품목 이름이 행 시작선(40)에 맞습니다.
                 const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: LdsColors.title,
-                    ),
+                // 이름 + 건수가 남는 폭을 다 써서, 주황 원은 머리 오른쪽 끝에
+                // 붙습니다(이름이 길면 이름만 말줄임).
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: LdsColors.title,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // 총 건수: 배지가 아니라 글자입니다(4.2).
+                      Text(
+                        "$count",
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: LdsColors.outline,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                // 총 건수: 배지가 아니라 글자입니다(4.2).
-                Text(
-                  "$count",
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: LdsColors.outline,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
-                ),
-                const Spacer(),
                 // 검토를 시작하지 않은 업무 수: 오른쪽 주황 원.
-                if (waiting > 0) GroupWaitingBadge(waiting),
+                if (waiting > 0) ...[
+                  const SizedBox(width: 8),
+                  GroupWaitingBadge(waiting),
+                ],
                 const SizedBox(width: 12),
               ],
             ),

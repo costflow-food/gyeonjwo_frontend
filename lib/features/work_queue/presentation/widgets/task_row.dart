@@ -2,7 +2,9 @@ import "package:flutter/material.dart";
 
 import "../../../../shared/formatters.dart";
 import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/app_icons.dart";
 import "../../../../shared/widgets/lds/lds.dart";
+import "../../domain/case_stage.dart";
 import "../../domain/task_group.dart";
 import "../../domain/task_row_text.dart";
 import "../../domain/work_case.dart";
@@ -17,11 +19,24 @@ LdsTagTone taskLabelTone(TaskLabel label) => switch (label) {
   TaskLabel.done => LdsTagTone.success,
 };
 
-/// Tasks 업무 행 = 한 줄형 (`docs/design-ssot.md` 7.13).
+/// 업무 행의 상태 라벨(채운 색): 진행 중 연주황 + 먹색 글자 · 보류 주황 +
+/// 흰 글자 · 오류 빨강 + 흰 글자 · 완료 아주 연한 주황 + 진한 주황 글자 ·
+/// 대기 연한 주황 + 주황 글자. 상세 머리의 라벨([taskLabelTone])과 다릅니다.
+(Color, Color) taskRowLabelColors(TaskLabel label) => switch (label) {
+  TaskLabel.running => (const Color(0xFFFFA066), LdsColors.ink),
+  TaskLabel.hold => (LdsColors.primary, Colors.white),
+  TaskLabel.error => (const Color(0xFFE12337), Colors.white),
+  TaskLabel.done => (const Color(0xFFFFDFCC), LdsColors.primaryText),
+  TaskLabel.waiting => (LdsColors.primarySoft, LdsColors.primaryText),
+};
+
+/// Tasks 업무 행 = 한 줄형 (`docs/design-ssot.md` 7.13, 2026-11-18 시안).
 ///
-/// 높이 48, 시작선 40, 오른쪽 12, 칸 사이 6.
-/// `[거래처 | 요청 유형 · 구분 | 상태 라벨 56 | 진행도 28]`.
-/// 보낸 사람·받은 시각은 화면에 보이지 않게 두고 툴팁·화면 낭독기로 알립니다.
+/// 높이 48, 시작선 40, 오른쪽 12.
+/// `[가게 아이콘 16 · 거래처 | 지금 단계 이름 | 채운 상태 라벨]`.
+/// 고른 줄 = 바탕 `#E8EBEF` + 왼쪽 `#4E5968` 3px, 거래처 이름만 굵게.
+/// 요청 유형·보낸 사람·받은 시각은 화면에 보이지 않게 두고 툴팁·화면
+/// 낭독기로 알립니다.
 class TaskRow extends StatelessWidget {
   const TaskRow(
     this.workCase, {
@@ -35,6 +50,12 @@ class TaskRow extends StatelessWidget {
   /// 머리칸 왼쪽 12 + 화살표 18 + 간격 6 + 여백 4.
   static const start = 40.0;
 
+  /// 거래처 칸(아이콘 포함) 폭: 단계 이름이 줄마다 같은 선에서 시작합니다.
+  static const partyWidth = 128.0;
+
+  static const selectedColor = Color(0xFFE8EBEF);
+  static const selectedBar = LdsColors.label;
+
   final WorkCase workCase;
   final bool selected;
   final VoidCallback onTap;
@@ -45,24 +66,26 @@ class TaskRow extends StatelessWidget {
     final detail = taskDetailOf(workCase);
     final label = taskLabelOf(workCase);
     final progress = taskProgressOf(workCase);
+    final stepName = progress == null ? "" : caseStepNames[progress - 1];
     final received = formatSeoulDateTime(workCase.receivedAt);
     final from = workCase.senderName ?? workCase.sender;
+    final (labelBg, labelFg) = taskRowLabelColors(label);
     return Semantics(
       selected: selected,
       button: true,
       label: [
         party,
-        detail,
+        if (stepName.isNotEmpty) stepName,
         label.text,
-        if (progress != null) "5단계 중 $progress단계",
+        detail,
         "$from, $received 수신",
       ].join(", "),
       excludeSemantics: true,
       child: Tooltip(
-        message: "$from · $received 수신",
+        message: "$detail · $from · $received 수신",
         waitDuration: const Duration(milliseconds: 600),
         child: Material(
-          color: selected ? LdsColors.selectedRow : Colors.white,
+          color: selected ? selectedColor : Colors.white,
           child: InkWell(
             onTap: onTap,
             hoverColor: LdsColors.canvas,
@@ -76,59 +99,70 @@ class TaskRow extends StatelessWidget {
                       top: 0,
                       bottom: 0,
                       width: 3,
-                      child: ColoredBox(color: LdsColors.primary),
+                      child: ColoredBox(color: selectedBar),
                     ),
                   Padding(
                     padding: const EdgeInsets.only(left: start, right: 12),
                     child: Row(
                       children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 88),
-                          child: Text(
-                            party,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: LdsColors.ink,
-                            ),
+                        SizedBox(
+                          width: partyWidth,
+                          child: Row(
+                            children: [
+                              const AppIconView(
+                                AppIcon.suppliers,
+                                size: 16,
+                                color: LdsColors.muted,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  party,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w400,
+                                    color: LdsColors.ink,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            detail,
+                            stepName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 13,
-                              color: LdsColors.muted,
+                              color: LdsColors.label,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        // 칸 폭 56. '진행 중'처럼 긴 라벨은 라벨 여백(8)을
-                        // 지키느라 조금 넓어집니다.
+                        const SizedBox(width: 8),
                         Container(
                           constraints: const BoxConstraints(minWidth: 56),
+                          height: 24,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           alignment: Alignment.center,
-                          child: LdsTag(label.text, tone: taskLabelTone(label)),
-                        ),
-                        const SizedBox(width: 6),
-                        SizedBox(
-                          width: 28,
+                          decoration: BoxDecoration(
+                            color: labelBg,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Text(
-                            taskProgressText(progress),
-                            textAlign: TextAlign.right,
+                            label.text,
                             maxLines: 1,
                             softWrap: false,
-                            overflow: TextOverflow.visible,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: LdsColors.title,
-                              fontFeatures: [FontFeature.tabularFigures()],
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                              color: labelFg,
                             ),
                           ),
                         ),

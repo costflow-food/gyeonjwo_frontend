@@ -67,10 +67,9 @@ class TransactionsViewModel extends Notifier<TransactionsFilter> {
     fromSuppliers: false,
   );
 
-  /// 새 열은 큰 값부터, 같은 열을 다시 누르면 반대로.
-  void sortBy(TransactionSort sort) => state = state.sort == sort
-      ? state.copyWith(descending: !state.descending)
-      : state.copyWith(sort: sort, descending: true);
+  /// 목록 위 정렬 선택('최신순 ▾'). 같은 값은 날짜 최신순(목록 규칙).
+  void setSort(TransactionSort sort, {required bool descending}) =>
+      state = state.copyWith(sort: sort, descending: descending);
 
   void select(String id) => state = state.copyWith(selectedId: () => id);
 

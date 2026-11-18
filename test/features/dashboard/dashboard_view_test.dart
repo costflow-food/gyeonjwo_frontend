@@ -164,14 +164,11 @@ void main() {
     final side = (confirm.shape! as RoundedRectangleBorder).side;
     expect(side.color, LdsColors.primary);
     expect(side.width, 1.5);
-    expect(
-      find.descendant(of: _card("확인 필요"), matching: find.text("지금 할 일")),
-      findsOneWidget,
-    );
     expect(material("진행 중").color, Colors.white);
     // 미분류: gray with a dashed border, not a status color.
     expect(material("미분류").color, LdsColors.lineSoft);
-    expect(find.text("지금 할 일"), findsOneWidget);
+    // No '지금 할 일' label on the card (emphasis is the border and fill).
+    expect(find.text("지금 할 일"), findsNothing);
   });
 
   testWidgets("a status card opens Tasks on its tab", (tester) async {

@@ -4,8 +4,9 @@ import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/transaction_listing.dart";
 
-/// 필터 바 `[품목 ▾] [거래처 ▾]` + 고른 값 태그 줄 + '모두 지우기'
-/// (`docs/design-ssot.md` 7.12). 확정 방식은 DB에 없어 두지 않습니다.
+/// 필터 바 `[품목 ▾] [거래처 ▾]` + 오른쪽 [trailing](정렬 선택) + 고른 값
+/// 태그 줄 + '모두 지우기' (`docs/design-ssot.md` 7.12). 확정 방식은 DB에
+/// 없어 두지 않습니다.
 class TransactionFilterBar extends StatelessWidget {
   const TransactionFilterBar({
     super.key,
@@ -14,6 +15,7 @@ class TransactionFilterBar extends StatelessWidget {
     required this.onItems,
     required this.onSuppliers,
     required this.onClearAll,
+    this.trailing,
   });
 
   final TransactionListing listing;
@@ -21,6 +23,9 @@ class TransactionFilterBar extends StatelessWidget {
   final ValueChanged<Set<String>> onItems;
   final ValueChanged<Set<String>> onSuppliers;
   final VoidCallback onClearAll;
+
+  /// 필터 줄 오른쪽 끝(정렬 선택).
+  final Widget? trailing;
 
   static const _caption = "최근 거래순";
 
@@ -32,29 +37,43 @@ class TransactionFilterBar extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Semantics(
-        container: true,
-        label: "거래 거르기",
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          children: [
-            LdsFilterButton(
-              label: "품목",
-              caption: _caption,
-              options: _options(listing.itemChoices),
-              selected: filter.items,
-              onChanged: onItems,
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Semantics(
+                container: true,
+                label: "거래 거르기",
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    LdsFilterButton(
+                      label: "품목",
+                      caption: _caption,
+                      options: _options(listing.itemChoices),
+                      selected: filter.items,
+                      onChanged: onItems,
+                    ),
+                    LdsFilterButton(
+                      label: "거래처",
+                      caption: _caption,
+                      options: _options(listing.supplierChoices),
+                      selected: filter.suppliers,
+                      onChanged: onSuppliers,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            LdsFilterButton(
-              label: "거래처",
-              caption: _caption,
-              options: _options(listing.supplierChoices),
-              selected: filter.suppliers,
-              onChanged: onSuppliers,
-            ),
+          ),
+          if (trailing case final trailing?) ...[
+            const SizedBox(width: 8),
+            trailing,
           ],
-        ),
+        ],
       ),
       if (filter.hasFilters) ...[
         const SizedBox(height: 12),

@@ -1,12 +1,13 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart" hide testWidgets;
+import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_row_text.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_row.dart";
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
-import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
+import "package:gyeonjwo_frontend/shared/widgets/app_icons.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
 
 import "../../helpers/platform_override.dart";
@@ -103,31 +104,31 @@ void main() {
     });
   });
 
-  testWidgets("one 48px line: party, detail, label, n/5 from 40", (
+  testWidgets("one 48px line: store icon + party, step name, filled label", (
     tester,
   ) async {
     await _pump(tester, TaskRow(_case(), selected: false, onTap: () {}));
     expect(tester.getSize(find.byType(TaskRow)).height, TaskRow.height);
     expect(find.text("한라푸드"), findsOneWidget);
-    expect(find.text("거래처 회신 대기"), findsOneWidget);
+    // The step name instead of the request detail and n/5.
+    expect(find.text("견적 요청·회신"), findsOneWidget);
+    expect(find.text("거래처 회신 대기"), findsNothing);
+    expect(find.text("4/5"), findsNothing);
     expect(find.text("진행 중"), findsOneWidget);
-    expect(find.text("4/5"), findsOneWidget);
-    final progress = tester.widget<Text>(find.text("4/5"));
-    expect(progress.style!.fontWeight, FontWeight.w600);
-    expect(progress.style!.color, LdsColors.title);
-    // The row's content starts on the item name's line.
+    // The store icon starts on the item name's line.
     expect(
-      tester.getTopLeft(find.text("한라푸드")).dx -
+      tester.getTopLeft(find.byType(AppIconView)).dx -
           tester.getTopLeft(find.byType(TaskRow)).dx,
       TaskRow.start,
     );
     final party = tester.widget<Text>(find.text("한라푸드"));
     expect(party.style!.fontSize, 15);
-    expect(party.style!.fontWeight, FontWeight.w700);
-    expect(
-      tester.widget<LdsTag>(find.byType(LdsTag)).tone,
-      LdsTagTone.progressing,
-    );
+    expect(party.style!.fontWeight, FontWeight.w400);
+    // 진행 중 = light orange fill, ink text.
+    final label = tester.widget<Text>(find.text("진행 중"));
+    expect(label.style!.color, LdsColors.ink);
+    expect(taskRowLabelColors(TaskLabel.running).$1, const Color(0xFFFFA066));
+    expect(taskRowLabelColors(TaskLabel.hold), (LdsColors.primary, Colors.white));
     // Sender and time are kept for the screen reader.
     expect(
       tester.getSemantics(find.byType(TaskRow)).label,
@@ -135,7 +136,7 @@ void main() {
     );
   });
 
-  testWidgets("a selected row is tinted with an orange bar on the left", (
+  testWidgets("a selected row is gray with a dark bar and a bold name", (
     tester,
   ) async {
     await _pump(tester, TaskRow(_case(), selected: true, onTap: () {}));
@@ -144,11 +145,15 @@ void main() {
           .descendant(of: find.byType(TaskRow), matching: find.byType(Material))
           .first,
     );
-    expect(material.color, LdsColors.selectedRow);
+    expect(material.color, TaskRow.selectedColor);
     final bar = find.byWidgetPredicate(
-      (widget) => widget is ColoredBox && widget.color == LdsColors.primary,
+      (widget) => widget is ColoredBox && widget.color == TaskRow.selectedBar,
     );
     expect(tester.getSize(bar), const Size(3, TaskRow.height));
+    expect(
+      tester.widget<Text>(find.text("한라푸드")).style!.fontWeight,
+      FontWeight.w700,
+    );
   });
 
   for (final scale in [1.0, 1.3]) {
