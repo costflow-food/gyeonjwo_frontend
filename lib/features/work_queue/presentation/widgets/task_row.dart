@@ -44,20 +44,23 @@ class TaskStatusLabel extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 64),
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
-        label.text,
-        maxLines: 1,
-        softWrap: false,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          height: 1.2,
-          color: foreground,
+      // 글자 길이만큼(최소 64). alignment를 쓰면 Wrap 안에서 폭 전체로 늘어납니다.
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label.text,
+          maxLines: 1,
+          softWrap: false,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            height: 1.2,
+            color: foreground,
+          ),
         ),
       ),
     );
@@ -125,6 +128,8 @@ class TaskRow extends StatelessWidget {
             child: SizedBox(
               height: height,
               child: Stack(
+                // 줄 내용은 세로 가운데(기본값 위쪽 붙음을 막음).
+                alignment: AlignmentDirectional.centerStart,
                 children: [
                   if (selected)
                     const Positioned(

@@ -239,11 +239,11 @@ void main() {
     }
   });
 
-  testWidgets("the top bar has the period button (this week)", (tester) async {
+  testWidgets("the top bar has the date view button, not a range picker", (
+    tester,
+  ) async {
     await _pump(tester);
-    final button = tester.widget<LdsDateRangeButton>(
-      find.byType(LdsDateRangeButton),
-    );
-    expect(button.value, LdsQuickRange.thisWeek.rangeFor(DateTime.now()));
+    expect(find.byType(LdsDateViewButton), findsOneWidget);
+    expect(find.byType(LdsDateRangeButton), findsNothing);
   });
 }

@@ -230,4 +230,20 @@ void main() {
     expect(find.text("품목 미등록"), findsOneWidget);
     expect(find.text("위치 미확인"), findsNothing);
   });
+
+  testWidgets("the two price boxes split the row evenly", (tester) async {
+    await _pump(tester, SupplierDetailContent(supplier: _supplier()));
+    Size boxOf(String label) => tester.getSize(
+      find
+          .ancestor(
+            of: find.text(label).first,
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    final quote = boxOf("최근 참고 견적");
+    final purchase = boxOf("마지막 실거래");
+    expect(purchase.width, closeTo(quote.width, 1));
+    expect(purchase.height, closeTo(quote.height, 1));
+  });
 }
