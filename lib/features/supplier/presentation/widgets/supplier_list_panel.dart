@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/list_detail_layout.dart";
 import "../../domain/supplier.dart";
 import "../../domain/supplier_list_state.dart";
 import "supplier_list_row.dart";
@@ -46,10 +47,11 @@ class SupplierListPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final (index, supplier) in data.sortedSuppliers.indexed) ...[
-          if (index > 0) const SizedBox(height: 8),
-          _row(supplier),
-        ],
+        ListGroupBox(
+          children: [
+            for (final supplier in data.sortedSuppliers) _row(supplier),
+          ],
+        ),
         if (data.hasMore)
           Padding(
             padding: const EdgeInsets.only(top: 12),

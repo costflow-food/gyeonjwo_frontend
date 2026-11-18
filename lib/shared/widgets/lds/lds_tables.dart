@@ -398,7 +398,9 @@ class LdsCompareOption {
 }
 
 class LdsCompareRow {
-  const LdsCompareRow(this.label, this.values);
+  const LdsCompareRow(this.label, this.values, {this.sectionStart = false});
+
+  final bool sectionStart;
 
   final String label;
   final List<Widget> values;
@@ -515,7 +517,18 @@ class LdsCompareTable extends StatelessWidget {
               ],
             ),
         ], head: true),
-        for (final row in rows) line(row.label, row.values),
+        for (final row in rows)
+          Column(
+            children: [
+              if (row.sectionStart)
+                const Divider(
+                  height: 2,
+                  thickness: 2,
+                  color: LdsColors.borderStrong,
+                ),
+              line(row.label, row.values),
+            ],
+          ),
       ],
     );
   }

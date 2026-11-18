@@ -5,6 +5,7 @@ import "package:go_router/go_router.dart";
 import "../../../app/app_paths.dart";
 import "../../../shared/app_font_sizes.dart";
 import "../../../shared/lds_colors.dart";
+import "../../../shared/widgets/lds/lds.dart";
 import "../../../shared/widgets/list_detail_layout.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/outline_panel.dart";
@@ -155,6 +156,7 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
         );
 
     return WorkspaceShell(
+      topAction: const LdsDateViewButton(),
       scrollable: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

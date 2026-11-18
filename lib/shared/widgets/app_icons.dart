@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'workflow_step_icon.dart';
+
 /// 메뉴 아이콘(시안의 선 아이콘): 24 격자, 선 두께 2, 둥근 끝.
 /// Material 아이콘에 같은 모양이 없어 직접 그립니다.
 enum AppIcon {
@@ -114,21 +116,7 @@ class _AppIconPainter extends CustomPainter {
         line(8.5, 11.5, 13.5, 11.5);
         line(8.5, 15, 11, 15);
       case AppIcon.suppliers:
-        // 차양: 지붕선 → 아래 물결 세 칸. 문 없이 벽 두 줄 + 바닥.
-        canvas.drawPath(
-          Path()
-            ..moveTo(3, 9)
-            ..lineTo(6, 4)
-            ..lineTo(18, 4)
-            ..lineTo(21, 9)
-            ..arcToPoint(const Offset(15, 9), radius: const Radius.circular(3))
-            ..arcToPoint(const Offset(9, 9), radius: const Radius.circular(3))
-            ..arcToPoint(const Offset(3, 9), radius: const Radius.circular(3)),
-          stroke,
-        );
-        line(5, 12.5, 5, 19.5);
-        line(19, 12.5, 19, 19.5);
-        line(4, 19.5, 20, 19.5);
+        canvas.drawPath(workflowStepPath(2), Paint()..color = color);
       case AppIcon.sidebarExpand:
         line(5, 7, 13, 7);
         line(5, 12, 13, 12);

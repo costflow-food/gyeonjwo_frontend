@@ -196,33 +196,17 @@ void main() {
         width: 400,
       );
       final row = find.byType(SupplierListRow);
-      final card = tester.widget<Container>(
-        find.descendant(of: row, matching: find.byType(Container)).first,
+      expect(tester.getSize(row).height, 48);
+      final material = tester.widget<Material>(
+        find.descendant(of: row, matching: find.byType(Material)).first,
       );
-      final decoration = card.decoration! as BoxDecoration;
-      expect((decoration.border! as Border).top.color, LdsColors.primary);
-      expect((decoration.border! as Border).top.width, 2);
-      expect(decoration.boxShadow, isNotEmpty);
+      expect(material.color, LdsColors.selectedRow);
       final name = tester.widget<Text>(find.text("한라푸드"));
-      expect(name.style!.fontSize, 17);
+      expect(name.style!.fontSize, 15);
       expect(name.style!.fontWeight, FontWeight.w700);
       expect(find.text("직접 등록"), findsOneWidget);
-      // Chips: one per item; the one matching the query is orange.
-      expect(find.text("냉동 딸기"), findsOneWidget);
-      expect(find.text("냉동 블루베리"), findsOneWidget);
-      expect(
-        tester.widget<Text>(find.text("냉동 딸기")).style!.color,
-        LdsColors.primaryText,
-      );
-      expect(
-        tester.widget<Text>(find.text("냉동 블루베리")).style!.color,
-        LdsColors.title,
-      );
-      // Location below the chips, no email in the card.
-      expect(
-        tester.getTopLeft(find.text("경기 이천시")).dy,
-        greaterThan(tester.getBottomLeft(find.text("냉동 딸기")).dy),
-      );
+      expect(find.text("냉동 딸기 외 1"), findsOneWidget);
+      expect(find.text("경기 이천시"), findsNothing);
       expect(find.textContaining("sales@"), findsNothing);
     },
   );
@@ -241,9 +225,9 @@ void main() {
       SupplierListRow(supplier: summary, selected: false, onTap: () {}),
       width: 400,
     );
-    expect(find.text("정보 부족 · 3개 미확인"), findsOneWidget);
+    expect(find.text("정보 부족"), findsOneWidget);
     expect(find.text("웹 확인"), findsNothing);
-    expect(find.text("취급 품목 미등록"), findsOneWidget);
-    expect(find.text("위치 미확인"), findsOneWidget);
+    expect(find.text("품목 미등록"), findsOneWidget);
+    expect(find.text("위치 미확인"), findsNothing);
   });
 }

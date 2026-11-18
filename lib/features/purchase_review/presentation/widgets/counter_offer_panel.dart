@@ -20,6 +20,13 @@ class CounterOfferPanel extends StatelessWidget {
   /// Whether a plan can still be chosen on this card; a held offer says so.
   final bool plansSelectable;
 
+  static String _delta(String value, String base, String? unit) {
+    final a = num.tryParse(value), b = num.tryParse(base);
+    if (a == null || b == null) return '';
+    final d = a - b;
+    return '${d >= 0 ? '+' : '−'}${perUnit(d.abs().toString(), unit)}${b == 0 ? '' : ' (${(d / b * 100).toStringAsFixed(1)}%)'}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final target = offer.target;
@@ -129,7 +136,7 @@ class CounterOfferPanel extends StatelessWidget {
                 Text(
                   decimal(target.targetUnitPrice),
                   style: const TextStyle(
-                    fontSize: 32,
+                    fontSize: 17,
                     fontWeight: FontWeight.w800,
                     height: 1,
                     fontFeatures: [FontFeature.tabularFigures()],
@@ -148,72 +155,110 @@ class CounterOfferPanel extends StatelessWidget {
               ],
             ),
           ],
-          if (showRange) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: LdsColors.line),
-                borderRadius: BorderRadius.circular(LdsRadius.table),
+          if (target != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                [
+                  if (reference?.requestedUnitPrice != null)
+                    '요청 ${perUnit(reference!.requestedUnitPrice, unit)} 대비 ${_delta(target.targetUnitPrice, reference.requestedUnitPrice!, unit)}',
+                  if (reference?.previousUnitPrice != null)
+                    '인상 전 ${perUnit(reference!.previousUnitPrice, unit)} 대비 ${_delta(target.targetUnitPrice, reference.previousUnitPrice!, unit)}',
+                ].join(' · '),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: LdsColors.mutedStrong,
+                ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          // Held with no range: the box holds only the
-                          // alternative total, so it is named for that.
-                          hold && !hasRange ? "대안 총액" : "제안 가능 범위",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: LdsColors.label,
-                          ),
+            ),
+          if (showDraft)
+            Align(alignment: Alignment.centerRight, child: draftButton),
+          Material(
+            type: MaterialType.transparency,
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('자세히 보기', style: TextStyle(fontSize: 13)),
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (showRange) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: LdsColors.line),
+                          borderRadius: BorderRadius.circular(LdsRadius.table),
                         ),
-                        if (summary.isNotEmpty)
-                          Text(
-                            hold && !hasRange
-                                ? won(reference!.alternativeTotal)
-                                : summary.join(" · "),
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: LdsColors.ink,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    // Held with no range: the box holds only the
+                                    // alternative total, so it is named for that.
+                                    hold && !hasRange ? "대안 총액" : "제안 가능 범위",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: LdsColors.label,
+                                    ),
+                                  ),
+                                  if (summary.isNotEmpty)
+                                    Text(
+                                      hold && !hasRange
+                                          ? won(reference!.alternativeTotal)
+                                          : summary.join(" · "),
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: LdsColors.ink,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (showDraft) ...[const SizedBox(width: 10), draftButton],
-                ],
-              ),
+                            if (showDraft) ...[
+                              const SizedBox(width: 10),
+                              draftButton,
+                            ],
+                          ],
+                        ),
+                      ),
+                    ] else if (showDraft) ...[
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: draftButton,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    for (final condition in [...?target?.conditions])
+                      Text(
+                        "조건 · $condition",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: LdsColors.mutedStrong,
+                          height: 1.6,
+                        ),
+                      ),
+                    if (!hold && offer.reason != null)
+                      Text(
+                        offer.reason!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: LdsColors.mutedStrong,
+                          height: 1.6,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
-          ] else if (showDraft) ...[
-            const SizedBox(height: 16),
-            Align(alignment: Alignment.centerLeft, child: draftButton),
-          ],
-          const SizedBox(height: 12),
-          for (final condition in [...?target?.conditions])
-            Text(
-              "조건 · $condition",
-              style: const TextStyle(
-                fontSize: 13,
-                color: LdsColors.mutedStrong,
-                height: 1.6,
-              ),
-            ),
-          if (!hold && offer.reason != null)
-            Text(
-              offer.reason!,
-              style: const TextStyle(
-                fontSize: 13,
-                color: LdsColors.mutedStrong,
-                height: 1.6,
-              ),
-            ),
+          ),
           if (offer.draftIds.isNotEmpty)
             Text(
               "역제안 메일 초안은 '메일 초안'에서 확인하고 승인해 주세요.",

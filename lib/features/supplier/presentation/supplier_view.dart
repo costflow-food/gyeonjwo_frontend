@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/lds_colors.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/widgets/lds/lds.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
@@ -55,46 +54,19 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
     return WorkspaceShell(
       scrollable: false,
       topAction: const LdsDateViewButton(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: WorkspaceShell.gutter,
-              vertical: 14,
-            ),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: LdsColors.line)),
-            ),
-            child: SupplierHeader(
-              onRefresh: viewModel.refresh,
-              onRegister: () => showSupplierRegisterDialog(context),
-            ),
+      child: AsyncContent<SupplierListState>(
+        value: value,
+        onRetry: viewModel.refresh,
+        builder: (data) => SupplierContent(
+          data: data,
+          search: _search,
+          viewModel: viewModel,
+          lead: SupplierHeader(
+            onRefresh: viewModel.refresh,
+            onRegister: () => showSupplierRegisterDialog(context),
           ),
-          Expanded(
-            child: AsyncContent<SupplierListState>(
-              value: value,
-              onRetry: viewModel.refresh,
-              builder: (data) => SupplierContent(
-                data: data,
-                search: _search,
-                viewModel: viewModel,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: WorkspaceShell.gutter,
-              vertical: 10,
-            ),
-            decoration: const BoxDecoration(
-              color: LdsColors.canvas,
-              border: Border(top: BorderSide(color: LdsColors.line)),
-            ),
-            child: const NoteLine(supplierPriceNote),
-          ),
-        ],
+          foot: const NoteLine(supplierPriceNote),
+        ),
       ),
     );
   }

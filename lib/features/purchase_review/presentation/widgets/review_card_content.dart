@@ -33,12 +33,22 @@ class ReviewCardContent extends ConsumerStatefulWidget {
 class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
   bool _busy = false;
   String? _error;
+  String? _selectedPlanId;
+
+  @override
+  void didUpdateWidget(ReviewCardContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.review.card.reviewRevision != _card.reviewRevision ||
+        oldWidget.review.card.inputRevision != _card.inputRevision ||
+        oldWidget.review.card.caseId != _card.caseId) {
+      _selectedPlanId = null;
+    }
+  }
 
   /// The counter-offer panel, which the notice's "사유 보기" scrolls to.
   final _counterOfferKey = GlobalKey();
 
   /// The 확인할 항목 section, which "확인할 항목 보기" scrolls to.
-  final _questionsKey = GlobalKey();
 
   /// The panel is marked for a moment after "사유 보기": on a wide screen it
   /// is already in view and nothing would move.
@@ -180,9 +190,8 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
               ? _Tone.caution
               : _Tone.info,
           lines: lines,
+          questions: card.questions,
           onCounterOffer: _showCounterOffer,
-          count: card.questions.length,
-          onQuestions: card.questions.isEmpty ? null : _showQuestions,
         ),
         const SizedBox(height: 12),
       ],
@@ -202,19 +211,6 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
         const SizedBox(height: 12),
       ],
     ];
-  }
-
-  /// '확인할 항목 보기': 확인할 항목 영역으로 내려갑니다.
-  Future<void> _showQuestions() async {
-    final target = _questionsKey.currentContext;
-    if (target == null) return;
-    await Scrollable.ensureVisible(
-      target,
-      duration: MediaQuery.disableAnimationsOf(context)
-          ? Duration.zero
-          : const Duration(milliseconds: 250),
-      curve: Curves.easeOutCubic,
-    );
   }
 
   /// 영역 순서(7.16): 상태 띠 · 구매안 비교 · 확인할 항목 · 역제안 · 견적과
@@ -259,19 +255,13 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
           card: card,
           busy: _busy,
           colors: colors,
-          onSelect: (plan) => _run((viewModel) => viewModel.selectPlan(plan)),
+          selectedPlanId: _selectedPlanId,
+          onSelect: (plan) => setState(
+            () => _selectedPlanId = _selectedPlanId == plan.planId
+                ? null
+                : plan.planId,
+          ),
         ),
-      if (card.questions.isNotEmpty) ...[
-        const SizedBox(height: 40),
-        _SectionTitle(
-          "확인할 항목",
-          key: _questionsKey,
-          count: card.questions.length,
-          caption: "답에 따라 순위가 바뀔 수 있는 값입니다. 보완 질문은 메일 초안에서 보냅니다.",
-        ),
-        const SizedBox(height: 16),
-        _Questions(questions: card.questions),
-      ],
       if (offer != null) ...[
         const SizedBox(height: 40),
         AnimatedContainer(
@@ -321,7 +311,10 @@ class _ReviewCardContentState extends ConsumerState<ReviewCardContent> {
       card: card,
       busy: _busy,
       onHold: _hold,
-      onConfirm: _confirm,
+      selectedPlan: _card.plan(_selectedPlanId),
+      onConfirm: _selectedPlanId == null
+          ? _confirm
+          : () => _run((vm) => vm.selectPlan(_card.plan(_selectedPlanId)!)),
       compact: compact,
     );
     if (compact) {
@@ -495,11 +488,10 @@ class _Head extends StatelessWidget {
 
 /// 영역 제목 20/700 + 선택 배지 + 옆 설명 13.
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text, {super.key, this.caption, this.count});
+  const _SectionTitle(this.text, {this.caption});
 
   final String text;
   final String? caption;
-  final int? count;
 
   @override
   Widget build(BuildContext context) => Wrap(
@@ -522,10 +514,6 @@ class _SectionTitle extends StatelessWidget {
               ),
             ),
           ),
-          if (count != null) ...[
-            const SizedBox(width: 8),
-            LdsBadge(count!, tone: LdsBadgeTone.primary),
-          ],
         ],
       ),
       if (caption != null)
@@ -538,103 +526,57 @@ class _SectionTitle extends StatelessWidget {
 }
 
 /// 확인할 항목: 업체·항목, 이유, 역전 기준·계산식.
-class _Questions extends StatelessWidget {
+class _Questions extends StatefulWidget {
   const _Questions({required this.questions});
-
   final List<ReviewQuestion> questions;
-
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final perRow = constraints.maxWidth >= 1000
-          ? 3
-          : constraints.maxWidth >= 640
-          ? 2
-          : 1;
-      final width = (constraints.maxWidth - 16 * (perRow - 1)) / perRow;
-      return Wrap(
-        spacing: 16,
-        runSpacing: 16,
-        children: [
-          for (final question in questions)
-            SizedBox(width: width, child: _QuestionCard(question)),
-        ],
-      );
-    },
-  );
+  State<_Questions> createState() => _QuestionsState();
 }
 
-class _QuestionCard extends StatelessWidget {
-  const _QuestionCard(this.question);
-
-  final ReviewQuestion question;
-
+class _QuestionsState extends State<_Questions> {
+  bool _expanded = false;
   @override
-  Widget build(BuildContext context) {
-    final detail = [
-      ?question.formula,
-      if (question.breakEvenAmount != null)
-        "역전 기준 ${won(question.breakEvenAmount)}",
-    ];
-    // 왼쪽 경고 막대 3: 모서리가 둥근 틀은 테두리 색이 한 가지여야 해서
-    // 막대를 안쪽에 그립니다.
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(LdsRadius.panel),
-        border: Border.all(color: LdsColors.line),
-      ),
-      foregroundDecoration: const BoxDecoration(
-        border: Border(left: BorderSide(color: LdsColors.warning, width: 3)),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            "${question.supplierName} · ${question.fieldLabel}",
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: LdsColors.ink,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final q in widget.questions.take(
+        !_expanded && widget.questions.length > 3 ? 2 : widget.questions.length,
+      ))
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '${q.supplierName} · ${q.fieldLabel} ',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                TextSpan(
+                  text: [
+                    q.reason,
+                    if (q.breakEvenAmount != null)
+                      '역전 기준 ${won(q.breakEvenAmount)}',
+                    ?q.formula,
+                  ].join(' · '),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            question.reason,
             style: const TextStyle(
-              fontSize: 15,
+              fontSize: 13,
               height: 1.6,
               color: LdsColors.ink,
             ),
           ),
-          if (detail.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: LdsColors.canvas,
-                borderRadius: BorderRadius.circular(LdsRadius.table),
-              ),
-              child: Text(
-                detail.join("\n"),
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.5,
-                  color: LdsColors.mutedStrong,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+        ),
+      if (widget.questions.length > 3)
+        TextButton(
+          onPressed: () => setState(() => _expanded = !_expanded),
+          child: Text(_expanded ? '접기' : '더 보기'),
+        ),
+    ],
+  );
 }
 
-/// 보류 / 확인하고 보관, with the reason when one is blocked. On the web a
-/// bar at the bottom of the page with a one-line guide (7.16).
 class _ReviewActions extends StatelessWidget {
   const _ReviewActions({
     required this.card,
@@ -642,18 +584,21 @@ class _ReviewActions extends StatelessWidget {
     required this.onHold,
     required this.onConfirm,
     this.compact = false,
+    this.selectedPlan,
   });
 
   final ReviewCard card;
   final bool busy;
   final VoidCallback onHold, onConfirm;
   final bool compact;
+  final ResponsePlan? selectedPlan;
 
   String? get _holdBlocked => card.disabledMessage(ReviewAction.hold);
   String? get _confirmBlocked =>
       card.disabledMessage(ReviewAction.confirmReview);
 
   bool get visible =>
+      card.can(ReviewAction.selectPlan) ||
       card.can(ReviewAction.hold) ||
       card.can(ReviewAction.confirmReview) ||
       _holdBlocked != null ||
@@ -662,7 +607,9 @@ class _ReviewActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canHold = card.can(ReviewAction.hold);
-    final canConfirm = card.can(ReviewAction.confirmReview);
+    final canConfirm = selectedPlan != null
+        ? card.can(ReviewAction.selectPlan)
+        : card.can(ReviewAction.confirmReview);
     final blocked = [
       for (final message in {?_holdBlocked, ?_confirmBlocked})
         Padding(
@@ -678,6 +625,17 @@ class _ReviewActions extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (selectedPlan != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                '${selectedPlan!.typeLabel} · ${won(selectedPlan!.totalAmount)} 선택됨',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           Row(
             children: [
               Expanded(
@@ -701,7 +659,7 @@ class _ReviewActions extends StatelessWidget {
                     ),
                   ),
                   onPressed: canConfirm && !busy ? onConfirm : null,
-                  child: const Text("확인하고 보관"),
+                  child: Text(selectedPlan != null ? "이 안으로 확정" : "확인하고 보관"),
                 ),
               ),
             ],
@@ -728,9 +686,11 @@ class _ReviewActions extends StatelessWidget {
                 color: LdsColors.mutedStrong,
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  "구매안을 고르거나, 근거가 부족하면 보류해 주세요.",
+                  selectedPlan == null
+                      ? "구매안을 고르거나, 근거가 부족하면 보류해 주세요."
+                      : "${selectedPlan!.typeLabel} · ${won(selectedPlan!.totalAmount)} 선택됨",
                   style: TextStyle(fontSize: 15, color: LdsColors.ink),
                 ),
               ),
@@ -742,7 +702,7 @@ class _ReviewActions extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               LdsButton(
-                label: "확인하고 보관",
+                label: selectedPlan != null ? "이 안으로 확정" : "확인하고 보관",
                 icon: Icons.check,
                 onPressed: canConfirm && !busy ? onConfirm : null,
               ),
@@ -826,9 +786,8 @@ class _Notice extends StatelessWidget {
     required this.text,
     this.tone = _Tone.info,
     this.lines = const [],
+    this.questions = const [],
     this.onCounterOffer,
-    this.count = 0,
-    this.onQuestions,
   });
 
   final IconData icon;
@@ -837,13 +796,10 @@ class _Notice extends StatelessWidget {
 
   /// What is left unresolved, under the title.
   final List<UnresolvedLine> lines;
+  final List<ReviewQuestion> questions;
 
   /// Shows the counter-offer panel, for a line whose reason is written there.
   final VoidCallback? onCounterOffer;
-
-  /// 확인할 항목 수와 그 영역으로 가는 '확인할 항목 보기'.
-  final int count;
-  final VoidCallback? onQuestions;
 
   @override
   Widget build(BuildContext context) {
@@ -887,18 +843,7 @@ class _Notice extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text.rich(
-                  TextSpan(
-                    children: [
-                      if (count > 0) ...[
-                        TextSpan(
-                          text: "확인할 항목 $count건",
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        const TextSpan(text: " · "),
-                      ],
-                      TextSpan(text: text),
-                    ],
-                  ),
+                  TextSpan(children: [TextSpan(text: text)]),
                   style: TextStyle(fontSize: 15, height: 1.5, color: body),
                 ),
                 for (final line in lines)
@@ -934,32 +879,22 @@ class _Notice extends StatelessWidget {
                         ),
                       ),
                     ),
-              ],
-            ),
-          ),
-          if (onQuestions != null) ...[
-            const SizedBox(width: 12),
-            LdsFocusRing(
-              radius: 4,
-              child: InkWell(
-                onTap: onQuestions,
-                borderRadius: BorderRadius.circular(4),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(
-                    "확인할 항목 보기",
+                if (questions.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    '우선 확인',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: body,
-                      decoration: TextDecoration.underline,
-                      decorationColor: body,
+                      color: LdsColors.cautionText,
                     ),
                   ),
-                ),
-              ),
+                  const SizedBox(height: 4),
+                  _Questions(questions: questions),
+                ],
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );

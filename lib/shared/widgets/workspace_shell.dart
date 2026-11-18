@@ -229,7 +229,7 @@ class _TopBar extends ConsumerWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 21,
                 fontWeight: FontWeight.w700,
                 color: LdsColors.ink,
               ),

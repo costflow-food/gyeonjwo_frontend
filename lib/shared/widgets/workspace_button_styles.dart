@@ -12,57 +12,60 @@ abstract final class WorkspaceButtonStyles {
     borderRadius: BorderRadius.all(Radius.circular(4)),
   );
   static const _label = TextStyle(
+    fontFamily: 'NanumGothic',
     fontSize: AppFontSizes.button,
     fontWeight: FontWeight.w700,
   );
 
-  static ButtonStyle filled(BuildContext context) => FilledButton.styleFrom(
-    backgroundColor: context.palette.accent,
-    foregroundColor: context.palette.onAccent,
-    disabledBackgroundColor: LdsColors.lineSoft,
-    disabledForegroundColor: LdsColors.disabled,
-    elevation: 0,
-    visualDensity: VisualDensity.standard,
-    minimumSize: _size,
-    padding: _padding,
-    shape: _shape,
-    textStyle: _label,
-  ).copyWith(
-    // hover는 겹침 색 대신 바탕을 #CC4D00으로 바꿉니다.
-    backgroundColor: WidgetStateProperty.resolveWith(
-      (states) => states.contains(WidgetState.disabled)
-          ? LdsColors.lineSoft
-          : states.contains(WidgetState.hovered)
-          ? LdsColors.primaryHover
-          : context.palette.accent,
-    ),
-  );
+  static ButtonStyle filled(BuildContext context) =>
+      FilledButton.styleFrom(
+        backgroundColor: context.palette.accent,
+        foregroundColor: context.palette.onAccent,
+        disabledBackgroundColor: LdsColors.lineSoft,
+        disabledForegroundColor: LdsColors.disabled,
+        elevation: 0,
+        visualDensity: VisualDensity.standard,
+        minimumSize: _size,
+        padding: _padding,
+        shape: _shape,
+        textStyle: _label,
+      ).copyWith(
+        // hover는 겹침 색 대신 바탕을 #CC4D00으로 바꿉니다.
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? LdsColors.lineSoft
+              : states.contains(WidgetState.hovered)
+              ? LdsColors.primaryHover
+              : context.palette.accent,
+        ),
+      );
 
-  static ButtonStyle outlined(BuildContext context) => OutlinedButton.styleFrom(
-    foregroundColor: context.palette.accentText,
-    disabledForegroundColor: LdsColors.disabled,
-    elevation: 0,
-    visualDensity: VisualDensity.standard,
-    minimumSize: _size,
-    padding: _padding,
-    shape: _shape,
-    textStyle: _label,
-  ).copyWith(
-    side: WidgetStateProperty.resolveWith(
-      (states) => BorderSide(
-        color: states.contains(WidgetState.disabled)
-            ? LdsColors.line
-            : LdsColors.borderStrong,
-      ),
-    ),
-    backgroundColor: WidgetStateProperty.resolveWith(
-      (states) =>
-          states.contains(WidgetState.hovered) &&
-              !states.contains(WidgetState.disabled)
-          ? LdsColors.canvas
-          : null,
-    ),
-  );
+  static ButtonStyle outlined(BuildContext context) =>
+      OutlinedButton.styleFrom(
+        foregroundColor: context.palette.accentText,
+        disabledForegroundColor: LdsColors.disabled,
+        elevation: 0,
+        visualDensity: VisualDensity.standard,
+        minimumSize: _size,
+        padding: _padding,
+        shape: _shape,
+        textStyle: _label,
+      ).copyWith(
+        side: WidgetStateProperty.resolveWith(
+          (states) => BorderSide(
+            color: states.contains(WidgetState.disabled)
+                ? LdsColors.line
+                : LdsColors.borderStrong,
+          ),
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.hovered) &&
+                  !states.contains(WidgetState.disabled)
+              ? LdsColors.canvas
+              : null,
+        ),
+      );
 
   static ButtonStyle text(BuildContext context) => TextButton.styleFrom(
     foregroundColor: LdsColors.title,

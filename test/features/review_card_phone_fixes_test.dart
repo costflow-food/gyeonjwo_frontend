@@ -127,8 +127,9 @@ Future<void> _pumpPhone(
   await tester.pumpAndSettle();
 }
 
-Widget _content(ReviewCard card) =>
-    ReviewCardContent(review: PurchaseReview(card: card, quotes: const []));
+Widget _content(ReviewCard card) => ReviewCardContent(
+  review: PurchaseReview(card: card, quotes: const []),
+);
 
 void main() {
   testWidgets("a failed 확인하고 보관 is said while the page is scrolled down", (
@@ -170,14 +171,14 @@ void main() {
     tester,
   ) async {
     await _pumpPhone(tester, _content(_card(planId: null)));
-    expect(find.text("선택"), findsOneWidget);
+    expect(find.text("이 안 선택"), findsOneWidget);
     expect(find.text("서버가 이 안의 ID를 보내지 않아 선택할 수 없습니다."), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets("a plan that can be chosen has no reason line", (tester) async {
     await _pumpPhone(tester, _content(_card()));
-    expect(find.text("선택"), findsOneWidget);
+    expect(find.text("이 안 선택"), findsOneWidget);
     expect(find.textContaining("선택할 수 없습니다"), findsNothing);
   });
 

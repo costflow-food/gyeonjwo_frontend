@@ -17,10 +17,22 @@ class PurchaseRecord {
     required this.totalAmount,
     required this.currency,
     this.specification,
+    this.confirmationMethod,
+    this.confirmationDescription,
+    this.evidenceName,
+    this.relatedTaskTitle,
+    this.caseId,
   });
 
   /// `purchase_history.id`.
   final String id;
+
+  /// Optional metadata, supplied only by a real source or the HTML demo fixture.
+  final String? confirmationMethod,
+      confirmationDescription,
+      evidenceName,
+      relatedTaskTitle,
+      caseId;
 
   /// `purchase_history.supplier_item_id`.
   final String supplierItemId;

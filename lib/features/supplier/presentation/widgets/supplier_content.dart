@@ -20,11 +20,14 @@ class SupplierContent extends StatefulWidget {
     required this.data,
     required this.search,
     required this.viewModel,
+    this.lead,
+    this.foot,
   });
 
   final SupplierListState data;
   final TextEditingController search;
   final SupplierListViewModel viewModel;
+  final Widget? lead, foot;
 
   @override
   State<SupplierContent> createState() => _SupplierContentState();
@@ -56,6 +59,7 @@ class _SupplierContentState extends State<SupplierContent> {
     final viewModel = widget.viewModel;
     final selectedId = data.selectedId;
     return ListDetailLayout(
+      detailPadding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       detailAlone: _detailOpen && selectedId != null,
       onBack: () => setState(() => _detailOpen = false),
       list: (padding, wide) => ListPaneColumn(
@@ -63,6 +67,10 @@ class _SupplierContentState extends State<SupplierContent> {
         header: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.lead != null) ...[
+              widget.lead!,
+              const SizedBox(height: 12),
+            ],
             SupplierSearchField(
               controller: widget.search,
               onChanged: viewModel.search,
@@ -86,15 +94,24 @@ class _SupplierContentState extends State<SupplierContent> {
           ),
         ),
       ),
-      detail: (_) => selectedId == null
-          ? const Text(
-              "거래처를 선택하면 상세 정보를 볼 수 있습니다.",
-              style: TextStyle(fontSize: 15, color: LdsColors.mutedStrong),
-            )
-          : SupplierDetailPanel(
-              key: ValueKey(selectedId),
-              supplierId: selectedId,
-            ),
+      detail: (_) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          selectedId == null
+              ? const Text(
+                  "거래처를 선택하면 상세 정보를 볼 수 있습니다.",
+                  style: TextStyle(fontSize: 15, color: LdsColors.mutedStrong),
+                )
+              : SupplierDetailPanel(
+                  key: ValueKey(selectedId),
+                  supplierId: selectedId,
+                ),
+          if (widget.foot != null) ...[
+            const SizedBox(height: 16),
+            widget.foot!,
+          ],
+        ],
+      ),
     );
   }
 }

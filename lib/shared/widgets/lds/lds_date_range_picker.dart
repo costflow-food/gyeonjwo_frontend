@@ -67,8 +67,11 @@ class LdsDateRangeButton extends StatefulWidget {
     required this.value,
     required this.onChanged,
     this.today,
+    this.iconOnly = false,
+    this.invoice = false,
   });
 
+  final bool iconOnly, invoice;
   final DateTimeRange value;
   final ValueChanged<DateTimeRange> onChanged;
 
@@ -114,6 +117,7 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
               initial: widget.value,
               today: today,
               months: 1,
+              invoice: widget.invoice,
             ),
           ),
         ),
@@ -123,10 +127,12 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
         LdsPopoverRoute<DateTimeRange>(
           anchor: LdsPopoverRoute.anchorOf(context),
           label: '기간 선택 닫기',
+          alignEnd: !widget.invoice,
           child: LdsDateRangePanel(
             initial: widget.value,
             today: today,
-            months: 2,
+            months: widget.invoice ? 1 : 2,
+            invoice: widget.invoice,
           ),
         ),
       );
@@ -139,6 +145,13 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.iconOnly) {
+      return LdsIconButton(
+        icon: Icons.calendar_today_outlined,
+        tooltip: '기간 선택, ${formatLdsDateRange(widget.value)}',
+        onPressed: _open,
+      );
+    }
     final radius = BorderRadius.circular(LdsRadius.button);
     final label = formatLdsDateRange(widget.value);
     return Semantics(
@@ -174,15 +187,18 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
                     color: LdsColors.title,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.2,
-                      letterSpacing: -.3,
-                      color: LdsColors.ink,
-                      fontFeatures: [FontFeature.tabularFigures()],
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.2,
+                        letterSpacing: -.3,
+                        color: LdsColors.ink,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ],
@@ -203,6 +219,7 @@ class LdsDateRangePanel extends StatefulWidget {
     required this.initial,
     required this.today,
     this.months = 2,
+    this.invoice = false,
   });
 
   final DateTimeRange initial;
@@ -210,6 +227,7 @@ class LdsDateRangePanel extends StatefulWidget {
 
   /// 1(시트) 또는 2(팝오버: 이번 달·다음 달).
   final int months;
+  final bool invoice;
 
   /// 달력 하나 폭, 달력 사이.
   static const monthWidth = 272.0;
@@ -223,8 +241,8 @@ class _LdsDateRangePanelState extends State<LdsDateRangePanel> {
   late DateTime? _start = ldsDateOnly(widget.initial.start);
   late DateTime? _end = ldsDateOnly(widget.initial.end);
   late DateTime _month = DateTime(
-    widget.initial.start.year,
-    widget.initial.start.month,
+    widget.invoice ? widget.today.year : widget.initial.start.year,
+    widget.invoice ? widget.today.month : widget.initial.start.month,
   );
   LdsQuickRange? _quick;
 
@@ -311,15 +329,16 @@ class _LdsDateRangePanelState extends State<LdsDateRangePanel> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                LdsRoundTabs<LdsQuickRange?>(
-                  tabs: [
-                    for (final quick in LdsQuickRange.values)
-                      LdsTabItem(value: quick, label: quick.label),
-                  ],
-                  selected: _quick,
-                  onSelected: _pickQuick,
-                ),
-                const SizedBox(height: 20),
+                if (!widget.invoice)
+                  LdsRoundTabs<LdsQuickRange?>(
+                    tabs: [
+                      for (final quick in LdsQuickRange.values)
+                        LdsTabItem(value: quick, label: quick.label),
+                    ],
+                    selected: _quick,
+                    onSelected: _pickQuick,
+                  ),
+                if (!widget.invoice) const SizedBox(height: 20),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,

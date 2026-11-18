@@ -228,8 +228,21 @@ void main() {
       await loaded();
       final reads = queue.listReads;
 
+      final removed = Completer<void>();
+      final subscription = container.listen(workQueueViewModelProvider, (
+        _,
+        next,
+      ) {
+        final items = next.asData?.value.items;
+        if (items != null &&
+            !items.any((item) => item.id == '-2') &&
+            !removed.isCompleted) {
+          removed.complete();
+        }
+      });
       changes.add(const WorkCaseChange(1, WorkCaseChangeKind.deleted, "-2"));
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await removed.future.timeout(const Duration(seconds: 5));
+      subscription.close();
 
       expect(queue.listReads, reads);
       expect(queue.caseReads, isEmpty);

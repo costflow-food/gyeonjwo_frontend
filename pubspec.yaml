@@ -48,6 +48,14 @@ flutter:
     - assets/branding/google/g-logo.png
 
   fonts:
+    - family: NanumGothic
+      fonts:
+        - asset: assets/fonts/NanumGothic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NanumGothic-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/NanumGothic-ExtraBold.ttf
+          weight: 800
     - family: GoogleSignInRoboto
       fonts:
         - asset: assets/fonts/Roboto-Medium.ttf
