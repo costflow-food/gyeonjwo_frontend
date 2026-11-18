@@ -8,6 +8,7 @@ abstract final class LdsColors {
   static const primarySoft = Color(0xFFFFEFE5);
   static const primaryLight = Color(0xFFFFBF99); // 진행 단계 남은 구간·테두리
   static const primaryRow = Color(0xFFFFF7F2); // 최신·추천 줄
+  static const primaryText = Color(0xFF993A00); // 연주황 바탕 위 글자
   static const selectedRow = Color(0xFFFFF4EC); // 고른 업무 행
   static const ink = Color(0xFF191F28);
   static const title = Color(0xFF333D4B);
@@ -37,4 +38,9 @@ abstract final class LdsColors {
   static const priceUp = Color(0xFFE42939);
   static const priceDown = Color(0xFF1B64DA);
   static const overlay = Color(0x73191F28); // rgba(25,31,40,.45)
+  static const cardShadow = Color(
+    0x0A191F28,
+  ); // Dashboard 카드 그림자 rgba(25,31,40,.04)
+  static const chartShare2 = Color(0xFFFFA066); // 품목별 비중 2위
+  static const chartShare3 = Color(0xFFFFDFCC); // 품목별 비중 3위 이하
 }

@@ -15,6 +15,9 @@ import "../../work_queue/domain/task_group.dart";
 import "../../work_queue/presentation/completed_tasks_view_model.dart";
 import "../../work_queue/presentation/widgets/gmail_read_notice.dart";
 import "../../work_queue/presentation/work_queue_view_model.dart";
+import "../domain/dashboard_insights.dart";
+import "widgets/category_share_card.dart";
+import "widgets/monthly_trend_card.dart";
 
 /// 상태 색 (`docs/design-ssot.md` 4.1): 확인 필요 주황, 진행 중 파랑, 완료 초록.
 Color taskGroupColor(TaskGroup group) => switch (group) {
@@ -23,16 +26,21 @@ Color taskGroupColor(TaskGroup group) => switch (group) {
   TaskGroup.complete => LdsColors.success,
 };
 
-/// Dashboard 상태 카드 (`docs/design-ssot.md` 7.9, 7.9.1, 7.9.3).
+/// Dashboard (`docs/design-ssot.md` 7.9, 7.9.1, 7.9.2, 7.9.3).
 ///
-/// 위 '전체 업무' 한 줄 + 카드 4개(확인 필요 · 진행 중 · 완료 · 미분류).
-/// 확인 필요·진행 중·완료 카드는 Tasks 입구이고, 미분류는 접수·연결 확인
-/// 모달을 엽니다. 업무 목록·상태 탭·업무 상세는 두지 않습니다.
+/// 위 '전체 업무' 한 줄 + 카드 4개(확인 필요 · 진행 중 · 완료 · 미분류 메일),
+/// 아래 월별 처리 추세 + 품목별 구매 비중. 확인 필요·진행 중·완료 카드는 Tasks
+/// 입구이고, 미분류는 접수·연결 확인 모달을 엽니다. 업무 목록·상태 탭·업무
+/// 상세는 두지 않습니다.
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
 
-  /// 이 폭 미만에서는 카드를 2×2로 놓습니다(7.9.1).
+  /// 이 폭 미만에서는 상태 카드를 2×2로, 추세·비중 카드를 위아래로 놓습니다
+  /// (7.9.1).
   static const twoByTwoWidth = 1100.0;
+
+  /// 카드 사이.
+  static const _gap = 12.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -75,19 +83,21 @@ class DashboardView extends ConsumerWidget {
             const SizedBox(height: 16),
           ],
           _TotalBar(total: total, byGroup: byGroup),
-          const SizedBox(height: 16),
+          const SizedBox(height: _gap),
           if (wide)
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final card in cards.take(3)) ...[
+                  for (final (index, card) in cards.take(3).indexed) ...[
+                    if (index > 0) const SizedBox(width: _gap),
                     Expanded(child: card),
-                    const SizedBox(width: 16),
                   ],
                   // 미분류는 세로 점선 구분선 뒤(7.9.3).
-                  const _DashedLine(vertical: true),
-                  const SizedBox(width: 16),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 11.5),
+                    child: _DashedLine(vertical: true),
+                  ),
                   Expanded(child: cards.last),
                 ],
               ),
@@ -96,13 +106,13 @@ class DashboardView extends ConsumerWidget {
             Column(
               children: [
                 for (final row in [0, 2]) ...[
-                  if (row > 0) const SizedBox(height: 16),
+                  if (row > 0) const SizedBox(height: _gap),
                   IntrinsicHeight(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(child: cards[row]),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: _gap),
                         Expanded(child: cards[row + 1]),
                       ],
                     ),
@@ -110,7 +120,33 @@ class DashboardView extends ConsumerWidget {
                 ],
               ],
             ),
-          // 아래(차트 자리)는 5단계까지 비워 둡니다.
+          const SizedBox(height: 24),
+          // TODO(backend): 추세·품목 비중 API가 생기면 예시 데이터를 바꿉니다.
+          if (wide)
+            const IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 19,
+                    child: MonthlyTrendCard(series: DashboardSample.trends),
+                  ),
+                  SizedBox(width: 24),
+                  Expanded(
+                    flex: 10,
+                    child: CategoryShareCard(
+                      data: DashboardSample.share,
+                      fill: true,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else ...const [
+            MonthlyTrendCard(series: DashboardSample.trends),
+            SizedBox(height: 24),
+            CategoryShareCard(data: DashboardSample.share),
+          ],
         ],
       ),
     );
@@ -121,6 +157,9 @@ class DashboardView extends ConsumerWidget {
 /// 미분류는 넣지 않습니다(7.9.3).
 class _TotalBar extends StatelessWidget {
   const _TotalBar({required this.total, required this.byGroup});
+
+  /// 비율 막대 두께.
+  static const barHeight = 10.0;
 
   final int? total;
   final Map<TaskGroup, int?> byGroup;
@@ -141,7 +180,8 @@ class _TotalBar extends StatelessWidget {
             ].join(", "),
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: LdsColors.line),
@@ -158,24 +198,16 @@ class _TotalBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              total == null ? "" : "$total건",
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: LdsColors.ink,
-                fontFeatures: [FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(width: 20),
+            _CountText(count: total, numberSize: 23),
+            const SizedBox(width: 24),
             Expanded(
               child: SizedBox(
-                height: 12,
+                height: _TotalBar.barHeight,
                 child: parts.isEmpty
                     ? const DecoratedBox(
                         decoration: BoxDecoration(
                           color: LdsColors.lineSoft,
-                          borderRadius: BorderRadius.all(Radius.circular(6)),
+                          borderRadius: BorderRadius.all(Radius.circular(5)),
                         ),
                       )
                     : Row(
@@ -190,7 +222,7 @@ class _TotalBar extends StatelessWidget {
                                 key: ValueKey("bar-${group.code}"),
                                 decoration: BoxDecoration(
                                   color: taskGroupColor(group),
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(5),
                                 ),
                               ),
                             ),
@@ -206,9 +238,9 @@ class _TotalBar extends StatelessWidget {
   }
 }
 
-/// 상태 카드: 흰 바탕 + 1px `#E5E7EA`, 모서리 12. 상태 이름 15/700 + 앞 색
-/// 점 8, 숫자 32/700 + '건' 13, 오른쪽 아래 '보기 ›' 13 `#4E5968`.
-/// 설명 문장은 넣지 않습니다.
+/// 상태 카드: 흰 바탕 + 1px `#E5E7EA`, 모서리 12, 최소 높이 112. 상태 이름
+/// 15/700 + 앞 색 점 8, 숫자 32/800 + '건' 13/700, 오른쪽 아래 '보기 ›' 13
+/// `#4E5968`. 설명 문장은 넣지 않습니다.
 class _StatusCard extends StatelessWidget {
   const _StatusCard({
     required this.name,
@@ -219,11 +251,11 @@ class _StatusCard extends StatelessWidget {
     required this.onTap,
   }) : unsorted = false;
 
-  /// 미분류(7.9.1): 회색 바탕 `#F3F4F6`, 점선 테두리 `#B1B8C0`, 회색 라벨,
+  /// 미분류 메일(7.9.1): 흰 바탕 + 점선 테두리 `#B1B8C0`, 회색 점.
   /// 상태 색을 쓰지 않습니다.
   const _StatusCard.unsorted({required this.count, required this.onTap})
-    : name = "미분류",
-      dot = null,
+    : name = "미분류 메일",
+      dot = LdsColors.outline,
       emphasized = false,
       link = "확인 ›",
       unsorted = true;
@@ -241,13 +273,9 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(LdsRadius.panel);
-    final background = unsorted
-        ? LdsColors.lineSoft
-        : emphasized
-        ? LdsColors.primaryRow
-        : Colors.white;
+    final background = emphasized ? LdsColors.primaryRow : Colors.white;
     final content = Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -259,17 +287,17 @@ class _StatusCard extends StatelessWidget {
                   height: 8,
                   decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
               ],
-              Flexible(
+              Expanded(
                 child: Text(
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: unsorted ? LdsColors.label : LdsColors.ink,
+                    color: LdsColors.ink,
                   ),
                 ),
               ),
@@ -279,25 +307,9 @@ class _StatusCard extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 12),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: count == null ? "" : "$count",
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
-                ),
-                const TextSpan(text: " 건", style: TextStyle(fontSize: 13)),
-              ],
-            ),
-            style: TextStyle(color: unsorted ? LdsColors.label : LdsColors.ink),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
+          _CountText(count: count, numberSize: 32),
+          const SizedBox(height: 4),
           // 카드 높이가 같은 줄에서 맞춰져도 '보기 ›'는 오른쪽 아래에 둡니다.
           const Spacer(),
           Align(
@@ -323,15 +335,18 @@ class _StatusCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
-        child: unsorted
-            ? CustomPaint(
-                foregroundPainter: const _DashedBorderPainter(
-                  color: LdsColors.disabled,
-                  radius: LdsRadius.panel,
-                ),
-                child: content,
-              )
-            : content,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 112),
+          child: unsorted
+              ? CustomPaint(
+                  foregroundPainter: const _DashedBorderPainter(
+                    color: LdsColors.disabled,
+                    radius: LdsRadius.panel,
+                  ),
+                  child: content,
+                )
+              : content,
+        ),
       ),
     );
     return Semantics(
@@ -343,6 +358,41 @@ class _StatusCard extends StatelessWidget {
       child: LdsFocusRing(radius: LdsRadius.panel, child: card),
     );
   }
+}
+
+/// 숫자(800) + ' 건'(13/700 `#333D4B`). 불러오는 중이면 숫자 없이 둡니다.
+class _CountText extends StatelessWidget {
+  const _CountText({required this.count, required this.numberSize});
+
+  final int? count;
+  final double numberSize;
+
+  @override
+  Widget build(BuildContext context) => Text.rich(
+    TextSpan(
+      children: [
+        TextSpan(
+          text: count == null ? "" : "$count",
+          style: TextStyle(
+            fontSize: numberSize,
+            fontWeight: FontWeight.w800,
+            height: 1.1,
+            color: LdsColors.ink,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        const TextSpan(
+          text: " 건",
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            height: 1.1,
+            color: LdsColors.title,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// 둥근 사각 점선 테두리 1px.
