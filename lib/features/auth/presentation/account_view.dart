@@ -191,12 +191,14 @@ class _PermissionsPage extends ConsumerWidget {
             labelWidth: 136,
             rows: [
               _statusRow(
+                context,
                 'Google 연결',
                 connection.authFailure?.message ?? phase.description,
                 phase.label,
                 hasConnection ? _Status.ok : _Status.off,
               ),
               _statusRow(
+                context,
                 'Gmail 읽기',
                 '수신 메일을 업무 큐로 가져오는 데 사용합니다.',
                 !hasConnection
@@ -211,6 +213,7 @@ class _PermissionsPage extends ConsumerWidget {
                     : _Status.bad,
               ),
               _statusRow(
+                context,
                 'Gmail 발송',
                 '메일 발송 권한과 실제 발송 승인 설정은 별개입니다.',
                 !hasConnection
@@ -224,8 +227,8 @@ class _PermissionsPage extends ConsumerWidget {
                     ? _Status.ok
                     : _Status.bad,
               ),
-              if (hasConnection && phase.canRead) _mailboxSyncRow(ref),
-              ?_serverLimitsRow(ref),
+              if (hasConnection && phase.canRead) _mailboxSyncRow(context, ref),
+              ?_serverLimitsRow(context, ref),
             ],
           ),
           const SizedBox(height: 24),
@@ -267,17 +270,17 @@ enum _Status { ok, off, bad }
 
 /// 이름표-값 줄: 값 = 설명(14), 오른쪽 = 상태 라벨.
 LdsKeyValueRow _statusRow(
+  BuildContext context,
   String label,
   String description,
   String status,
   _Status kind,
-) => LdsKeyValueRow(
-  label,
-  child: Text(
+) {
+  final descriptionText = Text(
     description,
     style: const TextStyle(fontSize: 14, height: 1.5, color: LdsColors.title),
-  ),
-  trailing: switch (kind) {
+  );
+  final statusTag = switch (kind) {
     _Status.ok => LdsTag(
       status,
       tone: LdsTagTone.success,
@@ -293,16 +296,39 @@ LdsKeyValueRow _statusRow(
       tone: LdsTagTone.error,
       foreground: LdsColors.errorText,
     ),
-  },
-);
+  };
+  if (isCompactLayout(context)) {
+    return LdsKeyValueRow(
+      label,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [descriptionText, const SizedBox(height: 8), statusTag],
+      ),
+    );
+  }
+  return LdsKeyValueRow(label, child: descriptionText, trailing: statusTag);
+}
 
-LdsKeyValueRow _mailboxSyncRow(WidgetRef ref) {
+LdsKeyValueRow _mailboxSyncRow(BuildContext context, WidgetRef ref) {
   final sync = ref.watch(mailboxSyncViewModelProvider);
   if (sync.isLoading && !sync.hasValue) {
-    return _statusRow('메일 수신', '수신 상태를 확인하고 있습니다.', '확인 중', _Status.off);
+    return _statusRow(
+      context,
+      '메일 수신',
+      '수신 상태를 확인하고 있습니다.',
+      '확인 중',
+      _Status.off,
+    );
   }
   final (label, description, ok) = _describeSync(sync.asData?.value);
-  return _statusRow('메일 수신', description, label, ok ? _Status.ok : _Status.bad);
+  return _statusRow(
+    context,
+    '메일 수신',
+    description,
+    label,
+    ok ? _Status.ok : _Status.bad,
+  );
 }
 
 (String, String, bool) _describeSync(MailboxSyncStatus? status) {
@@ -330,7 +356,7 @@ LdsKeyValueRow _mailboxSyncRow(WidgetRef ref) {
   return ('받는 중', last, true);
 }
 
-LdsKeyValueRow? _serverLimitsRow(WidgetRef ref) {
+LdsKeyValueRow? _serverLimitsRow(BuildContext context, WidgetRef ref) {
   final server = ref.watch(serverStatusViewModelProvider).asData?.value;
   if (server == null) return null;
   final String description;
@@ -344,7 +370,7 @@ LdsKeyValueRow? _serverLimitsRow(WidgetRef ref) {
     if (limited.isEmpty) return null;
     description = '지금 쓸 수 없어요: ${limited.join(', ')}';
   }
-  return _statusRow('서버 기능', description, '일부 기능 멈춤', _Status.bad);
+  return _statusRow(context, '서버 기능', description, '일부 기능 멈춤', _Status.bad);
 }
 
 class _SendSettingsPage extends StatelessWidget {
