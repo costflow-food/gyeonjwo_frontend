@@ -170,9 +170,11 @@ void main() {
       expect(find.text("buyer@example.invalid"), findsOneWidget);
       await tester.tap(find.byTooltip("계정 메뉴"));
       await tester.pumpAndSettle();
-      for (final item in ["계정 설정", "메일 발송 설정", "처리 이력", "로그아웃"]) {
+      for (final item in ["계정 설정", "처리 이력", "로그아웃"]) {
         expect(find.text(item), findsOneWidget);
       }
+      // 메일 발송 설정은 계정 설정 팝업의 탭에만 있습니다.
+      expect(find.text("메일 발송 설정"), findsNothing);
       await tester.tap(find.text("처리 이력"));
       await tester.pumpAndSettle();
       expect(router.state.uri.path, "/logs");
