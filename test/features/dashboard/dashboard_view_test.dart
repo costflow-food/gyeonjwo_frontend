@@ -154,20 +154,21 @@ void main() {
     expect(find.text("확인 ›"), findsOneWidget);
   });
 
-  testWidgets("only 확인 필요 is emphasized", (tester) async {
+  testWidgets("확인 필요 uses the same neutral panel as 진행 중", (tester) async {
     await _pump(tester);
     Material material(String name) => tester.widget<Material>(
       find.descendant(of: _card(name), matching: find.byType(Material)).first,
     );
     final confirm = material("확인 필요");
-    expect(confirm.color, LdsColors.primaryRow);
+    expect(confirm.color, Colors.white);
     final side = (confirm.shape! as RoundedRectangleBorder).side;
-    expect(side.color, LdsColors.primary);
-    expect(side.width, 1.5);
+    expect(side.color, LdsColors.line);
+    expect(side.width, 1);
+    expect(confirm.shape, material("진행 중").shape);
     expect(material("진행 중").color, Colors.white);
     // 미분류: gray with a dashed border, not a status color.
     expect(material("미분류").color, LdsColors.lineSoft);
-    // No '지금 할 일' label on the card (emphasis is the border and fill).
+    // No extra label on the card.
     expect(find.text("지금 할 일"), findsNothing);
   });
 
