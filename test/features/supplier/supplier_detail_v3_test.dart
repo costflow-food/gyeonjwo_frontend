@@ -175,55 +175,75 @@ void main() {
   });
 
   testWidgets(
-    "a supplier is a compact two-line row; selected is #FFF4EC + 3px",
+    "a supplier is a card: name + label, item chips, location; selected is orange 2px",
     (tester) async {
       const summary = SupplierSummary(
         id: "s1",
         name: "한라푸드",
         sourceType: SupplierSourceType.registered,
-        itemNames: ["냉동 딸기", "냉동 블루베리", "깐마늘", "대파"],
+        itemNames: ["냉동 딸기", "냉동 블루베리"],
         location: "경기 이천시",
         contactEmail: "sales@a-supplier.example.com",
       );
       await _pump(
         tester,
-        SupplierListRow(supplier: summary, selected: true, onTap: () {}),
+        SupplierListRow(
+          supplier: summary,
+          selected: true,
+          query: "딸기",
+          onTap: () {},
+        ),
         width: 400,
       );
       final row = find.byType(SupplierListRow);
-      expect(
-        tester
-            .widget<Material>(
-              find.descendant(of: row, matching: find.byType(Material)).first,
-            )
-            .color,
-        LdsColors.selectedRow,
+      final card = tester.widget<Container>(
+        find.descendant(of: row, matching: find.byType(Container)).first,
       );
-      final bar = find.descendant(
-        of: row,
-        matching: find.byWidgetPredicate(
-          (widget) => widget is ColoredBox && widget.color == LdsColors.primary,
-        ),
-      );
-      expect(tester.getSize(bar).width, 3);
-      // Line 1: name 15/700, items 13 #6B7583 in one line, the source label.
+      final decoration = card.decoration! as BoxDecoration;
+      expect((decoration.border! as Border).top.color, LdsColors.primary);
+      expect((decoration.border! as Border).top.width, 2);
+      expect(decoration.boxShadow, isNotEmpty);
       final name = tester.widget<Text>(find.text("한라푸드"));
-      expect(name.style!.fontSize, 15);
+      expect(name.style!.fontSize, 17);
       expect(name.style!.fontWeight, FontWeight.w700);
-      final items = find.text("냉동 딸기 · 냉동 블루베리 · 깐마늘 · 대파");
-      expect(tester.widget<Text>(items).style!.color, LdsColors.muted);
-      expect(tester.widget<Text>(items).maxLines, 1);
-      expect(tester.widget<Text>(items).overflow, TextOverflow.ellipsis);
       expect(find.text("직접 등록"), findsOneWidget);
-      // Line 2: region · email.
-      final where = find.text("경기 이천시 · sales@a-supplier.example.com");
-      expect(tester.widget<Text>(where).style!.fontSize, 13);
+      // Chips: one per item; the one matching the query is orange.
+      expect(find.text("냉동 딸기"), findsOneWidget);
+      expect(find.text("냉동 블루베리"), findsOneWidget);
       expect(
-        tester.getTopLeft(where).dy,
-        greaterThan(tester.getBottomLeft(find.text("한라푸드")).dy - 1),
+        tester.widget<Text>(find.text("냉동 딸기")).style!.color,
+        LdsColors.primaryText,
       );
-      // No chips any more.
-      expect(find.text("+1"), findsNothing);
+      expect(
+        tester.widget<Text>(find.text("냉동 블루베리")).style!.color,
+        LdsColors.title,
+      );
+      // Location below the chips, no email in the card.
+      expect(
+        tester.getTopLeft(find.text("경기 이천시")).dy,
+        greaterThan(tester.getBottomLeft(find.text("냉동 딸기")).dy),
+      );
+      expect(find.textContaining("sales@"), findsNothing);
     },
   );
+
+  testWidgets("missing list info: '정보 부족 · N개 미확인' instead of the source", (
+    tester,
+  ) async {
+    const summary = SupplierSummary(
+      id: "s2",
+      name: "다온신선푸드",
+      sourceType: SupplierSourceType.verifiedWeb,
+      itemNames: [],
+    );
+    await _pump(
+      tester,
+      SupplierListRow(supplier: summary, selected: false, onTap: () {}),
+      width: 400,
+    );
+    expect(find.text("정보 부족 · 3개 미확인"), findsOneWidget);
+    expect(find.text("웹 확인"), findsNothing);
+    expect(find.text("취급 품목 미등록"), findsOneWidget);
+    expect(find.text("위치 미확인"), findsOneWidget);
+  });
 }

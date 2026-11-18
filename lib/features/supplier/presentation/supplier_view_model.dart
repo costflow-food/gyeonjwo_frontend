@@ -45,6 +45,12 @@ class SupplierListViewModel extends _$SupplierListViewModel {
     state = AsyncData(current.copyWith(selectedId: () => supplierId));
   }
 
+  void sortBy(SupplierSort sort) {
+    final current = state.asData?.value;
+    if (current == null || current.sort == sort || !sort.available) return;
+    state = AsyncData(current.copyWith(sort: sort));
+  }
+
   Future<void> refresh() async {
     ref.invalidate(supplierDetailViewModelProvider);
     ref.invalidate(supplierPriceHistoryViewModelProvider);
@@ -157,6 +163,7 @@ class SupplierListViewModel extends _$SupplierListViewModel {
           selectedId:
               selectId ??
               SupplierListState.keepSelection(page.items, current.selectedId),
+          sort: state.asData?.value.sort ?? current.sort,
         ),
       );
     } catch (_) {
