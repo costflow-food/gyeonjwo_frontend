@@ -41,7 +41,7 @@ class WorkflowLogFilters extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: "모든 업무의 로그 보기",
+              tooltip: "모든 업무의 이력 보기",
               onPressed: onClearCase,
               iconSize: 16,
               visualDensity: VisualDensity.compact,

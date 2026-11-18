@@ -597,7 +597,7 @@ class _AccountMenu extends StatelessWidget {
               Icons.mail_outline,
               '메일 발송 설정',
             ),
-            const _MenuRow(_AccountAction.logs, Icons.history, '실행 로그'),
+            const _MenuRow(_AccountAction.logs, Icons.history, '처리 이력'),
             const SizedBox(height: 4),
             const Divider(height: 1, color: LdsColors.line),
             const SizedBox(height: 4),

@@ -20,7 +20,7 @@ class WorkflowLogView extends ConsumerWidget {
     final viewModel = ref.read(workflowLogViewModelProvider.notifier);
     if (isCompactLayout(context)) {
       return MobileTabScaffold(
-        title: "실행 로그",
+        title: "처리 이력",
         actions: [
           IconButton(
             tooltip: "새로고침",
@@ -79,7 +79,7 @@ class _LogDetailPage extends ConsumerWidget {
     final data = ref.watch(workflowLogViewModelProvider).value;
     final viewModel = ref.read(workflowLogViewModelProvider.notifier);
     return MobilePageScaffold(
-      title: "로그 상세",
+      title: "이력 상세",
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         child: WorkflowLogDetail(

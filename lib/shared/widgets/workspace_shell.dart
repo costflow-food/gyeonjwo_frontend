@@ -36,7 +36,7 @@ class AppSection {
       return const AppSection('Suppliers', AppMenu.suppliers);
     }
     if (under(AppPaths.logs)) {
-      return const AppSection('실행 로그', null);
+      return const AppSection('처리 이력', null);
     }
     if (under(AppPaths.account)) {
       return const AppSection('설정', null);

@@ -116,7 +116,7 @@ class _AccountViewState extends State<AccountView>
                 Align(
                   alignment: Alignment.centerLeft,
                   child: LdsButton(
-                    label: '실행 로그',
+                    label: '처리 이력',
                     icon: Icons.history,
                     variant: LdsButtonVariant.outlinedNeutral,
                     onPressed: () => context.go(AppPaths.logs),
