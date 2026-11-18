@@ -9,7 +9,6 @@ import '../../app/app_paths.dart';
 import '../../features/auth/presentation/account_settings_dialog.dart';
 import '../../features/auth/presentation/auth_session_view_model.dart';
 import '../../features/auth/presentation/widgets/sign_out_action.dart';
-import '../../features/send_settings/presentation/send_settings_dialog.dart';
 import '../lds_colors.dart';
 import 'app_icons.dart';
 import 'brand_logo.dart';
@@ -443,12 +442,13 @@ class _MenuIcon extends StatelessWidget {
   );
 }
 
-enum _AccountAction { settings, sendSettings, logs, signOut }
+enum _AccountAction { settings, logs, signOut }
 
 /// 아래 계정 카드: 아바타·이름·이메일 + 톱니바퀴 (7.17). 아이콘 메뉴에서는
-/// 아바타만. 누르면 계정 메뉴(맨 위 '구매담당자'·이메일, 계정 설정 · 메일 발송
-/// 설정 · 실행 로그 · 로그아웃). 넓은 메뉴는 카드 바로 위에 카드와 같은 폭으로,
-/// 아이콘 메뉴는 아바타 오른쪽 옆에 아래를 맞춰 띄웁니다.
+/// 아바타만. 누르면 계정 메뉴(맨 위 '구매담당자'·이메일, 계정 설정 · 처리 이력 ·
+/// 로그아웃). 메일 발송 설정은 계정 설정 팝업의 탭에 있습니다. 넓은 메뉴는
+/// 카드 바로 위에 카드와 같은 폭으로, 아이콘 메뉴는 아바타 오른쪽 옆에 아래를
+/// 맞춰 띄웁니다.
 class _AccountCard extends ConsumerWidget {
   const _AccountCard({required this.compact, this.onNavigate});
 
@@ -476,8 +476,6 @@ class _AccountCard extends ConsumerWidget {
     switch (action) {
       case _AccountAction.settings:
         showAccountSettingsDialog(context);
-      case _AccountAction.sendSettings:
-        showSendSettingsDialog(context);
       case _AccountAction.logs:
         context.go(AppPaths.logs);
       case _AccountAction.signOut:
@@ -711,11 +709,6 @@ class _AccountMenu extends StatelessWidget {
               _AccountAction.settings,
               Icons.manage_accounts_outlined,
               '계정 설정',
-            ),
-            const _MenuRow(
-              _AccountAction.sendSettings,
-              Icons.mail_outline,
-              '메일 발송 설정',
             ),
             const _MenuRow(_AccountAction.logs, Icons.history, '처리 이력'),
             const SizedBox(height: 4),
