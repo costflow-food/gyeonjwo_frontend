@@ -170,13 +170,13 @@ void main() {
       expect(find.text("buyer@example.invalid"), findsOneWidget);
       await tester.tap(find.byTooltip("계정 메뉴"));
       await tester.pumpAndSettle();
-      for (final item in ["계정 설정", "메일 발송 설정", "실행 로그", "로그아웃"]) {
+      for (final item in ["계정 설정", "메일 발송 설정", "처리 이력", "로그아웃"]) {
         expect(find.text(item), findsOneWidget);
       }
-      await tester.tap(find.text("실행 로그"));
+      await tester.tap(find.text("처리 이력"));
       await tester.pumpAndSettle();
       expect(router.state.uri.path, "/logs");
-      expect(find.text("실행 로그"), findsOneWidget);
+      expect(find.text("처리 이력"), findsOneWidget);
     });
   });
 

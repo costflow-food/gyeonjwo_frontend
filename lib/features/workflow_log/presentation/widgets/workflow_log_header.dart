@@ -3,7 +3,7 @@ import "package:flutter/material.dart";
 import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 
-/// 설명 줄 + 새로고침. 화면 제목 '실행 로그'는 상단 바에 있습니다.
+/// 설명 줄 + 새로고침. 화면 제목 '처리 이력'은 상단 바에 있습니다.
 class WorkflowLogHeader extends StatelessWidget {
   const WorkflowLogHeader({super.key, required this.onRefresh});
   final VoidCallback onRefresh;

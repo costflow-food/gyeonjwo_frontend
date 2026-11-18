@@ -135,7 +135,7 @@ void main() {
         findsOneWidget,
       );
     }
-    expect(find.widgetWithText(LdsButton, "이 업무 로그만"), findsOneWidget);
+    expect(find.widgetWithText(LdsButton, "이 업무 이력만"), findsOneWidget);
     expect(find.widgetWithText(LdsButton, "업무 보기"), findsOneWidget);
     final tag = tester.widget<LdsTag>(find.byType(LdsTag));
     expect(tag.foreground, LdsColors.warningText);
