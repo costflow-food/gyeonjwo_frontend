@@ -16,6 +16,7 @@ import "transactions_view_model.dart";
 import "widgets/transaction_detail_panel.dart";
 import "widgets/transaction_filter_bar.dart";
 import "widgets/transaction_list_row.dart";
+import "widgets/transaction_table.dart";
 import "widgets/transaction_sort_button.dart";
 
 /// Transactions (`/transactions`, `docs/design-ssot.md` 7.12): 확정된 거래를
@@ -165,7 +166,7 @@ class _ContentState extends ConsumerState<_Content> {
           ),
         ),
         const SizedBox(height: 12),
-        _Summary(listing: listing),
+        if (!isCompactLayout(context)) _Summary(listing: listing),
       ],
     );
     final rows = listing.rows.isEmpty
@@ -215,7 +216,19 @@ class _ContentState extends ConsumerState<_Content> {
       }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [header, const SizedBox(height: 12), rows],
+        children: [
+          header,
+          const SizedBox(height: 12),
+          TransactionTable(
+            listing: listing,
+            filter: filter,
+            onSort: (sort) => viewModel.setSort(
+              sort,
+              descending: filter.sort == sort ? !filter.descending : true,
+            ),
+            onSelect: viewModel.select,
+          ),
+        ],
       );
     }
     if (!ListDetailLayout.isSinglePane(context)) _autoSelect(listing);
