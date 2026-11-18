@@ -8,6 +8,7 @@ import "../../../shared/widgets/async_content.dart";
 import "../../../shared/widgets/lds/lds.dart";
 import "../../../shared/widgets/list_detail_layout.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
+import "../../../shared/widgets/page_lead_text.dart";
 import "../../../shared/widgets/workspace_shell.dart";
 import "../domain/purchase_record.dart";
 import "../domain/transaction_listing.dart";
@@ -27,6 +28,9 @@ import "widgets/transaction_sort_button.dart";
 /// [entry]는 Suppliers 품목 카드 '마지막 실거래'에서 넘어온 조건입니다.
 class TransactionsView extends ConsumerStatefulWidget {
   const TransactionsView({super.key, this.entry = const TransactionsEntry()});
+
+  /// 목록 칸 맨 위 화면 설명(Suppliers와 같은 자리·모양).
+  static const lead = "확정된 거래의 품목·거래처·단가·수량·총액을 확인합니다.";
 
   final TransactionsEntry entry;
 
@@ -138,6 +142,11 @@ class _ContentState extends ConsumerState<_Content> {
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Suppliers처럼 목록 칸 맨 위 화면 설명(휴대폰은 화면이 좁아 뺍니다).
+        if (!isCompactLayout(context)) ...[
+          const PageLeadText(TransactionsView.lead),
+          const SizedBox(height: PageLeadText.gap),
+        ],
         if (filter.fromSuppliers) ...[
           _FromSuppliersNote(filter: filter),
           const SizedBox(height: 12),

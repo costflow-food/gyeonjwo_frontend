@@ -11,9 +11,14 @@ import 'account_view.dart';
 
 /// 계정 메뉴의 '계정 설정'을 팝업으로 엽니다(접수·연결 확인 팝업과 같은 틀).
 /// 휴대폰 아래 탭의 '계정 설정'은 지금처럼 화면(`/account`)입니다.
-Future<void> showAccountSettingsDialog(BuildContext context) {
-  // 권한 화면에서 휴대폰 뒤로 가기가 돌아올 곳: 팝업을 연 화면.
-  final returnTo = GoRouterState.of(context).uri.toString();
+///
+/// [returnTo]: 권한 화면에서 휴대폰 뒤로 가기가 돌아올 곳. 없으면 [context]의
+/// 화면(라우트 밖의 context로 열 때는 꼭 넘깁니다).
+Future<void> showAccountSettingsDialog(
+  BuildContext context, {
+  String? returnTo,
+}) {
+  returnTo ??= GoRouterState.of(context).uri.toString();
   return showDialog<void>(
     context: context,
     // Full screen on a phone: the dialog paints behind the system bars and
@@ -22,7 +27,7 @@ Future<void> showAccountSettingsDialog(BuildContext context) {
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: AccountSettingsDialog(returnTo: returnTo),
+      child: AccountSettingsDialog(returnTo: returnTo!),
     ),
   );
 }

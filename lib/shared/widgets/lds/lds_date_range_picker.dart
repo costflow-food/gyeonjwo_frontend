@@ -193,7 +193,7 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: LdsText.control,
                         height: 1.2,
                         letterSpacing: -.3,
                         color: LdsColors.ink,

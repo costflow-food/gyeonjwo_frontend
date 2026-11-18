@@ -311,4 +311,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LdsDialog), findsNothing);
   });
+
+  testWidgets("from the 900px-and-narrower menu, the popup takes the keys", (
+    tester,
+  ) async {
+    final router = await _pump(tester);
+    tester.view.physicalSize = const Size(800, 900);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip("메뉴 열기"));
+    await tester.pumpAndSettle();
+    await _openFromMenu(tester);
+    expect(find.byType(AccountSettingsDialog), findsOneWidget);
+    expect(
+      ModalRoute.of(FocusManager.instance.primaryFocus!.context!),
+      isA<DialogRoute<void>>(),
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(AccountSettingsDialog), findsNothing);
+    expect(router.state.uri.path, "/tasks");
+  });
 }

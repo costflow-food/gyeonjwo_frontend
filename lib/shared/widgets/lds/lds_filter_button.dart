@@ -111,7 +111,7 @@ class _LdsFilterButtonState extends State<LdsFilterButton> {
                   Text(
                     widget.label,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: LdsText.control,
                       height: 1.2,
                       letterSpacing: -.3,
                       fontWeight: active ? FontWeight.w700 : FontWeight.w400,

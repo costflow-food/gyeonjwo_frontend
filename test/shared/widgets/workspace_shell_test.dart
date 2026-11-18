@@ -6,6 +6,7 @@ import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:go_router/go_router.dart";
 import "package:gyeonjwo_frontend/features/auth/domain/auth_session.dart";
 import "package:gyeonjwo_frontend/features/auth/presentation/auth_session_view_model.dart";
+import "package:gyeonjwo_frontend/features/workflow_log/presentation/workflow_log_dialog.dart";
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/app_sidebar.dart";
@@ -175,10 +176,11 @@ void main() {
       }
       // 메일 발송 설정은 계정 설정 팝업의 탭에만 있습니다.
       expect(find.text("메일 발송 설정"), findsNothing);
+      // 처리 이력은 화면 이동 없이 팝업으로 엽니다.
       await tester.tap(find.text("처리 이력"));
       await tester.pumpAndSettle();
-      expect(router.state.uri.path, "/logs");
-      expect(find.text("처리 이력"), findsOneWidget);
+      expect(router.state.uri.path, "/");
+      expect(find.byType(WorkflowLogDialog), findsOneWidget);
     });
 
     testWidgets("folding and unfolding animate the width without overflow", (
