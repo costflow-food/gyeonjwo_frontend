@@ -188,4 +188,29 @@ void main() {
       }
     });
   }
+
+  testWidgets("row content sits in the vertical middle of the 48px row", (
+    tester,
+  ) async {
+    await _pump(tester, TaskRow(_case(), selected: true, onTap: () {}));
+    final row = tester.getRect(find.byType(TaskRow));
+    expect(row.height, TaskRow.height);
+    final party = tester.getRect(find.text("한라푸드"));
+    expect(party.center.dy, closeTo(row.center.dy, 1));
+    final label = tester.getRect(find.byType(TaskStatusLabel));
+    expect(label.center.dy, closeTo(row.center.dy, 1));
+  });
+
+  testWidgets("status label hugs its text inside a Wrap (detail header)", (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const Wrap(children: [TaskStatusLabel(TaskLabel.running)]),
+      width: 800,
+    );
+    final width = tester.getSize(find.byType(TaskStatusLabel)).width;
+    expect(width, greaterThanOrEqualTo(64));
+    expect(width, lessThan(100));
+  });
 }
