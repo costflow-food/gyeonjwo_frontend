@@ -33,13 +33,16 @@ class SupplierDetailContent extends StatelessWidget {
               ),
             ),
             SupplierSourceBadge(supplier.sourceType),
-            IconButton(
-              tooltip: "거래처 수정",
-              visualDensity: VisualDensity.compact,
-              onPressed: () =>
-                  showSupplierRegisterDialog(context, initial: supplier),
-              icon: const Icon(Icons.edit_outlined, size: 18),
-            ),
+            // The server edits only suppliers registered by hand
+            // (SUPPLIER_NOT_EDITABLE for web-verified ones).
+            if (supplier.sourceType == SupplierSourceType.registered)
+              IconButton(
+                tooltip: "거래처 수정",
+                visualDensity: VisualDensity.compact,
+                onPressed: () =>
+                    showSupplierRegisterDialog(context, initial: supplier),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+              ),
           ],
         ),
         const SizedBox(height: 20),
