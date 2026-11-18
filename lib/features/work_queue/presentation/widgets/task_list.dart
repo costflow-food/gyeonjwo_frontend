@@ -245,7 +245,6 @@ class _TaskListState extends ConsumerState<TaskList> {
                     value: TaskGroup.confirm,
                     label: TaskGroup.confirm.label,
                     count: counts?.confirm,
-                    urgent: true,
                   ),
                   LdsTabItem(
                     value: TaskGroup.running,
