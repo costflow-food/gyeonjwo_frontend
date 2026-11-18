@@ -34,7 +34,7 @@ class WorkflowLogDetail extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: 24),
           child: Center(
             child: Text(
-              "로그를 선택하면 근거와 참조를 볼 수 있습니다.",
+              "이력을 선택하면 근거와 참조를 볼 수 있습니다.",
               style: TextStyle(fontSize: 15, color: LdsColors.mutedStrong),
             ),
           ),
@@ -121,7 +121,7 @@ class WorkflowLogDetail extends StatelessWidget {
               children: [
                 if (caseId != null && !caseFiltered)
                   LdsButton(
-                    label: "이 업무 로그만",
+                    label: "이 업무 이력만",
                     icon: Icons.filter_list,
                     variant: LdsButtonVariant.outlinedNeutral,
                     onPressed: () =>
