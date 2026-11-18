@@ -168,9 +168,9 @@ void main() {
     expect(find.text("거래처"), findsWidgets);
   });
 
-  testWidgets("작업 화면이라 사이드바는 아이콘 메뉴로 시작", (tester) async {
+  testWidgets("화면 공통 기본값으로 사이드바는 펼친 상태로 시작", (tester) async {
     await _pump(tester);
-    expect(tester.getSize(find.byType(AppSidebar)).width, AppSidebar.iconWidth);
+    expect(tester.getSize(find.byType(AppSidebar)).width, AppSidebar.wideWidth);
   });
 
   testWidgets("필터: 품목·거래처로 거르고, 태그·모두 지우기로 풉니다", (tester) async {
@@ -389,7 +389,7 @@ void main() {
     // #F3F4F6 + 오른쪽 1px 선. 상세 칸 #F9FAFB.
     expect(_listPane, findsOneWidget);
     expect(tester.getSize(_listPane).width, ListDetailLayout.listWidth(1440));
-    expect(tester.getTopLeft(_listPane).dx, AppSidebar.iconWidth);
+    expect(tester.getTopLeft(_listPane).dx, AppSidebar.wideWidth);
     expect(
       tester.getSize(find.byType(ListGroupBox)).width,
       ListDetailLayout.listWidth(1440) - 33,
