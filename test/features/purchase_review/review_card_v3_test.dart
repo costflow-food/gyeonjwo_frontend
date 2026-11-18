@@ -184,12 +184,12 @@ void main() {
     expect(find.text("+160,000원"), findsOneWidget);
     // One filled button (the lowest), one outlined, the conditional one
     // has a dashed box with the reason.
-    expect(find.widgetWithText(FilledButton, "이 안 선택"), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, "이 안 선택"), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, "선택"), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, "선택"), findsOneWidget);
     expect(find.text("선택 불가 · 조건부 안은 아직 확정할 수 없어요."), findsOneWidget);
     expect(
       tester
-          .getSize(find.widgetWithText(OutlinedButton, "이 안 선택").first)
+          .getSize(find.widgetWithText(OutlinedButton, "선택").first)
           .height,
       44,
     );
@@ -286,13 +286,13 @@ void main() {
     (tester) async {
       await _pump(tester);
       expect(find.text('✓ 선택됨'), findsNothing);
-      final choice = find.widgetWithText(OutlinedButton, '이 안 선택').first;
+      final choice = find.widgetWithText(OutlinedButton, '선택').first;
       await tester.ensureVisible(choice);
       await tester.tap(choice);
       await tester.pumpAndSettle();
       // Only the chosen plan is filled now; the lowest goes back to outlined.
       expect(find.widgetWithText(FilledButton, '✓ 선택됨'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, '이 안 선택'), findsNothing);
+      expect(find.widgetWithText(FilledButton, '선택'), findsNothing);
       expect(find.text('분산 구매 · 5,560,000원 선택됨'), findsOneWidget);
       expect(find.text('이 안으로 확정'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -300,7 +300,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('✓ 선택됨'), findsNothing);
       expect(find.text('분산 구매 · 5,560,000원 선택됨'), findsNothing);
-      expect(find.widgetWithText(FilledButton, '이 안 선택'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, '선택'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

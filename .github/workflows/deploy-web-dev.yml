@@ -1,0 +1,125 @@
+# DEV 웹 화면 배포: dev 브랜치에 머지(push)되면 자동으로 DEV Vercel 프로젝트에 올린다.
+# Actions 탭 → "Deploy web to Vercel (DEV)" → Run workflow 로 원하는 브랜치를 수동 배포할 수도 있다.
+# 기존 PRD 배포(deploy-web.yml, dev → main 머지 시 자동)는 그대로 두고, 이 파일은 DEV만 다룬다.
+#
+# 값은 GitHub 환경 "development"에서 읽는다 (Settings → Environments → development).
+#   Secrets   : VERCEL_TOKEN              DEV Vercel 프로젝트를 가진 계정(구본혁)의 토큰
+#   Variables : SUPABASE_URL              https://mumzaoohsmdiegtmjhha.supabase.co (THONER_DEV)
+#               SUPABASE_PUBLISHABLE_KEY  THONER_DEV publishable 키
+#               API_BASE_URL              https://gyeonjwo-api-dev.rkrbhm0ryexya.ap-northeast-2.cs.amazonlightsail.com
+#               VERCEL_PROJECT            (선택, 기본 thoner-frontend-dev)
+# 환경 값은 같은 이름의 저장소 값보다 우선한다. PRD 값과 섞이지 않는다.
+name: Deploy web to Vercel (DEV)
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 배포할 브랜치·태그·커밋 (기본 dev)
+        required: false
+        default: dev
+
+# 연달아 머지되면 앞의 배포를 취소하고 마지막 것만 올린다.
+concurrency:
+  group: deploy-web-development
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: development
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT: ${{ vars.VERCEL_PROJECT || 'thoner-frontend-dev' }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+      SOURCE_REF: ${{ inputs.ref || github.sha }}
+
+    steps:
+      - name: Check required settings
+        run: |
+          missing=()
+          for name in VERCEL_TOKEN SUPABASE_URL SUPABASE_PUBLISHABLE_KEY API_BASE_URL; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::development 환경 설정에 없는 값: ${missing[*]}"
+            exit 1
+          fi
+          case "$API_BASE_URL" in
+            https://*) ;;
+            *) echo "::error::API_BASE_URL은 https:// 로 시작해야 합니다"; exit 1 ;;
+          esac
+          # PRD 값이 잘못 들어가는 사고 방지
+          case "$SUPABASE_URL" in
+            *qlabhitzpdiawtbdmlgw*) echo "::error::SUPABASE_URL이 PRD(THONER_PRD)입니다. DEV 값을 넣으세요"; exit 1 ;;
+          esac
+          case "$API_BASE_URL" in
+            https://gyeonjwo-api.*) echo "::error::API_BASE_URL이 PRD API입니다. DEV API를 넣으세요"; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_REF }}
+
+      - id: rev
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+
+      - run: flutter pub get
+
+      # PRD 배포와 같은 검사. 실패하면 DEV에도 올리지 않는다.
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build web
+        run: >-
+          flutter build web --release
+          --dart-define=SUPABASE_URL="$SUPABASE_URL"
+          --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+          --dart-define=API_BASE_URL="$API_BASE_URL"
+          --dart-define=BUILD_REVISION="${{ steps.rev.outputs.sha }}-dev"
+
+      # Git 정보가 없는 임시 폴더에서 올려 Vercel이 저장소를 자동 연결하지 않게 한다.
+      - name: Deploy to Vercel (DEV)
+        run: |
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site/.vercel/output"
+          cp -R build/web "$site/.vercel/output/static"
+          # PRD와 같은 보안 헤더 + 검색엔진 노출 금지
+          python3 - .github/vercel/config.json "$site/.vercel/output/config.json" <<'PY'
+          import json, sys
+          cfg = json.load(open(sys.argv[1]))
+          for route in cfg.get("routes", []):
+              if "headers" in route:
+                  route["headers"]["X-Robots-Tag"] = "noindex, nofollow"
+          json.dump(cfg, open(sys.argv[2], "w"), indent=2)
+          PY
+          cd "$site"
+          vercel="npx --yes vercel@65.14.0"
+          # 첫 배포 때만 프로젝트를 만든다(이미 있으면 실패해도 무시하고 아래 link가 확인)
+          $vercel project create "$VERCEL_PROJECT" --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+          $vercel link --yes --project "$VERCEL_PROJECT" --token "$VERCEL_TOKEN"
+          url=$($vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN")
+          echo "Deployed: $url"
+          {
+            echo "### DEV 배포 완료"
+            echo "- 배포 주소: $url"
+            echo "- 소스: $SOURCE_REF (${{ steps.rev.outputs.sha }})"
+            echo "- API: $API_BASE_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -248,7 +248,7 @@ void main() {
       );
       // One card per row (SSOT 7.16): both plans that can be confirmed
       // have a button; the conditional one says why it cannot.
-      expect(find.text("이 안 선택"), findsNWidgets(2));
+      expect(find.text("선택"), findsNWidgets(2));
       expect(find.text("수용"), findsNothing);
       expect(find.text("선택 불가 · 역제안 회신 후 선택할 수 있어요"), findsOneWidget);
       // Scroll through the rest of the card.

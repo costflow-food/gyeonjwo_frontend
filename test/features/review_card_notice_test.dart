@@ -635,8 +635,8 @@ void main() {
       expect(find.text("가장 낮음"), findsOneWidget);
       expect(find.text("최저 총액"), findsOneWidget);
       // The chosen plan says so; the lowest can still be chosen.
-      expect(find.text("선택한 구매안"), findsOneWidget);
-      expect(find.text("이 안 선택"), findsOneWidget);
+      expect(find.text("✓ 선택됨"), findsOneWidget);
+      expect(find.text("선택"), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -650,7 +650,7 @@ void main() {
           plan("KEEP", "2559000"),
         ]),
       );
-      expect(find.text("이 안 선택"), findsOneWidget);
+      expect(find.text("선택"), findsOneWidget);
       expect(find.text("수용"), findsNothing);
       expect(find.text("선택 불가 · 조건부 안은 아직 확정할 수 없어요."), findsOneWidget);
     });
@@ -688,7 +688,7 @@ void main() {
 
     testWidgets("a single plan is simply open", (tester) async {
       await _pump(tester, card([plan("KEEP", "2559000")]));
-      expect(find.text("이 안 선택"), findsOneWidget);
+      expect(find.text("선택"), findsOneWidget);
       expect(find.byIcon(Icons.expand_less), findsNothing);
       expect(find.byIcon(Icons.expand_more), findsNothing);
     });
