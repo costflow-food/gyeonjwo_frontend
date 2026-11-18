@@ -1,5 +1,6 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:go_router/go_router.dart";
@@ -11,11 +12,13 @@ import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_repository
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_repository.dart";
+import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_list.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_row.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/app_visibility.dart";
+import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/app_sidebar.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
@@ -30,24 +33,31 @@ class _SignedIn extends AuthSessionViewModel {
   AuthSession build() => const AuthSession(status: AuthSessionStatus.signedIn);
 }
 
-WorkCase _case(String id, String status, String step, {String? item}) =>
-    WorkCase(
-      id: id,
-      initialMailId: "m-$id",
-      title: "업체 $id",
-      sender: "$id@example.invalid",
-      receivedAt: "2026-11-10T00:00:00Z",
-      status: WorkCaseStatus.fromCode(status),
-      statusCode: status,
-      processingStep: step,
-      stepMessage: step,
-      inputRevision: 1,
-      attachmentCount: 0,
-      itemName: item ?? "냉동 딸기",
-    );
+WorkCase _case(
+  String id,
+  String status,
+  String step, {
+  String? item,
+  String receivedAt = "2026-11-10T00:00:00Z",
+  bool archived = false,
+}) => WorkCase(
+  id: id,
+  initialMailId: "m-$id",
+  title: "업체 $id",
+  sender: "$id@example.invalid",
+  receivedAt: receivedAt,
+  archived: archived,
+  status: WorkCaseStatus.fromCode(status),
+  statusCode: status,
+  processingStep: step,
+  stepMessage: step,
+  inputRevision: 1,
+  attachmentCount: 0,
+  itemName: item ?? "냉동 딸기",
+);
 
 /// Two cases for the user (확인 필요), one waiting on a supplier (진행 중),
-/// and a long item group to scroll.
+/// one confirmed (완료, archived), and a long item group to scroll.
 class _Queue implements WorkQueueRepository {
   _Queue({this.longGroup = false});
 
@@ -62,10 +72,20 @@ class _Queue implements WorkQueueRepository {
     bool archived = false,
   }) async {
     if (archived) {
-      return const WorkQueuePage(items: [], counts: WorkQueueCounts());
+      return WorkQueuePage(
+        items: [
+          _case("d1", "Complete", "REVIEW_READY", item: "피망", archived: true),
+        ],
+        counts: const WorkQueueCounts(total: 1),
+      );
     }
     final items = [
-      _case("c1", "Waiting", "PENDING_START"),
+      _case(
+        "c1",
+        "Waiting",
+        "PENDING_START",
+        receivedAt: "2026-11-11T00:00:00Z",
+      ),
       _case("c2", "Pending", "FAILED"),
       _case("r1", "Running", "WAITING_REPLY", item: "깐마늘"),
       if (longGroup)
@@ -79,13 +99,23 @@ class _Queue implements WorkQueueRepository {
   }
 
   @override
+  Future<OriginalMail> getOriginalMail(String mailId) async => OriginalMail(
+    id: mailId,
+    subject: "[단가변경] $mailId 단가 조정",
+    sender: "영업담당 <$mailId@example.invalid>",
+    recipients: const ["buyer@example.invalid"],
+    receivedAt: "2026-11-10T00:00:00Z",
+    bodyText: "본문",
+  );
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 Future<GoRouter> _pump(
   WidgetTester tester, {
   String at = "/tasks",
-  double width = 1440,
+  double width = 1100,
   bool longGroup = false,
 }) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
@@ -102,10 +132,12 @@ Future<GoRouter> _pump(
         path: "/tasks",
         builder: (_, state) => WorkQueueView(tab: tab(state)),
       ),
-      // A stand-in for the case page: these tests are about the list.
       GoRoute(
         path: "/tasks/:caseId",
-        builder: (_, state) => Text("case ${state.uri}"),
+        builder: (_, state) => WorkQueueView(
+          caseId: state.pathParameters["caseId"],
+          tab: tab(state),
+        ),
       ),
     ],
   );
@@ -153,8 +185,9 @@ void main() {
     expect(_badge(tester, "확인 필요"), LdsBadgeTone.primary);
     expect(_badge(tester, "진행 중"), LdsBadgeTone.neutral);
     expect(_badge(tester, "완료"), LdsBadgeTone.neutral);
+    // Row labels (결정 b): only the case not started yet waits.
     expect(find.text("대기"), findsOneWidget, reason: "row label");
-    expect(_rows(tester), unorderedEquals(["c1", "c2", "r1"]));
+    expect(_rows(tester), unorderedEquals(["c1", "c2", "r1", "d1"]));
 
     // The tab is in the address.
     await tester.tap(find.text("확인 필요"));
@@ -168,6 +201,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.state.uri.queryParameters["tab"], "running");
     expect(_rows(tester), ["r1"]);
+
+    await tester.tap(find.text("완료").first);
+    await tester.pumpAndSettle();
+    expect(_rows(tester), ["d1"]);
+  });
+
+  testWidgets("전체 counts and shows the confirmed cases too", (tester) async {
+    await _pump(tester);
+    final all = find.descendant(
+      of: find.ancestor(of: find.text("전체"), matching: find.byType(Row)).first,
+      matching: find.byType(LdsBadge),
+    );
+    // 3 open + 1 confirmed (archived).
+    expect(tester.widget<LdsBadge>(all).count, 4);
+    expect(_rows(tester), contains("d1"));
+    expect(find.text("완료"), findsNWidgets(2), reason: "tab and row label");
   });
 
   testWidgets("an address with ?tab opens on that tab", (tester) async {
@@ -183,13 +232,49 @@ void main() {
     expect(router.state.uri.toString(), "/tasks/c1?tab=confirm");
   });
 
-  testWidgets("groups are boxes with a name and a plain count", (tester) async {
+  testWidgets("groups in 가나다 order with a count and a waiting badge", (
+    tester,
+  ) async {
     await _pump(tester);
-    expect(find.text("냉동 딸기"), findsOneWidget);
-    expect(find.text("2"), findsWidgets);
+    double top(String name) => tester.getTopLeft(find.text(name)).dy;
+    expect(top("깐마늘"), lessThan(top("냉동 딸기")));
+    expect(top("냉동 딸기"), lessThan(top("피망")));
+    // 냉동 딸기: 2 cases, one not started yet.
+    final header = find.ancestor(
+      of: find.text("냉동 딸기"),
+      matching: find.byType(Row),
+    );
+    expect(
+      find.descendant(of: header.first, matching: find.text("2")),
+      findsOneWidget,
+    );
+    final badge = find.descendant(
+      of: header.first,
+      matching: find.byType(GroupWaitingBadge),
+    );
+    expect(tester.widget<GroupWaitingBadge>(badge).count, 1);
+    expect(find.byType(GroupWaitingBadge), findsOneWidget);
+
+    // Folding: the chevron turns -90°.
     await tester.tap(find.text("냉동 딸기"));
     await tester.pumpAndSettle();
-    expect(_rows(tester), ["r1"]);
+    expect(_rows(tester), unorderedEquals(["r1", "d1"]));
+    final turn = tester.widget<AnimatedRotation>(
+      find.descendant(
+        of: header.first,
+        matching: find.byType(AnimatedRotation),
+      ),
+    );
+    expect(turn.turns, -.25);
+  });
+
+  testWidgets("search: 제목·보낸 사람, #333D4B 1px when focused", (tester) async {
+    await _pump(tester);
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.decoration!.hintText, "제목·보낸 사람 검색");
+    final focused = field.decoration!.focusedBorder! as OutlineInputBorder;
+    expect(focused.borderSide.color, LdsColors.title);
+    expect(focused.borderSide.width, 1);
   });
 
   testWidgets("a group's header stays on top while its rows scroll", (
@@ -204,11 +289,14 @@ void main() {
     expect(find.text("제주감귤").hitTestable(), findsOneWidget);
   });
 
-  testWidgets("wide: list 30% (400–480) beside an empty detail", (
+  testWidgets("wide: list 30% beside the first row, opened on its own", (
     tester,
   ) async {
-    await _pump(tester, width: 1440);
-    expect(find.text("왼쪽 목록에서 업무를 고르면 내용이 여기에 보입니다."), findsOneWidget);
+    final router = await _pump(tester, width: 1440);
+    // The first visible row (깐마늘 group) is selected, in the address too.
+    expect(router.state.uri.toString(), "/tasks/r1");
+    expect(find.text("거래처 회신을 모으고 있어요"), findsOneWidget);
+    expect(find.text("왼쪽 목록에서 업무를 고르면 내용이 여기에 보입니다."), findsNothing);
     expect(
       tester.getSize(find.byType(LdsTabBar<TaskGroup?>)).width,
       WorkQueueView.listWidth(1440),
@@ -217,11 +305,61 @@ void main() {
     expect(WorkQueueView.listWidth(2000), 480);
     // Tasks starts with the icon menu.
     expect(tester.getSize(find.byType(AppSidebar)).width, AppSidebar.iconWidth);
+    // The list pane is #F3F4F6 with a line on its right; the detail #F9FAFB.
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration! as BoxDecoration).color == LdsColors.lineSoft &&
+            (widget.decoration! as BoxDecoration).border ==
+                const Border(right: BorderSide(color: LdsColors.line)),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is ColoredBox && widget.color == LdsColors.canvas,
+      ),
+      findsWidgets,
+    );
   });
 
-  testWidgets("1100 and narrower: the list alone", (tester) async {
-    await _pump(tester, width: 1100);
+  testWidgets("↑/↓ in the list opens the next and previous rows", (
+    tester,
+  ) async {
+    final router = await _pump(tester, width: 1440, at: "/tasks/r1");
+    Future<void> press(LogicalKeyboardKey key) async {
+      await tester.sendKeyEvent(key);
+      await tester.pumpAndSettle();
+    }
+
+    tester
+        .widget<Focus>(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Focus && widget.focusNode?.debugLabel == "업무 목록",
+          ),
+        )
+        .focusNode!
+        .requestFocus();
+    await tester.pump();
+    await press(LogicalKeyboardKey.arrowDown);
+    expect(router.state.uri.toString(), "/tasks/c1");
+    // The new list keeps the focus.
+    await press(LogicalKeyboardKey.arrowUp);
+    expect(router.state.uri.toString(), "/tasks/r1");
+    // Nothing above the first row.
+    await press(LogicalKeyboardKey.arrowUp);
+    expect(router.state.uri.toString(), "/tasks/r1");
+  });
+
+  testWidgets("1100 and narrower: the list alone, nothing auto-opened", (
+    tester,
+  ) async {
+    final router = await _pump(tester, width: 1100);
     expect(find.byType(TaskRow), findsWidgets);
+    expect(router.state.uri.toString(), "/tasks");
     expect(find.text("왼쪽 목록에서 업무를 고르면 내용이 여기에 보입니다."), findsNothing);
   });
 }

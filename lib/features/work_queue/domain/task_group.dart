@@ -43,7 +43,7 @@ const _candidatesPreparing = {"CANDIDATES_NOT_READY", "REVISION_CONFLICT"};
 /// CANDIDATES 단계에서 사용자가 고를 차례인지. 서버가 후보 선택을 열었거나,
 /// 고를 수 있는 후보가 없는 등 사용자가 풀어야 하는 이유로 막혔을 때입니다.
 /// 막힌 이유가 없으면 서버가 이미 견적 요청을 준비하는 중입니다.
-bool _userPicksCandidates(WorkCase workCase) {
+bool userPicksCandidates(WorkCase workCase) {
   if (workCase.can(WorkCaseAction.selectCandidates)) return true;
   final blocked = workCase.disabledActions
       .where((disabled) => disabled.action == WorkCaseAction.selectCandidates)
@@ -55,7 +55,7 @@ TaskGroup taskGroupOf(WorkCase workCase) {
   if (workCase.archived) return TaskGroup.complete;
   final step = workCase.processingStep;
   if (step == ProcessingStep.candidates) {
-    return _userPicksCandidates(workCase)
+    return userPicksCandidates(workCase)
         ? TaskGroup.confirm
         : TaskGroup.running;
   }
@@ -68,7 +68,9 @@ TaskGroup taskGroupOf(WorkCase workCase) {
   return TaskGroup.confirm;
 }
 
-/// 행·상세의 상태 라벨: 왜 그 묶음인지 보여 줍니다(7.14).
+/// 행·상세의 상태 라벨 (Tasks 시안): 묶음(누구 차례인가)과 따로, 업무가 지금
+/// 어떤 상태인지 보여 줍니다. 검토를 시작하기 전만 '대기'이고, 보류·오류·
+/// 완료가 아니면 모두 '진행 중'입니다.
 enum TaskLabel {
   waiting("대기"),
   hold("보류"),
@@ -85,54 +87,11 @@ TaskLabel taskLabelOf(WorkCase workCase) {
   return switch (workCase.processingStep) {
     ProcessingStep.onHold || ProcessingStep.needsInfo => TaskLabel.hold,
     "FAILED" || "SEND_UNKNOWN" => TaskLabel.error,
-    _ =>
-      taskGroupOf(workCase) == TaskGroup.running
-          ? TaskLabel.running
-          : TaskLabel.waiting,
+    "PENDING_START" || "ACKNOWLEDGED" => TaskLabel.waiting,
+    _ => workCase.notStarted ? TaskLabel.waiting : TaskLabel.running,
   };
 }
 
-/// 보류 사유로 짐작하는 단계(1 요청 확인 · 2 후보 · 3 견적 요청 · 4 회신 · 5 검토).
-const _holdStages = {
-  "SUPPLIER_NOT_MATCHED": 1,
-  "SUPPLIER_MISMATCH": 1,
-  "MISSING_FIELD": 1,
-  "MISSING_EVIDENCE": 1,
-  "SOURCE_READ_FAILED": 1,
-  "NO_SUITABLE_CANDIDATES": 2,
-  "CONDITIONS_MISSING": 3,
-  "SEND_POLICY_REQUIRED": 3,
-  "NO_QUOTE_DATA": 4,
-  "COUNTER_OFFER_POLICY_MISSING": 5,
-  "COUNTER_OFFER_NOT_COMPUTABLE": 5,
-};
-
-/// 목록 행의 진행도 n(전체 [CaseStage.total]). 단계를 알 수 없으면
-/// (처리 오류, 사유 없는 보류) null이고 칸은 비워 둡니다.
-int? taskProgressOf(WorkCase workCase) {
-  if (workCase.archived) return CaseStage.total;
-  final step = workCase.processingStep;
-  switch (step) {
-    case "PENDING_START" || "ACKNOWLEDGED":
-      return 1;
-    case ProcessingStep.needsInfo:
-      return 3;
-    case ProcessingStep.onHold:
-      return _holdStages[workCase.hold?.code];
-    case "FAILED":
-      return null;
-  }
-  final blocked = workCase.disabledActions
-      .where((disabled) => disabled.action == WorkCaseAction.selectCandidates)
-      .firstOrNull;
-  return caseStageOf(
-    step,
-    inputRevision: workCase.inputRevision,
-    canSelectCandidates: _userPicksCandidates(workCase),
-    // 막히지 않았거나 후보 세트 없이 넘어간 경우(옛 경로): 서버가 견적
-    // 요청을 준비하는 중입니다.
-    preparingRfq:
-        blocked == null || blocked.reasonCode == "CANDIDATES_NOT_READY",
-    rfqSent: workCase.replySummary?.visible ?? true,
-  )?.index;
-}
+/// 목록 행의 진행도 n(전체 [CaseStage.total]). 모르는 단계 코드면 null이고
+/// 칸은 비워 둡니다.
+int? taskProgressOf(WorkCase workCase) => caseStageOf(workCase)?.index;

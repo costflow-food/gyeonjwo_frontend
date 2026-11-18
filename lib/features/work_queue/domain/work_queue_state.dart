@@ -86,7 +86,8 @@ class WorkQueueState {
   );
 }
 
-/// 품목별 그룹. 가장 최근 메일이 온 품목이 먼저, 품목 미확인은 맨 뒤입니다.
+/// 품목별 그룹. 품목 이름 가나다순, 품목 미확인은 맨 뒤입니다. 묶음 안은
+/// 최신 수신순입니다.
 List<WorkCaseGroup> groupCases(Iterable<WorkCase> cases) {
   final byItem = <String?, List<WorkCase>>{};
   for (final workCase in cases) {
@@ -104,10 +105,36 @@ List<WorkCaseGroup> groupCases(Iterable<WorkCase> cases) {
         ),
       ),
   ];
+  // 한글 음절은 유니코드에서 가나다 차례라 코드값 비교로 충분합니다.
   groups.sort((a, b) {
-    if (a.itemName == null) return 1;
+    if (a.itemName == null) return b.itemName == null ? 0 : 1;
     if (b.itemName == null) return -1;
-    return b.cases.first.receivedAt.compareTo(a.cases.first.receivedAt);
+    return a.itemName!.compareTo(b.itemName!);
   });
   return List.unmodifiable(groups);
 }
+
+/// 탭에 보일 업무. 전체 탭은 보관 전 업무와 완료(보관) 업무를 함께 보이고,
+/// 완료 탭은 완료 업무만 보입니다. [completed]가 아직 없으면 빼고 셉니다.
+List<WorkCase> tabCases(
+  TaskGroup? status, {
+  required List<WorkCase> active,
+  List<WorkCase>? completed,
+}) => switch (status) {
+  null => [...active, ...?completed],
+  TaskGroup.complete => [...?completed],
+  _ => [
+    for (final workCase in active)
+      if (taskGroupOf(workCase) == status) workCase,
+  ],
+};
+
+/// 목록에 보이는 차례(묶음 순서 → 묶음 안 순서)대로 편 업무. 접힌 묶음
+/// ([collapsed]의 품목)은 건너뜁니다.
+List<WorkCase> orderedCases(
+  List<WorkCaseGroup> groups, {
+  Set<String?> collapsed = const {},
+}) => [
+  for (final group in groups)
+    if (!collapsed.contains(group.itemName)) ...group.cases,
+];

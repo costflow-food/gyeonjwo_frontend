@@ -7,7 +7,8 @@ import "../../domain/task_group.dart";
 import "../../domain/task_row_text.dart";
 import "../../domain/work_case.dart";
 
-/// 상태 라벨 색 (4.1 weak).
+/// 상태 라벨 색 (4.1 weak): 대기 주황 · 진행 중 파랑 · 보류 노랑 · 오류 빨강 ·
+/// 완료 초록.
 LdsTagTone taskLabelTone(TaskLabel label) => switch (label) {
   TaskLabel.waiting => LdsTagTone.enabled,
   TaskLabel.hold => LdsTagTone.warning,
@@ -125,8 +126,8 @@ class TaskRow extends StatelessWidget {
                             overflow: TextOverflow.visible,
                             style: const TextStyle(
                               fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: LdsColors.ink,
+                              fontWeight: FontWeight.w600,
+                              color: LdsColors.title,
                               fontFeatures: [FontFeature.tabularFigures()],
                             ),
                           ),

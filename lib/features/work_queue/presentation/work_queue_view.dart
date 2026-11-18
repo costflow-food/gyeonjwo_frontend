@@ -14,6 +14,7 @@ import "../domain/task_group.dart";
 import "../domain/work_case.dart";
 import "completed_tasks_view_model.dart";
 import "mobile/mobile_work_queue_home.dart";
+import "recent_tasks.dart";
 import "widgets/gmail_read_notice.dart";
 import "widgets/task_list.dart";
 import "widgets/work_case_panel.dart";
@@ -46,6 +47,9 @@ class WorkQueueView extends ConsumerStatefulWidget {
 class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
   static const _gutter = WorkspaceShell.gutter;
 
+  /// 목록 칸 오른쪽 안쪽 여백(시안 16).
+  static const _listRightPadding = 16.0;
+
   @override
   void initState() {
     super.initState();
@@ -66,10 +70,28 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
     ref.read(workQueueViewModelProvider.notifier)
       ..select(widget.caseId)
       ..setStatus(widget.tab);
+    ref.read(recentTasksProvider.notifier).visit(widget.caseId);
   });
 
   void _open(WorkCase workCase) =>
       context.go(AppPaths.tasksAt(caseId: workCase.id, tab: widget.tab?.code));
+
+  /// 넓은 화면에서 고른 업무가 없으면 보이는 첫 행을 엽니다. 주소도 그 업무로
+  /// 바꾸되 뒤로 가기에 빈 목록을 남기지 않습니다.
+  void _autoOpen(WorkCase workCase) {
+    if (!mounted || widget.caseId != null) return;
+    context.replace(
+      AppPaths.tasksAt(caseId: workCase.id, tab: widget.tab?.code),
+    );
+  }
+
+  /// '나중에'·'검토 보류': 목록에서 지금 업무 다음 행을 엽니다.
+  VoidCallback? _nextOf(String caseId) {
+    final order = taskListOrder(ref, widget.tab);
+    final at = order.indexWhere((workCase) => workCase.id == caseId);
+    if (at == -1 || at + 1 >= order.length) return null;
+    return () => _open(order[at + 1]);
+  }
 
   void _changeTab(TaskGroup? tab) =>
       context.go(AppPaths.tasksAt(caseId: widget.caseId, tab: tab?.code));
@@ -107,7 +129,11 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
     final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
     Widget detail() {
       if (listed != null) {
-        return WorkCasePanel(key: ValueKey(listed.id), workCase: listed);
+        return WorkCasePanel(
+          key: ValueKey(listed.id),
+          workCase: listed,
+          onNext: _nextOf(listed.id),
+        );
       }
       // Not in this search or page: read the case itself.
       if (caseId != null && listRead) return _CaseDetail(caseId: caseId);
@@ -120,13 +146,15 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
       return const _EmptyDetail();
     }
 
-    Widget list({required EdgeInsets padding}) => TaskList(
-      status: widget.tab,
-      selectedId: caseId,
-      onOpen: _open,
-      onTab: _changeTab,
-      padding: padding,
-    );
+    Widget list({required EdgeInsets padding, bool autoSelect = false}) =>
+        TaskList(
+          status: widget.tab,
+          selectedId: caseId,
+          onOpen: _open,
+          onTab: _changeTab,
+          padding: padding,
+          onAutoSelect: autoSelect ? _autoOpen : null,
+        );
 
     return WorkspaceShell(
       scrollable: false,
@@ -148,40 +176,57 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
                   if (caseId == null) {
                     return list(padding: const EdgeInsets.all(_gutter));
                   }
-                  return _DetailScroll(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () => context.go(
-                            AppPaths.tasksAt(tab: widget.tab?.code),
+                  return ColoredBox(
+                    color: LdsColors.canvas,
+                    child: _DetailScroll(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => context.go(
+                              AppPaths.tasksAt(tab: widget.tab?.code),
+                            ),
+                            icon: const Icon(Icons.arrow_back, size: 18),
+                            label: const Text("목록으로"),
                           ),
-                          icon: const Icon(Icons.arrow_back, size: 18),
-                          label: const Text("목록으로"),
-                        ),
-                        const SizedBox(height: 8),
-                        detail(),
-                      ],
+                          const SizedBox(height: 8),
+                          detail(),
+                        ],
+                      ),
                     ),
                   );
                 }
+                // 목록 칸 #F3F4F6 + 오른쪽 1px 선, 상세 칸 #F9FAFB (시안).
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(
-                      width: WorkQueueView.listWidth(screen) + _gutter,
+                    Container(
+                      width:
+                          WorkQueueView.listWidth(screen) +
+                          _gutter +
+                          _listRightPadding +
+                          1,
+                      decoration: const BoxDecoration(
+                        color: LdsColors.lineSoft,
+                        border: Border(
+                          right: BorderSide(color: LdsColors.line),
+                        ),
+                      ),
                       child: list(
+                        autoSelect: true,
                         padding: const EdgeInsets.fromLTRB(
                           _gutter,
                           _gutter,
-                          0,
+                          _listRightPadding,
                           _gutter,
                         ),
                       ),
                     ),
-                    const SizedBox(width: _gutter),
                     Expanded(
-                      child: _DetailScroll(leftGutter: 0, child: detail()),
+                      child: ColoredBox(
+                        color: LdsColors.canvas,
+                        child: _DetailScroll(child: detail()),
+                      ),
                     ),
                   ],
                 );
@@ -197,22 +242,13 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
 /// 상세 칸: 위 24에서 시작, 최대 1040을 목록 쪽에 붙이고 오른쪽 여백 24.
 /// 남는 폭은 상세 오른쪽 끝에만 둡니다(7.18).
 class _DetailScroll extends StatelessWidget {
-  const _DetailScroll({
-    required this.child,
-    this.leftGutter = WorkspaceShell.gutter,
-  });
+  const _DetailScroll({required this.child});
 
   final Widget child;
-  final double leftGutter;
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-    padding: EdgeInsets.fromLTRB(
-      leftGutter,
-      WorkspaceShell.gutter,
-      WorkspaceShell.gutter,
-      WorkspaceShell.gutter,
-    ),
+    padding: const EdgeInsets.all(WorkspaceShell.gutter),
     child: Align(
       alignment: Alignment.topLeft,
       child: ConstrainedBox(

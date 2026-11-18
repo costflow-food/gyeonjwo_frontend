@@ -110,7 +110,10 @@ void main() {
     expect(find.text("한라푸드"), findsOneWidget);
     expect(find.text("거래처 회신 대기"), findsOneWidget);
     expect(find.text("진행 중"), findsOneWidget);
-    expect(find.text("3/5"), findsOneWidget);
+    expect(find.text("4/5"), findsOneWidget);
+    final progress = tester.widget<Text>(find.text("4/5"));
+    expect(progress.style!.fontWeight, FontWeight.w600);
+    expect(progress.style!.color, LdsColors.title);
     // The row's content starts on the item name's line.
     expect(
       tester.getTopLeft(find.text("한라푸드")).dx -

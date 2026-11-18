@@ -1,15 +1,17 @@
 import "package:flutter_test/flutter_test.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/case_stage.dart";
-import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 
 WorkCase _case(
-  String status,
   String step, {
+  String status = "Running",
   int revision = 1,
   List<String> actions = const [],
   String? blockedBy,
   ReplySummary? replies,
+  String? item,
+  String? holdCode,
+  bool archived = false,
 }) => WorkCase(
   id: "c1",
   initialMailId: "m1",
@@ -22,8 +24,11 @@ WorkCase _case(
   stepMessage: "",
   inputRevision: revision,
   attachmentCount: 0,
+  itemName: item,
+  archived: archived,
   allowedActions: actions,
   replySummary: replies,
+  hold: holdCode == null ? null : HoldReason(code: holdCode, message: "사유"),
   disabledActions: [
     if (blockedBy != null)
       DisabledWorkCaseAction(
@@ -35,128 +40,95 @@ WorkCase _case(
 );
 
 void main() {
-  test("every step the AI runs is a working slice", () {
-    expect(
-      caseStageOf("EXTRACTING"),
-      const CaseStage(index: 1, working: true, label: "요청 정보 확인 중"),
-    );
-    expect(
-      caseStageOf("SELECTING_CANDIDATES"),
-      const CaseStage(index: 2, working: true, label: "후보 찾는 중"),
-    );
-    expect(
-      caseStageOf("GENERATING_PLANS"),
-      const CaseStage(index: 5, working: true, label: "검토안 생성 중"),
-    );
+  test("five steps as in the design", () {
+    expect(caseStepNames, ["접수", "정보 추출", "후보 찾기", "견적 요청·회신", "검토 카드"]);
   });
 
-  test("reading a supplier reply works on the reply slice", () {
-    expect(
-      caseStageOf("EXTRACTING", inputRevision: 2),
-      const CaseStage(index: 4, working: true, label: "거래처 회신 확인 중"),
-    );
-    // Only EXTRACTING moves with the revision.
-    expect(caseStageOf("WAITING_REPLY", inputRevision: 2)!.index, 3);
-  });
-
-  test("steps waiting on the user or a supplier rest", () {
-    // Step → slice, finished slices, label.
-    const resting = {
-      "CANDIDATES": (2, 2, "견적 요청 준비 중"),
-      // Not sent yet: the quote-request slice itself stays open.
-      "WAITING_APPROVAL": (3, 2, "발송 승인 대기"),
-      "AWAITING_APPROVAL": (3, 2, "발송 승인 대기"),
-      "SEND_UNKNOWN": (3, 2, "발송 결과 확인 필요"),
-      "WAITING_REPLY": (3, 3, "거래처 회신 대기"),
-      "REVIEW_READY": (5, 5, "검토 결과 준비 완료"),
+  // 결정 (a): 서버 processing_step → 다섯 단계.
+  test("server steps map onto the five steps", () {
+    const table = {
+      "PENDING_START": 1,
+      "ACKNOWLEDGED": 1,
+      "EXTRACTING": 2,
+      "SELECTING_CANDIDATES": 3,
+      "WAITING_APPROVAL": 4,
+      "AWAITING_APPROVAL": 4,
+      "SEND_UNKNOWN": 4,
+      "WAITING_REPLY": 4,
+      "GENERATING_PLANS": 5,
+      "BUILDING_PLANS": 5,
+      "BUILDING_COUNTER_OFFER": 5,
+      "REVIEW_READY": 5,
     };
-    for (final MapEntry(key: step, value: (index, done, label))
-        in resting.entries) {
-      final stage = caseStageOf(step)!;
-      expect(stage.index, index, reason: step);
-      expect(stage.working, isFalse, reason: step);
-      expect(stage.doneCount, done, reason: step);
-      expect(stage.label, label, reason: step);
+    for (final MapEntry(key: step, value: index) in table.entries) {
+      expect(caseStageOf(_case(step))!.index, index, reason: step);
     }
+    expect(caseStageOf(_case("SOMETHING_NEW")), isNull);
+  });
+
+  test("candidate pick is step 3; the server drafting requests is step 4", () {
     expect(
-      caseStageOf("CANDIDATES", canSelectCandidates: true)!.label,
-      "업체 선택 대기",
+      caseStageOf(
+        _case("CANDIDATES", actions: [WorkCaseAction.selectCandidates]),
+      )!.index,
+      3,
+    );
+    expect(caseStageOf(_case("CANDIDATES"))!.index, 4);
+    expect(
+      caseStageOf(_case("CANDIDATES", blockedBy: "CANDIDATES_NOT_READY"))!
+          .index,
+      4,
     );
   });
 
-  test("a raised revision is a reply only after a quote request went out", () {
+  test("reading a reply is step 4 only after a quote request went out", () {
+    expect(caseStageOf(_case("EXTRACTING", revision: 2))!.index, 4);
     expect(
-      taskProgressOf(
+      caseStageOf(
         _case(
-          "Running",
           "EXTRACTING",
           revision: 2,
           replies: const ReplySummary(requested: 0, responded: 0),
         ),
-      ),
-      1,
+      )!.index,
+      2,
     );
+  });
+
+  test("a stop follows its reason code, else what the list knows", () {
+    expect(caseStageOf(_case("ON_HOLD", holdCode: "MISSING_FIELD"))!.index, 2);
     expect(
-      taskProgressOf(
-        _case(
-          "Running",
-          "EXTRACTING",
-          revision: 2,
-          replies: const ReplySummary(requested: 3, responded: 1),
-        ),
-      ),
+      caseStageOf(_case("NEEDS_INFO"), stopCode: "SEND_POLICY_REQUIRED")!.index,
       4,
     );
-    // No reply summary (API-02): the revision alone decides.
-    expect(taskProgressOf(_case("Running", "EXTRACTING", revision: 2)), 4);
+    expect(caseStageOf(_case("ON_HOLD"))!.index, 2);
+    expect(caseStageOf(_case("ON_HOLD", item: "깐마늘"))!.index, 3);
   });
 
-  test("CANDIDATES without a pick to wait for is the worker preparing", () {
-    const preparing = CaseStage(index: 3, working: true, label: "견적 요청 준비 중");
-    expect(caseStageOf("CANDIDATES", preparingRfq: true), preparing);
-    expect(preparing.doneCount, 2);
-    for (final workCase in [
-      _case("Running", "CANDIDATES"),
-      _case("Running", "CANDIDATES", blockedBy: "CANDIDATES_NOT_READY"),
-    ]) {
-      expect(taskProgressOf(workCase), 3);
-      expect(taskGroupOf(workCase), TaskGroup.running);
-    }
-    // Blocked for another reason: nothing is running; the user has to look.
-    final blocked = _case(
-      "Running",
-      "CANDIDATES",
-      blockedBy: "CANDIDATE_SELECTION_INTEGRATION_REQUIRED",
+  test("a failure keeps its step and marks it as an error", () {
+    final failed = caseStageOf(
+      _case(
+        "FAILED",
+        item: "깐마늘",
+        replies: const ReplySummary(requested: 3, responded: 0),
+      ),
+    )!;
+    expect(failed.index, 4);
+    expect(failed.error, isTrue);
+    expect(failed.doneCount, 3);
+    expect(failed.semanticsLabel, "5단계 중 4단계 견적 요청·회신, 오류");
+    expect(
+      caseStageOf(_case("FAILED"), stopCode: "RFQ_PREPARATION_FAILED")!.index,
+      4,
     );
-    expect(taskProgressOf(blocked), 2);
-    expect(taskGroupOf(blocked), TaskGroup.confirm);
-    // The flag only matters at CANDIDATES.
-    expect(taskProgressOf(_case("Running", "WAITING_REPLY")), 3);
+    expect(caseStageOf(_case("WAITING_REPLY"))!.error, isFalse);
   });
 
-  test("steps without a known slice have no ring", () {
-    for (final step in [
-      "PENDING_START",
-      "ACKNOWLEDGED",
-      "BUILDING_PLANS",
-      "BUILDING_COUNTER_OFFER",
-      "ON_HOLD",
-      "NEEDS_INFO",
-      "FAILED",
-      "SOMETHING_NEW",
-      "",
-    ]) {
-      expect(caseStageOf(step), isNull, reason: step);
-      expect(caseStageOf(step, inputRevision: 3), isNull, reason: step);
-    }
-  });
-
-  test("finished slices and the spoken label follow working or resting", () {
-    final working = caseStageOf("SELECTING_CANDIDATES")!;
-    expect(working.doneCount, 1);
-    expect(working.semanticsLabel, "5단계 중 2단계 작업 중, 후보 찾는 중");
-    final resting = caseStageOf("WAITING_REPLY")!;
-    expect(resting.doneCount, 3);
-    expect(resting.semanticsLabel, "5단계 중 3단계 대기, 거래처 회신 대기");
+  test("a confirmed plan finishes every step", () {
+    final done = caseStageOf(_case("REVIEW_READY", archived: true))!;
+    expect(done.complete, isTrue);
+    expect(done.index, CaseStage.total);
+    expect(done.doneCount, CaseStage.total);
+    expect(done.semanticsLabel, "5단계 모두 완료");
   });
 }
