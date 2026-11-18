@@ -170,13 +170,114 @@ void main() {
       expect(find.text("buyer@example.invalid"), findsOneWidget);
       await tester.tap(find.byTooltip("계정 메뉴"));
       await tester.pumpAndSettle();
-      for (final item in ["계정 설정", "메일 발송 설정", "처리 이력", "로그아웃"]) {
+      for (final item in ["계정 설정", "처리 이력", "로그아웃"]) {
         expect(find.text(item), findsOneWidget);
       }
+      // 메일 발송 설정은 계정 설정 팝업의 탭에만 있습니다.
+      expect(find.text("메일 발송 설정"), findsNothing);
       await tester.tap(find.text("처리 이력"));
       await tester.pumpAndSettle();
       expect(router.state.uri.path, "/logs");
       expect(find.text("처리 이력"), findsOneWidget);
+    });
+
+    testWidgets("folding and unfolding animate the width without overflow", (
+      tester,
+    ) async {
+      final router = await _pump(tester, at: "/");
+      final half = AppSidebar.toggleDuration ~/ 2;
+
+      await tester.tap(find.byTooltip("메뉴 접기"));
+      await tester.pump();
+      await tester.pump(half);
+      final folding = _sidebarWidth(tester);
+      expect(folding, greaterThan(AppSidebar.iconWidth));
+      expect(folding, lessThan(AppSidebar.wideWidth));
+      expect(tester.takeException(), isNull);
+
+      // The leaving wide menu can't be pressed mid-way.
+      final tasks = find.descendant(
+        of: find.byType(AppSidebar),
+        matching: find.text("Tasks"),
+      );
+      await tester.tap(tasks.first, warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, "/");
+      expect(_sidebarWidth(tester), AppSidebar.iconWidth);
+      expect(find.byTooltip("메뉴 접기"), findsNothing);
+
+      await tester.tap(find.byTooltip("메뉴 펼치기"));
+      await tester.pump();
+      await tester.pump(half);
+      final unfolding = _sidebarWidth(tester);
+      expect(unfolding, greaterThan(AppSidebar.iconWidth));
+      expect(unfolding, lessThan(AppSidebar.wideWidth));
+      expect(tester.takeException(), isNull);
+      await tester.pumpAndSettle();
+      expect(_sidebarWidth(tester), AppSidebar.wideWidth);
+      expect(find.byTooltip("메뉴 펼치기"), findsNothing);
+    });
+
+    testWidgets("reduced motion folds at once", (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await _pump(tester, at: "/");
+
+      await tester.tap(find.byTooltip("메뉴 접기"));
+      await tester.pump();
+      expect(_sidebarWidth(tester), AppSidebar.iconWidth);
+    });
+
+    testWidgets("rapid re-toggles turn back from where the menu is", (
+      tester,
+    ) async {
+      await _pump(tester, at: "/");
+      final choice = ProviderScope.containerOf(
+        tester.element(find.byType(AppSidebar)),
+      ).read(sidebarChoiceProvider.notifier);
+      const step = Duration(milliseconds: 20);
+
+      // Fold, unfold, fold inside one toggle: no error, no jump.
+      var wide = true;
+      double? last;
+      for (var i = 0; i < 3; i++) {
+        wide = !wide;
+        choice.choose(wide);
+        for (var f = 0; f < 3; f++) {
+          await tester.pump(step);
+          expect(tester.takeException(), isNull);
+          final width = _sidebarWidth(tester);
+          if (last != null) expect((width - last).abs(), lessThan(60));
+          last = width;
+        }
+      }
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(_sidebarWidth(tester), AppSidebar.iconWidth);
+      expect(find.byTooltip("메뉴 펼치기"), findsOneWidget);
+      expect(find.byTooltip("메뉴 접기"), findsNothing);
+    });
+
+    testWidgets("a left screen inset does not cut off the menu's right side", (
+      tester,
+    ) async {
+      tester.view.padding = const FakeViewPadding(left: 24);
+      await _pump(tester, at: "/");
+      final sidebarRight = tester.getTopRight(find.byType(AppSidebar)).dx;
+      expect(
+        tester.getTopRight(find.byTooltip("메뉴 접기")).dx,
+        lessThanOrEqualTo(sidebarRight - 1),
+      );
+
+      await tester.tap(find.byTooltip("메뉴 접기"));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getTopRight(find.byTooltip("메뉴 펼치기")).dx,
+        lessThanOrEqualTo(AppSidebar.iconWidth - 1),
+      );
     });
   });
 

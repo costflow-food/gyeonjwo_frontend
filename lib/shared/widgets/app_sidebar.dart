@@ -1,12 +1,14 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_paths.dart';
+import '../../features/auth/presentation/account_settings_dialog.dart';
 import '../../features/auth/presentation/auth_session_view_model.dart';
 import '../../features/auth/presentation/widgets/sign_out_action.dart';
-import '../../features/send_settings/presentation/send_settings_dialog.dart';
 import '../lds_colors.dart';
 import 'app_icons.dart';
 import 'brand_logo.dart';
@@ -72,18 +74,16 @@ class AppSidebar extends StatelessWidget {
     context.go(path);
   }
 
+  /// 펼치기·접기: 폭이 이 시간 동안 바뀌고, 그 사이 두 메뉴가 엇갈려 나타납니다.
+  static const toggleDuration = Duration(milliseconds: 220);
+
   @override
   Widget build(BuildContext context) => Material(
     color: Colors.white,
-    child: Container(
-      width: wide ? wideWidth : iconWidth,
-      decoration: const BoxDecoration(
-        border: Border(right: BorderSide(color: LdsColors.line)),
-      ),
-      child: SafeArea(
-        right: false,
-        child: wide ? _wide(context) : _icons(context),
-      ),
+    child: _FoldingRail(
+      wide: wide,
+      wideMenu: () => _wide(context),
+      iconMenu: () => _icons(context),
     ),
   );
 
@@ -157,6 +157,125 @@ class AppSidebar extends StatelessWidget {
         child: _AccountCard(compact: true, onNavigate: onNavigate),
       ),
     ],
+  );
+}
+
+/// 넓은 메뉴(1) ↔ 아이콘 메뉴(0)를 컨트롤러 하나로 움직입니다. 폭과 두 메뉴의
+/// 투명도가 같은 값을 따라가므로, 도중에 다시 눌러도 지금 자리에서 되돌아갑니다.
+/// 움직이는 0.2초 동안은 누를 수 없고, 다 끝나면 한 메뉴만 남습니다.
+class _FoldingRail extends StatefulWidget {
+  const _FoldingRail({
+    required this.wide,
+    required this.wideMenu,
+    required this.iconMenu,
+  });
+
+  final bool wide;
+  final Widget Function() wideMenu;
+  final Widget Function() iconMenu;
+
+  @override
+  State<_FoldingRail> createState() => _FoldingRailState();
+}
+
+class _FoldingRailState extends State<_FoldingRail>
+    with SingleTickerProviderStateMixin {
+  static const _border = BorderSide(color: LdsColors.line);
+
+  late final _fold = AnimationController(
+    vsync: this,
+    duration: AppSidebar.toggleDuration,
+    value: widget.wide ? 1 : 0,
+  );
+  bool _reduceMotion = false;
+
+  @override
+  void didUpdateWidget(_FoldingRail old) {
+    super.didUpdateWidget(old);
+    if (old.wide == widget.wide) return;
+    final target = widget.wide ? 1.0 : 0.0;
+    if (_reduceMotion) {
+      _fold.value = target;
+    } else {
+      _fold.animateTo(target, curve: Curves.easeOutCubic);
+    }
+  }
+
+  @override
+  void dispose() {
+    _fold.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return AnimatedBuilder(
+      animation: _fold,
+      builder: (context, _) {
+        final t = _fold.value;
+        return Container(
+          width: lerpDouble(AppSidebar.iconWidth, AppSidebar.wideWidth, t),
+          decoration: const BoxDecoration(border: Border(right: _border)),
+          child: ClipRect(
+            child: IgnorePointer(
+              ignoring: _fold.isAnimating,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (t < 1)
+                    _layer(
+                      'icons',
+                      AppSidebar.iconWidth,
+                      1 - t,
+                      shown: !widget.wide,
+                      child: widget.iconMenu(),
+                    ),
+                  if (t > 0)
+                    _layer(
+                      'wide',
+                      AppSidebar.wideWidth,
+                      t,
+                      shown: widget.wide,
+                      child: widget.wideMenu(),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 각 메뉴는 늘 제 폭으로 그리고(넘치는 쪽은 잘림), 사라지는 메뉴는 포커스·
+  /// 화면 낭독기·툴팁에서 뺍니다.
+  static Widget _layer(
+    String name,
+    double width,
+    double opacity, {
+    required bool shown,
+    required Widget child,
+  }) => KeyedSubtree(
+    key: ValueKey(name),
+    child: OverflowBox(
+      alignment: Alignment.topLeft,
+      minWidth: width - _border.width,
+      maxWidth: width - _border.width,
+      child: Opacity(
+        opacity: opacity,
+        child: ExcludeFocus(
+          excluding: !shown,
+          child: ExcludeSemantics(
+            excluding: !shown,
+            child: TooltipVisibility(
+              visible: shown,
+              child: SafeArea(right: false, child: child),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 }
 
@@ -323,12 +442,13 @@ class _MenuIcon extends StatelessWidget {
   );
 }
 
-enum _AccountAction { settings, sendSettings, logs, signOut }
+enum _AccountAction { settings, logs, signOut }
 
 /// 아래 계정 카드: 아바타·이름·이메일 + 톱니바퀴 (7.17). 아이콘 메뉴에서는
-/// 아바타만. 누르면 계정 메뉴(맨 위 '구매담당자'·이메일, 계정 설정 · 메일 발송
-/// 설정 · 실행 로그 · 로그아웃). 넓은 메뉴는 카드 바로 위에 카드와 같은 폭으로,
-/// 아이콘 메뉴는 아바타 오른쪽 옆에 아래를 맞춰 띄웁니다.
+/// 아바타만. 누르면 계정 메뉴(맨 위 '구매담당자'·이메일, 계정 설정 · 처리 이력 ·
+/// 로그아웃). 메일 발송 설정은 계정 설정 팝업의 탭에 있습니다. 넓은 메뉴는
+/// 카드 바로 위에 카드와 같은 폭으로, 아이콘 메뉴는 아바타 오른쪽 옆에 아래를
+/// 맞춰 띄웁니다.
 class _AccountCard extends ConsumerWidget {
   const _AccountCard({required this.compact, this.onNavigate});
 
@@ -355,9 +475,7 @@ class _AccountCard extends ConsumerWidget {
     onNavigate?.call();
     switch (action) {
       case _AccountAction.settings:
-        context.go(AppPaths.account);
-      case _AccountAction.sendSettings:
-        showSendSettingsDialog(context);
+        showAccountSettingsDialog(context);
       case _AccountAction.logs:
         context.go(AppPaths.logs);
       case _AccountAction.signOut:
@@ -591,11 +709,6 @@ class _AccountMenu extends StatelessWidget {
               _AccountAction.settings,
               Icons.manage_accounts_outlined,
               '계정 설정',
-            ),
-            const _MenuRow(
-              _AccountAction.sendSettings,
-              Icons.mail_outline,
-              '메일 발송 설정',
             ),
             const _MenuRow(_AccountAction.logs, Icons.history, '처리 이력'),
             const SizedBox(height: 4),

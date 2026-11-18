@@ -1,6 +1,7 @@
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:flutter/scheduler.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../shared/lds_colors.dart";
@@ -36,11 +37,31 @@ Future<bool?> showSendSettingsDialog(BuildContext context, {String? caseId}) {
 }
 
 class SendSettingsDialog extends ConsumerStatefulWidget {
-  const SendSettingsDialog({super.key, this.caseId, this.embedded = false});
+  const SendSettingsDialog({
+    super.key,
+    this.caseId,
+    this.embedded = false,
+    this.embeddedPadding = const EdgeInsets.symmetric(horizontal: 28),
+    this.embeddedDivider = true,
+    this.onDirtyChanged,
+    this.onSavingChanged,
+  });
   final String? caseId;
 
   /// 설정 페이지 탭 안에 바로 표시: 팝업 틀·닫기 없이, 저장해도 화면에 남습니다.
   final bool embedded;
+
+  /// [embedded]일 때 내용·아래 줄의 좌우 여백.
+  final EdgeInsets embeddedPadding;
+
+  /// [embedded]일 때 아래 줄 위 구분선. 팝업 안에서는 빼고 아래 여백도 둡니다.
+  final bool embeddedDivider;
+
+  /// 저장하지 않은 변경이 생기거나 없어질 때. 감싼 창이 닫기 전에 확인하는 데 씁니다.
+  final ValueChanged<bool>? onDirtyChanged;
+
+  /// 저장 요청을 보내고 결과를 기다리는 동안 true. 감싼 창은 이때 닫히지 않게 합니다.
+  final ValueChanged<bool>? onSavingChanged;
 
   @override
   ConsumerState<SendSettingsDialog> createState() => _SendSettingsDialogState();
@@ -103,13 +124,40 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     };
     _tone = settings.tone;
     _signature.text = settings.signature;
-    _dirty = false;
+    _setDirty(false);
   }
 
   void _edit(VoidCallback change) => setState(() {
     change();
-    _dirty = true;
+    _setDirty(true);
   });
+
+  void _setDirty(bool dirty) {
+    if (_dirty == dirty) return;
+    _dirty = dirty;
+    _tell(widget.onDirtyChanged, () => _dirty);
+  }
+
+  void _setSaving(bool saving) {
+    _saving = saving;
+    _tell(widget.onSavingChanged, () => _saving);
+  }
+
+  /// Tells the wrapping window right away (so a close in the next frame
+  /// already sees it), or after this frame when called while building.
+  void _tell(ValueChanged<bool>? notify, bool Function() value) {
+    if (notify == null) return;
+    final building =
+        SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks;
+    if (!building) {
+      notify(value());
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) notify(value());
+    });
+  }
 
   Future<void> _save() async {
     final version = _loadedVersion;
@@ -135,7 +183,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       signature: _signature.text.trim(),
     );
     setState(() {
-      _saving = true;
+      _setSaving(true);
       _error = null;
     });
     try {
@@ -147,7 +195,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
         ScaffoldMessenger.maybeOf(context)
             ?.showSnackBar(const SnackBar(content: Text("발송 설정을 저장했습니다.")));
         setState(() {
-          _saving = false;
+          _setSaving(false);
           _seed(saved);
         });
         return;
@@ -164,7 +212,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
         ref.read(sendSettingsViewModelProvider(_scope).notifier).refresh();
       }
       setState(() {
-        _saving = false;
+        _setSaving(false);
         _error = switch (failure) {
           SendSettingsFailure(unknownOutcome: true) =>
             "저장 결과를 확인하지 못했습니다. 다시 저장하면 같은 요청으로 확인합니다.",
@@ -176,7 +224,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _saving = false;
+        _setSaving(false);
         _error = "저장 결과를 확인하지 못했습니다. 다시 저장하면 같은 요청으로 확인합니다.";
       });
     }
@@ -248,14 +296,15 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: content,
-          ),
+          Padding(padding: widget.embeddedPadding, child: content),
           const SizedBox(height: 16),
-          const Divider(height: 1, color: LdsColors.line),
+          if (widget.embeddedDivider)
+            const Divider(height: 1, color: LdsColors.line),
           Padding(
-            padding: const EdgeInsets.fromLTRB(28, 14, 28, 16),
+            padding: widget.embeddedPadding.copyWith(
+              top: 14,
+              bottom: widget.embeddedDivider ? 16 : 0,
+            ),
             child: footer,
           ),
         ],
