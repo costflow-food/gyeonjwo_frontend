@@ -5,6 +5,7 @@ import "package:go_router/go_router.dart";
 import "../../../app/app_paths.dart";
 import "../../../shared/lds_colors.dart";
 import "../../../shared/widgets/lds/lds.dart";
+import "../../mail_intake/presentation/mail_intake_dialog.dart";
 import "notifications_view_model.dart";
 
 /// 상단 바 알림 단추: 안 읽은 알림이 있으면 오른쪽 위 빨간 점. 누르면 단추
@@ -121,13 +122,7 @@ class _NotificationPanel extends ConsumerWidget {
                     _NotificationRow(
                       item: item,
                       unread: !data.isRead(item),
-                      onTap: item.caseId == null
-                          ? null
-                          : () {
-                              final router = GoRouter.of(context);
-                              Navigator.of(context).pop();
-                              router.go(AppPaths.task(item.caseId!));
-                            },
+                      onTap: _open(context, item),
                     ),
                 ],
               ),
@@ -136,6 +131,29 @@ class _NotificationPanel extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// 알림을 누르면 갈 곳: 검토 카드 준비 → 그 검토 카드, 업무가 있는 알림 →
+/// 그 업무 상세, 업무에 아직 붙지 않은 새 메일 → 접수·연결 확인 창.
+/// 갈 곳이 없으면 null(누를 수 없음).
+VoidCallback? _open(BuildContext context, AppNotification item) {
+  final caseId = item.caseId;
+  if (caseId == null) {
+    if (item.kind != AppNotificationKind.mailReceived) return null;
+    return () {
+      final navigator = Navigator.of(context);
+      navigator.pop();
+      showMailIntakeDialog(navigator.context);
+    };
+  }
+  final path = item.kind == AppNotificationKind.reviewReady
+      ? AppPaths.review(caseId)
+      : AppPaths.task(caseId);
+  return () {
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    router.go(path);
+  };
 }
 
 class _NotificationRow extends StatelessWidget {
