@@ -16,10 +16,12 @@ import "package:gyeonjwo_frontend/features/transactions/domain/transaction_repos
 import "package:gyeonjwo_frontend/features/transactions/presentation/transactions_view.dart";
 import "package:gyeonjwo_frontend/features/transactions/presentation/transactions_view_model.dart";
 import "package:gyeonjwo_frontend/features/transactions/presentation/widgets/transaction_detail_panel.dart";
+import "package:gyeonjwo_frontend/features/transactions/presentation/widgets/transaction_list_row.dart";
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/app_sidebar.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
+import "package:gyeonjwo_frontend/shared/widgets/list_detail_layout.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
 
 import "../../helpers/platform_override.dart";
@@ -105,9 +107,13 @@ Future<GoRouter> _pump(
   return router;
 }
 
-/// 화면에 보이는 순서(위→아래)대로 확정일.
+/// 목록 칸의 거래 줄 안에서만 찾습니다(상세 칸에도 같은 글자가 있어서).
+Finder _inRows(Finder finder) =>
+    find.descendant(of: find.byType(TransactionListRow), matching: finder);
+
+/// 목록에 보이는 순서(위→아래)대로 확정일.
 List<String> _dates(WidgetTester tester) {
-  final finder = find.textContaining(RegExp(r"^2026\.\d\d\.\d\d$"));
+  final finder = _inRows(find.textContaining(RegExp(r"^2026\.\d\d\.\d\d · ")));
   final found = finder.evaluate().toList()
     ..sort(
       (a, b) => tester
@@ -115,13 +121,33 @@ List<String> _dates(WidgetTester tester) {
           .dy
           .compareTo(tester.getTopLeft(find.byWidget(b.widget)).dy),
     );
-  return [for (final element in found) (element.widget as Text).data!];
+  return [
+    for (final element in found)
+      (element.widget as Text).data!.substring(0, 10),
+  ];
 }
 
-Finder _head(String label) => find.bySemanticsLabel(RegExp("^$label, "));
+Future<void> _sort(WidgetTester tester, String label) async {
+  await tester.tap(find.bySemanticsLabel(RegExp(r"^정렬, ")));
+  await tester.pumpAndSettle();
+  await tester.tap(find.bySemanticsLabel("$label 정렬"));
+  await tester.pumpAndSettle();
+}
+
+Finder get _listPane => find.byWidgetPredicate(
+  (widget) =>
+      widget is Container &&
+      widget.decoration is BoxDecoration &&
+      (widget.decoration! as BoxDecoration).color == LdsColors.lineSoft &&
+      (widget.decoration! as BoxDecoration).border ==
+          const Border(right: BorderSide(color: LdsColors.line)),
+);
+
+TransactionListRow _row(WidgetTester tester, int index) => tester
+    .widget<TransactionListRow>(find.byType(TransactionListRow).at(index));
 
 void main() {
-  testWidgets("기본 기간은 최근 3개월, 머리는 건수·총액", (tester) async {
+  testWidgets("기본 기간은 최근 3개월, 목록 위는 건수·총액, 설명 줄 없음", (tester) async {
     await _pump(tester);
     final button = tester.widget<LdsDateRangeButton>(
       find.byType(LdsDateRangeButton),
@@ -129,11 +155,18 @@ void main() {
     expect(button.value.start, DateTime(2026, 8, 19));
     expect(button.value.end, DateTime(2026, 11, 18));
     expect(find.text("2026. 8. 19 - 2026. 11. 18"), findsOneWidget);
+    // 기간 선택은 상단 바(높이 64) 안.
+    expect(
+      tester.getCenter(find.byType(LdsDateRangeButton)).dy,
+      lessThan(AppSidebar.headerHeight),
+    );
     expect(
       find.text("Thoner에서 확정됐거나 증빙이 등록된 거래를 기간·품목·거래처로 찾아봅니다."),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.text("확정 거래 5건 · 총 18,000,000원"), findsOneWidget);
+    // 7열 표는 없습니다.
+    expect(find.byType(LdsListTable), findsNothing);
     // DB에 없는 확정 방식 열·필터는 없습니다.
     expect(find.text("확정 방식"), findsNothing);
     expect(find.text("품목"), findsWidgets);
@@ -181,7 +214,7 @@ void main() {
     expect(find.text("모두 지우기"), findsNothing);
   });
 
-  testWidgets("정렬: 기본 확정일 최신순, 새 열은 큰 값부터, 다시 누르면 반대", (tester) async {
+  testWidgets("정렬 선택: 기본 최신순, 선택지 8개, 고르면 그 순서로", (tester) async {
     await _pump(tester);
     expect(_dates(tester), [
       "2026.10.18",
@@ -190,15 +223,38 @@ void main() {
       "2026.09.05",
       "2026.08.28",
     ]);
-    expect(_head("확정일"), findsOneWidget);
-    expect(find.bySemanticsLabel("확정일, 내림차순 정렬됨"), findsOneWidget);
-    expect(find.bySemanticsLabel("단가, 정렬 안 됨"), findsOneWidget);
+    // 필터 줄 오른쪽 끝.
+    final sort = find.bySemanticsLabel("정렬, 최신순");
+    expect(sort, findsOneWidget);
+    expect(
+      tester.getCenter(sort).dy,
+      closeTo(tester.getCenter(find.bySemanticsLabel("품목 필터")).dy, 1),
+    );
+    expect(
+      tester.getTopLeft(sort).dx,
+      greaterThan(tester.getTopRight(find.bySemanticsLabel("거래처 필터")).dx),
+    );
 
-    await tester.tap(_head("단가"));
+    await tester.tap(sort);
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel("단가, 내림차순 정렬됨"), findsOneWidget);
-    expect(find.bySemanticsLabel("확정일, 정렬 안 됨"), findsOneWidget);
+    for (final label in [
+      "최신순",
+      "오래된순",
+      "단가 높은순",
+      "단가 낮은순",
+      "총액 높은순",
+      "총액 낮은순",
+      "수량 많은순",
+      "수량 적은순",
+    ]) {
+      expect(find.bySemanticsLabel("$label 정렬"), findsOneWidget);
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
     // 5,400 · 5,000 · 4,900 · 3,900 · 3,700
+    await _sort(tester, "단가 높은순");
+    expect(find.bySemanticsLabel("정렬, 단가 높은순"), findsOneWidget);
     expect(_dates(tester), [
       "2026.10.18",
       "2026.10.10",
@@ -207,9 +263,7 @@ void main() {
       "2026.08.28",
     ]);
 
-    await tester.tap(_head("단가"));
-    await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel("단가, 오름차순 정렬됨"), findsOneWidget);
+    await _sort(tester, "단가 낮은순");
     expect(_dates(tester), [
       "2026.08.28",
       "2026.09.25",
@@ -219,8 +273,7 @@ void main() {
     ]);
 
     // 수량: 1,000 · 900 · 800 · 600 · 500
-    await tester.tap(_head("수량"));
-    await tester.pumpAndSettle();
+    await _sort(tester, "수량 많은순");
     expect(_dates(tester), [
       "2026.10.18",
       "2026.09.05",
@@ -229,12 +282,14 @@ void main() {
       "2026.08.28",
     ]);
 
-    // 정렬 중인 화살표는 주황, 나머지는 회색 ↕.
-    final down = tester.widget<Text>(find.text("↓"));
-    expect(down.style!.color, LdsColors.primary);
-    final idle = tester.widget<Text>(find.text("↕").first);
-    expect(idle.style!.color, const Color(0xFFB1B8C0));
-    expect(idle.style!.fontSize, 12);
+    await _sort(tester, "오래된순");
+    expect(_dates(tester), [
+      "2026.08.28",
+      "2026.09.05",
+      "2026.09.25",
+      "2026.10.10",
+      "2026.10.18",
+    ]);
   });
 
   testWidgets("같은 값은 날짜 최신순", (tester) async {
@@ -245,27 +300,70 @@ void main() {
         _record("2", "2026-10-05", 5000),
       ],
     );
-    await tester.tap(_head("총액"));
-    await tester.pumpAndSettle();
+    await _sort(tester, "총액 높은순");
     expect(_dates(tester), ["2026.10.05", "2026.10.01"]);
-    await tester.tap(_head("총액"));
-    await tester.pumpAndSettle();
+    await _sort(tester, "총액 낮은순");
     expect(_dates(tester), ["2026.10.05", "2026.10.01"]);
+  });
+
+  testWidgets("두 줄 행: 품목·거래처·단가 / 날짜·수량·직전 대비", (tester) async {
+    await _pump(tester);
+    final first = find.byType(TransactionListRow).first;
+    Finder inFirst(String text) =>
+        find.descendant(of: first, matching: find.text(text));
+    final item = tester.widget<Text>(inFirst("냉동 딸기"));
+    expect(item.style!.fontSize, 15);
+    expect(item.style!.fontWeight, FontWeight.w700);
+    final supplier = tester.widget<Text>(inFirst("바른채소"));
+    expect(supplier.style!.fontSize, 13);
+    expect(supplier.style!.color, LdsColors.muted);
+    final second = tester.widget<Text>(inFirst("2026.10.18 · 1,000kg"));
+    expect(second.style!.fontSize, 13);
+    expect(second.style!.color, LdsColors.muted);
+    // 1줄: 품목 < 거래처 < 단가(오른쪽), 2줄: 날짜·수량 < 직전 대비(오른쪽).
+    final top = tester.getCenter(inFirst("냉동 딸기")).dy;
+    expect(tester.getCenter(inFirst("5,400원/kg")).dy, closeTo(top, 2));
+    expect(
+      tester.getTopLeft(inFirst("5,400원/kg")).dx,
+      greaterThan(tester.getTopLeft(inFirst("바른채소")).dx),
+    );
+    final bottom = tester.getCenter(inFirst("2026.10.18 · 1,000kg")).dy;
+    expect(bottom, greaterThan(top));
+    expect(tester.getCenter(inFirst("▲ 400원 · +8%")).dy, closeTo(bottom, 2));
+    // 묶음 상자: 흰 바탕, 1px #E5E7EA, 모서리 12.
+    final box = tester.widget<Container>(
+      find
+          .ancestor(of: first, matching: find.byType(Container))
+          .evaluate()
+          .map((element) => find.byWidget(element.widget))
+          .firstWhere((finder) {
+            final widget = tester.widget<Container>(finder);
+            final decoration = widget.decoration;
+            return decoration is BoxDecoration &&
+                decoration.borderRadius == BorderRadius.circular(12);
+          }),
+    );
+    final decoration = box.decoration! as BoxDecoration;
+    expect(decoration.color, Colors.white);
+    expect(decoration.border, Border.all(color: LdsColors.line));
   });
 
   testWidgets("단가 대비: ▲·첫 거래, 단가는 보통 굵기", (tester) async {
     await _pump(tester);
-    final up = tester.widget<Text>(find.text("▲ 400원 · +8%"));
+    final up = tester.widget<Text>(_inRows(find.text("▲ 400원 · +8%")));
     expect(up.style!.color, LdsColors.priceUp);
     expect(up.style!.fontSize, 13);
-    expect(find.text("▲ 200원 · +5.4%"), findsOneWidget);
-    expect(find.text("▲ 100원 · +2%"), findsOneWidget);
-    final first = tester.widget<Text>(find.text("첫 거래").first);
-    expect(find.text("첫 거래"), findsNWidgets(2));
+    expect(_inRows(find.text("▲ 200원 · +5.4%")), findsOneWidget);
+    expect(_inRows(find.text("▲ 100원 · +2%")), findsOneWidget);
+    final first = tester.widget<Text>(_inRows(find.text("첫 거래")).first);
+    expect(_inRows(find.text("첫 거래")), findsNWidgets(2));
     expect(first.style!.color, const Color(0xFF8A95A0));
-    expect(find.byTooltip("직전 2026.10.10 한라푸드 5,000원/kg 대비"), findsOneWidget);
+    expect(
+      _inRows(find.byTooltip("직전 2026.10.10 한라푸드 5,000원/kg 대비")),
+      findsOneWidget,
+    );
 
-    final price = tester.widget<Text>(find.text("5,400원/kg"));
+    final price = tester.widget<Text>(_inRows(find.text("5,400원/kg")));
     expect(price.style!.fontWeight, FontWeight.w400);
     expect(price.style!.color, LdsColors.title);
   });
@@ -280,21 +378,24 @@ void main() {
         _record("4", "2026-10-12", 4410),
       ],
     );
-    final down = tester.widget<Text>(find.text("▼ 100원 · −2%"));
+    final down = tester.widget<Text>(_inRows(find.text("▼ 100원 · −2%")));
     expect(down.style!.color, LdsColors.priceDown);
-    expect(find.text("▼ 490원 · −10%"), findsOneWidget);
-    final same = tester.widget<Text>(find.text("직전과 같음"));
+    expect(_inRows(find.text("▼ 490원 · −10%")), findsOneWidget);
+    final same = tester.widget<Text>(_inRows(find.text("직전과 같음")));
     expect(same.style!.color, const Color(0xFF8A95A0));
-    expect(find.byTooltip("직전 2026.10.05 업체2 4,900원/kg 대비"), findsOneWidget);
+    expect(
+      _inRows(find.byTooltip("직전 2026.10.05 업체2 4,900원/kg 대비")),
+      findsOneWidget,
+    );
   });
 
-  testWidgets("빈 상태", (tester) async {
+  testWidgets("빈 상태: 목록 칸에 문구, 상세 칸은 비움", (tester) async {
     await _pump(tester, records: const []);
     expect(find.text("확정 거래 0건 · 총 0원"), findsOneWidget);
-    final empty = tester.widget<Text>(
-      find.text("이 기간·조건에 확정된 거래가 없어요. 기간을 넓히거나 필터를 지워 보세요."),
-    );
-    expect(empty.style!.color, LdsColors.muted);
+    final empty = find.text("이 기간·조건에 확정된 거래가 없어요. 기간을 넓히거나 필터를 지워 보세요.");
+    expect(tester.widget<Text>(empty).style!.color, LdsColors.muted);
+    expect(find.descendant(of: _listPane, matching: empty), findsOneWidget);
+    expect(find.byType(TransactionDetailPanel), findsNothing);
   });
 
   testWidgets("기간 밖 거래는 빠집니다", (tester) async {
@@ -307,66 +408,134 @@ void main() {
     );
     expect(find.text("확정 거래 1건 · 총 520,000원"), findsOneWidget);
     // 직전 거래는 기간 밖이어도 비교합니다.
-    expect(find.text("▲ 200원 · +4%"), findsOneWidget);
+    expect(_inRows(find.text("▲ 200원 · +4%")), findsOneWidget);
   });
 
-  testWidgets("줄을 누르면 오른쪽 상세 창, 목록은 남습니다", (tester) async {
+  testWidgets("넓은 화면: 목록 칸 30% + 상세 칸, 첫 거래를 골라 엽니다", (tester) async {
     await _pump(tester);
-    expect(find.byType(TransactionDetailPanel), findsNothing);
-    await tester.tap(find.text("바른채소"));
-    await tester.pumpAndSettle();
+    // 목록 칸: 폭 = 목록 30%(400~480) + 왼쪽 24 + 오른쪽 16 + 선 1,
+    // #F3F4F6 + 오른쪽 1px 선. 상세 칸 #F9FAFB.
+    expect(_listPane, findsOneWidget);
+    expect(
+      tester.getSize(_listPane).width,
+      ListDetailLayout.listWidth(1440) + 24 + 16 + 1,
+    );
+    expect(tester.getTopLeft(_listPane).dx, AppSidebar.iconWidth);
+    expect(
+      tester.getSize(find.byType(ListGroupBox)).width,
+      ListDetailLayout.listWidth(1440),
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is ColoredBox && widget.color == LdsColors.canvas,
+      ),
+      findsWidgets,
+    );
+
+    // 첫 거래가 골라져 있습니다: #FFF4EC + 왼쪽 주황 3px.
+    expect(_row(tester, 0).selected, isTrue);
+    expect(_row(tester, 1).selected, isFalse);
+    final first = find.byType(TransactionListRow).first;
+    expect(
+      tester
+          .widget<Material>(
+            find.descendant(of: first, matching: find.byType(Material)).first,
+          )
+          .color,
+      LdsColors.selectedRow,
+    );
+    final bar = find.descendant(
+      of: first,
+      matching: find.byWidgetPredicate(
+        (widget) => widget is ColoredBox && widget.color == LdsColors.primary,
+      ),
+    );
+    expect(tester.getSize(bar).width, 3);
 
     final panel = find.byType(TransactionDetailPanel);
     expect(panel, findsOneWidget);
-    expect(tester.getSize(panel).width, TransactionDetailPanel.width);
     expect(find.text("냉동 딸기 · 바른채소"), findsOneWidget);
     expect(find.text("확정"), findsOneWidget);
+    expect(find.text("확정 정보"), findsOneWidget);
     expect(find.text("2026.10.10 · 한라푸드 · 5,000원/kg"), findsOneWidget);
     expect(find.text("Suppliers에서 바른채소 보기"), findsOneWidget);
     expect(find.text("냉동 딸기 확정 단가 흐름"), findsOneWidget);
+    // 넓은 화면은 늘 고른 거래를 보여 주므로 닫기 단추가 없습니다.
+    expect(find.byTooltip("상세 닫기"), findsNothing);
     // 확정 방식·증빙·업무 연결 칸은 없습니다.
     expect(find.text("근거"), findsNothing);
     expect(find.text("확정 방식"), findsNothing);
-    expect(find.text("확정 거래 5건 · 총 18,000,000원"), findsOneWidget);
-    // 상세 창은 목록 오른쪽.
+    // 상세는 목록 칸 오른쪽, 상세 칸 위 24에서 시작.
     expect(
       tester.getTopLeft(panel).dx,
-      greaterThan(tester.getTopLeft(find.text("바른채소").first).dx),
+      greaterThan(tester.getTopRight(_listPane).dx),
     );
 
-    await tester.tap(find.byTooltip("상세 닫기"));
+    // 다른 줄을 누르면 그 거래.
+    await tester.tap(_inRows(find.text("남도청과")).first);
     await tester.pumpAndSettle();
-    expect(panel, findsNothing);
+    expect(find.text("한라감귤 · 남도청과"), findsOneWidget);
+    expect(_row(tester, 2).selected, isTrue);
+    expect(find.text("확정 거래 5건 · 총 18,000,000원"), findsOneWidget);
 
     // Enter로도 고릅니다.
-    Focus.of(tester.element(find.text("남도청과").first)).requestFocus();
+    Focus.of(tester.element(_inRows(find.text("한라푸드")).first)).requestFocus();
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
-    expect(find.text("한라감귤 · 남도청과"), findsOneWidget);
+    expect(find.text("냉동 딸기 · 한라푸드"), findsOneWidget);
 
     // Suppliers 링크.
-    await tester.tap(find.text("Suppliers에서 남도청과 보기"));
+    await tester.tap(find.text("Suppliers에서 한라푸드 보기"));
     await tester.pumpAndSettle();
     expect(find.text("page /suppliers"), findsOneWidget);
   });
 
-  testWidgets("1100px 이하: 상세 창이 목록 아래", (tester) async {
-    await _pump(tester, width: 1000);
-    await tester.tap(find.text("바른채소"));
+  testWidgets("↑/↓로 이전·다음 거래를 엽니다", (tester) async {
+    await _pump(tester);
+    await tester.tap(_inRows(find.text("바른채소")));
     await tester.pumpAndSettle();
-    final panel = find.byType(TransactionDetailPanel);
-    expect(
-      tester.getTopLeft(panel).dy,
-      greaterThan(tester.getBottomLeft(find.text("바른채소").first).dy),
-    );
+    Future<void> press(LogicalKeyboardKey key) async {
+      await tester.sendKeyEvent(key);
+      await tester.pumpAndSettle();
+    }
+
+    await press(LogicalKeyboardKey.arrowDown);
+    expect(_row(tester, 1).selected, isTrue);
+    expect(find.text("냉동 딸기 · 한라푸드"), findsOneWidget);
+    await press(LogicalKeyboardKey.arrowDown);
+    expect(find.text("한라감귤 · 남도청과"), findsOneWidget);
+    await press(LogicalKeyboardKey.arrowUp);
+    await press(LogicalKeyboardKey.arrowUp);
+    expect(_row(tester, 0).selected, isTrue);
+    // 첫 줄 위로는 가지 않습니다.
+    await press(LogicalKeyboardKey.arrowUp);
+    expect(_row(tester, 0).selected, isTrue);
   });
 
-  testWidgets("기간을 바꾸면 선택이 풀립니다", (tester) async {
-    await _pump(tester);
-    await tester.tap(find.text("바른채소"));
+  testWidgets("1100px 이하: 목록과 상세를 한 화면씩", (tester) async {
+    await _pump(tester, width: 1000);
+    // 목록만, 자동으로 열지 않습니다.
+    expect(find.byType(TransactionListRow), findsNWidgets(5));
+    expect(find.byType(TransactionDetailPanel), findsNothing);
+    expect(_listPane, findsNothing);
+
+    await tester.tap(_inRows(find.text("바른채소")));
     await tester.pumpAndSettle();
     expect(find.byType(TransactionDetailPanel), findsOneWidget);
+    expect(find.byType(TransactionListRow), findsNothing);
+    expect(find.text("냉동 딸기 · 바른채소"), findsOneWidget);
+
+    await tester.tap(find.text("목록으로"));
+    await tester.pumpAndSettle();
+    expect(find.byType(TransactionDetailPanel), findsNothing);
+    expect(find.byType(TransactionListRow), findsNWidgets(5));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets("기간을 바꾸면 새 기간의 첫 거래를 엽니다", (tester) async {
+    await _pump(tester);
+    expect(find.text("냉동 딸기 · 바른채소"), findsOneWidget);
     final container = ProviderScope.containerOf(
       tester.element(find.byType(TransactionsView)),
     );
@@ -379,9 +548,10 @@ void main() {
           ),
         );
     await tester.pumpAndSettle();
-    expect(find.byType(TransactionDetailPanel), findsNothing);
     expect(container.read(transactionsPeriodProvider).start.month, 9);
     expect(find.text("확정 거래 2건 · 총 6,750,000원"), findsOneWidget);
+    expect(find.text("냉동 딸기 · 바른채소"), findsNothing);
+    expect(find.text("한라감귤 · 남도청과"), findsOneWidget);
   });
 
   testWidgets("Suppliers에서 넘어오면 안내 띠·필터·선택", (tester) async {
@@ -393,20 +563,30 @@ void main() {
         date: "2026-10-10",
       ),
     );
-    final note = tester.widget<Text>(
-      find.text("Suppliers에서 넘어왔어요 · 한라푸드 · 냉동 딸기로 걸러 보는 중"),
-    );
+    final noteFinder = find.text("Suppliers에서 넘어왔어요 · 한라푸드 · 냉동 딸기로 걸러 보는 중");
+    final note = tester.widget<Text>(noteFinder);
     expect(note.style!.color, const Color(0xFFC24A00));
     expect(note.style!.fontSize, 14);
+    // 안내 띠는 목록 칸 맨 위(필터 줄 위).
+    expect(
+      find.descendant(of: _listPane, matching: noteFinder),
+      findsOneWidget,
+    );
+    expect(
+      tester.getBottomLeft(noteFinder).dy,
+      lessThan(tester.getTopLeft(find.bySemanticsLabel(RegExp("^품목 필터"))).dy),
+    );
     expect(find.text("확정 거래 2건 · 총 8,410,000원"), findsOneWidget);
+    // 넘어온 거래가 골라져 있습니다(첫 줄 자동 선택이 덮지 않음).
     expect(find.text("냉동 딸기 · 한라푸드"), findsOneWidget);
     expect(find.text("2026.09.05 · 한라푸드 · 4,900원/kg"), findsOneWidget);
+    expect(_row(tester, 0).selected, isTrue);
 
-    // 필터를 바꾸면 안내가 사라집니다.
+    // 필터를 바꾸면 안내가 사라지고 첫 거래를 엽니다.
     await tester.tap(find.text("모두 지우기"));
     await tester.pumpAndSettle();
     expect(find.textContaining("Suppliers에서 넘어왔어요"), findsNothing);
-    expect(find.byType(TransactionDetailPanel), findsNothing);
+    expect(find.text("냉동 딸기 · 바른채소"), findsOneWidget);
   });
 
   testWidgets("휴대폰 아래 탭에 Transactions", (tester) async {
@@ -419,7 +599,7 @@ void main() {
         for (final destination in bar.destinations)
           (destination as NavigationDestination).label,
       ],
-      ["Dashboard", "Tasks", "Transactions", "Suppliers", "계정 설정"],
+      ["Dashboard", "Tasks", "Invoices", "Suppliers", "계정 설정"],
     );
     expect(bar.selectedIndex, 2);
     expect(tester.takeException(), isNull);

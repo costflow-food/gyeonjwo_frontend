@@ -5,6 +5,7 @@ import "package:go_router/go_router.dart";
 import "../../../app/app_paths.dart";
 import "../../../shared/app_font_sizes.dart";
 import "../../../shared/lds_colors.dart";
+import "../../../shared/widgets/list_detail_layout.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/outline_panel.dart";
 import "../../../shared/widgets/workspace_shell.dart";
@@ -31,14 +32,14 @@ class WorkQueueView extends ConsumerStatefulWidget {
   final TaskGroup? tab;
 
   /// 이 폭 이하에서는 목록과 상세를 한 화면씩 보여 줍니다(7.18).
-  static const singlePaneWidth = 1100.0;
+  static const singlePaneWidth = ListDetailLayout.singlePaneWidth;
 
   /// 상세 내용 최대 폭(7.18).
-  static const detailMaxWidth = 1040.0;
+  static const detailMaxWidth = ListDetailLayout.detailMaxWidth;
 
   /// 목록 칸 = 화면 폭의 30%, 최소 400 · 최대 480 (7.18).
   static double listWidth(double screenWidth) =>
-      (screenWidth * .3).clamp(400.0, 480.0);
+      ListDetailLayout.listWidth(screenWidth);
 
   @override
   ConsumerState<WorkQueueView> createState() => _WorkQueueViewState();
@@ -46,9 +47,6 @@ class WorkQueueView extends ConsumerStatefulWidget {
 
 class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
   static const _gutter = WorkspaceShell.gutter;
-
-  /// 목록 칸 오른쪽 안쪽 여백(시안 16).
-  static const _listRightPadding = 16.0;
 
   @override
   void initState() {
@@ -168,97 +166,17 @@ class _WorkQueueViewState extends ConsumerState<WorkQueueView> {
               child: GmailReadNotice(),
             ),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final screen = MediaQuery.sizeOf(context).width;
-                if (screen <= WorkQueueView.singlePaneWidth) {
-                  // 한 화면씩: 목록, 또는 '목록으로'가 있는 상세.
-                  if (caseId == null) {
-                    return list(padding: const EdgeInsets.all(_gutter));
-                  }
-                  return ColoredBox(
-                    color: LdsColors.canvas,
-                    child: _DetailScroll(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextButton.icon(
-                            onPressed: () => context.go(
-                              AppPaths.tasksAt(tab: widget.tab?.code),
-                            ),
-                            icon: const Icon(Icons.arrow_back, size: 18),
-                            label: const Text("목록으로"),
-                          ),
-                          const SizedBox(height: 8),
-                          detail(),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                // 목록 칸 #F3F4F6 + 오른쪽 1px 선, 상세 칸 #F9FAFB (시안).
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      width:
-                          WorkQueueView.listWidth(screen) +
-                          _gutter +
-                          _listRightPadding +
-                          1,
-                      decoration: const BoxDecoration(
-                        color: LdsColors.lineSoft,
-                        border: Border(
-                          right: BorderSide(color: LdsColors.line),
-                        ),
-                      ),
-                      child: list(
-                        autoSelect: true,
-                        padding: const EdgeInsets.fromLTRB(
-                          _gutter,
-                          _gutter,
-                          _listRightPadding,
-                          _gutter,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: ColoredBox(
-                        color: LdsColors.canvas,
-                        child: _DetailScroll(child: detail()),
-                      ),
-                    ),
-                  ],
-                );
-              },
+            child: ListDetailLayout(
+              detailAlone: caseId != null,
+              onBack: () => context.go(AppPaths.tasksAt(tab: widget.tab?.code)),
+              list: (padding, wide) => list(padding: padding, autoSelect: wide),
+              detail: (_) => detail(),
             ),
           ),
         ],
       ),
     );
   }
-}
-
-/// 상세 칸: 위 24에서 시작, 최대 1040을 목록 쪽에 붙이고 오른쪽 여백 24.
-/// 남는 폭은 상세 오른쪽 끝에만 둡니다(7.18).
-class _DetailScroll extends StatelessWidget {
-  const _DetailScroll({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    padding: const EdgeInsets.all(WorkspaceShell.gutter),
-    child: Align(
-      alignment: Alignment.topLeft,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: WorkQueueView.detailMaxWidth,
-        ),
-        child: child,
-      ),
-    ),
-  );
 }
 
 /// 업무를 고르지 않았을 때 상세 칸.

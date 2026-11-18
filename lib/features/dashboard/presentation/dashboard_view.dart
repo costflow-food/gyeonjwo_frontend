@@ -269,7 +269,7 @@ class _StatusCard extends StatelessWidget {
   final int? count;
   final Color? dot;
 
-  /// 확인 필요: 테두리 1.5px `#FF6000` + 바탕 `#FFF7F2` + '지금 할 일' 라벨.
+  /// 확인 필요: 테두리 1.5px `#FF6000` + 바탕 `#FFF7F2`(라벨 없음).
   final bool emphasized;
   final String link;
   final VoidCallback onTap;
@@ -310,10 +310,6 @@ class _StatusCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (emphasized) ...[
-                const SizedBox(width: 8),
-                const LdsTag("지금 할 일", style: LdsTagStyle.solid),
-              ],
             ],
           ),
           const SizedBox(height: 6),
