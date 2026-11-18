@@ -128,7 +128,10 @@ void main() {
     final label = tester.widget<Text>(find.text("진행 중"));
     expect(label.style!.color, LdsColors.ink);
     expect(taskRowLabelColors(TaskLabel.running).$1, const Color(0xFFFFA066));
-    expect(taskRowLabelColors(TaskLabel.hold), (LdsColors.primary, Colors.white));
+    expect(taskRowLabelColors(TaskLabel.hold), (
+      LdsColors.primary,
+      Colors.white,
+    ));
     // Sender and time are kept for the screen reader.
     expect(
       tester.getSemantics(find.byType(TaskRow)).label,

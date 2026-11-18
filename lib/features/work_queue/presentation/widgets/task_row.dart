@@ -21,7 +21,7 @@ LdsTagTone taskLabelTone(TaskLabel label) => switch (label) {
 
 /// 업무 행의 상태 라벨(채운 색): 진행 중 연주황 + 먹색 글자 · 보류 주황 +
 /// 흰 글자 · 오류 빨강 + 흰 글자 · 완료 아주 연한 주황 + 진한 주황 글자 ·
-/// 대기 연한 주황 + 주황 글자. 상세 머리의 라벨([taskLabelTone])과 다릅니다.
+/// 대기 연한 주황 + 주황 글자. 업무 행과 상세 머리가 같이 씁니다([TaskStatusLabel]).
 (Color, Color) taskRowLabelColors(TaskLabel label) => switch (label) {
   TaskLabel.running => (const Color(0xFFFFA066), LdsColors.ink),
   TaskLabel.hold => (LdsColors.primary, Colors.white),
@@ -29,6 +29,40 @@ LdsTagTone taskLabelTone(TaskLabel label) => switch (label) {
   TaskLabel.done => (const Color(0xFFFFDFCC), LdsColors.primaryText),
   TaskLabel.waiting => (LdsColors.primarySoft, LdsColors.primaryText),
 };
+
+/// 업무 상태 라벨(채운 색, [taskRowLabelColors]): 높이 24, 최소 폭 56, 좌우 8,
+/// 모서리 4, 13px/700. Tasks 업무 행과 상세 머리가 같이 씁니다.
+class TaskStatusLabel extends StatelessWidget {
+  const TaskStatusLabel(this.label, {super.key});
+
+  final TaskLabel label;
+
+  @override
+  Widget build(BuildContext context) {
+    final (background, foreground) = taskRowLabelColors(label);
+    return Container(
+      constraints: const BoxConstraints(minWidth: 56),
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label.text,
+        maxLines: 1,
+        softWrap: false,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          height: 1.2,
+          color: foreground,
+        ),
+      ),
+    );
+  }
+}
 
 /// Tasks 업무 행 = 한 줄형 (`docs/design-ssot.md` 7.13, 2026-11-18 시안).
 ///
@@ -69,7 +103,6 @@ class TaskRow extends StatelessWidget {
     final stepName = progress == null ? "" : caseStepNames[progress - 1];
     final received = formatSeoulDateTime(workCase.receivedAt);
     final from = workCase.senderName ?? workCase.sender;
-    final (labelBg, labelFg) = taskRowLabelColors(label);
     return Semantics(
       selected: selected,
       button: true,
@@ -145,27 +178,7 @@ class TaskRow extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Container(
-                          constraints: const BoxConstraints(minWidth: 56),
-                          height: 24,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: labelBg,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            label.text,
-                            maxLines: 1,
-                            softWrap: false,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              height: 1.2,
-                              color: labelFg,
-                            ),
-                          ),
-                        ),
+                        TaskStatusLabel(label),
                       ],
                     ),
                   ),
