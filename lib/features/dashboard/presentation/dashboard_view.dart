@@ -16,7 +16,6 @@ import "../../work_queue/presentation/completed_tasks_view_model.dart";
 import "../../work_queue/presentation/widgets/gmail_read_notice.dart";
 import "../../work_queue/presentation/work_queue_view_model.dart";
 import "../domain/dashboard_insights.dart";
-import "dashboard_period.dart";
 import "widgets/category_share_card.dart";
 import "widgets/monthly_trend_card.dart";
 
@@ -76,11 +75,8 @@ class DashboardView extends ConsumerWidget {
       ),
     ];
     return WorkspaceShell(
-      topAction: LdsDateRangeButton(
-        iconOnly: true,
-        value: ref.watch(dashboardPeriodProvider),
-        onChanged: ref.read(dashboardPeriodProvider.notifier).select,
-      ),
+      // 날짜 확인 전용 달력(거르기 없음). Tasks·Suppliers·Invoices와 같습니다.
+      topAction: const LdsDateViewButton(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

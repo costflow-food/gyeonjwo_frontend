@@ -331,6 +331,8 @@ class _Summary extends StatelessWidget {
   }
 
   Widget _box() => Container(
+    // 단추형 칸도 반쪽 폭을 다 채웁니다(초점 링 Stack이 폭을 느슨하게 함).
+    width: double.infinity,
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     decoration: BoxDecoration(
       color: LdsColors.canvas,
