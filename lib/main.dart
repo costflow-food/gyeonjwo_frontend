@@ -243,7 +243,7 @@ class MyApp extends ConsumerWidget {
       SystemChrome.setPreferredOrientations(allowedOrientations(screen));
     }
     return MaterialApp.router(
-      title: '견줘',
+      title: 'Thoner',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(WorkspacePalette.lds),
       scrollBehavior: const AppScrollBehavior(),
@@ -259,7 +259,7 @@ class MissingConfigApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: '견줘',
+    title: 'Thoner',
     debugShowCheckedModeBanner: false,
     theme: buildAppTheme(WorkspacePalette.lds),
     home: Scaffold(
