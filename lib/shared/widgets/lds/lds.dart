@@ -11,6 +11,7 @@ export 'lds_notice.dart';
 export 'lds_panel.dart';
 export 'lds_popover.dart';
 export 'lds_ratio_bar.dart';
+export 'lds_sort_button.dart';
 export 'lds_step_bar.dart';
 export 'lds_tab_bar.dart';
 export 'lds_tables.dart';

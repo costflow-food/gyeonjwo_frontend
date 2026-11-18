@@ -4,7 +4,8 @@ import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 
 /// Suppliers 맨 위 줄 (7.14b): 왼쪽 화면 설명, 오른쪽 '새로고침' 다음
-/// '거래처 등록'(outlined, 등록만 + 아이콘). 좁으면 단추가 설명 아래로 내려갑니다.
+/// '거래처 등록'(등록만 + 아이콘). 좁으면 단추가 설명 아래로 내려갑니다.
+/// 단추는 Invoices 필터·정렬 단추와 같은 회색 테두리 · 진한 글자(outlinedNeutral).
 class SupplierHeader extends StatelessWidget {
   const SupplierHeader({
     super.key,
@@ -38,14 +39,14 @@ class SupplierHeader extends StatelessWidget {
         children: [
           LdsButton(
             label: "새로고침",
-            variant: LdsButtonVariant.outlined,
+            variant: LdsButtonVariant.outlinedNeutral,
             onPressed: onRefresh,
           ),
           const SizedBox(width: 8),
           LdsButton(
             label: "거래처 등록",
             icon: Icons.add,
-            variant: LdsButtonVariant.outlined,
+            variant: LdsButtonVariant.outlinedNeutral,
             onPressed: onRegister,
           ),
         ],
