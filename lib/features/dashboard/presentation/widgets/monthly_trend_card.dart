@@ -4,6 +4,7 @@ import "dart:ui" show PathMetric;
 import "package:flutter/material.dart";
 
 import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/dashboard_insights.dart";
 import "dashboard_card.dart";
@@ -71,20 +72,42 @@ class _SeriesTabs extends StatelessWidget {
   final ValueChanged<int> onSelect;
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      for (final (index, item) in series.indexed) ...[
-        if (index > 0) const SizedBox(width: 8),
-        Expanded(
-          child: _SeriesTab(
-            series: item,
-            selected: index == selected,
-            onTap: () => onSelect(index),
-          ),
-        ),
+  Widget build(BuildContext context) {
+    Widget tab(int index) => _SeriesTab(
+      series: series[index],
+      selected: index == selected,
+      onTap: () => onSelect(index),
+    );
+
+    if (isCompactLayout(context)) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final minimumWidth =
+              104 * MediaQuery.textScalerOf(context).scale(13) / 13;
+          final columns = ((constraints.maxWidth + 8) / (minimumWidth + 8))
+              .floor()
+              .clamp(1, series.length);
+          final width = (constraints.maxWidth - 8 * (columns - 1)) / columns;
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var index = 0; index < series.length; index++)
+                SizedBox(width: width, child: tab(index)),
+            ],
+          );
+        },
+      );
+    }
+    return Row(
+      children: [
+        for (var index = 0; index < series.length; index++) ...[
+          if (index > 0) const SizedBox(width: 8),
+          Expanded(child: tab(index)),
+        ],
       ],
-    ],
-  );
+    );
+  }
 }
 
 class _SeriesTab extends StatelessWidget {
@@ -267,9 +290,17 @@ class _TrendChart extends StatefulWidget {
 class _TrendChartState extends State<_TrendChart> {
   int? _hover;
   Size? _size;
+  final _chartKey = GlobalKey();
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _pick(Offset position) {
-    final size = context.size;
+    final size = _chartKey.currentContext?.size;
     if (size == null) return;
     setState(() {
       _size = size;
@@ -283,7 +314,8 @@ class _TrendChartState extends State<_TrendChart> {
     final base = DefaultTextStyle.of(context).style;
     final hover = _hover;
     final size = _size;
-    return AspectRatio(
+    final chart = AspectRatio(
+      key: _chartKey,
       aspectRatio: 900 / 400,
       child: MouseRegion(
         onHover: (event) => _pick(event.localPosition),
@@ -312,6 +344,22 @@ class _TrendChartState extends State<_TrendChart> {
         ),
       ),
     );
+    if (isCompactLayout(context)) {
+      return Scrollbar(
+        controller: _scrollController,
+        thumbVisibility: false,
+        scrollbarOrientation: ScrollbarOrientation.bottom,
+        notificationPredicate: (notification) =>
+            notification.metrics.axis == Axis.horizontal,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SizedBox(width: 600, child: chart),
+        ),
+      );
+    }
+    return chart;
   }
 
   Widget _tooltip(_ChartGeometry geometry, int index) {

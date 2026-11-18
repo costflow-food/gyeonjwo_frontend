@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/transaction_listing.dart";
 import "../transaction_format.dart";
@@ -41,12 +42,14 @@ class TransactionTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = isCompactLayout(context);
+    final textScale = MediaQuery.textScalerOf(context).scale(15) / 15;
     final currency = listing.rows.firstOrNull?.record.currency ?? "KRW";
     return Semantics(
       container: true,
       label: "확정 거래 목록",
       child: LdsListTable(
-        minWidth: minWidth,
+        minWidth: compact ? 1000 * textScale : minWidth,
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Semantics(
@@ -67,12 +70,12 @@ class TransactionTable extends StatelessWidget {
           ),
         ),
         columns: [
-          _sortable("확정일", TransactionSort.date),
-          const LdsColumn("품목", flex: 2, alignStart: true),
-          const LdsColumn("거래처", alignStart: true),
-          _sortable("수량", TransactionSort.quantity),
-          _sortable("단가", TransactionSort.unitPrice, flex: 2),
-          _sortable("총액", TransactionSort.total, flex: 2),
+          _sortable("확정일", TransactionSort.date, flex: compact ? 3 : 1),
+          LdsColumn("품목", flex: compact ? 4 : 2, alignStart: true),
+          LdsColumn("거래처", flex: compact ? 3 : 1, alignStart: !compact),
+          _sortable("수량", TransactionSort.quantity, flex: compact ? 2 : 1),
+          _sortable("단가", TransactionSort.unitPrice, flex: compact ? 4 : 2),
+          _sortable("총액", TransactionSort.total, flex: compact ? 4 : 2),
         ],
         rows: [
           for (final row in listing.rows)
