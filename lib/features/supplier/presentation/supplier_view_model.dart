@@ -5,6 +5,7 @@ import "package:riverpod_annotation/riverpod_annotation.dart";
 import "../data/supplier_repository_impl.dart";
 import "../domain/supplier.dart";
 import "../domain/supplier_list_state.dart";
+import "../domain/supplier_update.dart";
 
 part "supplier_view_model.g.dart";
 
@@ -89,16 +90,28 @@ class SupplierListViewModel extends _$SupplierListViewModel {
     }
   }
 
-  /// The server has no supplier update yet (08 has no such API): this always
-  /// fails. Send the request here once it exists.
+  /// Sends only what changed from [initial] (KAN-288) and reloads the list
+  /// and that supplier's detail. With no change it returns [initial] without
+  /// a request. Returns the updated supplier even if reloading the list fails.
   Future<SupplierDetail> updateSupplier(
-    String supplierId,
+    SupplierDetail initial,
     SupplierDraft draft,
   ) async {
-    throw const SupplierFailure(
-      "SUPPLIER_UPDATE_UNSUPPORTED",
-      "거래처를 수정하지 못했습니다.",
-    );
+    final body = SupplierUpdate.body(initial, draft);
+    if (body.isEmpty) return initial;
+    final updated = await ref
+        .read(supplierRepositoryProvider)
+        .updateSupplier(initial.id, body);
+    if (!ref.mounted) return updated;
+    ref.invalidate(supplierDetailViewModelProvider(initial.id));
+    _searchTimer?.cancel();
+    final current = state.asData?.value;
+    if (current == null) {
+      ref.invalidateSelf();
+      return updated;
+    }
+    await _reload(current.query, selectId: initial.id);
+    return updated;
   }
 
   /// Clears the search and selects the new supplier. Returns the created

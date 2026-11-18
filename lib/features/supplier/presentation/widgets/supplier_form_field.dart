@@ -1,21 +1,27 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 
+/// 거래처 입력칸 = LDS 입력칸(7.14b): 이름표는 칸 위, 검사에 걸리면 칸 아래
+/// 빨간 안내.
 class SupplierFormField extends StatelessWidget {
   const SupplierFormField({
     super.key,
     required this.label,
     required this.controller,
+    this.required = false,
     this.hint,
     this.validator,
     this.keyboardType,
     this.maxLines = 1,
     this.autofocus = false,
+    this.readOnly = false,
+    this.helper,
   });
 
   final String label;
+  final bool required;
   final String? hint;
   final TextEditingController controller;
   final FormFieldValidator<String>? validator;
@@ -23,45 +29,35 @@ class SupplierFormField extends StatelessWidget {
   final int maxLines;
   final bool autofocus;
 
+  /// Shown but not editable (the server does not accept this value).
+  final bool readOnly;
+  final String? helper;
+
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    final field = LdsTextFormField(
       controller: controller,
+      label: label,
+      required: required,
+      hintText: hint,
       validator: validator,
       keyboardType: keyboardType,
       maxLines: maxLines,
       autofocus: autofocus,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-      style: const TextStyle(fontSize: AppFontSizes.body),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        labelStyle: const TextStyle(fontSize: AppFontSizes.body),
-        hintStyle: TextStyle(
-          fontSize: AppFontSizes.body,
-          color: context.palette.muted,
+      enabled: !readOnly,
+    );
+    final helper = this.helper;
+    if (helper == null) return field;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        field,
+        const SizedBox(height: 4),
+        Text(
+          helper,
+          style: const TextStyle(fontSize: 13, color: LdsColors.muted),
         ),
-        isDense: true,
-        filled: true,
-        fillColor: context.palette.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(6)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(6)),
-          borderSide: BorderSide(
-            color: context.palette.muted.withValues(alpha: .45),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(6)),
-          borderSide: BorderSide(color: context.palette.ink),
-        ),
-      ),
+      ],
     );
   }
 }

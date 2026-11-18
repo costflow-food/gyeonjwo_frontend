@@ -1,8 +1,9 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 
+/// 아래 줄: (오류) + 취소(글자 버튼) · 등록/저장(채움).
 class SupplierRegisterFooter extends StatelessWidget {
   const SupplierRegisterFooter({
     super.key,
@@ -23,64 +24,50 @@ class SupplierRegisterFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 14, 28, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (error != null) ...[
-            Semantics(
-              liveRegion: true,
-              child: Row(
-                children: [
-                  const Icon(Icons.error_outline, size: 16, color: danger),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      error!,
-                      style: const TextStyle(
-                        fontSize: AppFontSizes.body,
-                        color: danger,
-                      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (error != null) ...[
+          Semantics(
+            liveRegion: true,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 16,
+                  color: LdsColors.errorText,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    error!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: LdsColors.errorText,
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: submitting ? null : onCancel,
-                child: const Text("취소"),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: submitting ? null : onSubmit,
-                style: FilledButton.styleFrom(
-                  backgroundColor: context.palette.deep,
-                  disabledBackgroundColor: context.palette.deep.withValues(
-                    alpha: .7,
-                  ),
-                  disabledForegroundColor: Colors.white,
                 ),
-                icon: submitting
-                    ? const SizedBox.square(
-                        dimension: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.check, size: 16),
-                label: Text(submitting ? "$submitLabel 중" : submitLabel),
-              ),
-            ],
+              ],
+            ),
           ),
+          const SizedBox(height: 12),
         ],
-      ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: submitting ? null : onCancel,
+              child: const Text("취소"),
+            ),
+            const SizedBox(width: 8),
+            LdsButton(
+              label: submitting ? "$submitLabel 중" : submitLabel,
+              loading: submitting,
+              onPressed: submitting ? null : onSubmit,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

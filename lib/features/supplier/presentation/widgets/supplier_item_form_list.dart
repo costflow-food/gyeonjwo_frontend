@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../supplier_form_controllers.dart";
 import "supplier_form_group_title.dart";
 import "supplier_item_form.dart";
@@ -35,25 +35,20 @@ class SupplierItemFormList extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            TextButton.icon(
+            LdsButton(
+              label: "품목 추가",
+              icon: Icons.add,
+              size: LdsButtonSize.small,
+              variant: LdsButtonVariant.outlinedNeutral,
               onPressed: onAdd,
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text(
-                "품목 추가",
-                style: TextStyle(fontSize: AppFontSizes.buttonSmall),
-              ),
-              style: TextButton.styleFrom(foregroundColor: context.palette.ink),
             ),
           ],
         ),
         const SizedBox(height: 12),
         if (items.isEmpty)
-          Text(
+          const Text(
             "취급 품목 없이 등록하면 후보 선정의 취급 근거로 쓰이지 않습니다.",
-            style: TextStyle(
-              fontSize: AppFontSizes.secondary,
-              color: context.palette.muted,
-            ),
+            style: TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
           ),
         for (final (index, item) in items.indexed) ...[
           // ObjectKey keeps each item's fields attached after a removal.

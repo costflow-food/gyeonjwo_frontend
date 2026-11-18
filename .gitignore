@@ -57,3 +57,6 @@ app.*.map.json
 /config/*.local.json
 
 # Keep lib/, pubspec.lock, .metadata, and generated Dart source files tracked.
+/Claude outputs/
+/docs/
+

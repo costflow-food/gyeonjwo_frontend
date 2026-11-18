@@ -1,46 +1,38 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/workflow_log.dart";
 
-/// Result of one log entry. Uses text and icon, not color alone.
+/// Result of one log entry: LdsTag with icon and text, not color alone.
 class LogOutcomeBadge extends StatelessWidget {
   const LogOutcomeBadge(this.outcome, {super.key});
   final LogOutcome outcome;
 
   @override
   Widget build(BuildContext context) {
-    final (color, background, icon) = switch (outcome) {
+    final (tone, foreground, icon) = switch (outcome) {
       LogOutcome.success => (
-        const Color(0xFF00754A),
-        const Color(0xFFE2F4EA),
-        Icons.check,
+        LdsTagTone.success,
+        LdsColors.successText,
+        Icons.check_circle_outline,
       ),
-      LogOutcome.failure => (danger, dangerTint, Icons.error_outline),
+      LogOutcome.failure => (
+        LdsTagTone.error,
+        LdsColors.errorText,
+        Icons.error_outline,
+      ),
       LogOutcome.waiting => (
-        const Color(0xFF8A6516),
-        const Color(0xFFF6EEDC),
+        LdsTagTone.warning,
+        LdsColors.warningText,
         Icons.schedule,
       ),
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            outcome.label,
-            style: TextStyle(fontSize: AppFontSizes.secondary, color: color),
-          ),
-        ],
-      ),
+    return LdsTag(
+      outcome.label,
+      tone: tone,
+      icon: icon,
+      foreground: foreground,
     );
   }
 }

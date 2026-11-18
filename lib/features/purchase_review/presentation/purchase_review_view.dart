@@ -9,6 +9,7 @@ import "../../../shared/workspace_colors.dart";
 import "../domain/purchase_review.dart";
 import "purchase_review_view_model.dart";
 import "widgets/review_card_content.dart";
+import "../../../app/app_paths.dart";
 
 class PurchaseReviewView extends ConsumerWidget {
   const PurchaseReviewView({super.key, required this.caseId});
@@ -25,7 +26,7 @@ class PurchaseReviewView extends ConsumerWidget {
       if (current != null) return ReviewCardContent(review: current);
       return MobilePageScaffold(
         title: "검토 카드",
-        onBack: () => context.go("/cases/$caseId"),
+        onBack: () => context.go(AppPaths.task(caseId)),
         body: switch (value) {
           AsyncError(:final error) => Padding(
             padding: const EdgeInsets.all(24),
@@ -39,14 +40,19 @@ class PurchaseReviewView extends ConsumerWidget {
         },
       );
     }
+    // 카드는 스스로 스크롤하고 아래 고정 줄(보류·확인하고 보관)을 둡니다.
     return WorkspaceShell(
+      scrollable: false,
       child: switch (value) {
         // Keep the card on screen while it reloads after a decision.
         _ when current != null => ReviewCardContent(review: current),
-        AsyncError(:final error) => _Unavailable(
-          caseId: caseId,
-          failure: error is PurchaseReviewFailure ? error : null,
-          onRetry: ref.read(provider.notifier).refresh,
+        AsyncError(:final error) => SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: _Unavailable(
+            caseId: caseId,
+            failure: error is PurchaseReviewFailure ? error : null,
+            onRetry: ref.read(provider.notifier).refresh,
+          ),
         ),
         _ => const Padding(
           padding: EdgeInsets.all(32),
@@ -105,7 +111,7 @@ class _Unavailable extends StatelessWidget {
               children: [
                 OutlinedButton(
                   style: WorkspaceButtonStyles.outlined(context),
-                  onPressed: () => context.go("/cases/$caseId"),
+                  onPressed: () => context.go(AppPaths.task(caseId)),
                   child: const Text("업무 보기"),
                 ),
                 FilledButton(

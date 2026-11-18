@@ -3,12 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_config.dart';
-import '../../../shared/app_font_sizes.dart';
 import '../../../shared/formatters.dart';
-import '../../../shared/theme/theme_picker.dart';
+import '../../../shared/lds_colors.dart';
+import '../../../shared/widgets/lds/lds.dart';
 import '../../../shared/widgets/mobile_scaffold.dart';
 import '../../../shared/widgets/workspace_shell.dart';
-import '../../../shared/workspace_colors.dart';
 import '../../mailbox_sync/domain/mailbox_sync_status.dart';
 import '../../mailbox_sync/presentation/mailbox_sync_view_model.dart';
 import '../../send_settings/presentation/send_settings_dialog.dart';
@@ -21,6 +20,7 @@ import 'auth_session_view_model.dart';
 import 'gmail_connection_view_model.dart';
 import 'widgets/auth_failure_message.dart';
 import 'widgets/sign_out_action.dart';
+import '../../../app/app_paths.dart';
 
 class AccountView extends StatefulWidget {
   const AccountView({super.key});
@@ -31,7 +31,7 @@ class AccountView extends StatefulWidget {
 
 class _AccountViewState extends State<AccountView>
     with SingleTickerProviderStateMixin {
-  static const _pages = ['권한', '메일 발송 설정', '화면 테마'];
+  static const _pages = ['권한', '메일 발송 설정'];
 
   late final TabController _tabs = TabController(
     length: _pages.length,
@@ -68,30 +68,15 @@ class _AccountViewState extends State<AccountView>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // On a phone the app bar already says 계정 설정.
-              if (!isCompactLayout(context)) ...[
-                const Text(
-                  '설정',
-                  style: TextStyle(
-                    fontSize: AppFontSizes.pageTitle,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-              TabBar(
-                controller: _tabs,
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                labelColor: context.palette.accentText,
-                unselectedLabelColor: context.palette.muted,
-                indicatorColor: context.palette.accent,
-                dividerColor: context.palette.line,
-                labelStyle: const TextStyle(
-                  fontSize: AppFontSizes.navigation,
-                  fontWeight: FontWeight.w700,
-                ),
-                tabs: [for (final page in _pages) Tab(text: page)],
+              // 화면 제목 '설정'은 상단 바(웹)·앱 바(휴대폰)에 있습니다.
+              // Tab text(6.1): 누르면 아래 내용이 바뀝니다.
+              LdsTabBar<int>(
+                tabs: [
+                  for (final (index, page) in _pages.indexed)
+                    LdsTabItem(value: index, label: page),
+                ],
+                selected: _index,
+                onSelected: _tabs.animateTo,
               ),
               const SizedBox(height: 24),
               GestureDetector(
@@ -105,7 +90,6 @@ class _AccountViewState extends State<AccountView>
                       for (final (index, page) in const [
                         _PermissionsPage(),
                         _SendSettingsPage(),
-                        _ThemePage(),
                       ].indexed)
                         Visibility(
                           visible: index == _index,
@@ -126,14 +110,27 @@ class _AccountViewState extends State<AccountView>
                   ),
                 ),
               ),
+              // 휴대폰 아래 탭에는 실행 로그가 없어 여기서 들어갑니다.
+              if (isCompactLayout(context)) ...[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: LdsButton(
+                    label: '실행 로그',
+                    icon: Icons.history,
+                    variant: LdsButtonVariant.outlinedNeutral,
+                    onPressed: () => context.go(AppPaths.logs),
+                  ),
+                ),
+              ],
               if (AppConfig.buildRevision.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 SelectableText(
                   '빌드 ${AppConfig.buildRevision}',
                   textAlign: TextAlign.end,
-                  style: TextStyle(
-                    fontSize: AppFontSizes.caption,
-                    color: context.palette.muted,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: LdsColors.mutedStrong,
                   ),
                 ),
               ],
@@ -145,6 +142,8 @@ class _AccountViewState extends State<AccountView>
   }
 }
 
+/// 권한 탭: 사용자 → 연결·권한 상태 이름표-값 표(값 = 설명, 오른쪽 상태 라벨)
+/// → 큰 버튼.
 class _PermissionsPage extends ConsumerWidget {
   const _PermissionsPage();
 
@@ -154,48 +153,82 @@ class _PermissionsPage extends ConsumerWidget {
     final connection = ref.watch(gmailConnectionViewModelProvider);
     final phase = connection.connectionPhase;
     final hasConnection = phase.hasConnection;
-    return AuthCard(
+    return LdsPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AuthInfoTile(
-            icon: Icons.person_outline,
-            title: '구매담당자',
-            description: session?.email ?? 'Google 계정 정보는 로그인 후 표시됩니다.',
+          Row(
+            children: [
+              const AuthIconBox(icon: Icons.person_outline),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '구매담당자',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: LdsColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      session?.email ?? 'Google 계정 정보는 로그인 후 표시됩니다.',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: LdsColors.mutedStrong,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Divider(color: context.palette.line),
-          AuthInfoTile(
-            icon: Icons.link_outlined,
-            title: 'Google 계정 연결',
-            description: connection.authFailure?.message ?? phase.description,
-            enabled: hasConnection,
-            status: phase.label,
-          ),
-          AuthInfoTile(
-            icon: Icons.inbox_outlined,
-            title: 'Gmail 읽기',
-            description: '수신 메일을 업무 큐로 가져오는 데 사용합니다.',
-            enabled: hasConnection && phase.canRead,
-            status: !hasConnection
-                ? '연결 전'
-                : phase.canRead
-                ? '허용'
-                : '거부됨',
-          ),
-          AuthInfoTile(
-            icon: Icons.send_outlined,
-            title: 'Gmail 발송',
-            description: '메일 발송 권한과 실제 발송 승인 설정은 별개입니다.',
-            enabled: hasConnection && phase.canSend,
-            status: !hasConnection
-                ? '연결 전'
-                : phase.canSend
-                ? '허용 · 발송 승인은 별도'
-                : '거부됨',
-          ),
-          if (hasConnection && phase.canRead) const _MailboxSyncTile(),
-          const _ServerLimitsTile(),
           const SizedBox(height: 20),
+          LdsKeyValueTable(
+            labelWidth: 136,
+            rows: [
+              _statusRow(
+                'Google 연결',
+                connection.authFailure?.message ?? phase.description,
+                phase.label,
+                hasConnection ? _Status.ok : _Status.off,
+              ),
+              _statusRow(
+                'Gmail 읽기',
+                '수신 메일을 업무 큐로 가져오는 데 사용합니다.',
+                !hasConnection
+                    ? '연결 전'
+                    : phase.canRead
+                    ? '허용'
+                    : '거부됨',
+                !hasConnection
+                    ? _Status.off
+                    : phase.canRead
+                    ? _Status.ok
+                    : _Status.bad,
+              ),
+              _statusRow(
+                'Gmail 발송',
+                '메일 발송 권한과 실제 발송 승인 설정은 별개입니다.',
+                !hasConnection
+                    ? '연결 전'
+                    : phase.canSend
+                    ? '허용 · 발송 승인은 별도'
+                    : '거부됨',
+                !hasConnection
+                    ? _Status.off
+                    : phase.canSend
+                    ? _Status.ok
+                    : _Status.bad,
+              ),
+              if (hasConnection && phase.canRead) _mailboxSyncRow(ref),
+              ?_serverLimitsRow(ref),
+            ],
+          ),
+          const SizedBox(height: 24),
           AuthButton(
             label: phase == GmailConnectionPhase.connected
                 ? '권한 다시 선택하기'
@@ -210,13 +243,15 @@ class _PermissionsPage extends ConsumerWidget {
             OutlinedButton(
               onPressed: () => signOutAndLeave(context, ref),
               style: OutlinedButton.styleFrom(
-                foregroundColor: danger,
-                side: const BorderSide(color: danger),
+                foregroundColor: LdsColors.errorText,
+                side: const BorderSide(color: LdsColors.borderStrong),
                 minimumSize: const Size.fromHeight(48),
-                shape: const StadiumBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(LdsRadius.buttonLarge),
+                ),
                 textStyle: const TextStyle(
-                  fontSize: AppFontSizes.buttonLarge,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               child: const Text('로그아웃'),
@@ -228,99 +263,96 @@ class _PermissionsPage extends ConsumerWidget {
   }
 }
 
-class _MailboxSyncTile extends ConsumerWidget {
-  const _MailboxSyncTile();
+enum _Status { ok, off, bad }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sync = ref.watch(mailboxSyncViewModelProvider);
-    if (sync.isLoading && !sync.hasValue) {
-      return const AuthInfoTile(
-        icon: Icons.mark_email_unread_outlined,
-        title: '메일 수신',
-        description: '수신 상태를 확인하고 있습니다.',
-      );
-    }
-    final status = sync.asData?.value;
-    final (label, description, ok) = _describe(status);
-    return AuthInfoTile(
-      icon: Icons.mark_email_unread_outlined,
-      title: '메일 수신',
-      description: description,
-      enabled: ok,
-      status: label,
-      statusColor: ok ? null : danger,
-    );
-  }
+/// 이름표-값 줄: 값 = 설명(14), 오른쪽 = 상태 라벨.
+LdsKeyValueRow _statusRow(
+  String label,
+  String description,
+  String status,
+  _Status kind,
+) => LdsKeyValueRow(
+  label,
+  child: Text(
+    description,
+    style: const TextStyle(fontSize: 14, height: 1.5, color: LdsColors.title),
+  ),
+  trailing: switch (kind) {
+    _Status.ok => LdsTag(
+      status,
+      tone: LdsTagTone.success,
+      foreground: LdsColors.successText,
+    ),
+    _Status.off => LdsTag(
+      status,
+      tone: LdsTagTone.warning,
+      foreground: LdsColors.warningText,
+    ),
+    _Status.bad => LdsTag(
+      status,
+      tone: LdsTagTone.error,
+      foreground: LdsColors.errorText,
+    ),
+  },
+);
 
-  static (String, String, bool) _describe(MailboxSyncStatus? status) {
-    if (status == null) {
-      return ('확인하지 못함', '서버에서 수신 상태를 받아 오지 못했습니다.', false);
-    }
-    if (!status.connected) {
-      return ('연결 전', '연결된 메일함이 없어 메일을 받지 않고 있습니다.', false);
-    }
-    final synced = status.lastSyncedAt;
-    final last = synced == null
-        ? '마지막 수신 시각을 알 수 없습니다.'
-        : '마지막 수신 ${formatSeoulDateTime(synced.toUtc().toIso8601String())}.';
-    if (status.failed) {
-      final code = status.lastError == null ? '' : ' (오류 ${status.lastError})';
-      return (
-        '멈춤',
-        '$last 서버가 메일함을 읽지 못하고 있어 그 뒤에 온 메일은 아직 업무 큐에 없습니다.$code',
-        false,
-      );
-    }
-    if (status.isStale(DateTime.now())) {
-      return ('늦어짐', '$last 그 뒤에 온 메일은 아직 업무 큐에 없을 수 있습니다.', false);
-    }
-    return ('받는 중', last, true);
+LdsKeyValueRow _mailboxSyncRow(WidgetRef ref) {
+  final sync = ref.watch(mailboxSyncViewModelProvider);
+  if (sync.isLoading && !sync.hasValue) {
+    return _statusRow('메일 수신', '수신 상태를 확인하고 있습니다.', '확인 중', _Status.off);
   }
+  final (label, description, ok) = _describeSync(sync.asData?.value);
+  return _statusRow('메일 수신', description, label, ok ? _Status.ok : _Status.bad);
 }
 
-class _ServerLimitsTile extends ConsumerWidget {
-  const _ServerLimitsTile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final server = ref.watch(serverStatusViewModelProvider).asData?.value;
-    if (server == null) return const SizedBox.shrink();
-    final String description;
-    if (server.notReady) {
-      description = '서버 일부가 준비되지 않아 검토와 메일 발송이 멈출 수 있습니다.';
-    } else {
-      final limited = [
-        for (final feature in ServerFeature.values)
-          if (server.degraded?.contains(feature) ?? false) feature.label,
-      ];
-      if (limited.isEmpty) return const SizedBox.shrink();
-      description = '지금 쓸 수 없어요: ${limited.join(', ')}';
-    }
-    return AuthInfoTile(
-      icon: Icons.report_gmailerrorred_outlined,
-      title: '서버 기능',
-      description: description,
-      enabled: false,
-      status: '일부 기능 멈춤',
-      statusColor: danger,
+(String, String, bool) _describeSync(MailboxSyncStatus? status) {
+  if (status == null) {
+    return ('확인하지 못함', '서버에서 수신 상태를 받아 오지 못했습니다.', false);
+  }
+  if (!status.connected) {
+    return ('연결 전', '연결된 메일함이 없어 메일을 받지 않고 있습니다.', false);
+  }
+  final synced = status.lastSyncedAt;
+  final last = synced == null
+      ? '마지막 수신 시각을 알 수 없습니다.'
+      : '마지막 수신 ${formatSeoulDateTime(synced.toUtc().toIso8601String())}.';
+  if (status.failed) {
+    final code = status.lastError == null ? '' : ' (오류 ${status.lastError})';
+    return (
+      '멈춤',
+      '$last 서버가 메일함을 읽지 못하고 있어 그 뒤에 온 메일은 아직 업무 큐에 없습니다.$code',
+      false,
     );
   }
+  if (status.isStale(DateTime.now())) {
+    return ('늦어짐', '$last 그 뒤에 온 메일은 아직 업무 큐에 없을 수 있습니다.', false);
+  }
+  return ('받는 중', last, true);
+}
+
+LdsKeyValueRow? _serverLimitsRow(WidgetRef ref) {
+  final server = ref.watch(serverStatusViewModelProvider).asData?.value;
+  if (server == null) return null;
+  final String description;
+  if (server.notReady) {
+    description = '서버 일부가 준비되지 않아 검토와 메일 발송이 멈출 수 있습니다.';
+  } else {
+    final limited = [
+      for (final feature in ServerFeature.values)
+        if (server.degraded?.contains(feature) ?? false) feature.label,
+    ];
+    if (limited.isEmpty) return null;
+    description = '지금 쓸 수 없어요: ${limited.join(', ')}';
+  }
+  return _statusRow('서버 기능', description, '일부 기능 멈춤', _Status.bad);
 }
 
 class _SendSettingsPage extends StatelessWidget {
   const _SendSettingsPage();
 
   @override
-  Widget build(BuildContext context) => const AuthCard(
+  Widget build(BuildContext context) => const LdsPanel(
     padding: EdgeInsets.only(top: 24),
     child: SendSettingsDialog(embedded: true),
   );
-}
-
-class _ThemePage extends StatelessWidget {
-  const _ThemePage();
-
-  @override
-  Widget build(BuildContext context) => const AuthCard(child: ThemePicker());
 }

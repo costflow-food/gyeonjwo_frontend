@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shared/workspace_colors.dart';
+import '../../../../shared/lds_colors.dart';
+import '../../../../shared/widgets/lds/lds.dart';
 import '../../domain/source_document.dart';
 
+/// 본문 상자: 제목 17/700, 문단 15px 줄간격 1.6. 근거 글자는 밑줄.
 class SourceDocumentBody extends StatelessWidget {
   const SourceDocumentBody({super.key, required this.document});
   final SourceDocument document;
@@ -12,8 +14,9 @@ class SourceDocumentBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        border: Border.all(color: context.palette.line),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        border: Border.all(color: LdsColors.line),
+        borderRadius: BorderRadius.circular(LdsRadius.table),
       ),
       child: SelectionArea(
         child: Column(
@@ -22,19 +25,20 @@ class SourceDocumentBody extends StatelessWidget {
             Text(
               document.title,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: FontWeight.w700,
                 height: 1.5,
+                color: LdsColors.ink,
               ),
             ),
             for (final paragraph in document.paragraphs) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Text.rich(
-                TextSpan(children: _highlight(context, paragraph)),
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 2,
-                  color: context.palette.muted,
+                TextSpan(children: _highlight(paragraph)),
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.6,
+                  color: LdsColors.title,
                 ),
               ),
             ],
@@ -44,7 +48,7 @@ class SourceDocumentBody extends StatelessWidget {
     );
   }
 
-  List<TextSpan> _highlight(BuildContext context, String text) {
+  List<TextSpan> _highlight(String text) {
     if (document.highlights.isEmpty) return [TextSpan(text: text)];
     final pattern = RegExp(document.highlights.map(RegExp.escape).join('|'));
     final spans = <TextSpan>[];
@@ -54,9 +58,8 @@ class SourceDocumentBody extends StatelessWidget {
       spans.add(
         TextSpan(
           text: match.group(0),
-          style: TextStyle(
-            backgroundColor: context.palette.line,
-            color: context.palette.ink,
+          style: const TextStyle(
+            color: LdsColors.ink,
             decoration: TextDecoration.underline,
           ),
         ),

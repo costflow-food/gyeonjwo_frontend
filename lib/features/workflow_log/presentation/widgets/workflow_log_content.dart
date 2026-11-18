@@ -1,8 +1,6 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/widgets/outline_panel.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
 import "../../domain/workflow_log_state.dart";
 import "../workflow_log_view_model.dart";
 import "workflow_log_detail.dart";
@@ -49,20 +47,31 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final narrow = constraints.maxWidth < 920;
-        final list = OutlinePanel(
+        final list = KeyedSubtree(
           key: _listKey,
-          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      "총 ${data.total}건 · 최신순",
-                      style: TextStyle(
-                        fontSize: AppFontSizes.secondary,
-                        color: context.palette.muted,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          const TextSpan(text: "총 "),
+                          TextSpan(
+                            text: "${data.total}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: LdsColors.ink,
+                            ),
+                          ),
+                          const TextSpan(text: "건 · 최신순"),
+                        ],
+                      ),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: LdsColors.mutedStrong,
                       ),
                     ),
                   ),
@@ -77,17 +86,16 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                       icon: const Icon(
                         Icons.error_outline,
                         size: 15,
-                        color: danger,
+                        color: LdsColors.errorText,
                       ),
                       label: const Text(
                         "조회 실패 · 다시 시도",
-                        style: TextStyle(fontSize: AppFontSizes.secondary),
+                        style: TextStyle(fontSize: 13),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 8),
-              Divider(height: 1, color: context.palette.muted),
               WorkflowLogList(
                 data: data,
                 showSelection: widget.onOpenDetail == null,
@@ -127,7 +135,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(flex: 6, child: list),
-                        const SizedBox(width: 20),
+                        const SizedBox(width: 24),
                         Expanded(flex: 5, child: detail),
                       ],
                     );
@@ -149,7 +157,7 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                                 icon: const Icon(Icons.arrow_back, size: 16),
                                 label: const Text('목록으로'),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: context.palette.ink,
+                                  foregroundColor: LdsColors.ink,
                                 ),
                               ),
                             ),

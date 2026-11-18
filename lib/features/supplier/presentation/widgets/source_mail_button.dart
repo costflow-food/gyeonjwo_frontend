@@ -1,28 +1,19 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../../source_document/presentation/source_document_dialog.dart";
 
+/// '원문 보기': 작은 테두리 버튼(메일 아이콘).
 class SourceMailButton extends StatelessWidget {
   const SourceMailButton({super.key, required this.mailId});
   final String mailId;
 
   @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: () => showSourceDocument(context, requestId: mailId),
-      icon: const Icon(Icons.mail_outline, size: 14),
-      label: const Text(
-        "원문 보기",
-        style: TextStyle(fontSize: AppFontSizes.caption),
-      ),
-      style: TextButton.styleFrom(
-        foregroundColor: context.palette.accentText,
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        minimumSize: const Size(0, 28),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => LdsButton(
+    label: "원문 보기",
+    icon: Icons.mail_outline,
+    size: LdsButtonSize.small,
+    variant: LdsButtonVariant.outlinedNeutral,
+    onPressed: () => showSourceDocument(context, requestId: mailId),
+  );
 }

@@ -12,17 +12,35 @@ import "features/auth/data/auth_session_data_source.dart";
 import "features/auth/data/provider_token_free_local_storage.dart";
 import "features/auth/presentation/auth_session_view_model.dart";
 import "features/auth/presentation/gmail_connection_view_model.dart";
-import "shared/theme/workspace_theme.dart";
+import "shared/app_font_sizes.dart";
+import "shared/lds_colors.dart";
+import "shared/preferences.dart";
 import "shared/widgets/app_scroll_behavior.dart";
 import "shared/widgets/mobile_scaffold.dart";
 import "shared/workspace_colors.dart";
 
+/// 앱 전체 기본 모양 (`docs/design-ssot.md` 1·2장, 6.1 탭, 7.4 버튼, 8.1 모달).
+/// 글꼴은 나눔고딕(400·700·800)이라 여기서는 w400/w700만 씁니다.
 ThemeData buildAppTheme(WorkspacePalette p) {
+  const buttonSize = Size(0, 36);
+  const buttonPadding = EdgeInsets.symmetric(horizontal: 12);
+  const buttonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(4)),
+  );
+  const buttonLabel = TextStyle(
+    fontSize: AppFontSizes.button,
+    fontWeight: FontWeight.w700,
+  );
+  OutlineInputBorder field(Color color) => OutlineInputBorder(
+    borderRadius: BorderRadius.circular(4),
+    borderSide: BorderSide(color: color),
+  );
+
   final base = ThemeData(
     extensions: [p],
     colorScheme: ColorScheme.fromSeed(
       seedColor: p.accent,
-      brightness: p.brightness,
+      brightness: Brightness.light,
       primary: p.accent,
       onPrimary: p.onAccent,
       error: danger,
@@ -31,55 +49,65 @@ ThemeData buildAppTheme(WorkspacePalette p) {
     ),
     scaffoldBackgroundColor: p.canvas,
     useMaterial3: true,
-    fontFamily: GoogleFonts.ibmPlexSansKr().fontFamily,
+    fontFamily: GoogleFonts.nanumGothic().fontFamily,
   );
   return base.copyWith(
-    textTheme: GoogleFonts.ibmPlexSansKrTextTheme(base.textTheme)
-        .apply(bodyColor: p.ink, displayColor: p.ink),
+    textTheme: GoogleFonts.nanumGothicTextTheme(
+      base.textTheme,
+    ).apply(bodyColor: p.ink, displayColor: p.ink),
     dividerColor: p.line,
     dividerTheme: DividerThemeData(color: p.line, space: 1),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: p.accent),
     dialogTheme: DialogThemeData(
       backgroundColor: p.surface,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       titleTextStyle: TextStyle(
-        fontSize: 22,
+        fontSize: AppFontSizes.dialogTitle,
         fontWeight: FontWeight.w700,
+        height: 1.3,
         color: p.ink,
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: p.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: p.line),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: p.line),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: p.accent, width: 1.5),
-      ),
-      labelStyle: TextStyle(color: p.muted),
-      hintStyle: TextStyle(color: p.muted),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      border: field(LdsColors.borderStrong),
+      enabledBorder: field(LdsColors.borderStrong),
+      focusedBorder: field(LdsColors.title),
+      errorBorder: field(danger),
+      focusedErrorBorder: field(danger),
+      labelStyle: const TextStyle(color: LdsColors.outline),
+      hintStyle: const TextStyle(color: LdsColors.outline),
     ),
     tabBarTheme: TabBarThemeData(
       labelColor: p.ink,
-      unselectedLabelColor: p.muted,
-      indicatorColor: p.accent,
+      unselectedLabelColor: LdsColors.label,
+      labelStyle: const TextStyle(
+        fontSize: AppFontSizes.body,
+        fontWeight: FontWeight.w700,
+      ),
+      unselectedLabelStyle: const TextStyle(
+        fontSize: AppFontSizes.body,
+        fontWeight: FontWeight.w700,
+      ),
+      indicator: UnderlineTabIndicator(
+        borderSide: BorderSide(color: p.ink, width: 2),
+      ),
       dividerColor: p.line,
     ),
     chipTheme: ChipThemeData(
       shape: const StadiumBorder(),
       side: BorderSide(color: p.line),
-      selectedColor: p.accent,
+      selectedColor: p.blush,
       backgroundColor: p.surface,
-      labelStyle: TextStyle(color: p.ink),
+      labelStyle: WidgetStateTextStyle.resolveWith(
+        (states) => TextStyle(
+          color: states.contains(WidgetState.selected) ? p.accent : p.ink,
+        ),
+      ),
     ),
     switchTheme: SwitchThemeData(
       thumbColor: const WidgetStatePropertyAll(Colors.white),
@@ -91,12 +119,12 @@ ThemeData buildAppTheme(WorkspacePalette p) {
     popupMenuTheme: PopupMenuThemeData(
       color: p.surface,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
         color: p.deep,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       textStyle: const TextStyle(color: Colors.white, fontSize: 13),
     ),
@@ -104,26 +132,70 @@ ThemeData buildAppTheme(WorkspacePalette p) {
       backgroundColor: p.deep,
       contentTextStyle: const TextStyle(color: Colors.white),
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: p.accent,
         foregroundColor: p.onAccent,
-        shape: const StadiumBorder(),
-        minimumSize: const Size(0, 40),
+        disabledForegroundColor: LdsColors.disabled,
+        elevation: 0,
+        // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
+        visualDensity: VisualDensity.standard,
+        minimumSize: buttonSize,
+        padding: buttonPadding,
+        shape: buttonShape,
+        textStyle: buttonLabel,
+      ).copyWith(
+        // hover는 겹침 색 대신 바탕을 #CC4D00으로 바꿉니다.
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? LdsColors.lineSoft
+              : states.contains(WidgetState.hovered)
+              ? LdsColors.primaryHover
+              : p.accent,
+        ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: p.accentText,
-        side: BorderSide(color: p.accentText),
-        shape: const StadiumBorder(),
-        minimumSize: const Size(0, 40),
+        disabledForegroundColor: LdsColors.disabled,
+        elevation: 0,
+        // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
+        visualDensity: VisualDensity.standard,
+        minimumSize: buttonSize,
+        padding: buttonPadding,
+        shape: buttonShape,
+        textStyle: buttonLabel,
+      ).copyWith(
+        side: WidgetStateProperty.resolveWith(
+          (states) => BorderSide(
+            color: states.contains(WidgetState.disabled)
+                ? LdsColors.line
+                : LdsColors.borderStrong,
+          ),
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.hovered) &&
+                  !states.contains(WidgetState.disabled)
+              ? LdsColors.canvas
+              : null,
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: p.accentText),
+      style: TextButton.styleFrom(
+        foregroundColor: LdsColors.title,
+        disabledForegroundColor: LdsColors.disabled,
+        elevation: 0,
+        // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
+        visualDensity: VisualDensity.standard,
+        minimumSize: buttonSize,
+        padding: buttonPadding,
+        shape: buttonShape,
+        textStyle: buttonLabel,
+      ),
     ),
   );
 }
@@ -173,7 +245,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: '견줘',
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(ref.watch(activePaletteProvider)),
+      theme: buildAppTheme(WorkspacePalette.lds),
       scrollBehavior: const AppScrollBehavior(),
       routerConfig: appRouter,
     );
@@ -189,7 +261,7 @@ class MissingConfigApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: '견줘',
     debugShowCheckedModeBanner: false,
-    theme: buildAppTheme(WorkspacePalette.houseGreen),
+    theme: buildAppTheme(WorkspacePalette.lds),
     home: Scaffold(
       body: Center(
         child: ConstrainedBox(

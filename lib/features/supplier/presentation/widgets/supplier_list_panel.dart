@@ -1,10 +1,10 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
 import "../../domain/supplier_list_state.dart";
 import "supplier_list_row.dart";
 
+/// 거래처 카드 목록(카드 사이 8)과 '더 보기'.
 class SupplierListPanel extends StatelessWidget {
   const SupplierListPanel({
     super.key,
@@ -32,10 +32,7 @@ class SupplierListPanel extends StatelessWidget {
                 ? "등록된 거래처 기준자료가 없습니다."
                 : "검색 조건과 일치하는 거래처가 없습니다.",
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: AppFontSizes.body,
-              color: context.palette.muted,
-            ),
+            style: const TextStyle(fontSize: 15, color: LdsColors.mutedStrong),
           ),
         ),
       );
@@ -43,12 +40,14 @@ class SupplierListPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final supplier in data.suppliers)
+        for (final (index, supplier) in data.suppliers.indexed) ...[
+          if (index > 0) const SizedBox(height: 8),
           SupplierListRow(
             supplier: supplier,
             selected: showSelection && supplier.id == data.selectedId,
             onTap: () => onSelect(supplier.id),
           ),
+        ],
         if (data.hasMore)
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -60,10 +59,7 @@ class SupplierListPanel extends StatelessWidget {
                     )
                   : TextButton(
                       onPressed: onLoadMore,
-                      child: const Text(
-                        "더 보기",
-                        style: TextStyle(fontSize: AppFontSizes.button),
-                      ),
+                      child: const Text("더 보기"),
                     ),
             ),
           ),

@@ -8,7 +8,6 @@ import "../../../shared/widgets/workspace_shell.dart";
 import "../domain/supplier_list_state.dart";
 import "supplier_register_dialog.dart";
 import "supplier_view_model.dart";
-import "../../../shared/widgets/outline_panel.dart";
 import "widgets/supplier_content.dart";
 import "widgets/supplier_detail_panel.dart";
 import "widgets/supplier_header.dart";
@@ -79,7 +78,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
     AsyncValue<SupplierListState> value,
     SupplierListViewModel viewModel,
   ) => MobileTabScaffold(
-    title: "거래처",
+    title: "Suppliers",
     actions: [
       IconButton(
         tooltip: "거래처 등록",
@@ -105,21 +104,19 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
             children: [
               SupplierListStatus(data: data, onRetry: viewModel.refresh),
               const SizedBox(height: 8),
-              OutlinePanel(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: SupplierListPanel(
-                  data: data,
-                  showSelection: false,
-                  onSelect: (id) {
-                    viewModel.select(id);
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => _SupplierDetailPage(supplierId: id),
-                      ),
-                    );
-                  },
-                  onLoadMore: viewModel.loadMore,
-                ),
+              // 카드마다 테두리가 있어 바깥 틀은 두지 않습니다.
+              SupplierListPanel(
+                data: data,
+                showSelection: false,
+                onSelect: (id) {
+                  viewModel.select(id);
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => _SupplierDetailPage(supplierId: id),
+                    ),
+                  );
+                },
+                onLoadMore: viewModel.loadMore,
               ),
             ],
           ),

@@ -1,8 +1,7 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
-import "../../../../shared/widgets/workspace_button_styles.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/mail_draft.dart";
 
 class MailDraftFooter extends StatelessWidget {
@@ -44,97 +43,90 @@ class MailDraftFooter extends StatelessWidget {
         current != null &&
         (current.status == DraftStatus.draft ||
             current.status == DraftStatus.failed);
-    final filled = WorkspaceButtonStyles.filled(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 14, 28, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (error != null || (blocked != null && !editing)) ...[
-            Semantics(
-              liveRegion: true,
-              child: Row(
-                children: [
-                  Icon(
-                    error != null ? Icons.error_outline : Icons.block,
-                    size: 16,
-                    color: error != null ? danger : context.palette.muted,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      error ?? blocked!,
-                      style: TextStyle(
-                        fontSize: AppFontSizes.body,
-                        color: error != null ? danger : context.palette.muted,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-          Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (editing) ...[
-                TextButton(
-                  style: WorkspaceButtonStyles.text(context),
-                  onPressed: busy ? null : onCancelEdit,
-                  child: const Text("편집 취소"),
+    // 닫기·보내지 않음 = 글자 버튼, 수정 = 테두리, 승인 후 발송 = 채움.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (error != null || (blocked != null && !editing)) ...[
+          Semantics(
+            liveRegion: true,
+            child: Row(
+              children: [
+                Icon(
+                  error != null ? Icons.error_outline : Icons.block,
+                  size: 16,
+                  color: error != null
+                      ? LdsColors.errorText
+                      : LdsColors.mutedStrong,
                 ),
-                FilledButton(
-                  onPressed: busy ? null : onSaveRevision,
-                  style: filled,
+                const SizedBox(width: 6),
+                Expanded(
                   child: Text(
-                    current?.approvalRequired == false
-                        ? "수정 저장·자동발송 적용"
-                        : "수정 저장",
-                  ),
-                ),
-              ] else ...[
-                TextButton(
-                  style: WorkspaceButtonStyles.text(context),
-                  onPressed: busy ? null : onClose,
-                  child: const Text("닫기"),
-                ),
-                if (current != null && current.can(DraftAction.withdraw))
-                  TextButton(
-                    style: WorkspaceButtonStyles.text(context),
-                    onPressed: busy ? null : onWithdraw,
-                    child: const Text("보내지 않음"),
-                  ),
-                // A stale or pending draft keeps the button, disabled.
-                if (current != null && editable)
-                  OutlinedButton(
-                    style: WorkspaceButtonStyles.outlined(context),
-                    onPressed: current.can(DraftAction.edit) && !busy
-                        ? onEdit
-                        : null,
-                    child: Text(
-                      current.status == DraftStatus.failed ? "수정본 만들기" : "수정",
+                    error ?? blocked!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: error != null
+                          ? LdsColors.errorText
+                          : LdsColors.mutedStrong,
                     ),
                   ),
-                if (current != null && current.can(DraftAction.reconcile))
-                  FilledButton(
-                    onPressed: busy ? null : onReconcile,
-                    style: filled,
-                    child: Text(busy ? "확인 중" : "발신함 대조"),
-                  ),
-                if (current != null && current.can(DraftAction.approveSend))
-                  FilledButton(
-                    onPressed: busy ? null : onApprove,
-                    style: filled,
-                    child: Text(busy ? "요청 중" : "승인 후 발송"),
-                  ),
+                ),
               ],
-            ],
+            ),
           ),
+          const SizedBox(height: 12),
         ],
-      ),
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (editing) ...[
+              TextButton(
+                onPressed: busy ? null : onCancelEdit,
+                child: const Text("편집 취소"),
+              ),
+              LdsButton(
+                onPressed: busy ? null : onSaveRevision,
+                label: current?.approvalRequired == false
+                    ? "수정 저장·자동발송 적용"
+                    : "수정 저장",
+              ),
+            ] else ...[
+              TextButton(
+                onPressed: busy ? null : onClose,
+                child: const Text("닫기"),
+              ),
+              if (current != null && current.can(DraftAction.withdraw))
+                TextButton(
+                  onPressed: busy ? null : onWithdraw,
+                  child: const Text("보내지 않음"),
+                ),
+              // A stale or pending draft keeps the button, disabled.
+              if (current != null && editable)
+                LdsButton(
+                  variant: LdsButtonVariant.outlinedNeutral,
+                  onPressed: current.can(DraftAction.edit) && !busy
+                      ? onEdit
+                      : null,
+                  label: current.status == DraftStatus.failed
+                      ? "수정본 만들기"
+                      : "수정",
+                ),
+              if (current != null && current.can(DraftAction.reconcile))
+                LdsButton(
+                  onPressed: busy ? null : onReconcile,
+                  label: busy ? "확인 중" : "발신함 대조",
+                ),
+              if (current != null && current.can(DraftAction.approveSend))
+                LdsButton(
+                  onPressed: busy ? null : onApprove,
+                  label: busy ? "요청 중" : "승인 후 발송",
+                ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }

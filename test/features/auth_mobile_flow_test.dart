@@ -102,7 +102,7 @@ Future<GoRouter> _pumpPhone(
     ProviderScope(
       overrides: [authRepositoryProvider.overrideWithValue(auth)],
       child: MaterialApp.router(
-        theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+        theme: ThemeData(extensions: const [WorkspacePalette.lds]),
         routerConfig: router,
       ),
     ),

@@ -14,7 +14,6 @@ import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_repository
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_repository.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/mobile/mobile_work_queue_home.dart";
-import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/queue_group_list.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/work_case_panel.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
 import "package:gyeonjwo_frontend/shared/app_visibility.dart";
@@ -51,12 +50,16 @@ class _Queue implements WorkQueueRepository {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) async => WorkQueuePage(
-    items: [
-      for (var i = 0; i < 20; i++) _case("a$i", itemName: "깐양파"),
-      for (var i = 0; i < 20; i++) _case("b$i", itemName: "대파"),
-    ],
-    counts: const WorkQueueCounts(waiting: 40, total: 40),
+    // 보관(완료) 목록은 비어 있습니다.
+    items: archived
+        ? const []
+        : [
+            for (var i = 0; i < 20; i++) _case("a$i", itemName: "깐양파"),
+            for (var i = 0; i < 20; i++) _case("b$i", itemName: "대파"),
+          ],
+    counts: const WorkQueueCounts(total: 40),
   );
 
   @override
@@ -111,7 +114,7 @@ void main() {
       routes: [
         GoRoute(path: "/", builder: (_, _) => const MobileWorkQueueHome()),
         GoRoute(
-          path: "/cases/:caseId",
+          path: "/tasks/:caseId",
           builder: (context, _) => Scaffold(
             body: TextButton(
               onPressed: () => context.go("/"),
@@ -134,7 +137,7 @@ void main() {
           ),
         ],
         child: MaterialApp.router(
-          theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+          theme: ThemeData(extensions: const [WorkspacePalette.lds]),
           routerConfig: router,
         ),
       ),
@@ -142,37 +145,29 @@ void main() {
     await tester.pumpAndSettle();
 
     // Fold the first group, then scroll down and open a case.
-    await tester.tap(find.text("깐양파 품목"));
+    await tester.tap(find.text("깐양파"));
     await tester.pumpAndSettle();
     expect(find.text("제목 a0"), findsNothing);
-    final list = find.byType(ListView).first;
-    await tester.drag(list, const Offset(0, -500));
+    final list = find.byType(CustomScrollView).first;
+    await tester.drag(list, const Offset(0, -300));
     await tester.pumpAndSettle();
-    final offset = tester.widget<ListView>(list).controller!.offset;
+    final offset = tester.widget<CustomScrollView>(list).controller!.offset;
     expect(offset, greaterThan(0));
     await tester.tap(find.textContaining("제목 b").hitTestable().first);
     await tester.pumpAndSettle();
     expect(find.byType(MobileWorkQueueHome), findsNothing);
 
+    // Back on the list: the same place, the group still folded.
     await tester.tap(find.text("back"));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<ListView>(find.byType(ListView).first).controller!.offset,
+      tester
+          .widget<CustomScrollView>(find.byType(CustomScrollView).first)
+          .controller!
+          .offset,
       offset,
     );
     expect(find.text("제목 a0"), findsNothing);
-
-    // The chosen list survives too.
-    await tester.drag(find.byType(ListView).first, const Offset(0, 800));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("접수 확인"));
-    await tester.pumpAndSettle();
-    expect(find.byType(QueueGroupList), findsNothing);
-    router.go("/cases/a1");
-    await tester.pumpAndSettle();
-    await tester.tap(find.text("back"));
-    await tester.pumpAndSettle();
-    expect(find.byType(QueueGroupList), findsNothing);
 
     // Stops the view models' polling timers.
     await tester.pumpWidget(const SizedBox());
@@ -188,7 +183,7 @@ void main() {
       ProviderScope(
         overrides: [workQueueRepositoryProvider.overrideWithValue(queue)],
         child: MaterialApp(
-          theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+          theme: ThemeData(extensions: const [WorkspacePalette.lds]),
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: const TextScaler.linear(1.3)),

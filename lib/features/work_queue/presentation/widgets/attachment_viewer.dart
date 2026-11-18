@@ -5,6 +5,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:pdfrx/pdfrx.dart";
 
 import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../../../shared/widgets/outline_panel.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
@@ -25,12 +26,16 @@ class AttachmentViewer extends ConsumerWidget {
     required this.attachment,
     required this.height,
     required this.onClose,
+    this.onEnlarge,
   });
 
   final String mailId;
   final MailAttachment attachment;
   final double height;
   final VoidCallback onClose;
+
+  /// '크게 보기': 전체 화면으로 엽니다. null이면 두지 않습니다.
+  final VoidCallback? onEnlarge;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,6 +69,14 @@ class AttachmentViewer extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  if (onEnlarge != null)
+                    LdsButton(
+                      label: "크게 보기",
+                      icon: Icons.open_in_new,
+                      size: LdsButtonSize.small,
+                      variant: LdsButtonVariant.outlined,
+                      onPressed: onEnlarge,
+                    ),
                   IconButton(
                     tooltip: "첨부 닫기",
                     onPressed: onClose,

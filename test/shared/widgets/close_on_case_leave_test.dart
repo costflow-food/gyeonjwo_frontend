@@ -6,15 +6,15 @@ import "package:gyeonjwo_frontend/shared/widgets/close_on_case_leave.dart";
 /// Same shape as the app router: one route for every case, so switching cases
 /// keeps the page (and any dialog on top of it) unless something closes it.
 GoRouter _router() => GoRouter(
-  initialLocation: "/cases/a",
+  initialLocation: "/tasks/a",
   routes: [
     GoRoute(
-      path: "/cases/:caseId",
+      path: "/tasks/:caseId",
       builder: (context, state) =>
           _CasePage(caseId: state.pathParameters["caseId"]!),
     ),
     GoRoute(
-      path: "/cases/:caseId/review",
+      path: "/tasks/:caseId/review",
       builder: (context, state) => const Scaffold(body: Text("검토 카드")),
     ),
   ],
@@ -61,7 +61,7 @@ void main() {
 
   testWidgets("moving to another case closes the window", (tester) async {
     final router = await openWindow(tester);
-    router.go("/cases/b");
+    router.go("/tasks/b");
     await tester.pumpAndSettle();
     expect(find.text("업무 창"), findsNothing);
     expect(find.text("열기 b"), findsOneWidget);
@@ -70,17 +70,17 @@ void main() {
   testWidgets("unsaved edits keep the window open", (tester) async {
     final router = await openWindow(tester);
     _keepOpen = true;
-    router.go("/cases/b");
+    router.go("/tasks/b");
     await tester.pumpAndSettle();
     expect(find.text("업무 창"), findsOneWidget);
   });
 
   test("the case's own pages do not count as leaving", () {
-    expect(leavesCase("/cases/a", caseId: "a"), isFalse);
-    expect(leavesCase("/cases/a/review", caseId: "a"), isFalse);
+    expect(leavesCase("/tasks/a", caseId: "a"), isFalse);
+    expect(leavesCase("/tasks/a/review", caseId: "a"), isFalse);
     expect(leavesCase("/", caseId: "a", openedAt: "/"), isFalse);
-    expect(leavesCase("/cases/b", caseId: "a", openedAt: "/cases/a"), isTrue);
-    expect(leavesCase("/cases/ab", caseId: "a"), isTrue);
-    expect(leavesCase("/logs", caseId: "a", openedAt: "/cases/a"), isTrue);
+    expect(leavesCase("/tasks/b", caseId: "a", openedAt: "/tasks/a"), isTrue);
+    expect(leavesCase("/tasks/ab", caseId: "a"), isTrue);
+    expect(leavesCase("/logs", caseId: "a", openedAt: "/tasks/a"), isTrue);
   });
 }

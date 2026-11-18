@@ -5,6 +5,7 @@ import "../shared/app_font_sizes.dart";
 import "../shared/widgets/brand_logo.dart";
 import "../shared/widgets/workspace_button_styles.dart";
 import "../shared/workspace_colors.dart";
+import "app_paths.dart";
 
 class NotFoundView extends StatelessWidget {
   const NotFoundView({super.key});
@@ -46,8 +47,8 @@ class NotFoundView extends StatelessWidget {
                 const SizedBox(height: 24),
                 FilledButton(
                   style: WorkspaceButtonStyles.filled(context),
-                  onPressed: () => context.go("/"),
-                  child: const Text("업무 큐로 이동"),
+                  onPressed: () => context.go(AppPaths.dashboard),
+                  child: const Text("처음 화면으로"),
                 ),
               ],
             ),
