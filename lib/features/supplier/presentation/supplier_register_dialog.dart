@@ -1,16 +1,14 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/workspace_colors.dart";
+import "../../../shared/widgets/lds/lds.dart";
 import "../domain/supplier.dart";
 import "supplier_form_controllers.dart";
 import "supplier_view_model.dart";
 import "widgets/supplier_basic_form.dart";
 import "widgets/supplier_item_form_list.dart";
 import "widgets/supplier_register_footer.dart";
-import "widgets/supplier_register_header.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
-import "../../../shared/widgets/workspace_dialog.dart";
 
 /// Opens the supplier form: empty to register, filled from [initial] to edit.
 Future<SupplierDetail?> showSupplierRegisterDialog(
@@ -20,7 +18,7 @@ Future<SupplierDetail?> showSupplierRegisterDialog(
   return showDialog<SupplierDetail>(
     context: context,
     // Full screen on a phone: the dialog paints behind the system bars and
-    // WorkspaceDialog's own SafeArea keeps the content clear of them.
+    // LdsDialog's own SafeArea keeps the content clear of them.
     useSafeArea: !isCompactLayout(context),
     barrierDismissible: false,
     barrierColor: Colors.black.withValues(alpha: .30),
@@ -153,50 +151,36 @@ class _SupplierRegisterDialogState
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _close();
       },
-      child: WorkspaceDialog(
-        maxWidth: 760,
-        child: Form(
-          key: _formKey,
-          onChanged: _markDirty,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SupplierRegisterHeader(
-                title: _editing ? "거래처 수정" : "거래처 등록",
-                onClose: _close,
-              ),
-              Divider(height: 1, color: context.palette.line),
-              DialogScrollArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(28),
-                  child: AbsorbPointer(
-                    absorbing: _submitting,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SupplierBasicForm(fields: _basic, editing: _editing),
-                        const SizedBox(height: 28),
-                        SupplierItemFormList(
-                          items: _items,
-                          editing: _editing,
-                          onAdd: _addItem,
-                          onRemove: _removeItem,
-                        ),
-                      ],
-                    ),
-                  ),
+      child: Form(
+        key: _formKey,
+        onChanged: _markDirty,
+        child: LdsDialog(
+          title: _editing ? "거래처 수정" : "거래처 등록",
+          subtitle: _editing ? null : "업체 기본 정보를 입력합니다.",
+          maxWidth: 760,
+          onClose: _close,
+          footer: SupplierRegisterFooter(
+            error: _error,
+            submitting: _submitting,
+            submitLabel: _editing ? "저장" : "등록",
+            onCancel: _close,
+            onSubmit: _submit,
+          ),
+          child: AbsorbPointer(
+            absorbing: _submitting,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SupplierBasicForm(fields: _basic, editing: _editing),
+                const SizedBox(height: 28),
+                SupplierItemFormList(
+                  items: _items,
+                  editing: _editing,
+                  onAdd: _addItem,
+                  onRemove: _removeItem,
                 ),
-              ),
-              Divider(height: 1, color: context.palette.line),
-              SupplierRegisterFooter(
-                error: _error,
-                submitting: _submitting,
-                submitLabel: _editing ? "저장" : "등록",
-                onCancel: _close,
-                onSubmit: _submit,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -112,7 +112,7 @@ Future<void> _pumpPhone(
     ProviderScope(
       overrides: [...overrides],
       child: MaterialApp(
-        theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+        theme: ThemeData(extensions: const [WorkspacePalette.lds]),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
             padding: EdgeInsets.only(bottom: bottomInset),

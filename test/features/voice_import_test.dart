@@ -219,7 +219,7 @@ Future<void> _pumpCase(
           ...repositories.cast(),
       ],
       child: MaterialApp(
-        theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+        theme: ThemeData(extensions: const [WorkspacePalette.lds]),
         home: Consumer(
           builder: (context, ref, _) => Scaffold(
             body: Padding(

@@ -20,7 +20,7 @@ class WorkflowLogView extends ConsumerWidget {
     final viewModel = ref.read(workflowLogViewModelProvider.notifier);
     if (isCompactLayout(context)) {
       return MobileTabScaffold(
-        title: "로그",
+        title: "실행 로그",
         actions: [
           IconButton(
             tooltip: "새로고침",

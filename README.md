@@ -62,16 +62,17 @@ lib/
 | 위치 | 내용 |
 | --- | --- |
 | `network/` | 공용 Dio 클라이언트, 인증 GET 요청 |
-| `theme/` | 테마·다크 모드 선택 상태와 설정 화면의 테마 선택기 |
 | `widgets/` | 앱 틀(사이드바·셸)과 공용 위젯, 버튼 스타일 |
-| `workspace_colors.dart` | 테마 팔레트와 다크 버전 |
+| `workspace_colors.dart` | LDS 팔레트(`context.palette`)와 오류·주의 색 |
+| `lds_colors.dart` | 팔레트에 없는 SSOT 전용 색 |
+| `preferences.dart` | 앱 시작 때 읽어 둔 브라우저 저장소(`sharedPreferencesProvider`) |
 | `app_font_sizes.dart` | 글자 크기 단계 |
 | `formatters.dart`, `idempotency_key.dart` | 숫자·날짜 표시, 멱등 키 |
 | `file_save/`, `navigation/` | 웹 전용 파일 다운로드·브라우저 주소 이동(다른 플랫폼에서는 `UnsupportedError`) |
 
 ## 테마
 
-`shared/workspace_colors.dart`에 팔레트가 있고, 목록의 첫 번째가 기본값입니다. 다크 모드는 고른 팔레트에서 다크 버전을 만들어 씁니다. 설정 화면(`/account`)의 "화면 테마" 탭에서 고르며, 고른 값은 브라우저에 저장됩니다.
+LDS 단일 테마(주색 `#FF6000`, 라이트 전용)입니다. 색은 `shared/workspace_colors.dart`(palette, 화면에서는 `context.palette`)와 `shared/lds_colors.dart`(SSOT 전용 색)에 있고, 글꼴은 나눔고딕입니다. 기본 모양은 `main.dart`의 `buildAppTheme`이 정합니다.
 
 ## Provider 코드 생성
 

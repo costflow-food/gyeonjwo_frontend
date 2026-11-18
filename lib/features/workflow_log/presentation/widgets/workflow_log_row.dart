@@ -1,11 +1,11 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/formatters.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
 import "../../domain/workflow_log.dart";
 import "log_outcome_badge.dart";
 
+/// 휴대폰 목록의 한 줄(폭이 좁아 표 대신): 업무 · 결과 라벨 · 요약 · 시각.
 class WorkflowLogRow extends StatelessWidget {
   const WorkflowLogRow({
     super.key,
@@ -20,75 +20,71 @@ class WorkflowLogRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final meta = [
-      formatSeoulDateTime(entry.createdAt),
-      entry.actor?.label ?? entry.actorLabel,
-      entry.eventLabel,
-      if (entry.durationMs != null) formatDuration(entry.durationMs!),
-    ].join(" · ");
     return Semantics(
       selected: selected,
       button: true,
-      child: Material(
-        color: selected ? context.palette.surface : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: selected
-              ? BorderSide(color: context.palette.accentText, width: 1.5)
-              : BorderSide.none,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        entry.caseLabel,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: AppFontSizes.body,
-                          fontWeight: FontWeight.w700,
-                          color: entry.caseId == null
-                              ? context.palette.muted
-                              : context.palette.ink,
-                        ),
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: LdsColors.lineSoft)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      entry.caseLabel,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: entry.caseId == null
+                            ? LdsColors.mutedStrong
+                            : LdsColors.ink,
                       ),
                     ),
-                    if (entry.outcome != null) ...[
-                      const SizedBox(width: 8),
-                      LogOutcomeBadge(entry.outcome!),
-                    ],
-                  ],
-                ),
-                if (entry.summary.isNotEmpty) ...[
-                  const SizedBox(height: 5),
-                  Text(
-                    entry.summary,
-                    style: const TextStyle(
-                      fontSize: AppFontSizes.body,
-                      height: 1.45,
-                    ),
                   ),
+                  if (entry.outcome != null) ...[
+                    const SizedBox(width: 8),
+                    LogOutcomeBadge(entry.outcome!),
+                  ],
                 ],
-                const SizedBox(height: 5),
+              ),
+              if (entry.summary.isNotEmpty) ...[
+                const SizedBox(height: 4),
                 Text(
-                  meta,
-                  style: TextStyle(
-                    fontSize: AppFontSizes.caption,
-                    color: context.palette.muted,
+                  entry.summary,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: LdsColors.title,
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 4),
+              Text(
+                logMeta(entry),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: LdsColors.mutedStrong,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 }
+
+/// 시각 · 주체 · 이벤트 · 소요 시간.
+String logMeta(WorkflowLogEntry entry, {bool withTime = true}) => [
+  if (withTime) formatSeoulDateTime(entry.createdAt),
+  entry.actor?.label ?? entry.actorLabel,
+  entry.eventLabel,
+  if (entry.durationMs != null) formatDuration(entry.durationMs!),
+].join(" · ");

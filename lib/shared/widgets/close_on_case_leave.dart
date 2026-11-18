@@ -1,9 +1,11 @@
 import "package:flutter/widgets.dart";
 import "package:go_router/go_router.dart";
 
+import "../../app/app_paths.dart";
+
 /// Closes the modal route this widget sits in once the app moves to a screen
 /// that is not [caseId] (e.g. another case picked in the queue, or the
-/// browser's back button). Opening the case itself (/cases/:id and its
+/// browser's back button). Opening the case itself (/tasks/:id and its
 /// subpaths such as /review) keeps it open.
 ///
 /// [keepOpen] can hold the route open, e.g. while there are unsaved edits or a
@@ -78,6 +80,6 @@ class _CloseOnCaseLeaveState extends State<CloseOnCaseLeave> {
 /// for. The screen it was opened on ([openedAt]) and the case's own pages
 /// do not count as leaving.
 bool leavesCase(String path, {required String caseId, String? openedAt}) {
-  final ownCase = "/cases/$caseId";
+  final ownCase = AppPaths.task(caseId);
   return !(path == openedAt || path == ownCase || path.startsWith("$ownCase/"));
 }

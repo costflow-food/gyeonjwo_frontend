@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/supplier_form_rules.dart";
 import "../supplier_form_controllers.dart";
 import "supplier_field_grid.dart";
@@ -27,9 +27,9 @@ class SupplierItemForm extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 10, 16),
       decoration: BoxDecoration(
-        color: context.palette.surface,
-        border: Border.all(color: context.palette.line),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        border: Border.all(color: LdsColors.line),
+        borderRadius: BorderRadius.circular(LdsRadius.table),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -40,18 +40,19 @@ class SupplierItemForm extends StatelessWidget {
                 child: Text(
                   "품목 ${index + 1}",
                   style: const TextStyle(
-                    fontSize: AppFontSizes.body,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
+                    color: LdsColors.ink,
                   ),
                 ),
               ),
               // Saved items are tied to quotes and price history; the server
               // keeps them, so only items added in this form can be removed.
               if (!fields.saved)
-                IconButton(
+                LdsIconButton(
+                  icon: Icons.delete_outline,
                   tooltip: "품목 ${index + 1} 삭제",
                   onPressed: onRemove,
-                  icon: const Icon(Icons.delete_outline, size: 18),
                 ),
             ],
           ),
@@ -64,7 +65,8 @@ class SupplierItemForm extends StatelessWidget {
                 SupplierFieldGrid(
                   children: [
                     SupplierFormField(
-                      label: "품목명 *",
+                      label: "품목명",
+                      required: true,
                       hint: "예: 냉동 딸기",
                       controller: fields.name,
                       validator: SupplierFormRules.validateItemName,

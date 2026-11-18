@@ -4,23 +4,22 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../shared/widgets/async_content.dart";
+import "../../../shared/lds_colors.dart";
 import "../../../shared/widgets/workspace_button_styles.dart";
-import "../../../shared/workspace_colors.dart";
+import "../../../shared/widgets/lds/lds.dart";
 import "../domain/intake_mail.dart";
 import "mail_intake_view_model.dart";
 import "widgets/intake_load_more.dart";
 import "widgets/intake_mail_detail.dart";
 import "widgets/intake_mail_row.dart";
 import "widgets/mail_intake_actions.dart";
-import "widgets/mail_intake_header.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
-import "../../../shared/widgets/workspace_dialog.dart";
 
 Future<void> showMailIntakeDialog(BuildContext context, {String? mailId}) {
   return showDialog<void>(
     context: context,
     // Full screen on a phone: the dialog paints behind the system bars and
-    // WorkspaceDialog's own SafeArea keeps the content clear of them.
+    // LdsDialog's own SafeArea keeps the content clear of them.
     useSafeArea: !isCompactLayout(context),
     barrierColor: Colors.black.withValues(alpha: .30),
     builder: (context) => BackdropFilter(
@@ -222,134 +221,130 @@ class _MailIntakeDialogState extends ConsumerState<MailIntakeDialog> {
     // Phone: closing mid-request would drop the result message.
     return PopScope(
       canPop: !(_busy && isCompactLayout(context)),
-      child: WorkspaceDialog(
+      child: LdsDialog(
+        title: "접수·연결 확인",
+        subtitle: page?.totalPending == null
+            ? "판단 불가·연결 모호 메일"
+            : "판단 불가·연결 모호 메일 ${page!.totalPending}건",
         maxWidth: 960,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            MailIntakeHeader(
-              totalPending: page?.totalPending,
-              onRefresh: viewModel.refresh,
-              onClose: () => Navigator.of(context).maybePop(),
-            ),
-            Divider(height: 1, color: context.palette.line),
-            DialogScrollArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: AsyncContent<IntakePage>(
-                  value: value,
-                  onRetry: viewModel.refresh,
-                  builder: (page) => page.items.isEmpty || mail == null
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 32),
-                          child: Center(
-                            child: Text(
-                              isCompactLayout(context) &&
-                                      _selectedMailId != null
-                                  ? "이 메일은 이미 처리되어 목록에서 빠졌습니다."
-                                  : "확인할 메일이 없습니다.",
+        onClose: () => Navigator.of(context).maybePop(),
+        headerAction: LdsIconButton(
+          icon: Icons.refresh,
+          tooltip: "새로고침",
+          onPressed: viewModel.refresh,
+        ),
+        footer: MailIntakeActions(
+          enabled: mail != null,
+          canLink:
+              mail != null &&
+              mail.candidates.any((c) => c.caseId == _selectedCaseId),
+          busy: _busy,
+          error: _error,
+          onResolve: (resolution) => _resolve(mail!, resolution),
+        ),
+        child: AsyncContent<IntakePage>(
+          value: value,
+          onRetry: viewModel.refresh,
+          builder: (page) => page.items.isEmpty || mail == null
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text(
+                      isCompactLayout(context) && _selectedMailId != null
+                          ? "이 메일은 이미 처리되어 목록에서 빠졌습니다."
+                          : "확인할 메일이 없습니다.",
+                    ),
+                  ),
+                )
+              : AbsorbPointer(
+                  absorbing: _busy,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final list = Column(
+                        key: _listKey,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            "확인할 메일 ${page.totalPending}",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: LdsColors.label,
                             ),
                           ),
-                        )
-                      : AbsorbPointer(
-                          absorbing: _busy,
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final list = Column(
-                                key: _listKey,
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  for (final item in page.items)
-                                    IntakeMailRow(
-                                      mail: item,
-                                      selected: item.mailId == mail.mailId,
-                                      onTap: () {
-                                        _selectMail(item.mailId);
-                                        if (constraints.maxWidth < 680) {
-                                          _scrollTo(_detailKey);
-                                        }
-                                      },
+                          const SizedBox(height: 12),
+                          for (final item in page.items)
+                            IntakeMailRow(
+                              mail: item,
+                              selected: item.mailId == mail.mailId,
+                              onTap: () {
+                                _selectMail(item.mailId);
+                                if (constraints.maxWidth < 680) {
+                                  _scrollTo(_detailKey);
+                                }
+                              },
+                            ),
+                          if (page.nextCursor != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: IntakeLoadMore(
+                                loading: page.loadingMore,
+                                onPressed: viewModel.loadMore,
+                              ),
+                            ),
+                        ],
+                      );
+                      final detail = IntakeMailDetail(
+                        key: ValueKey(mail.mailId),
+                        mail: mail,
+                        selectedCaseId: _selectedCaseId,
+                        onSelectCase: (caseId) =>
+                            setState(() => _selectedCaseId = caseId),
+                        reason: _reason,
+                      );
+                      // Phone: opened from the list on the home screen, so only the mail.
+                      if (isCompactLayout(context)) return detail;
+                      if (constraints.maxWidth < 680) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            list,
+                            const SizedBox(height: 20),
+                            Column(
+                              key: _detailKey,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton.icon(
+                                    onPressed: () => _scrollTo(_listKey),
+                                    icon: const Icon(
+                                      Icons.arrow_back,
+                                      size: 16,
                                     ),
-                                  if (page.nextCursor != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8),
-                                      child: IntakeLoadMore(
-                                        loading: page.loadingMore,
-                                        onPressed: viewModel.loadMore,
-                                      ),
+                                    label: const Text('목록으로'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: LdsColors.ink,
                                     ),
-                                ],
-                              );
-                              final detail = IntakeMailDetail(
-                                key: ValueKey(mail.mailId),
-                                mail: mail,
-                                selectedCaseId: _selectedCaseId,
-                                onSelectCase: (caseId) =>
-                                    setState(() => _selectedCaseId = caseId),
-                                reason: _reason,
-                              );
-                              // Phone: opened from the list on the home screen, so only the mail.
-                              if (isCompactLayout(context)) return detail;
-                              if (constraints.maxWidth < 680) {
-                                return Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    list,
-                                    const SizedBox(height: 20),
-                                    Column(
-                                      key: _detailKey,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: TextButton.icon(
-                                            onPressed: () =>
-                                                _scrollTo(_listKey),
-                                            icon: const Icon(
-                                              Icons.arrow_back,
-                                              size: 16,
-                                            ),
-                                            label: const Text('목록으로'),
-                                            style: TextButton.styleFrom(
-                                              foregroundColor:
-                                                  context.palette.ink,
-                                            ),
-                                          ),
-                                        ),
-                                        detail,
-                                      ],
-                                    ),
-                                  ],
-                                );
-                              }
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(flex: 2, child: list),
-                                  const SizedBox(width: 20),
-                                  Expanded(flex: 3, child: detail),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
+                                  ),
+                                ),
+                                detail,
+                              ],
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 2, child: list),
+                          const SizedBox(width: 24),
+                          Expanded(flex: 3, child: detail),
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ),
-            Divider(height: 1, color: context.palette.line),
-            MailIntakeActions(
-              enabled: mail != null,
-              canLink:
-                  mail != null &&
-                  mail.candidates.any((c) => c.caseId == _selectedCaseId),
-              busy: _busy,
-              error: _error,
-              onResolve: (resolution) => _resolve(mail!, resolution),
-            ),
-          ],
         ),
       ),
     );

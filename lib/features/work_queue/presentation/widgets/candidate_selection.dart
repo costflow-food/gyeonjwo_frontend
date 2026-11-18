@@ -4,6 +4,8 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
@@ -11,15 +13,20 @@ import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../domain/candidate.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
+import "case_progress.dart";
 
 class CandidateSelection extends ConsumerStatefulWidget {
   const CandidateSelection({
     super.key,
     required this.workCase,
     this.page = false,
+    this.onLater,
   });
 
   final WorkCase workCase;
+
+  /// 넓은 화면 '나중에': 다음 업무로 넘어갑니다. null이면 두지 않습니다.
+  final VoidCallback? onLater;
 
   /// Phone: a screen of its own with the request button pinned to the bottom.
   final bool page;
@@ -129,7 +136,7 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.page) return _content(context, (_) {});
+    if (!widget.page) return _todo(context);
     Widget? bar;
     final body = _content(context, (submit) => bar = submit);
     return MobilePageScaffold(
@@ -139,6 +146,181 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         child: body,
       ),
       bottomBar: bar,
+    );
+  }
+
+  /// 넓은 화면: '지금 할 일' 상자 안의 체크 목록 (Tasks 시안 '업체 선택').
+  /// 줄 = 체크 · 업체 이름 · 조건 n/전체. 처음 체크는 서버에 저장된 선택입니다.
+  Widget _todo(BuildContext context) {
+    const title = "견적을 요청할 업체를 골라 주세요";
+    const tag = "업체 선택 대기";
+    final value = ref.watch(caseCandidatesProvider(widget.workCase.id));
+    Widget box({
+      String? description,
+      String? tableLabel,
+      Widget? body,
+      List<Widget> actions = const [],
+      Widget? leading,
+      Widget? footer,
+    }) => TodoBox(
+      title: title,
+      tag: tag,
+      description: description,
+      tableLabel: tableLabel,
+      body: body,
+      actions: actions,
+      leading: leading,
+      footer: footer,
+    );
+    return value.when(
+      skipLoadingOnRefresh: false,
+      loading: () => box(
+        body: const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        leading: const SizedBox.shrink(),
+      ),
+      error: (error, _) {
+        if (error is WorkQueueFailure && error.code == "CANDIDATES_NOT_READY") {
+          _retryLater();
+          return box(description: "에이전트가 견적 요청 후보를 찾고 있습니다.");
+        }
+        return box(
+          description: error is WorkQueueFailure
+              ? error.message
+              : "후보 목록을 불러오지 못했습니다.",
+          actions: [
+            LdsButton(
+              label: "다시 불러오기",
+              variant: LdsButtonVariant.outlined,
+              onPressed: () =>
+                  ref.invalidate(caseCandidatesProvider(widget.workCase.id)),
+            ),
+          ],
+        );
+      },
+      data: (set) {
+        final selected = _selected ?? set.selectedSupplierIds.toSet();
+        final canSelect = set.canSelect;
+        final serverBlocked = set.serverBlocked;
+        final blockedReason = set.blockedReason;
+        final count = set.candidates.length;
+        final notes = <Widget>[
+          if (set.isStale)
+            _Notice(
+              icon: Icons.history,
+              text: "업무 내용이 바뀌어 아래는 이전 후보입니다. 이 후보로는 견적을 요청할 수 없습니다.",
+              action: TextButton(
+                onPressed: () =>
+                    ref.invalidate(caseCandidatesProvider(widget.workCase.id)),
+                style: WorkspaceButtonStyles.text(context),
+                child: const Text("다시 불러오기"),
+              ),
+            ),
+          if (set.unknownFields.isNotEmpty)
+            _Notice(
+              icon: Icons.help_outline,
+              text:
+                  "확인 못 한 항목: ${set.unknownFields.map(unknownFieldLabel).join(", ")}",
+            ),
+        ];
+        final caption =
+            _error ??
+            (!canSelect &&
+                    blockedReason != null &&
+                    !serverBlocked &&
+                    !set.isStale
+                ? blockedReason
+                : null);
+        return box(
+          description:
+              "조건에 맞는 후보 $count곳을 찾았어요. 요청할 업체를 고르면 견적 요청 메일 초안을 만들어요.",
+          tableLabel: "찾은 후보 $count곳",
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final note in notes) ...[note, const SizedBox(height: 8)],
+              Opacity(
+                opacity: serverBlocked ? 0.55 : 1,
+                child: _PickList(
+                  candidates: set.candidates,
+                  selected: selected,
+                  enabled: !_busy && canSelect,
+                  onChanged: (candidate, value) => setState(() {
+                    final next = {...selected};
+                    value
+                        ? next.add(candidate.supplierId)
+                        : next.remove(candidate.supplierId);
+                    _selected = next;
+                  }),
+                ),
+              ),
+            ],
+          ),
+          leading: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: "${selected.length}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: LdsColors.ink,
+                  ),
+                ),
+                TextSpan(text: " / $count곳 선택"),
+              ],
+            ),
+            style: const TextStyle(
+              fontSize: 13,
+              letterSpacing: -.3,
+              color: LdsColors.muted,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+          actions: [
+            // 이미 골라 초안이 만들어졌으면 초안 화면(SCR-007)에서 이어 갑니다.
+            if (!canSelect && set.selectedSupplierIds.isNotEmpty)
+              LdsButton(
+                label: "메일 초안 보기",
+                variant: LdsButtonVariant.outlined,
+                onPressed: () =>
+                    showMailDraftDialog(context, caseId: widget.workCase.id),
+              ),
+            if (widget.onLater case final onLater?)
+              LdsButton(
+                label: "나중에",
+                variant: LdsButtonVariant.ghostNeutral,
+                onPressed: onLater,
+              ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 112),
+              child: LdsButton(
+                label: "견적 요청",
+                loading: _busy,
+                onPressed: selected.isEmpty || _busy || !canSelect
+                    ? null
+                    : () => _submit(set),
+              ),
+            ),
+          ],
+          footer: caption == null
+              ? null
+              : Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    caption,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: _error != null
+                          ? LdsColors.errorText
+                          : LdsColors.muted,
+                    ),
+                  ),
+                ),
+        );
+      },
     );
   }
 
@@ -325,6 +507,137 @@ class _CandidateSelectionState extends ConsumerState<CandidateSelection> {
         );
       },
     );
+  }
+}
+
+/// 업체 선택 체크 목록: 흰 바탕, 1px `#E5E7EA`, 모서리 8, 줄 높이 44.
+/// 줄 = 체크(24, 고르면 주황) · 업체 이름(15/600) · 조건 충족 수. 단가는 후보
+/// 자료(API-11)에 없어 두지 않습니다. 근거·추천 이유는 줄에 마우스를 올리면
+/// 보입니다.
+class _PickList extends StatelessWidget {
+  const _PickList({
+    required this.candidates,
+    required this.selected,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final List<Candidate> candidates;
+  final Set<String> selected;
+  final bool enabled;
+  final void Function(Candidate candidate, bool value) onChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: LdsColors.line),
+      borderRadius: BorderRadius.circular(LdsRadius.table),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (index, candidate) in candidates.indexed) ...[
+          if (index > 0) const Divider(height: 1, color: LdsColors.lineSoft),
+          _pickRow(candidate),
+        ],
+      ],
+    ),
+  );
+
+  Widget _pickRow(Candidate candidate) {
+    final checked = selected.contains(candidate.supplierId);
+    final can = enabled && candidate.selectable;
+    final met = candidate.checks
+        .where((check) => check.state == CheckState.met)
+        .length;
+    final notes = [
+      if (candidate.webCandidate) "웹 탐색 후보 · 회신 확인 전",
+      if (candidate.contactEmail == null) "연락처 없음 · 견적 요청 불가",
+      if (candidate.failsRequired) "필수 조건 미충족",
+      if (candidate.caution case final caution?) "주의 · $caution",
+    ];
+    final help = [
+      candidate.handlingEvidence,
+      if (candidate.reason.isNotEmpty) "추천 이유 · ${candidate.reason}",
+    ].where((line) => line.isNotEmpty).join("\n");
+    final row = InkWell(
+      onTap: can ? () => onChanged(candidate, !checked) : null,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Row(
+            children: [
+              SizedBox.square(
+                dimension: 24,
+                child: Checkbox(
+                  value: checked,
+                  activeColor: LdsColors.primary,
+                  side: const BorderSide(
+                    color: LdsColors.borderStrong,
+                    width: 2,
+                  ),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  onChanged: can
+                      ? (value) => onChanged(candidate, value ?? false)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      candidate.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -.3,
+                        color: candidate.selectable
+                            ? LdsColors.ink
+                            : LdsColors.muted,
+                      ),
+                    ),
+                    if (notes.isNotEmpty)
+                      Text(
+                        notes.join(" · "),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: LdsColors.cautionText,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (candidate.checks.isNotEmpty) ...[
+                const SizedBox(width: 12),
+                Text(
+                  "조건 $met/${candidate.checks.length}",
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: LdsColors.muted,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    return help.isEmpty
+        ? row
+        : Tooltip(
+            message: help,
+            waitDuration: const Duration(milliseconds: 600),
+            child: row,
+          );
   }
 }
 

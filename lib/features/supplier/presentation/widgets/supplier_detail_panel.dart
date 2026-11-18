@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../../shared/widgets/outline_panel.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../supplier_view_model.dart";
 import "supplier_detail_content.dart";
 import "supplier_load_error.dart";
@@ -13,7 +13,7 @@ class SupplierDetailPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = supplierDetailViewModelProvider(supplierId);
-    return OutlinePanel(
+    return LdsPanel(
       child: ref
           .watch(provider)
           .when(

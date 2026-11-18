@@ -6,11 +6,14 @@ import "work_case.dart";
 abstract interface class WorkQueueRepository {
   /// API-01. 상태·검색을 바꾸면 cursor 없이 처음부터 조회합니다.
   /// [limit]은 한 페이지 건수(서버 기본 25, 최대 100)입니다.
+  ///
+  /// [archived]가 true면 보관된 업무(구매안 확정 등)만 읽습니다.
   Future<WorkQueuePage> getCases({
     WorkCaseStatus? status,
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   });
 
   Future<OriginalMail> getOriginalMail(String mailId);

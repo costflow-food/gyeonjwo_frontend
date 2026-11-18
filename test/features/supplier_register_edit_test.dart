@@ -7,6 +7,7 @@ import "package:gyeonjwo_frontend/features/supplier/domain/supplier_repository.d
 import "package:gyeonjwo_frontend/features/supplier/presentation/supplier_register_dialog.dart";
 import "package:gyeonjwo_frontend/features/supplier/presentation/widgets/supplier_detail_content.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
+import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 
 const _supplier = SupplierDetail(
   id: "s1",
@@ -70,7 +71,7 @@ Future<void> _pump(
           supplierRepositoryProvider.overrideWithValue(repository),
       ],
       child: MaterialApp(
-        theme: ThemeData(extensions: const [WorkspacePalette.houseGreen]),
+        theme: ThemeData(extensions: const [WorkspacePalette.lds]),
         home: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     ),
@@ -90,8 +91,8 @@ void main() {
     await _openEdit(tester);
 
     expect(find.text("거래처 수정"), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, "서산참농산"), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, "깐마늘"), findsOneWidget);
+    expect(find.widgetWithText(LdsTextFormField, "서산참농산"), findsOneWidget);
+    expect(find.widgetWithText(LdsTextFormField, "깐마늘"), findsOneWidget);
     expect(find.text("저장"), findsOneWidget);
   });
 
@@ -107,7 +108,7 @@ void main() {
     await _openEdit(tester);
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, "충남 서산"),
+      find.widgetWithText(LdsTextFormField, "충남 서산"),
       "충남 당진",
     );
     await tester.tap(find.text("저장"));
@@ -155,7 +156,7 @@ void main() {
     await _openEdit(tester);
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, "sales@example.invalid"),
+      find.widgetWithText(LdsTextFormField, "sales@example.invalid"),
       "new@example.invalid",
     );
     await tester.tap(find.text("저장"));
@@ -184,11 +185,10 @@ void main() {
 
     final field = tester.widget<TextField>(
       find.descendant(
-        of: find.widgetWithText(TextFormField, "123-45-67890"),
+        of: find.widgetWithText(LdsTextFormField, "123-45-67890"),
         matching: find.byType(TextField),
       ),
     );
-    expect(field.readOnly, isTrue);
     expect(field.enabled, isFalse);
   });
 
@@ -220,6 +220,6 @@ void main() {
 
     expect(find.text("거래처 등록"), findsOneWidget);
     expect(find.text("등록"), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, "서산참농산"), findsNothing);
+    expect(find.widgetWithText(LdsTextFormField, "서산참농산"), findsNothing);
   });
 }

@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/send_settings.dart";
 
 /// Whether auto-send is shown as on for one purpose.
@@ -52,16 +52,17 @@ class PurposeApprovalRow extends StatelessWidget {
                 Text(
                   approval.purpose.label,
                   style: const TextStyle(
-                    fontSize: AppFontSizes.body,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
+                    color: LdsColors.ink,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   note,
-                  style: TextStyle(
-                    fontSize: AppFontSizes.caption,
-                    color: context.palette.muted,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: LdsColors.mutedStrong,
                   ),
                 ),
               ],
@@ -71,25 +72,16 @@ class PurposeApprovalRow extends StatelessWidget {
           Text(
             "자동 발송",
             style: TextStyle(
-              fontSize: AppFontSizes.body,
-              fontWeight: FontWeight.w600,
-              color: autoSend ? context.palette.ink : context.palette.muted,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: autoSend ? LdsColors.ink : LdsColors.mutedStrong,
             ),
           ),
           const SizedBox(width: 8),
-          Semantics(
-            label: "${approval.purpose.label} 자동 발송",
-            child: Switch(
-              value: autoSend,
-              activeThumbColor: Colors.white,
-              activeTrackColor: context.palette.accent,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: context.palette.line,
-              trackOutlineColor: const WidgetStatePropertyAll(
-                Colors.transparent,
-              ),
-              onChanged: (on) => onChanged(!on),
-            ),
+          LdsToggle(
+            value: autoSend,
+            semanticLabel: "${approval.purpose.label} 자동 발송",
+            onChanged: (on) => onChanged(!on),
           ),
         ],
       ),

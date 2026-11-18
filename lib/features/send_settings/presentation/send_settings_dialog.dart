@@ -3,9 +3,9 @@ import "dart:ui";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-import "../../../shared/app_font_sizes.dart";
+import "../../../shared/lds_colors.dart";
 import "../../../shared/widgets/async_content.dart";
-import "../../../shared/workspace_colors.dart";
+import "../../../shared/widgets/lds/lds.dart";
 import "../../../shared/widgets/workspace_button_styles.dart";
 import "../../mail_draft/domain/mail_draft.dart";
 import "../domain/send_settings.dart";
@@ -13,11 +13,9 @@ import "send_settings_view_model.dart";
 import "widgets/mail_style_section.dart";
 import "widgets/purpose_approval_row.dart";
 import "widgets/send_settings_footer.dart";
-import "widgets/send_settings_header.dart";
 import "widgets/settings_missing_banner.dart";
 import "widgets/settings_section_title.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
-import "../../../shared/widgets/workspace_dialog.dart";
 
 /// SCR-008 발송·메일 스타일 설정 모달을 엽니다. Returns true after a save.
 ///
@@ -26,7 +24,7 @@ Future<bool?> showSendSettingsDialog(BuildContext context, {String? caseId}) {
   return showDialog<bool>(
     context: context,
     // Full screen on a phone: the dialog paints behind the system bars and
-    // WorkspaceDialog's own SafeArea keeps the content clear of them.
+    // LdsDialog's own SafeArea keeps the content clear of them.
     useSafeArea: !isCompactLayout(context),
     barrierDismissible: false,
     barrierColor: Colors.black.withValues(alpha: .30),
@@ -255,8 +253,11 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
             child: content,
           ),
           const SizedBox(height: 16),
-          Divider(height: 1, color: context.palette.line),
-          footer,
+          const Divider(height: 1, color: LdsColors.line),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 14, 28, 16),
+            child: footer,
+          ),
         ],
       );
     }
@@ -265,24 +266,15 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _close();
       },
-      child: WorkspaceDialog(
+      child: LdsDialog(
+        title: "발송·메일 스타일 설정",
+        subtitle: widget.caseId == null
+            ? "메일함 기본값"
+            : "업무 설정 · ${widget.caseId}",
         maxWidth: 760,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SendSettingsHeader(caseId: widget.caseId, onClose: _close),
-            Divider(height: 1, color: context.palette.line),
-            DialogScrollArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(28),
-                child: content,
-              ),
-            ),
-            Divider(height: 1, color: context.palette.line),
-            footer,
-          ],
-        ),
+        onClose: _close,
+        footer: footer,
+        child: content,
       ),
     );
   }
@@ -295,7 +287,11 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           children: [
             Text(failure.message, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: const Text("다시 시도")),
+            LdsButton(
+              label: "다시 시도",
+              variant: LdsButtonVariant.outlinedNeutral,
+              onPressed: onRetry,
+            ),
           ],
         ),
       );
@@ -329,21 +325,26 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
           ),
         const SizedBox(height: 12),
         ExpansionTile(
-          iconColor: context.palette.ink,
-          collapsedIconColor: context.palette.muted,
+          iconColor: LdsColors.title,
+          collapsedIconColor: LdsColors.title,
           shape: const Border(),
           collapsedShape: const Border(),
           tilePadding: EdgeInsets.zero,
-          title: Text(
+          title: const Text(
             '문안·서명',
             style: TextStyle(
-              fontSize: AppFontSizes.bodyLarge,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: context.palette.ink,
+              color: LdsColors.ink,
             ),
           ),
-          subtitle: Text(_tone.label),
+          subtitle: Text(
+            _tone.label,
+            style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+          ),
           childrenPadding: const EdgeInsets.only(top: 12, bottom: 16),
+          expandedAlignment: Alignment.centerLeft,
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
           children: [
             MailStyleSection(
               tone: _tone,

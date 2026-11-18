@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shared/workspace_colors.dart';
+import '../../../../shared/lds_colors.dart';
 
+/// 메타 줄 하나: 이름표 13px `#6B7583` · 값 13px `#333D4B`.
 class SourceDocumentMetadataRow extends StatelessWidget {
   const SourceDocumentMetadataRow(this.label, this.value, {super.key});
   final String label, value;
@@ -9,24 +10,24 @@ class SourceDocumentMetadataRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 62,
+            width: 72,
             child: Text(
               label,
-              style: TextStyle(fontSize: 13, color: context.palette.muted),
+              style: const TextStyle(fontSize: 13, color: LdsColors.muted),
             ),
           ),
           Expanded(
-            child: Text(
+            child: SelectableText(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
-                color: context.palette.muted,
                 height: 1.5,
+                color: LdsColors.title,
               ),
             ),
           ),
