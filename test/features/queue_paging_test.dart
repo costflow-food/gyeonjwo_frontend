@@ -77,7 +77,14 @@ class _Queue implements WorkQueueRepository {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) {
+    // 보관(완료) 목록은 비어 있습니다.
+    if (archived) {
+      return Future.value(
+        const WorkQueuePage(items: [], counts: WorkQueueCounts()),
+      );
+    }
     if (cursor == "more") {
       return (late[query] = Completer<WorkQueuePage>()).future;
     }

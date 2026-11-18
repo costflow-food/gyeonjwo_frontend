@@ -10,6 +10,7 @@ import "../../review_progress/data/review_progress_repository_impl.dart";
 import "../data/work_case_change_source.dart";
 import "../data/work_queue_repository_impl.dart";
 import "../domain/candidate.dart";
+import "../domain/task_group.dart";
 import "../domain/work_case.dart";
 import "../domain/work_queue_repository.dart";
 import "../domain/work_queue_state.dart";
@@ -65,12 +66,12 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
 
   /// 상태 탭(null은 전체)은 받아 둔 목록을 화면에서 거릅니다. 검색어는
   /// 메일 제목까지 보는 서버(API-01 q)가 거릅니다.
-  WorkCaseStatus? _status;
+  TaskGroup? _status;
   String _query = "";
 
-  /// counts.waiting from the last response without a search (status does
-  /// not change counts), for the home summary.
-  int? _allWaiting;
+  /// Counts from the last list without a search (the tab does not change
+  /// counts), for the Dashboard cards.
+  WorkQueueCounts? _allCounts;
 
   /// Bumped by every read that replaces or extends the list (load, poll,
   /// load more, changed cases). A response is applied only while its
@@ -239,7 +240,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     if (current == null) return;
     final all = List<WorkCase>.unmodifiable(items);
     final counts = _counts(all, cursor, first.counts);
-    if (query.isEmpty) _allWaiting = counts.waiting;
+    if (query.isEmpty) _allCounts = counts;
     if (!all.any((workCase) => workCase.id == _selectedId)) _selectedId = null;
     // The tab or the selection may have changed meanwhile.
     state = AsyncData(
@@ -251,7 +252,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
             nextCursor: cursor,
             loadingMore: false,
             counts: counts,
-            allWaiting: _allWaiting,
+            allCounts: _allCounts,
           ),
     );
     // Changes that arrived while the pages were loading.
@@ -259,15 +260,17 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
     _schedulePoll();
   }
 
-  /// Tab counts from the cases in hand, by the rule of the tabs
-  /// ([WorkCaseStatus.tab]); the server counts by the same rule (Pending
-  /// under 진행 중, Confirm under 대기). With cases still on the server, the
-  /// server's counts are the only complete ones.
+  /// Tab counts from the cases in hand, by [taskGroupOf]. The server counts
+  /// by the old tabs only, so with cases still on the server only its total
+  /// is used; 확인 필요·진행 중 then count the cases in hand.
   static WorkQueueCounts _counts(
     List<WorkCase> items,
     String? nextCursor,
     WorkQueueCounts server,
-  ) => nextCursor == null ? WorkQueueCounts.fromCases(items) : server;
+  ) => WorkQueueCounts.fromCases(
+    items,
+    serverTotal: nextCursor == null ? null : server.total,
+  );
 
   WorkQueueState _fromPage(WorkQueuePage page, {bool keepSelection = false}) {
     // A case accepted elsewhere disappears; drop a selection that no longer
@@ -277,7 +280,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       _selectedId = null;
     }
     final counts = _counts(page.items, page.nextCursor, page.counts);
-    if (_query.isEmpty) _allWaiting = counts.waiting;
+    if (_query.isEmpty) _allCounts = counts;
     return WorkQueueState(
       items: page.items,
       counts: counts,
@@ -285,7 +288,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       status: _status,
       query: _query,
       selectedId: _selectedId,
-      allWaiting: _allWaiting,
+      allCounts: _allCounts,
     );
   }
 
@@ -293,7 +296,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
 
   /// 상태 탭을 바꿉니다. null은 전체입니다. 받아 둔 목록을 거를 뿐이라
   /// 서버를 다시 부르지 않습니다.
-  void setStatus(WorkCaseStatus? status) {
+  void setStatus(TaskGroup? status) {
     if (status == _status) return;
     _status = status;
     final current = state.value;
@@ -500,16 +503,14 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
       for (final workCase in current.items)
         if (!deleted.contains(workCase.id)) replaced[workCase.id] ?? workCase,
     ]);
-    final counts = current.nextCursor == null
-        ? WorkQueueCounts.fromCases(items)
-        : _shift(current.counts, [
-            for (final workCase in current.items)
-              if (deleted.contains(workCase.id))
-                (workCase, null)
-              else if (replaced[workCase.id] case final after?)
-                (workCase, after),
-          ]);
-    if (_query.isEmpty) _allWaiting = counts.waiting;
+    final gone = current.items.length - items.length;
+    final counts = WorkQueueCounts.fromCases(
+      items,
+      serverTotal: current.nextCursor == null
+          ? null
+          : current.counts.total - gone,
+    );
+    if (_query.isEmpty) _allCounts = counts;
     if (deleted.contains(_selectedId)) _selectedId = null;
     state = AsyncData(
       WorkQueueState(
@@ -519,44 +520,8 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         status: _status,
         query: current.query,
         selectedId: _selectedId,
-        allWaiting: _allWaiting,
+        allCounts: _allCounts,
       ),
-    );
-  }
-
-  /// Server counts moved by the cases that changed tabs or left, for a
-  /// list that does not hold every case.
-  static WorkQueueCounts _shift(
-    WorkQueueCounts counts,
-    List<(WorkCase, WorkCase?)> changes,
-  ) {
-    var waiting = counts.waiting;
-    var running = counts.running;
-    var complete = counts.complete;
-    var total = counts.total;
-    void add(WorkCase workCase, int delta) {
-      total += delta;
-      switch (workCase.status.tab) {
-        case WorkCaseStatus.waiting:
-          waiting += delta;
-        case WorkCaseStatus.running:
-          running += delta;
-        case WorkCaseStatus.complete:
-          complete += delta;
-        default:
-          break;
-      }
-    }
-
-    for (final (before, after) in changes) {
-      add(before, -1);
-      if (after != null) add(after, 1);
-    }
-    return WorkQueueCounts(
-      waiting: waiting,
-      running: running,
-      complete: complete,
-      total: total,
     );
   }
 
@@ -598,7 +563,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
         ...page.items,
       ]);
       final counts = _counts(items, page.nextCursor, page.counts);
-      if (_query.isEmpty) _allWaiting = counts.waiting;
+      if (_query.isEmpty) _allCounts = counts;
       // Every case is in hand within what one poll reads: polls can run
       // again without dropping anything.
       if (page.nextCursor == null && items.length <= maxPages * pageSize) {
@@ -613,7 +578,7 @@ class WorkQueueViewModel extends _$WorkQueueViewModel {
               nextCursor: page.nextCursor,
               loadingMore: false,
               counts: counts,
-              allWaiting: _allWaiting,
+              allCounts: _allCounts,
             ),
       );
     } catch (_) {

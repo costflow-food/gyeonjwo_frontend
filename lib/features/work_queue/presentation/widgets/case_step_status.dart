@@ -3,6 +3,8 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds_metrics.dart";
 import "../../../../shared/workspace_colors.dart";
 import "../../../mail_draft/presentation/mail_draft_dialog.dart";
 import "../../../review_progress/presentation/review_progress_view.dart";
@@ -10,10 +12,35 @@ import "../../../supplier/presentation/supplier_register_dialog.dart";
 import "../../domain/work_case.dart";
 import "../work_queue_view_model.dart";
 
+/// 이 업무에 볼 메일 초안이 있는지. 견적 요청을 준비한 뒤의 단계(발송 설정
+/// 멈춤 포함)는 단계만으로 알고, 발송 실패(FAILED)나 회신이 연결된 뒤는
+/// API-16에 묻습니다.
+bool caseHasMailDrafts(WidgetRef ref, WorkCase workCase) {
+  final progress = workCase.stopped
+      ? ref.watch(caseProgressProvider(workCase.id)).asData?.value
+      : null;
+  final hold = progress?.hold ?? workCase.hold;
+  final draftsByStep =
+      ProcessingStep.withDrafts.contains(workCase.processingStep) ||
+      (hold?.code ?? progress?.errorCode) == "SEND_POLICY_REQUIRED";
+  final mayHaveDrafts =
+      workCase.processingStep == "FAILED" || workCase.inputRevision > 1;
+  return draftsByStep ||
+      (mayHaveDrafts &&
+          (ref.watch(caseHasDraftsProvider(workCase.id)).value ?? false));
+}
+
 class CaseStepStatus extends ConsumerStatefulWidget {
-  const CaseStepStatus({super.key, required this.workCase});
+  const CaseStepStatus({
+    super.key,
+    required this.workCase,
+    this.showDraftButton = true,
+  });
 
   final WorkCase workCase;
+
+  /// false면 '메일 초안 보기'를 두지 않습니다(넓은 화면은 상세 머리에 있음).
+  final bool showDraftButton;
 
   @override
   ConsumerState<CaseStepStatus> createState() => _CaseStepStatusState();
@@ -74,18 +101,8 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         (workCase.atCandidates
             ? workCase.disabledMessage(WorkCaseAction.selectCandidates)
             : null);
-    // Drafts exist once RFQs were prepared, including a send-setting stop.
-    // A send failure (FAILED) or any step after a linked reply may also have
-    // drafts, but the step alone cannot tell, so ask API-16 there.
-    final draftsByStep =
-        ProcessingStep.withDrafts.contains(workCase.processingStep) ||
-        (hold?.code ?? progress?.errorCode) == "SEND_POLICY_REQUIRED";
-    final mayHaveDrafts =
-        workCase.processingStep == "FAILED" || workCase.inputRevision > 1;
     final hasDrafts =
-        draftsByStep ||
-        (mayHaveDrafts &&
-            (ref.watch(caseHasDraftsProvider(workCase.id)).value ?? false));
+        widget.showDraftButton && caseHasMailDrafts(ref, workCase);
     final needsSupplier =
         workCase.stopped &&
         supplierMissingStopCodes.contains(hold?.code ?? progress?.errorCode);
@@ -97,8 +114,8 @@ class _CaseStepStatusState extends ConsumerState<CaseStepStatus> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: context.palette.panel,
-            borderRadius: BorderRadius.circular(16),
+            color: LdsColors.canvas,
+            borderRadius: BorderRadius.circular(LdsRadius.table),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,43 +1,26 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/supplier.dart";
 
+/// 거래처 출처 라벨(4.1 weak): 직접 등록 · 웹 확인.
 class SupplierSourceBadge extends StatelessWidget {
   const SupplierSourceBadge(this.sourceType, {super.key});
   final SupplierSourceType sourceType;
 
   @override
-  Widget build(BuildContext context) {
-    final (color, background, icon) = switch (sourceType) {
-      SupplierSourceType.registered => (
-        const Color(0xFF00754A),
-        const Color(0xFFE2F4EA),
-        Icons.verified_outlined,
-      ),
-      SupplierSourceType.verifiedWeb => (
-        const Color(0xFF2F5E8C),
-        const Color(0xFFE6EEF6),
-        Icons.language,
-      ),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            sourceType.label,
-            style: TextStyle(fontSize: AppFontSizes.secondary, color: color),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => switch (sourceType) {
+    SupplierSourceType.registered => LdsTag(
+      sourceType.label,
+      tone: LdsTagTone.success,
+      icon: Icons.verified_outlined,
+      foreground: LdsColors.successText,
+    ),
+    SupplierSourceType.verifiedWeb => LdsTag(
+      sourceType.label,
+      tone: LdsTagTone.progressing,
+      icon: Icons.language,
+    ),
+  };
 }

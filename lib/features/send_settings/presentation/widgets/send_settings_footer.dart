@@ -1,9 +1,9 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
-import "../../../../shared/widgets/workspace_button_styles.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 
+/// 아래 줄: (오류) + 취소(글자 버튼) · 설정 저장(채움).
 class SendSettingsFooter extends StatelessWidget {
   const SendSettingsFooter({
     super.key,
@@ -20,50 +20,49 @@ class SendSettingsFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 14, 28, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (error != null) ...[
-            Semantics(
-              liveRegion: true,
-              child: Row(
-                children: [
-                  const Icon(Icons.error_outline, size: 16, color: danger),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      error!,
-                      style: const TextStyle(
-                        fontSize: AppFontSizes.body,
-                        color: danger,
-                      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (error != null) ...[
+          Semantics(
+            liveRegion: true,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 16,
+                  color: LdsColors.errorText,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    error!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: LdsColors.errorText,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-          ],
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                style: WorkspaceButtonStyles.text(context),
-                onPressed: saving ? null : onCancel,
-                child: const Text("취소"),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: saving ? null : onSave,
-                style: WorkspaceButtonStyles.filled(context),
-                child: Text(saving ? "저장 중" : "설정 저장"),
-              ),
-            ],
           ),
+          const SizedBox(height: 12),
         ],
-      ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: saving ? null : onCancel,
+              child: const Text("취소"),
+            ),
+            const SizedBox(width: 8),
+            LdsButton(
+              label: saving ? "저장 중" : "설정 저장",
+              onPressed: saving ? null : onSave,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

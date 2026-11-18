@@ -29,6 +29,7 @@ abstract interface class WorkQueueDataSource {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   });
 
   Future<Map<String, dynamic>> fetchOriginalMail(String mailId);
@@ -80,6 +81,7 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) => _send(
     (headers) => _dio.get<Map<String, dynamic>>(
       _cases,
@@ -88,6 +90,7 @@ class ApiWorkQueueDataSource implements WorkQueueDataSource {
         if (query.isNotEmpty) "q": query,
         "cursor": ?cursor,
         "limit": ?limit,
+        if (archived) "archived": true,
       },
       options: Options(headers: headers),
     ),

@@ -207,6 +207,7 @@ class _FakeWorkQueue implements WorkQueueDataSource {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) => _reply({
     "data": {
       "items": [

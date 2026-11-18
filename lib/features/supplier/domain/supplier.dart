@@ -74,6 +74,14 @@ class SupplierSummary {
   final List<String> itemNames;
   final String? contactEmail;
   final String? location;
+
+  /// 목록에 오는 항목 중 비어 있는 개수(이메일 · 위치 · 취급 품목).
+  /// 0보다 크면 목록 줄에 '정보 부족 · N개 미확인'을 붙입니다.
+  int get missingInfoCount => [
+    contactEmail == null,
+    location == null,
+    itemNames.isEmpty,
+  ].where((missing) => missing).length;
 }
 
 class SupplierPage {
@@ -186,6 +194,7 @@ class SupplierDetail {
 class SupplierItemDraft {
   const SupplierItemDraft({
     required this.itemName,
+    this.supplierItemId,
     this.specification,
     this.unit,
     this.unitsPerBox,
@@ -196,6 +205,9 @@ class SupplierItemDraft {
   });
 
   final String itemName;
+
+  /// The saved item this edits; null for a new item.
+  final String? supplierItemId;
   final String? specification;
   final String? unit;
   final String? unitsPerBox;

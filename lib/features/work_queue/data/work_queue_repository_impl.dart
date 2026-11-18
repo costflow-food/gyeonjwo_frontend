@@ -48,6 +48,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
     String query = "",
     String? cursor,
     int? limit,
+    bool archived = false,
   }) => _guard(() async {
     final response = await _dataSource.fetchCases(
       status: status == null || status == WorkCaseStatus.other
@@ -56,6 +57,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
       query: query,
       cursor: cursor,
       limit: limit,
+      archived: archived,
     );
     final data = response["data"] as Map<String, dynamic>;
     final counts = data["counts"] as Map<String, dynamic>;
@@ -64,12 +66,9 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
         for (final entry in data["items"] as List)
           _saw(_case(entry as Map<String, dynamic>)),
       ]),
-      counts: WorkQueueCounts(
-        waiting: counts["Waiting"] as int? ?? 0,
-        running: counts["Running"] as int? ?? 0,
-        complete: counts["Complete"] as int? ?? 0,
-        total: counts["total"] as int? ?? 0,
-      ),
+      // 서버 건수는 옛 탭 기준(Waiting·Running·Complete)이라 상태 묶음과
+      // 맞지 않습니다. 검색 전체 건수(total)만 씁니다.
+      counts: WorkQueueCounts(total: counts["total"] as int? ?? 0),
       nextCursor: data["next_cursor"] as String?,
     );
   });
@@ -393,6 +392,7 @@ class WorkQueueRepositoryImpl implements WorkQueueRepository {
             message: entry["message"] as String,
           ),
       ]),
+      archived: json["archived_at"] != null,
     );
   }
 }

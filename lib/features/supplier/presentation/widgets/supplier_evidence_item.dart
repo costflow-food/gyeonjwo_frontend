@@ -1,94 +1,99 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
 import "../../../../shared/formatters.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/supplier.dart";
 import "certification_badge.dart";
 import "evidence_source_line.dart";
-import "supplier_fact.dart";
-import "supplier_section_title.dart";
+import "supplier_evidence_supplier.dart";
 
+/// 가격 근거 창 '업체·품목 상세'의 품목 조건: 이름표-값 표.
 class SupplierEvidenceItem extends StatelessWidget {
   const SupplierEvidenceItem({super.key, required this.item});
   final SupplierItem item;
 
+  static const _muted = TextStyle(fontSize: 13, color: LdsColors.mutedStrong);
+
   @override
   Widget build(BuildContext context) {
-    final captionStyle = TextStyle(
-      fontSize: AppFontSizes.caption,
-      color: context.palette.muted,
-    );
+    final notes = item.notes;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SupplierSectionTitle("취급 품목 조건", large: true),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 20,
-          runSpacing: 14,
-          children: [
-            SupplierFact("규격", item.specification, width: 240),
-            SupplierFact("단위", item.unit, width: 90),
-            SupplierFact("박스당 수량", item.unitsPerBox, width: 90),
-            SupplierFact(
+        const Text("취급 품목 조건", style: evidenceSectionTitle),
+        const SizedBox(height: 8),
+        LdsKeyValueTable(
+          rows: [
+            evidenceRow("규격", item.specification),
+            evidenceRow("단위", item.unit),
+            evidenceRow("박스당 수량", item.unitsPerBox),
+            evidenceRow(
               "박스당 중량",
               item.weightPerBox == null ? null : "${item.weightPerBox}kg",
-              width: 90,
             ),
-            SupplierFact("원산지", item.origin),
-          ],
-        ),
-        const SizedBox(height: 18),
-        Text("인증", style: captionStyle),
-        const SizedBox(height: 6),
-        if (item.certifications.isEmpty)
-          Text(
-            "인증 정보 미확인",
-            style: TextStyle(
-              fontSize: AppFontSizes.body,
-              color: context.palette.muted,
+            evidenceRow("원산지", item.origin),
+            LdsKeyValueRow(
+              "인증",
+              child: item.certifications.isEmpty
+                  ? const Text(
+                      "인증 정보 미확인",
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: LdsColors.mutedStrong,
+                      ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final (index, certification)
+                            in item.certifications.indexed)
+                          Padding(
+                            padding: EdgeInsets.only(top: index == 0 ? 0 : 6),
+                            child: Wrap(
+                              spacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                CertificationBadge(certification),
+                                Text(
+                                  certification.validUntil == null
+                                      ? "유효기간 미확인"
+                                      : "${formatIsoDate(certification.validUntil!)}까지",
+                                  style: _muted,
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
             ),
-          )
-        else ...[
-          for (final certification in item.certifications)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Wrap(
-                spacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
+            LdsKeyValueRow(
+              "품목 비고",
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CertificationBadge(certification),
-                  Text(
-                    certification.validUntil == null
-                        ? "유효기간 미확인"
-                        : "${formatIsoDate(certification.validUntil!)}까지",
+                  SelectableText(
+                    notes ?? "기록된 비고가 없습니다.",
                     style: TextStyle(
-                      fontSize: AppFontSizes.secondary,
-                      color: context.palette.muted,
+                      fontSize: 15,
+                      height: 1.6,
+                      color: notes == null
+                          ? LdsColors.mutedStrong
+                          : LdsColors.ink,
                     ),
                   ),
+                  if (notes != null) ...[
+                    const SizedBox(height: 4),
+                    EvidenceSourceLine(
+                      prefix: "비고 근거",
+                      evidence: item.notesEvidence,
+                    ),
+                  ],
                 ],
               ),
             ),
-        ],
-        const SizedBox(height: 18),
-        Text("품목 비고", style: captionStyle),
-        const SizedBox(height: 6),
-        SelectableText(
-          item.notes ?? "기록된 비고가 없습니다.",
-          style: TextStyle(
-            fontSize: AppFontSizes.body,
-            height: 1.55,
-            color: item.notes == null
-                ? context.palette.muted
-                : context.palette.ink,
-          ),
+          ],
         ),
-        if (item.notes != null) ...[
-          const SizedBox(height: 10),
-          EvidenceSourceLine(prefix: "비고 근거", evidence: item.notesEvidence),
-        ],
       ],
     );
   }

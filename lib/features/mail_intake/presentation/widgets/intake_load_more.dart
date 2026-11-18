@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
 
 class IntakeLoadMore extends StatelessWidget {
   const IntakeLoadMore({
@@ -24,11 +23,8 @@ class IntakeLoadMore extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Icon(Icons.expand_more, size: 16),
-      label: const Text(
-        "더 불러오기",
-        style: TextStyle(fontSize: AppFontSizes.secondary),
-      ),
-      style: TextButton.styleFrom(foregroundColor: context.palette.muted),
+      label: const Text("더 불러오기", style: TextStyle(fontSize: 13)),
+      style: TextButton.styleFrom(foregroundColor: LdsColors.mutedStrong),
     ),
   );
 }

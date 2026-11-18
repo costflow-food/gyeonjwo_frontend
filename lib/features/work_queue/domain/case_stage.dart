@@ -1,135 +1,137 @@
+import "task_group.dart";
 import "work_case.dart";
 
-/// Where a case stands in the five-slice flow shown on a queue card:
-/// 1 요청 확인 → 2 후보 → 3 견적 요청 → 4 회신 → 5 검토.
+/// 업무 진행 다섯 단계 (Tasks 시안): 목록 행의 n/5와 상세 단계 바가 같은
+/// 기준입니다.
+const caseStepNames = ["접수", "정보 추출", "후보 찾기", "견적 요청·회신", "검토 카드"];
+
+/// 업무가 다섯 단계 중 어디에 있는지.
 class CaseStage {
   const CaseStage({
     required this.index,
-    required this.working,
-    required this.label,
-    this.ownSliceOpen = false,
+    this.complete = false,
+    this.error = false,
   });
 
   static const total = 5;
 
-  /// 1-based slice the case is in.
+  /// 1부터 센 지금 단계. 완료면 [total].
   final int index;
 
-  /// The AI is working on [index] right now. False while it rests and the
-  /// user or a supplier has the next move.
-  final bool working;
+  /// 구매안을 확정해 모든 단계를 마쳤습니다.
+  final bool complete;
 
-  final String label;
+  /// 지금 단계에서 오류가 났습니다(처리 오류·발송 결과 모름).
+  final bool error;
 
-  /// Resting, but [index] itself is not finished yet: the quote request is
-  /// drafted and waits for approval, or its send result is unknown.
-  final bool ownSliceOpen;
+  /// 끝난 단계 수.
+  int get doneCount => complete ? total : index - 1;
 
-  /// Slices drawn as finished. A resting case has finished its own slice,
-  /// unless [ownSliceOpen].
-  int get doneCount => working || ownSliceOpen ? index - 1 : index;
+  String get name => caseStepNames[index - 1];
 
-  String get semanticsLabel =>
-      "$total단계 중 $index단계 ${working ? "작업 중" : "대기"}, $label";
+  String get semanticsLabel => complete
+      ? "$total단계 모두 완료"
+      : "$total단계 중 $index단계 $name${error ? ", 오류" : ""}";
 
   @override
   bool operator ==(Object other) =>
       other is CaseStage &&
       other.index == index &&
-      other.working == working &&
-      other.label == label &&
-      other.ownSliceOpen == ownSliceOpen;
+      other.complete == complete &&
+      other.error == error;
 
   @override
-  int get hashCode => Object.hash(index, working, label, ownSliceOpen);
+  int get hashCode => Object.hash(index, complete, error);
 
   @override
   String toString() =>
-      "CaseStage($index/$total, working: $working, done: $doneCount, $label)";
+      "CaseStage($index/$total${complete ? ", complete" : ""}"
+      "${error ? ", error" : ""})";
 }
 
-/// Slice and whether the AI is the one acting, per processing step.
-const _stages = <String, (int, bool)>{
-  "EXTRACTING": (1, true),
-  "SELECTING_CANDIDATES": (2, true),
-  "CANDIDATES": (2, false),
-  "WAITING_APPROVAL": (3, false),
-  "AWAITING_APPROVAL": (3, false),
-  "SEND_UNKNOWN": (3, false),
-  "WAITING_REPLY": (3, false),
-  "GENERATING_PLANS": (5, true),
-  "REVIEW_READY": (5, false),
+/// 서버 단계 코드 → 단계(1 접수 · 2 정보 추출 · 3 후보 찾기 · 4 견적 요청·회신 ·
+/// 5 검토 카드). 보류·처리 오류·사유 필요(NEEDS_INFO)는 따로 고릅니다.
+const _stepStages = {
+  "PENDING_START": 1,
+  "ACKNOWLEDGED": 1,
+  "EXTRACTING": 2,
+  "SELECTING_CANDIDATES": 3,
+  "CANDIDATES": 3,
+  "WAITING_APPROVAL": 4,
+  "AWAITING_APPROVAL": 4,
+  "SEND_UNKNOWN": 4,
+  "WAITING_REPLY": 4,
+  "GENERATING_PLANS": 5,
+  "BUILDING_PLANS": 5,
+  "BUILDING_COUNTER_OFFER": 5,
+  "REVIEW_READY": 5,
 };
 
-/// Resting steps whose quote request has not (verifiably) gone out.
-const _unsent = {"WAITING_APPROVAL", "AWAITING_APPROVAL", "SEND_UNKNOWN"};
+/// 멈춘 이유 코드(보류 hold.code · API-03 error.code)로 아는 단계.
+const _stopStages = {
+  "SUPPLIER_NOT_MATCHED": 2,
+  "SUPPLIER_MISMATCH": 2,
+  "MISSING_FIELD": 2,
+  "MISSING_EVIDENCE": 2,
+  "SOURCE_READ_FAILED": 2,
+  "NO_SUITABLE_CANDIDATES": 3,
+  "NO_REGISTERED_SUPPLIER_EVIDENCE": 3,
+  "RFQ_CONDITIONS_REQUIRED": 4,
+  "CONDITIONS_MISSING": 4,
+  "SEND_POLICY_REQUIRED": 4,
+  "RFQ_PREPARATION_FAILED": 4,
+  "NO_QUOTE_DATA": 4,
+  "COUNTER_OFFER_POLICY_MISSING": 5,
+  "COUNTER_OFFER_NOT_COMPUTABLE": 5,
+};
 
-/// Null hides the ring: steps before the review starts (PENDING_START,
-/// ACKNOWLEDGED), steps the server no longer writes (BUILDING_*), stops whose
-/// slice the list API cannot tell (ON_HOLD, NEEDS_INFO, FAILED), and any code
-/// this app does not know.
+/// 오류로 보이는 단계 코드. 단계 바의 지금 단계를 빨간 원으로 그립니다.
+const _errorSteps = {"FAILED", "SEND_UNKNOWN"};
+
+/// 업무의 지금 단계. 모르는 단계 코드면 null(행의 n/5를 비웁니다).
 ///
-/// [canSelectCandidates] is whether the server offers SELECT_CANDIDATES; only
-/// then is CANDIDATES really waiting on the user's pick.
-///
-/// [preparingRfq]: at CANDIDATES the worker is already drafting or sending the
-/// quote requests (the server's legacy path), so the third slice is working.
-///
-/// [rfqSent] false means no quote request went out this round, so a raised
-/// revision cannot be a supplier reply.
-CaseStage? caseStageOf(
-  String step, {
-  int inputRevision = 1,
-  bool canSelectCandidates = false,
-  bool preparingRfq = false,
-  bool rfqSent = true,
-}) {
-  if (!rfqSent) inputRevision = 1;
-  // A reply arrived and is being read: the reply slice, not the first one.
-  if (isReplyExtraction(step, inputRevision)) {
-    return CaseStage(
-      index: 4,
-      working: true,
-      label: processingStepLabel(step, inputRevision: inputRevision),
-    );
+/// [stopCode]는 API-03의 멈춘 이유 코드입니다. 목록은 보류(ON_HOLD)에만
+/// 사유를 실어 보내므로, 사유를 모르는 멈춤·오류는 목록에 있는 것(품목,
+/// 견적 요청·회신 수)으로 짐작합니다.
+CaseStage? caseStageOf(WorkCase workCase, {String? stopCode}) {
+  if (workCase.archived) {
+    return const CaseStage(index: CaseStage.total, complete: true);
   }
-  if (step == ProcessingStep.candidates &&
-      preparingRfq &&
-      !canSelectCandidates) {
-    return CaseStage(index: 3, working: true, label: processingStepLabel(step));
+  final step = workCase.processingStep;
+  final error = _errorSteps.contains(step);
+  final replies = workCase.replySummary;
+  // 견적 요청이 나갔는지. API-02로 읽은 업무는 회신 현황이 없어 모릅니다(null).
+  final rfqSent = replies?.visible;
+  int guess() {
+    if ((replies?.responded ?? 0) > 0) return step == "FAILED" ? 5 : 4;
+    if (rfqSent ?? false) return 4;
+    if (workCase.itemName == null) return 2;
+    return step == "FAILED" ? 4 : 3;
   }
-  final stage = _stages[step];
-  if (stage == null) return null;
-  return CaseStage(
-    index: stage.$1,
-    working: stage.$2,
-    ownSliceOpen: _unsent.contains(step),
-    // The shared table words these two from the worker's side ("후보 찾기
-    // 대기", "견적 요청 준비 중"), which contradicts who is acting here.
-    label: switch (step) {
-      "SELECTING_CANDIDATES" => "후보 찾는 중",
-      "CANDIDATES" when canSelectCandidates => "업체 선택 대기",
-      _ => processingStepLabel(step, inputRevision: inputRevision),
-    },
-  );
+
+  final index = switch (step) {
+    // 연결된 회신을 읽는 중: 견적 요청·회신 단계.
+    "EXTRACTING"
+        when isReplyExtraction(step, workCase.inputRevision) &&
+            (rfqSent ?? true) =>
+      4,
+    // 서버가 견적 요청을 준비하는 중(사용자가 고를 차례가 아님).
+    ProcessingStep.candidates when !userPicksCandidates(workCase) =>
+      _preparingRfq(workCase) ? 4 : 3,
+    ProcessingStep.onHold ||
+    ProcessingStep.needsInfo ||
+    "FAILED" => _stopStages[stopCode ?? workCase.hold?.code] ?? guess(),
+    _ => _stepStages[step],
+  };
+  if (index == null) return null;
+  return CaseStage(index: index, error: error);
 }
 
-/// The ring for a queue row. Only cases in the 진행 중 tab (Running, Pending)
-/// get one; 대기 and 완료 are covered by the status badge.
-CaseStage? ringStageOf(WorkCase workCase) {
-  if (workCase.status.tab != WorkCaseStatus.running) return null;
+/// CANDIDATES에서 막힌 이유가 없거나 후보를 아직 찾는 중: 서버가 견적 요청을
+/// 준비합니다(옛 경로).
+bool _preparingRfq(WorkCase workCase) {
   final blocked = workCase.disabledActions
       .where((disabled) => disabled.action == WorkCaseAction.selectCandidates)
       .firstOrNull;
-  return caseStageOf(
-    workCase.processingStep,
-    inputRevision: workCase.inputRevision,
-    canSelectCandidates: workCase.can(WorkCaseAction.selectCandidates),
-    // Not offered and not blocked for another reason (missing integration,
-    // already picked): the worker went straight on to the quote requests.
-    preparingRfq:
-        blocked == null || blocked.reasonCode == "CANDIDATES_NOT_READY",
-    // Null (a case read through API-02) tells nothing; trust the revision.
-    rfqSent: workCase.replySummary?.visible ?? true,
-  );
+  return blocked == null || blocked.reasonCode == "CANDIDATES_NOT_READY";
 }

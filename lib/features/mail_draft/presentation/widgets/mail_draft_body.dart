@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/mail_draft.dart";
 
 class MailDraftBody extends StatelessWidget {
@@ -25,42 +25,58 @@ class MailDraftBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!editing) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.palette.surface,
-          border: Border.all(color: context.palette.line),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _ReadOnlyLine("받는 사람", draft.recipient),
-            _ReadOnlyLine("제목", draft.subject),
-            Divider(color: context.palette.line, height: 24),
-            SelectableText(
-              draft.body,
-              style: const TextStyle(
-                fontSize: AppFontSizes.bodyLarge,
-                height: 1.6,
+      // 받는 사람·제목 = 이름표-값 표, 본문은 아래 상자.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LdsKeyValueTable(
+            labelWidth: 96,
+            rows: [
+              LdsKeyValueRow(
+                "받는 사람",
+                child: SelectableText(draft.recipient, style: _value),
               ),
+              LdsKeyValueRow(
+                "제목",
+                child: SelectableText(
+                  draft.subject,
+                  style: _value.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: LdsColors.line),
+              borderRadius: BorderRadius.circular(LdsRadius.table),
             ),
-          ],
-        ),
+            child: SelectableText(draft.body, style: _value),
+          ),
+        ],
       );
     }
+    // LDS 입력칸 테두리(7.14b): 1px `#D1D6DC`, 초점 `#333D4B`, 오류 빨강, 모서리 4.
+    OutlineInputBorder border(Color color) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(LdsRadius.button),
+      borderSide: BorderSide(color: color),
+    );
     InputDecoration decoration(String label, {String? hint}) => InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: const TextStyle(fontSize: AppFontSizes.body),
+      labelStyle: const TextStyle(fontSize: 14, color: LdsColors.label),
       isDense: true,
       filled: true,
-      fillColor: context.palette.surface,
-      border: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(6)),
-      ),
+      fillColor: Colors.white,
+      enabledBorder: border(LdsColors.borderStrong),
+      focusedBorder: border(LdsColors.title),
+      errorBorder: border(LdsColors.error),
+      focusedErrorBorder: border(LdsColors.error),
+      errorStyle: const TextStyle(fontSize: 13, color: LdsColors.errorText),
     );
-    const style = TextStyle(fontSize: AppFontSizes.body);
+    const style = TextStyle(fontSize: 15, color: LdsColors.ink);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -86,7 +102,11 @@ class MailDraftBody extends StatelessWidget {
         const SizedBox(height: 12),
         TextFormField(
           controller: body,
-          style: const TextStyle(fontSize: AppFontSizes.body, height: 1.5),
+          style: const TextStyle(
+            fontSize: 15,
+            height: 1.6,
+            color: LdsColors.ink,
+          ),
           minLines: 8,
           maxLines: 16,
           decoration: decoration("본문"),
@@ -106,40 +126,4 @@ class MailDraftBody extends StatelessWidget {
   }
 }
 
-class _ReadOnlyLine extends StatelessWidget {
-  const _ReadOnlyLine(this.label, this.value);
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 72,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: AppFontSizes.secondary,
-                color: context.palette.muted,
-              ),
-            ),
-          ),
-          Expanded(
-            child: SelectableText(
-              value,
-              style: const TextStyle(
-                fontSize: AppFontSizes.body,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+const _value = TextStyle(fontSize: 15, height: 1.6, color: LdsColors.ink);

@@ -1,83 +1,79 @@
+import "dart:ui" show PathMetric;
+
 import "package:flutter/material.dart";
 
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/purchase_review.dart";
 import "plan_card.dart";
 import "review_format.dart";
 
+/// 구매안 비교 = 나란한 카드 3장 (`docs/design-ssot.md` 7.16).
+///
+/// 서버 순서 그대로 놓고, 폭은 같고 높이는 가장 긴 카드에 맞춥니다. 선택 단추는
+/// 카드 아래 12에 칸 폭 전체(높이 44). 900px 미만 화면이나 카드가 좁아지는
+/// 폭에서는 한 줄에 한 장입니다.
 class PlanBoard extends StatelessWidget {
   const PlanBoard({
     super.key,
     required this.card,
     required this.busy,
     required this.onSelect,
-    this.folding = false,
+    required this.colors,
   });
 
   final ReviewCard card;
   final bool busy;
   final ValueChanged<ResponsePlan> onSelect;
+  final SupplierColors colors;
 
-  /// Phone: every plan as one line, in the server's order; the tapped one
-  /// opens.
-  final bool folding;
+  static const gap = 16.0;
+  static const _minCardWidth = 260.0;
 
-  static const _gap = 12.0;
-  static const _minColumnWidth = 240.0;
+  /// 이 화면 폭 미만에서는 한 줄에 한 장(SSOT 부록).
+  static const stackWidth = 900.0;
 
   @override
   Widget build(BuildContext context) {
     final plans = card.plans;
-    final lowestTotal = _lowestValidTotal(plans);
+    final lowestTotal = lowestValidTotal(plans);
+    final allocationRows = plans.fold<int>(
+      0,
+      (most, plan) =>
+          plan.allocations.length > most ? plan.allocations.length : most,
+    );
+    // 나란할 때만 배분 표 줄 수를 맞춥니다(막대 높이를 같게).
+    Widget cardFor(ResponsePlan plan, {bool stacked = false}) => PlanCard(
+      plan: plan,
+      lowest: _isLowest(plan, lowestTotal),
+      difference: _difference(plan, lowestTotal),
+      colors: colors,
+      allocationRows: stacked ? 0 : allocationRows,
+    );
+    Widget selectFor(ResponsePlan plan, {required bool stacked}) => PlanSelect(
+      plan: plan,
+      card: card,
+      busy: busy,
+      lowest: _isLowest(plan, lowestTotal),
+      showReason: stacked,
+      onSelect: () => onSelect(plan),
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columnWidth =
-            (constraints.maxWidth - _gap * (plans.length - 1)) / plans.length;
-        final grid = !folding && columnWidth >= _minColumnWidth;
-        Widget cardFor(ResponsePlan plan) => PlanCard(
-          plan: plan,
-          lowest: _isLowest(plan, lowestTotal),
-          difference: _difference(plan, lowestTotal),
-          allocation: plan.allocations.isEmpty
-              ? null
-              : _Allocations(plan: plan, lowest: _isLowest(plan, lowestTotal)),
-        );
-        if (folding) {
+        final cardWidth =
+            (constraints.maxWidth - gap * (plans.length - 1)) / plans.length;
+        final stacked =
+            MediaQuery.sizeOf(context).width < stackWidth ||
+            cardWidth < _minCardWidth;
+        if (stacked) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _PlanList(
-                card: card,
-                busy: busy,
-                lowestTotal: lowestTotal,
-                onSelect: onSelect,
-              ),
-              for (final question in card.questions) ...[
+              for (final (index, plan) in plans.indexed) ...[
+                if (index > 0) const SizedBox(height: 24),
+                IntrinsicHeight(child: cardFor(plan, stacked: true)),
                 const SizedBox(height: 12),
-                _ExcludedNotice(question: question),
-              ],
-            ],
-          );
-        }
-        if (!grid) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final plan in plans) ...[
-                cardFor(plan),
-                const SizedBox(height: 8),
-                _SelectButton(
-                  plan: plan,
-                  card: card,
-                  busy: busy,
-                  lowest: _isLowest(plan, lowestTotal),
-                  onSelect: () => onSelect(plan),
-                ),
-                const SizedBox(height: 16),
-              ],
-              for (final question in card.questions) ...[
-                _ExcludedNotice(question: question),
-                const SizedBox(height: 12),
+                selectFor(plan, stacked: true),
               ],
             ],
           );
@@ -87,7 +83,7 @@ class PlanBoard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (final (index, plan) in plans.indexed) ...[
-                if (index > 0) const SizedBox(width: _gap),
+                if (index > 0) const SizedBox(width: gap),
                 Expanded(child: cell(plan)),
               ],
             ],
@@ -97,20 +93,8 @@ class PlanBoard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             row(cardFor),
-            for (final question in card.questions) ...[
-              const SizedBox(height: 14),
-              _ExcludedNotice(question: question),
-            ],
-            const SizedBox(height: 14),
-            row(
-              (plan) => _SelectButton(
-                plan: plan,
-                card: card,
-                busy: busy,
-                lowest: _isLowest(plan, lowestTotal),
-                onSelect: () => onSelect(plan),
-              ),
-            ),
+            const SizedBox(height: 12),
+            row((plan) => selectFor(plan, stacked: false)),
           ],
         );
       },
@@ -120,13 +104,20 @@ class PlanBoard extends StatelessWidget {
   static num? _total(ResponsePlan plan) =>
       plan.totalAmount == null ? null : num.tryParse(plan.totalAmount!);
 
-  static num? _lowestValidTotal(List<ResponsePlan> plans) {
+  /// 확정 가능한 안 중 가장 낮은 총액.
+  static num? lowestValidTotal(List<ResponsePlan> plans) {
     num? lowest;
     for (final plan in plans.where((plan) => plan.valid)) {
       final total = _total(plan);
       if (total != null && (lowest == null || total < lowest)) lowest = total;
     }
     return lowest;
+  }
+
+  /// 확정 가능한 안 중 총액이 가장 낮은 안. 없으면 null.
+  static ResponsePlan? lowestPlan(List<ResponsePlan> plans) {
+    final lowest = lowestValidTotal(plans);
+    return plans.where((plan) => _isLowest(plan, lowest)).firstOrNull;
   }
 
   static bool _isLowest(ResponsePlan plan, num? lowest) =>
@@ -137,307 +128,29 @@ class PlanBoard extends StatelessWidget {
     if (total == null || lowest == null || total <= lowest) return null;
     return decimal((total - lowest).toString());
   }
-
-  static num _planQuantity(ResponsePlan plan) => plan.allocations.fold<num>(
-    0,
-    (sum, allocation) => sum + (num.tryParse(allocation.quantity) ?? 0),
-  );
 }
 
-/// What a plan buys from whom. One supplier: its price, a bar and the
-/// quantity. Several: one bar split by supplier colour, then a line each.
-class _Allocations extends StatelessWidget {
-  const _Allocations({required this.plan, required this.lowest});
-
-  final ResponsePlan plan;
-  final bool lowest;
-
-  Color _color(BuildContext context, int index) {
-    final palette = context.palette;
-    if (index == 0) {
-      return lowest
-          ? palette.gold
-          : plan.valid
-          ? palette.accent
-          : palette.ink.withValues(alpha: 0.3);
-    }
-    // Later suppliers: fixed hues that stay apart from the first colour and
-    // from each other on the cell, in either brightness.
-    const light = [
-      Color(0xFF5FA98A),
-      Color(0xFF7C9CC4),
-      Color(0xFFB07FB0),
-      Color(0xFF8A8F98),
-    ];
-    const dark = [
-      Color(0xFFA9DCC0),
-      Color(0xFFA9C1E6),
-      Color(0xFFD9B3D9),
-      Color(0xFFB5BAC2),
-    ];
-    final hues = palette.isDark ? dark : light;
-    return hues[(index - 1) % hues.length];
-  }
-
-  Widget _quantity(BuildContext context, PlanAllocation allocation, num total) {
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: decimal(allocation.quantity),
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          TextSpan(
-            text:
-                " | ${decimal(total.toString())}${allocation.unit ?? ""}"
-                "${plan.valid ? "" : " · 조건부"}",
-            style: TextStyle(color: context.palette.muted),
-          ),
-        ],
-      ),
-      style: TextStyle(fontSize: 13, color: context.palette.ink),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final allocations = plan.allocations;
-    final total = PlanBoard._planQuantity(plan);
-    final supplier = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: palette.ink,
-    );
-    final segments = [
-      for (final (index, allocation) in allocations.indexed)
-        if (total > 0 &&
-            total.isFinite &&
-            (num.tryParse(allocation.quantity) ?? 0) > 0 &&
-            num.parse(allocation.quantity).isFinite)
-          (
-            _color(context, index),
-            (num.parse(allocation.quantity) / total * 1000).round().clamp(
-              1,
-              1000,
-            ),
-          ),
-    ];
-    final bar = ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: SizedBox(
-        height: 6,
-        child: segments.isEmpty
-            ? ColoredBox(color: palette.line)
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (index, (color, flex)) in segments.indexed) ...[
-                    if (index > 0) const SizedBox(width: 2),
-                    Expanded(
-                      flex: flex,
-                      child: ColoredBox(color: color),
-                    ),
-                  ],
-                ],
-              ),
-      ),
-    );
-    if (allocations.length == 1) {
-      final allocation = allocations.single;
-      return _Cell(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "${allocation.supplierName} · ${perUnit(allocation.unitPrice, allocation.unit)}",
-              style: supplier,
-            ),
-            const SizedBox(height: 6),
-            bar,
-            const SizedBox(height: 8),
-            _quantity(context, allocation, total),
-          ],
-        ),
-      );
-    }
-    return _Cell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          bar,
-          for (final (index, allocation) in allocations.indexed)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5, right: 6),
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _color(context, index),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  // The quantity drops under the name when both do not fit.
-                  Expanded(
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      spacing: 8,
-                      runSpacing: 2,
-                      children: [
-                        Text(
-                          "${allocation.supplierName} · ${perUnit(allocation.unitPrice, allocation.unit)}",
-                          style: supplier,
-                        ),
-                        _quantity(context, allocation, total),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Cell extends StatelessWidget {
-  const _Cell({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(minHeight: 64),
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(
-      color: context.palette.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: context.palette.line),
-      boxShadow: [
-        BoxShadow(
-          color: context.palette.ink.withValues(alpha: 0.08),
-          blurRadius: 8,
-          offset: Offset(0, 2),
-        ),
-      ],
-    ),
-    child: child,
-  );
-}
-
-class _ExcludedNotice extends StatelessWidget {
-  const _ExcludedNotice({required this.question});
-
-  final ReviewQuestion question;
-
-  @override
-  Widget build(BuildContext context) {
-    final detail =
-        question.formula ??
-        (question.breakEvenAmount == null
-            ? null
-            : "역전 기준 ${won(question.breakEvenAmount)}");
-    return CustomPaint(
-      painter: _HatchPainter(context.palette.ink.withValues(alpha: 0.06)),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: context.palette.ink.withValues(alpha: 0.35),
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: 2),
-              child: Icon(
-                Icons.info_outline,
-                size: 16,
-                color: context.palette.ink,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${question.supplierName} · ${question.fieldLabel}: ${question.reason}",
-                    style: const TextStyle(fontSize: 14, height: 1.5),
-                  ),
-                  if (detail != null)
-                    Text(
-                      detail,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: context.palette.muted,
-                        height: 1.5,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HatchPainter extends CustomPainter {
-  const _HatchPainter(this.color);
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.clipRRect(
-      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(16)),
-    );
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 8;
-    for (var x = -size.height; x < size.width; x += 16) {
-      canvas.drawLine(
-        Offset(x, size.height),
-        Offset(x + size.height, 0),
-        paint,
-      );
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_HatchPainter oldDelegate) => oldDelegate.color != color;
-}
-
-class _SelectButton extends StatelessWidget {
-  const _SelectButton({
+/// 구매안 선택 단추: 칸 폭 전체, 높이 44. 최저 안 = 채운 단추, 나머지 = 테두리
+/// 단추. 확정할 수 없는 안은 단추 대신 점선 상자에 이유를 적습니다(7.16).
+class PlanSelect extends StatelessWidget {
+  const PlanSelect({
+    super.key,
     required this.plan,
     required this.card,
     required this.busy,
     required this.lowest,
-    this.showReason = false,
     required this.onSelect,
+    this.showReason = false,
   });
+
+  static const height = 44.0;
 
   final ResponsePlan plan;
   final ReviewCard card;
   final bool busy, lowest;
 
-  /// Writes why the plan cannot be chosen under the button.
+  /// 한 줄에 한 장일 때: 고를 수 없는 이유를 단추 아래에 적습니다(툴팁은
+  /// 휴대폰에서 길게 눌러야 보입니다).
   final bool showReason;
   final VoidCallback onSelect;
 
@@ -450,64 +163,66 @@ class _SelectButton extends StatelessWidget {
         decision?.planId == plan.planId;
     if (selected) {
       return Container(
-        height: 48,
+        height: height,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: context.palette.blush,
-          borderRadius: BorderRadius.circular(999),
+          color: LdsColors.primarySoft,
+          borderRadius: BorderRadius.circular(LdsRadius.button),
         ),
-        child: Text(
+        child: const Text(
           "선택한 구매안",
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: context.palette.accentText,
+            color: LdsColors.primary,
           ),
         ),
       );
     }
+    if (!plan.valid) {
+      return _Unavailable("선택 불가 · ${plan.validationLabel} 안은 아직 확정할 수 없습니다.");
+    }
     final canSelect = card.can(ReviewAction.selectPlan) && plan.selectable;
-    final reason = !plan.valid
-        ? "${plan.validationLabel} 안은 아직 확정할 수 없습니다."
-        : plan.planId == null
+    final reason = plan.planId == null
         ? "서버가 이 안의 ID를 보내지 않아 선택할 수 없습니다."
         : card.disabledMessage(ReviewAction.selectPlan);
-    final label = plan.valid ? "선택" : "수용";
     final onPressed = canSelect && !busy ? onSelect : null;
-    const shape = StadiumBorder();
-    const size = Size.fromHeight(48);
-    const text = TextStyle(fontSize: 16, fontWeight: FontWeight.w700);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(LdsRadius.button),
+    );
+    const size = Size.fromHeight(height);
+    const text = TextStyle(fontSize: 15, fontWeight: FontWeight.w700);
     final button = lowest
         ? FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: context.palette.accent,
-              foregroundColor: context.palette.onAccent,
-              disabledBackgroundColor: context.palette.line,
-              disabledForegroundColor: context.palette.muted,
+              backgroundColor: LdsColors.primary,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: LdsColors.lineSoft,
+              disabledForegroundColor: LdsColors.disabled,
               minimumSize: size,
               shape: shape,
               textStyle: text,
+              elevation: 0,
             ),
             onPressed: onPressed,
-            child: Text(label),
+            child: const Text("선택"),
           )
         : OutlinedButton(
             style: OutlinedButton.styleFrom(
-              foregroundColor: context.palette.accentText,
-              disabledForegroundColor: context.palette.muted,
+              foregroundColor: LdsColors.title,
+              disabledForegroundColor: LdsColors.disabled,
               side: BorderSide(
                 color: onPressed == null
-                    ? context.palette.line
-                    : context.palette.accentText,
+                    ? LdsColors.line
+                    : LdsColors.borderStrong,
               ),
               minimumSize: size,
               shape: shape,
               textStyle: text,
             ),
             onPressed: onPressed,
-            child: Text(label),
+            child: const Text("선택"),
           );
-    // Phone: a tooltip needs a long press, so the reason is written out.
     if (showReason && !canSelect && reason != null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -518,7 +233,7 @@ class _SelectButton extends StatelessWidget {
           Text(
             reason,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: context.palette.muted),
+            style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
           ),
         ],
       );
@@ -529,297 +244,68 @@ class _SelectButton extends StatelessWidget {
   }
 }
 
-/// Phone: the plans as a list to compare, one line each. The tapped plan
-/// opens to its notes, allocation and select button; nothing scrolls sideways.
-class _PlanList extends StatefulWidget {
-  const _PlanList({
-    required this.card,
-    required this.busy,
-    required this.lowestTotal,
-    required this.onSelect,
-  });
+/// 고를 수 없는 안: 점선 상자 안에 이유.
+class _Unavailable extends StatelessWidget {
+  const _Unavailable(this.reason);
 
-  final ReviewCard card;
-  final bool busy;
-  final num? lowestTotal;
-  final ValueChanged<ResponsePlan> onSelect;
+  final String reason;
 
   @override
-  State<_PlanList> createState() => _PlanListState();
-}
-
-class _PlanListState extends State<_PlanList> {
-  /// The open plan; null when all are folded.
-  ResponsePlan? _open;
-
-  bool _selected(ResponsePlan plan) {
-    final decision = widget.card.decision;
-    return plan.planId != null &&
-        decision?.decision == ReviewAction.selectPlan &&
-        decision?.planId == plan.planId;
-  }
-
-  /// The chosen plan, else the first that can be chosen, else the first.
-  ResponsePlan? get _initial {
-    final plans = widget.card.plans;
-    return plans.where(_selected).firstOrNull ??
-        plans.where((plan) => plan.selectable).firstOrNull ??
-        plans.firstOrNull;
-  }
-
-  /// The same plan on a reloaded card, where the plans are new objects.
-  bool _same(ResponsePlan plan, ResponsePlan other) =>
-      identical(plan, other) ||
-      (plan.planId != null
-          ? plan.planId == other.planId
-          : other.planId == null && plan.planType == other.planType);
-
-  @override
-  void initState() {
-    super.initState();
-    _open = _initial;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final plans = widget.card.plans;
-    // Folded by hand stays folded; an open plan that left the card (a new
-    // review) gives way to the starting choice.
-    final remembered = _open;
-    final open = remembered == null
-        ? null
-        : plans.where((plan) => _same(plan, remembered)).firstOrNull ??
-              _initial;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final (index, plan) in plans.indexed) ...[
-          if (index > 0) const SizedBox(height: 8),
-          _PlanRow(
-            plan: plan,
-            card: widget.card,
-            busy: widget.busy,
-            open: plan == open || plans.length == 1,
-            foldable: plans.length > 1,
-            selected: _selected(plan),
-            lowest: PlanBoard._isLowest(plan, widget.lowestTotal),
-            difference: PlanBoard._difference(plan, widget.lowestTotal),
-            onToggle: () => setState(() => _open = plan == open ? null : plan),
-            onSelect: () => widget.onSelect(plan),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _PlanRow extends StatelessWidget {
-  const _PlanRow({
-    required this.plan,
-    required this.card,
-    required this.busy,
-    required this.open,
-    required this.foldable,
-    required this.selected,
-    required this.lowest,
-    required this.difference,
-    required this.onToggle,
-    required this.onSelect,
-  });
-
-  final ResponsePlan plan;
-  final ReviewCard card;
-  final bool busy, open, foldable, selected, lowest;
-  final String? difference;
-  final VoidCallback onToggle, onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final notes = [...plan.conditions, ...plan.adjustments, ?plan.reason];
-    final (chip, chipBackground, chipText) = lowest
-        ? (
-            "${plan.validationLabel} · 가장 낮음",
-            palette.gold,
-            const Color(0xFF1E1E1E),
-          )
-        : plan.valid
-        ? (plan.validationLabel, palette.blush, palette.accentText)
-        : (plan.validationLabel, cautionTint, caution);
-    final header = Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-      child: LayoutBuilder(
-        builder: (context, constraints) => Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      if (selected) ...[
-                        Icon(
-                          Icons.check_circle,
-                          size: 16,
-                          color: palette.accentText,
-                          semanticLabel: "선택한 구매안",
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                      Flexible(
-                        child: Text(
-                          plan.typeLabel,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: chipBackground,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      chip,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: chipText,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            // The total never takes more than about half the row: a longer
-            // one shrinks instead of pushing the name out.
-            ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth * .55),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      won(plan.totalAmount),
-                      // Capped so a large text setting leaves room for the name.
-                      textScaler: MediaQuery.textScalerOf(context)
-                          .clamp(maxScaleFactor: 1.3),
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ),
-                  if (lowest)
-                    Text(
-                      "최저",
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: palette.isDark ? palette.gold : caution,
-                      ),
-                    )
-                  else if (difference != null)
-                    Text(
-                      "+$difference",
-                      style: TextStyle(fontSize: 12, color: palette.muted),
-                    ),
-                ],
-              ),
-            ),
-            if (foldable) ...[
-              const SizedBox(width: 4),
-              Icon(
-                open ? Icons.expand_less : Icons.expand_more,
-                size: 22,
-                color: palette.muted,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-    return Material(
-      color: palette.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(
-          color: open && foldable ? palette.accentText : Colors.transparent,
-          width: 1.5,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) => CustomPaint(
+    foregroundPainter: const _DashedBorder(),
+    child: Container(
+      constraints: const BoxConstraints(minHeight: PlanSelect.height),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (foldable)
-            Semantics(
-              button: true,
-              expanded: open,
-              child: InkWell(onTap: onToggle, child: header),
-            )
-          else
-            header,
-          AnimatedSize(
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.topCenter,
-            child: !open
-                ? const SizedBox(width: double.infinity)
-                : Container(
-                    decoration: BoxDecoration(
-                      border: Border(top: BorderSide(color: palette.line)),
-                    ),
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final note in notes)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Text(
-                              note,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: palette.muted,
-                                height: 1.5,
-                              ),
-                            ),
-                          ),
-                        if (notes.isNotEmpty) const SizedBox(height: 6),
-                        if (plan.allocations.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _Allocations(plan: plan, lowest: lowest),
-                          ),
-                        _SelectButton(
-                          plan: plan,
-                          card: card,
-                          busy: busy,
-                          lowest: lowest,
-                          showReason: true,
-                          onSelect: onSelect,
-                        ),
-                      ],
-                    ),
-                  ),
+          const Icon(
+            Icons.lock_outline,
+            size: 14,
+            color: LdsColors.mutedStrong,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              reason,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.4,
+                color: LdsColors.mutedStrong,
+              ),
+            ),
           ),
         ],
       ),
-    );
+    ),
+  );
+}
+
+class _DashedBorder extends CustomPainter {
+  const _DashedBorder();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          (Offset.zero & size).deflate(.5),
+          const Radius.circular(LdsRadius.button),
+        ),
+      );
+    final paint = Paint()
+      ..color = LdsColors.disabled
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (final PathMetric metric in path.computeMetrics()) {
+      for (var d = 0.0; d < metric.length; d += 7) {
+        canvas.drawPath(metric.extractPath(d, d + 4), paint);
+      }
+    }
   }
+
+  @override
+  bool shouldRepaint(_DashedBorder oldDelegate) => false;
 }

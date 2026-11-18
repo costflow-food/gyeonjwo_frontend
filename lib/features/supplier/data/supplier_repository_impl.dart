@@ -81,6 +81,26 @@ class SupplierRepositoryImpl implements SupplierRepository {
     );
   }
 
+  @override
+  Future<SupplierDetail> updateSupplier(
+    String supplierId,
+    Map<String, Object?> body,
+  ) {
+    return _keys.run(
+      "update:$supplierId",
+      body,
+      (key) => _guard(() async {
+        final response = await _dataSource.updateSupplier(
+          supplierId,
+          body,
+          idempotencyKey: key,
+        );
+        return _detail(response["data"] as Map<String, dynamic>);
+      }),
+      serverCode: (error) => error is SupplierFailure ? error.code : null,
+    );
+  }
+
   static Map<String, Object?> _draftJson(SupplierDraft draft) => {
     "name": draft.name,
     "contact_email": draft.contactEmail,

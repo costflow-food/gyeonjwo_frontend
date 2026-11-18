@@ -1,20 +1,24 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
+import "../../../shared/lds_colors.dart";
 import "../../../shared/widgets/async_content.dart";
+import "../../../shared/widgets/lds/lds.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../../../shared/widgets/note_line.dart";
 import "../../../shared/widgets/workspace_shell.dart";
 import "../domain/supplier_list_state.dart";
 import "supplier_register_dialog.dart";
 import "supplier_view_model.dart";
-import "../../../shared/widgets/outline_panel.dart";
 import "widgets/supplier_content.dart";
 import "widgets/supplier_detail_panel.dart";
 import "widgets/supplier_header.dart";
 import "widgets/supplier_list_panel.dart";
 import "widgets/supplier_list_status.dart";
 import "widgets/supplier_search_field.dart";
+
+/// 맨 아래 안내 문구(목록·상세 칸 바깥).
+const supplierPriceNote = "견적과 실거래 가격의 적용일·조건을 함께 확인하세요.";
 
 class SupplierView extends ConsumerStatefulWidget {
   const SupplierView({super.key});
@@ -46,27 +50,49 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
     final value = ref.watch(supplierListViewModelProvider);
     final viewModel = ref.read(supplierListViewModelProvider.notifier);
     if (isCompactLayout(context)) return _phone(context, value, viewModel);
+    // 상단 바: 날짜 확인 달력(검색 왼쪽). 그 아래 설명 줄 + 단추 →
+    // 목록·상세 두 칸 → 맨 아래 안내 문구.
     return WorkspaceShell(
+      scrollable: false,
+      topAction: const LdsDateViewButton(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SupplierHeader(
-            onRefresh: viewModel.refresh,
-            onRegister: () => showSupplierRegisterDialog(context),
-          ),
-          const SizedBox(height: 24),
-          AsyncContent<SupplierListState>(
-            value: value,
-            onRetry: viewModel.refresh,
-            builder: (data) => SupplierContent(
-              data: data,
-              search: _search,
-              viewModel: viewModel,
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: WorkspaceShell.gutter,
+              vertical: 14,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(bottom: BorderSide(color: LdsColors.line)),
+            ),
+            child: SupplierHeader(
+              onRefresh: viewModel.refresh,
+              onRegister: () => showSupplierRegisterDialog(context),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(4, 20, 4, 32),
-            child: NoteLine("견적과 실거래 가격의 적용일·조건을 함께 확인하십시오."),
+          Expanded(
+            child: AsyncContent<SupplierListState>(
+              value: value,
+              onRetry: viewModel.refresh,
+              builder: (data) => SupplierContent(
+                data: data,
+                search: _search,
+                viewModel: viewModel,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: WorkspaceShell.gutter,
+              vertical: 10,
+            ),
+            decoration: const BoxDecoration(
+              color: LdsColors.canvas,
+              border: Border(top: BorderSide(color: LdsColors.line)),
+            ),
+            child: const NoteLine(supplierPriceNote),
           ),
         ],
       ),
@@ -79,7 +105,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
     AsyncValue<SupplierListState> value,
     SupplierListViewModel viewModel,
   ) => MobileTabScaffold(
-    title: "거래처",
+    title: "Suppliers",
     actions: [
       IconButton(
         tooltip: "거래처 등록",
@@ -103,30 +129,31 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
           builder: (data) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SupplierListStatus(data: data, onRetry: viewModel.refresh),
+              SupplierListStatus(
+                data: data,
+                onRetry: viewModel.refresh,
+                onSort: viewModel.sortBy,
+              ),
               const SizedBox(height: 8),
-              OutlinePanel(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: SupplierListPanel(
-                  data: data,
-                  showSelection: false,
-                  onSelect: (id) {
-                    viewModel.select(id);
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => _SupplierDetailPage(supplierId: id),
-                      ),
-                    );
-                  },
-                  onLoadMore: viewModel.loadMore,
-                ),
+              SupplierListPanel(
+                data: data,
+                showSelection: false,
+                onSelect: (id) {
+                  viewModel.select(id);
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => _SupplierDetailPage(supplierId: id),
+                    ),
+                  );
+                },
+                onLoadMore: viewModel.loadMore,
               ),
             ],
           ),
         ),
         const Padding(
           padding: EdgeInsets.fromLTRB(4, 16, 4, 0),
-          child: NoteLine("견적과 실거래 가격의 적용일·조건을 함께 확인하십시오."),
+          child: NoteLine(supplierPriceNote),
         ),
       ],
     ),

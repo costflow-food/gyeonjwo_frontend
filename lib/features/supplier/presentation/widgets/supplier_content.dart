@@ -1,8 +1,7 @@
 import "package:flutter/material.dart";
 
-import "../../../../shared/app_font_sizes.dart";
-import "../../../../shared/widgets/outline_panel.dart";
-import "../../../../shared/workspace_colors.dart";
+import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/list_detail_layout.dart";
 import "../../domain/supplier_list_state.dart";
 import "../supplier_view_model.dart";
 import "supplier_detail_panel.dart";
@@ -10,6 +9,11 @@ import "supplier_list_panel.dart";
 import "supplier_list_status.dart";
 import "supplier_search_field.dart";
 
+/// Suppliers 목록 칸 + 상세 칸 (Tasks와 같은 배치, [ListDetailLayout]).
+///
+/// 목록 칸: 검색칸 → '총 N곳' + 정렬 → 거래처 카드. 상세 칸: 고른 거래처.
+/// 1100px 이하에서는 한 화면씩(목록 → 고르면 상세 → '목록으로').
+/// 화면 설명 줄과 맨 아래 안내 문구는 [SupplierView]가 두 칸 바깥에 둡니다.
 class SupplierContent extends StatefulWidget {
   const SupplierContent({
     super.key,
@@ -27,111 +31,70 @@ class SupplierContent extends StatefulWidget {
 }
 
 class _SupplierContentState extends State<SupplierContent> {
-  final _listKey = GlobalKey();
-  final _detailKey = GlobalKey();
+  final _selectedRow = GlobalKey(debugLabel: "고른 거래처 줄");
 
-  void _scrollTo(GlobalKey key) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final target = key.currentContext;
-      if (target == null) return;
-      Scrollable.ensureVisible(
-        target,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-      );
-    });
+  /// 한 화면씩 볼 때 상세를 연 상태인지. 넓은 화면은 늘 첫 거래처를 고른
+  /// 채로 시작하므로 이 값과 상관없이 상세를 보여 줍니다.
+  bool _detailOpen = false;
+
+  void _open(String id) {
+    widget.viewModel.select(id);
+    setState(() => _detailOpen = true);
+  }
+
+  void _step(int step) {
+    final suppliers = widget.data.sortedSuppliers;
+    final at = suppliers.indexWhere((s) => s.id == widget.data.selectedId);
+    final next = at == -1 ? 0 : at + step;
+    if (next < 0 || next >= suppliers.length) return;
+    widget.viewModel.select(suppliers[next].id);
   }
 
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
     final viewModel = widget.viewModel;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final narrow = constraints.maxWidth < 920;
-        final list = OutlinePanel(
-          key: _listKey,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SupplierSearchField(
-                controller: widget.search,
-                onChanged: viewModel.search,
-              ),
-              const SizedBox(height: 12),
-              SupplierListStatus(data: data, onRetry: viewModel.refresh),
-              const SizedBox(height: 8),
-              Divider(height: 1, color: context.palette.muted),
-              SupplierListPanel(
-                data: data,
-                onSelect: (id) {
-                  viewModel.select(id);
-                  if (narrow) _scrollTo(_detailKey);
-                },
-                onLoadMore: viewModel.loadMore,
-              ),
-            ],
-          ),
-        );
-        final selectedId = data.selectedId;
-        final detail = selectedId == null
-            ? OutlinePanel(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text(
-                      "거래처를 선택하면 상세 정보를 볼 수 있습니다.",
-                      style: TextStyle(
-                        fontSize: AppFontSizes.body,
-                        color: context.palette.muted,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            : SupplierDetailPanel(
-                key: ValueKey(selectedId),
-                supplierId: selectedId,
-              );
-        if (!narrow) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 5, child: list),
-              const SizedBox(width: 20),
-              Expanded(flex: 7, child: detail),
-            ],
-          );
-        }
-        return Column(
+    final selectedId = data.selectedId;
+    return ListDetailLayout(
+      detailAlone: _detailOpen && selectedId != null,
+      onBack: () => setState(() => _detailOpen = false),
+      list: (padding, wide) => ListPaneColumn(
+        padding: padding,
+        header: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            list,
-            const SizedBox(height: 20),
-            Column(
-              key: _detailKey,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (selectedId != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => _scrollTo(_listKey),
-                      icon: const Icon(Icons.arrow_back, size: 16),
-                      label: const Text("목록으로"),
-                      style: TextButton.styleFrom(
-                        foregroundColor: context.palette.ink,
-                      ),
-                    ),
-                  ),
-                detail,
-              ],
+            SupplierSearchField(
+              controller: widget.search,
+              onChanged: viewModel.search,
+            ),
+            const SizedBox(height: 12),
+            SupplierListStatus(
+              data: data,
+              onRetry: viewModel.refresh,
+              onSort: viewModel.sortBy,
             ),
           ],
-        );
-      },
+        ),
+        body: ListArrowKeys(
+          onStep: _step,
+          selectedKey: _selectedRow,
+          child: SupplierListPanel(
+            data: data,
+            selectedKey: _selectedRow,
+            onSelect: _open,
+            onLoadMore: viewModel.loadMore,
+          ),
+        ),
+      ),
+      detail: (_) => selectedId == null
+          ? const Text(
+              "거래처를 선택하면 상세 정보를 볼 수 있습니다.",
+              style: TextStyle(fontSize: 15, color: LdsColors.mutedStrong),
+            )
+          : SupplierDetailPanel(
+              key: ValueKey(selectedId),
+              supplierId: selectedId,
+            ),
     );
   }
 }
