@@ -28,9 +28,9 @@ class _Line {
 
 /// 한 칸의 값. [missing]이면 '미확인' 표시입니다(0원·빈칸으로 채우지 않음).
 class _Value {
-  const _Value(this.text, {this.caption, this.missing = false});
+  const _Value(this.text, {this.caption}) : missing = false;
 
-  const _Value.missing([String text = "미확인"]) : this(text, missing: true);
+  const _Value.missing([this.text = "미확인"]) : caption = null, missing = true;
 
   final String text;
   final String? caption;
