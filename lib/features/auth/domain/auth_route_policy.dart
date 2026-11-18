@@ -23,3 +23,7 @@ String? authRedirect(
     _ => null,
   },
 };
+
+/// DEV 존(로그인 생략): 로그인 화면 주소는 메인(Dashboard)으로 보냅니다.
+String? noLoginRedirect(String path) =>
+    path == "/login" || path.startsWith("/login/") ? "/" : null;
