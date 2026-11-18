@@ -9,6 +9,8 @@
 #               API_BASE_URL              https://gyeonjwo-api-dev.rkrbhm0ryexya.ap-northeast-2.cs.amazonlightsail.com
 #               VERCEL_PROJECT            (선택, 기본 thoner-frontend-dev)
 # 환경 값은 같은 이름의 저장소 값보다 우선한다. PRD 값과 섞이지 않는다.
+# 로그인 생략: dev-overlay 브랜치의 overlay/dev-no-login.patch를 빌드 전에 적용하고 AUTH_DISABLED=true로 빌드한다.
+#   이 코드는 dev·main 소스에 없다(PRD 빌드에는 절대 들어가지 않는다).
 name: Deploy web to Vercel (DEV)
 
 on:
@@ -69,6 +71,13 @@ jobs:
         with:
           ref: ${{ env.SOURCE_REF }}
 
+      # DEV 전용 로그인 생략 코드는 dev·main에 두지 않는다. dev-overlay 브랜치의 패치를 DEV 빌드에만 적용한다
+      - name: Apply DEV overlay (로그인 생략)
+        run: |
+          git fetch --depth 1 origin dev-overlay
+          git show FETCH_HEAD:overlay/dev-no-login.patch > "$RUNNER_TEMP/dev-overlay.patch"
+          git apply --verbose "$RUNNER_TEMP/dev-overlay.patch"
+
       - id: rev
         run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
@@ -93,6 +102,7 @@ jobs:
           --dart-define=SUPABASE_URL="$SUPABASE_URL"
           --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
           --dart-define=API_BASE_URL="$API_BASE_URL"
+          --dart-define=AUTH_DISABLED=true
           --dart-define=BUILD_REVISION="${{ steps.rev.outputs.sha }}-dev"
 
       # Git 정보가 없는 임시 폴더에서 올려 Vercel이 저장소를 자동 연결하지 않게 한다.
