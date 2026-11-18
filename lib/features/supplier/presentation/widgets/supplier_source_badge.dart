@@ -1,26 +1,59 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/lds_colors.dart";
-import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/supplier.dart";
 
-/// 거래처 출처 라벨(4.1 weak): 직접 등록 · 웹 확인.
 class SupplierSourceBadge extends StatelessWidget {
-  const SupplierSourceBadge(this.sourceType, {super.key});
+  const SupplierSourceBadge(this.sourceType, {super.key, this.compact = false});
   final SupplierSourceType sourceType;
-
+  final bool compact;
   @override
-  Widget build(BuildContext context) => switch (sourceType) {
-    SupplierSourceType.registered => LdsTag(
-      sourceType.label,
-      tone: LdsTagTone.success,
-      icon: Icons.verified_outlined,
-      foreground: LdsColors.successText,
+  Widget build(BuildContext context) => SupplierStateTag(
+    fixedWidth: compact,
+    label: sourceType.label,
+    background: sourceType == SupplierSourceType.registered
+        ? const Color(0xFFFFDFCC)
+        : const Color(0xFFFFA066),
+    foreground: sourceType == SupplierSourceType.registered
+        ? LdsColors.primaryText
+        : LdsColors.ink,
+  );
+}
+
+class SupplierStateTag extends StatelessWidget {
+  const SupplierStateTag({
+    super.key,
+    required this.label,
+    required this.background,
+    required this.foreground,
+    this.fixedWidth = false,
+  });
+  final String label;
+  final Color background, foreground;
+  final bool fixedWidth;
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 24,
+    width: fixedWidth ? 64 : null,
+    constraints: const BoxConstraints(minWidth: 64),
+    padding: EdgeInsets.symmetric(horizontal: fixedWidth ? 0 : 8),
+
+    decoration: BoxDecoration(
+      color: background,
+      borderRadius: BorderRadius.circular(4),
     ),
-    SupplierSourceType.verifiedWeb => LdsTag(
-      sourceType.label,
-      tone: LdsTagTone.progressing,
-      icon: Icons.language,
+    child: Center(
+      widthFactor: 1,
+      child: Text(
+        label,
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: 13,
+          height: 1,
+          fontWeight: FontWeight.w700,
+          color: foreground,
+        ),
+      ),
     ),
-  };
+  );
 }

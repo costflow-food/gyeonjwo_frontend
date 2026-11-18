@@ -27,7 +27,7 @@ LdsTagTone taskLabelTone(TaskLabel label) => switch (label) {
   TaskLabel.hold => (LdsColors.primary, Colors.white),
   TaskLabel.error => (const Color(0xFFE12337), Colors.white),
   TaskLabel.done => (const Color(0xFFFFDFCC), LdsColors.primaryText),
-  TaskLabel.waiting => (LdsColors.primarySoft, LdsColors.primaryText),
+  TaskLabel.waiting => (LdsColors.primary, Colors.white),
 };
 
 /// 업무 상태 라벨(채운 색, [taskRowLabelColors]): 높이 24, 최소 폭 56, 좌우 8,
@@ -41,7 +41,7 @@ class TaskStatusLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final (background, foreground) = taskRowLabelColors(label);
     return Container(
-      constraints: const BoxConstraints(minWidth: 56),
+      constraints: const BoxConstraints(minWidth: 64),
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.center,
@@ -82,13 +82,13 @@ class TaskRow extends StatelessWidget {
   static const height = 48.0;
 
   /// 머리칸 왼쪽 12 + 화살표 18 + 간격 6 + 여백 4.
-  static const start = 40.0;
+  static const start = 16.0;
 
   /// 거래처 칸(아이콘 포함) 폭: 단계 이름이 줄마다 같은 선에서 시작합니다.
   static const partyWidth = 128.0;
 
   static const selectedColor = Color(0xFFE8EBEF);
-  static const selectedBar = LdsColors.label;
+  static const selectedBar = LdsColors.title;
 
   final WorkCase workCase;
   final bool selected;
@@ -165,7 +165,7 @@ class TaskRow extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Text(
                             stepName,
@@ -177,8 +177,8 @@ class TaskRow extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        TaskStatusLabel(label),
+                        const SizedBox(width: 16),
+                        SizedBox(width: 64, child: TaskStatusLabel(label)),
                       ],
                     ),
                   ),

@@ -35,118 +35,192 @@ class TransactionDetailPanel extends StatelessWidget {
     return Semantics(
       container: true,
       label: "거래 상세",
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(
-              "${record.itemName} · ${record.supplierName}",
+      child: LdsPanel(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${record.itemName} · ${record.supplierName}',
               style: const TextStyle(
-                fontSize: 21,
+                fontSize: 23,
                 fontWeight: FontWeight.w700,
                 height: 1.3,
-                color: LdsColors.ink,
               ),
             ),
-          ),
-          if (record.specification case final spec?) ...[
-            const SizedBox(height: 4),
-            Text(
-              spec,
-              style: const TextStyle(fontSize: 13, color: LdsColors.muted),
-            ),
-          ],
-          const SizedBox(height: 16),
-          _Card(
-            title: "확정 정보",
-            children: [
-              LdsKeyValueTable(
-                labelWidth: 96,
-                rows: [
-                  LdsKeyValueRow("확정일", text: dateText(record)),
-                  LdsKeyValueRow("수량", text: quantityText(record)),
-                  LdsKeyValueRow(
-                    "단가",
-                    child: Wrap(
-                      spacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          unitPriceText(record),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: LdsColors.ink,
-                          ),
-                        ),
-                        PriceChangeText(record, row.change),
-                      ],
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (record.confirmationMethod != null)
+                  Container(
+                    height: 24,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+
+                    constraints: const BoxConstraints(minWidth: 64),
+                    decoration: BoxDecoration(
+                      color: LdsColors.badgeNeutralBg,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      record.confirmationMethod!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: LdsColors.label,
+                      ),
                     ),
                   ),
-                  LdsKeyValueRow("총액", text: totalText(record)),
-                  LdsKeyValueRow(
-                    "직전 거래",
-                    text: previous == null
-                        ? "없음"
-                        : "${dateText(previous)} · ${previous.supplierName} · "
-                              "${unitPriceText(previous)}",
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 16,
+                      color: LdsColors.muted,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      dateText(record),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: LdsColors.label,
+                      ),
+                    ),
+                  ],
+                ),
+                if (record.specification != null)
+                  Text(
+                    record.specification!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: LdsColors.label,
+                    ),
                   ),
-                ],
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              '거래 정보',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final left = [
+                  LdsKeyValueRow('확정일', text: dateText(record)),
+                  LdsKeyValueRow('단가', text: unitPriceText(record)),
+                ];
+                final right = [
+                  LdsKeyValueRow('수량', text: quantityText(record)),
+                  LdsKeyValueRow('총액', text: totalText(record)),
+                ];
+                if (constraints.maxWidth < 560) {
+                  return LdsKeyValueTable(
+                    labelWidth: 96,
+                    rows: [...left, ...right],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: LdsKeyValueTable(labelWidth: 96, rows: left),
+                    ),
+                    Expanded(
+                      child: LdsKeyValueTable(labelWidth: 96, rows: right),
+                    ),
+                  ],
+                );
+              },
+            ),
+            LdsKeyValueTable(
+              labelWidth: 96,
+              rows: [
+                LdsKeyValueRow(
+                  '직전 대비',
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      PriceChangeText(record, row.change),
+                      if (previous != null)
+                        Text(
+                          '직전 ${dateText(previous)} · ${previous.supplierName} · ${unitPriceText(previous)}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: LdsColors.muted,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                LdsKeyValueRow(
+                  '확정 방식',
+                  text: record.confirmationDescription ?? '',
+                ),
+              ],
+            ),
+            const Divider(height: 48, color: LdsColors.line),
+            const Text(
+              '근거',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            if (record.evidenceName != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: LdsColors.line),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.description_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        record.evidenceName!,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              _LinkButton(
-                label: "Suppliers에서 ${record.supplierName} 보기",
-                onTap: onOpenSupplier,
+            if (record.relatedTaskTitle != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  '검토 카드 · ${record.relatedTaskTitle}',
+                  style: const TextStyle(fontSize: 13),
+                ),
+              )
+            else
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  '연결된 업무 없음 (Thoner 밖에서 확정된 거래)',
+                  style: TextStyle(fontSize: 13, color: LdsColors.muted),
+                ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _Card(
-            title: "${record.itemName} 확정 단가 흐름",
-            children: [_PriceFlow(flow: flow, currentId: record.id)],
-          ),
-        ],
+            _LinkButton(
+              label: 'Suppliers에서 ${record.supplierName} 보기',
+              onTap: onOpenSupplier,
+            ),
+            const Divider(height: 48, color: LdsColors.line),
+            Text(
+              '${record.itemName} 확정 단가 흐름',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            _PriceFlow(flow: flow, currentId: record.id),
+          ],
+        ),
       ),
     );
   }
-}
-
-/// 상세 카드: 흰 바탕, 1px `#E5E7EA`, 모서리 12, 안쪽 20. 제목 17/700 아래
-/// 1px `#F3F4F6`.
-class _Card extends StatelessWidget {
-  const _Card({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => LdsPanel(
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          padding: const EdgeInsets.only(bottom: 12),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: LdsColors.lineSoft)),
-          ),
-          child: Semantics(
-            header: true,
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: LdsColors.ink,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    ),
-  );
 }
 
 /// 테두리 링크 단추: 높이 최소 44, 오른쪽 '›'.

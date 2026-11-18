@@ -184,10 +184,15 @@ void main() {
     expect(find.text("+160,000원"), findsOneWidget);
     // One filled button (the lowest), one outlined, the conditional one
     // has a dashed box with the reason.
-    expect(find.widgetWithText(FilledButton, "선택"), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, "선택"), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, "이 안 선택"), findsNothing);
+    expect(find.widgetWithText(OutlinedButton, "이 안 선택"), findsNWidgets(2));
     expect(find.text("선택 불가 · 조건부 안은 아직 확정할 수 없습니다."), findsOneWidget);
-    expect(tester.getSize(find.widgetWithText(FilledButton, "선택")).height, 44);
+    expect(
+      tester
+          .getSize(find.widgetWithText(OutlinedButton, "이 안 선택").first)
+          .height,
+      44,
+    );
     // No dark cards any more: white, or light grey when it cannot be
     // confirmed.
     Color? fill(String type) =>
@@ -267,19 +272,36 @@ void main() {
   ) async {
     await _pump(tester);
     double top(String text) => tester.getTopLeft(find.text(text).first).dy;
-    expect(top("구매안 비교"), lessThan(top("확인할 항목")));
-    expect(top("확인할 항목"), lessThan(top("견적과 근거")));
-    expect(find.text("확인할 항목 보기"), findsOneWidget);
+    expect(top("우선 확인"), lessThan(top("구매안 비교")));
+    expect(top("구매안 비교"), lessThan(top("견적과 근거")));
+    expect(find.text("확인할 항목 보기"), findsNothing);
+    expect(find.text("확인할 항목"), findsNothing);
     expect(
-      find.descendant(
-        of: find
-            .ancestor(of: find.text("확인할 항목"), matching: find.byType(Row))
-            .first,
-        matching: find.byType(LdsBadge),
-      ),
+      find.textContaining("남도청과 · 운송비", findRichText: true),
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    "plan selection is local, toggles off, and names the pending total",
+    (tester) async {
+      await _pump(tester);
+      expect(find.text('✓ 선택됨'), findsNothing);
+      final choice = find.widgetWithText(OutlinedButton, '이 안 선택').first;
+      await tester.ensureVisible(choice);
+      await tester.tap(choice);
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, '✓ 선택됨'), findsOneWidget);
+      expect(find.text('전량 전환 · 5,400,000원 선택됨'), findsOneWidget);
+      expect(find.text('이 안으로 확정'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.widgetWithText(FilledButton, '✓ 선택됨'));
+      await tester.pumpAndSettle();
+      expect(find.text('✓ 선택됨'), findsNothing);
+      expect(find.text('전량 전환 · 5,400,000원 선택됨'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets("under 900 wide: one card per row", (tester) async {
     await _pump(tester, width: 880);

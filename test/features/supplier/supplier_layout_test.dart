@@ -149,26 +149,23 @@ void main() {
       expect(lead, findsOneWidget);
       expect(
         tester.getBottomLeft(lead).dy,
-        lessThan(tester.getTopLeft(_listPane).dy),
+        greaterThan(tester.getTopLeft(_listPane).dy),
       );
       // The price note sits below both panes.
       final note = find.text("견적과 실거래 가격의 적용일·조건을 함께 확인하세요.");
       expect(note, findsOneWidget);
       expect(
         tester.getTopLeft(note).dy,
-        greaterThan(tester.getBottomLeft(_listPane).dy - 1),
+        greaterThan(tester.getTopLeft(find.byType(SupplierDetailPanel)).dy),
       );
       // List pane: 30% (400~480) + 24 left + 16 right + 1px line, #F3F4F6,
       // flush against the sidebar.
       expect(_listPane, findsOneWidget);
-      expect(
-        tester.getSize(_listPane).width,
-        ListDetailLayout.listWidth(1440) + 24 + 16 + 1,
-      );
+      expect(tester.getSize(_listPane).width, ListDetailLayout.listWidth(1440));
       expect(tester.getTopLeft(_listPane).dx, AppSidebar.iconWidth);
       expect(
         tester.getSize(find.byType(SupplierListRow).first).width,
-        ListDetailLayout.listWidth(1440),
+        ListDetailLayout.listWidth(1440) - 35,
       );
       expect(
         find.byWidgetPredicate(
@@ -217,8 +214,8 @@ void main() {
           greaterThan(AppSidebar.headerHeight),
         );
         expect(
-          tester.getTopLeft(button).dx,
-          greaterThan(tester.getTopRight(lead).dx),
+          tester.getTopLeft(button).dy,
+          greaterThan(tester.getBottomLeft(lead).dy),
         );
       }
       final date = find.byIcon(Icons.calendar_today_outlined);

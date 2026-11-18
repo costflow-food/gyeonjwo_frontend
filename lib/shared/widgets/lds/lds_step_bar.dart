@@ -4,7 +4,9 @@ import '../../lds_colors.dart';
 
 /// 가로 진행 단계의 한 단계. [caption]은 이름 아래 보조 한 줄(시각·진행 내용).
 class LdsStep {
-  const LdsStep(this.label, {this.caption});
+  const LdsStep(this.label, {this.caption, this.icon});
+
+  final Widget? icon;
 
   final String label;
   final String? caption;
@@ -85,7 +87,11 @@ class LdsStepBar extends StatelessWidget {
               Positioned(
                 left: gap * index,
                 top: 0,
-                child: _Circle(number: index + 1, state: stateOf(index)),
+                child: _Circle(
+                  number: index + 1,
+                  state: stateOf(index),
+                  icon: step.icon,
+                ),
               ),
               _label(index, step, gap, labelWidth, width),
             ],
@@ -118,7 +124,11 @@ class LdsStepBar extends StatelessWidget {
                 width: circle,
                 child: Column(
                   children: [
-                    _Circle(number: index + 1, state: stateOf(index)),
+                    _Circle(
+                      number: index + 1,
+                      state: stateOf(index),
+                      icon: step.icon,
+                    ),
                     if (index < steps.length - 1)
                       Expanded(
                         child: CustomPaint(
@@ -246,7 +256,9 @@ class LdsStepBar extends StatelessWidget {
 }
 
 class _Circle extends StatelessWidget {
-  const _Circle({required this.number, required this.state});
+  const _Circle({required this.number, required this.state, this.icon});
+
+  final Widget? icon;
 
   final int number;
   final LdsStepState state;
@@ -272,9 +284,7 @@ class _Circle extends StatelessWidget {
         decoration: const BoxDecoration(
           color: LdsColors.primary,
           shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: LdsColors.primaryLight, spreadRadius: 4),
-          ],
+          boxShadow: [BoxShadow(color: LdsColors.primarySoft, spreadRadius: 4)],
         ),
         child: _number(Colors.white),
       ),
@@ -285,23 +295,28 @@ class _Circle extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: LdsColors.primaryLight, width: 2),
+          border: Border.all(color: LdsColors.borderStrong, width: 2),
         ),
-        child: _number(LdsColors.primary),
+        child: _number(LdsColors.outline),
       ),
     };
   }
 
-  Widget _number(Color color) => Text(
-    "$number",
-    textScaler: TextScaler.noScaling,
-    style: TextStyle(
-      fontSize: 13,
-      fontWeight: FontWeight.w700,
-      height: 1,
-      color: color,
-    ),
-  );
+  Widget _number(Color color) => icon != null
+      ? IconTheme.merge(
+          data: IconThemeData(size: 16, color: color),
+          child: icon!,
+        )
+      : Text(
+          "$number",
+          textScaler: TextScaler.noScaling,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            height: 1,
+            color: color,
+          ),
+        );
 }
 
 /// 지난 구간 주황 실선, 남은 구간 `#FFBF99` 점선(두께 2).
@@ -332,8 +347,8 @@ class _LinePainter extends CustomPainter {
       paint.color = LdsColors.primary;
       canvas.drawLine(at(0), at(split), paint);
     }
-    paint.color = LdsColors.primaryLight;
-    const dash = 6.0, gap = 4.0;
+    paint.color = LdsColors.borderStrong;
+    const dash = 4.0, gap = 4.0;
     for (var x = split; x < length; x += dash + gap) {
       final end = x + dash > length ? length : x + dash;
       canvas.drawLine(at(x), at(end), paint);

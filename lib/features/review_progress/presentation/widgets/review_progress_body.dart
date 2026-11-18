@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/review_phase.dart";
+import "../../../../shared/widgets/workflow_step_icon.dart";
 import "../../domain/review_progress_repository.dart";
 import "../../domain/review_progress_state.dart";
 
@@ -82,6 +83,7 @@ class ReviewProgressBody extends StatelessWidget {
                   for (final (index, stage) in ReviewStage.values.indexed)
                     LdsStep(
                       stage.label,
+                      icon: WorkflowStepIcon(index),
                       caption: switch (stages[index]) {
                         StageState.done => "완료",
                         StageState.running => "진행 중",

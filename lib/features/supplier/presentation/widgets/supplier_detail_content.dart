@@ -63,7 +63,7 @@ class SupplierDetailContent extends StatelessWidget {
                 color: LdsColors.ink,
               ),
             ),
-            SupplierSourceBadge(supplier.sourceType),
+
             // The server edits only suppliers registered by hand
             // (SUPPLIER_NOT_EDITABLE for web-verified ones).
             if (supplier.sourceType == SupplierSourceType.registered)
@@ -72,6 +72,39 @@ class SupplierDetailContent extends StatelessWidget {
                 tooltip: "거래처 수정",
                 onPressed: () =>
                     showSupplierRegisterDialog(context, initial: supplier),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SupplierSourceBadge(supplier.sourceType),
+            if (supplier.location != null)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: LdsColors.muted,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    supplier.location!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: LdsColors.label,
+                    ),
+                  ),
+                ],
+              ),
+            if (supplier.contact.name != null)
+              Text(
+                '담당 ${supplier.contact.name}',
+                style: const TextStyle(fontSize: 13, color: LdsColors.label),
               ),
           ],
         ),

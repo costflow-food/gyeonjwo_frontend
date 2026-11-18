@@ -27,7 +27,7 @@ class SupplierHeader extends StatelessWidget {
       const Text(
         lead,
         style: TextStyle(
-          fontSize: 15,
+          fontSize: 13,
           height: 1.6,
           letterSpacing: -.3,
           color: LdsColors.muted,
