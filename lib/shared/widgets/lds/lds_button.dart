@@ -13,6 +13,10 @@ enum LdsButtonVariant {
   /// 1px `#D1D6DC` 테두리, 중립 글자 `#333D4B`.
   outlinedNeutral,
 
+  /// 필터·정렬·기간 단추([LdsFilterButton], [LdsSortButton])와 같은 모양:
+  /// 1px `#D1D6DC` 테두리, 글자 `#191F28` 14 보통 굵기(자간 -0.3), 아이콘 `#333D4B`.
+  outlinedPlain,
+
   /// 테두리·바탕 없이 중립 글자 `#333D4B`, hover 때만 옅은 바탕.
   ghostNeutral,
 }
@@ -69,9 +73,11 @@ class LdsButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final filled = variant == LdsButtonVariant.filled;
     final ghost = variant == LdsButtonVariant.ghostNeutral;
+    final plain = variant == LdsButtonVariant.outlinedPlain;
     final foreground = switch (variant) {
       LdsButtonVariant.filled => Colors.white,
       LdsButtonVariant.outlined => LdsColors.primary,
+      LdsButtonVariant.outlinedPlain => LdsColors.ink,
       LdsButtonVariant.outlinedNeutral ||
       LdsButtonVariant.ghostNeutral => LdsColors.title,
     };
@@ -91,8 +97,9 @@ class LdsButton extends StatelessWidget {
       textStyle: WidgetStatePropertyAll(
         TextStyle(
           fontFamily: 'NanumGothic',
-          fontSize: size.fontSize,
-          fontWeight: FontWeight.w700,
+          fontSize: plain ? LdsText.control : size.fontSize,
+          fontWeight: plain ? FontWeight.w400 : FontWeight.w700,
+          letterSpacing: plain ? -.3 : null,
           height: 1.2,
         ),
       ),
@@ -101,6 +108,13 @@ class LdsButton extends StatelessWidget {
             ? LdsColors.disabled
             : foreground,
       ),
+      iconColor: plain
+          ? WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.disabled)
+                  ? LdsColors.disabled
+                  : LdsColors.title,
+            )
+          : null,
       backgroundColor: WidgetStateProperty.resolveWith((states) {
         final disabled = states.contains(WidgetState.disabled);
         final hovered = states.contains(WidgetState.hovered);

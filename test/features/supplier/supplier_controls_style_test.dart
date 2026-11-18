@@ -1,10 +1,12 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
+import "package:flutter/rendering.dart";
 import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/features/supplier/domain/supplier_list_state.dart";
 import "package:gyeonjwo_frontend/features/supplier/presentation/widgets/supplier_header.dart";
 import "package:gyeonjwo_frontend/features/supplier/presentation/widgets/supplier_list_status.dart";
 import "package:gyeonjwo_frontend/main.dart";
+import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
 
@@ -30,13 +32,43 @@ void main() {
   testWidgets("header buttons look like the Invoices buttons (neutral)", (
     tester,
   ) async {
-    await _pump(tester, SupplierHeader(onRefresh: () {}, onRegister: () {}));
+    await _pump(
+      tester,
+      Column(
+        children: [
+          SupplierHeader(onRefresh: () {}, onRegister: () {}),
+          SupplierSortSelect(value: SupplierSort.name, onChanged: (_) {}),
+        ],
+      ),
+    );
+    TextStyle style(String text) =>
+        tester.renderObject<RenderParagraph>(find.text(text)).text.style!;
+    // The sort button is the Invoices one; the header buttons use its font.
+    final sort = style("이름순");
+    expect(sort.fontSize, LdsText.control);
+    expect(LdsText.control, 14);
     for (final label in ["새로고침", "거래처 등록"]) {
       final button = tester.widget<LdsButton>(
         find.widgetWithText(LdsButton, label),
       );
-      expect(button.variant, LdsButtonVariant.outlinedNeutral, reason: label);
+      expect(button.variant, LdsButtonVariant.outlinedPlain, reason: label);
+      final text = style(label);
+      expect(text.fontSize, sort.fontSize, reason: label);
+      expect(text.fontWeight ?? FontWeight.w400, FontWeight.w400);
+      expect(text.letterSpacing, sort.letterSpacing, reason: label);
+      expect(text.color, LdsColors.ink, reason: label);
+      expect(
+        tester.getSize(find.widgetWithText(LdsButton, label)).height,
+        36,
+        reason: label,
+      );
     }
+    // '+' is grey like the sort/filter arrows.
+    final plus = tester.widget<Icon>(find.byIcon(Icons.add));
+    final plusColor =
+        plus.color ??
+        IconTheme.of(tester.element(find.byIcon(Icons.add))).color;
+    expect(plusColor, LdsColors.title);
   });
 
   testWidgets("sort is the same button as Invoices '최신순 ▾'", (tester) async {
@@ -96,5 +128,23 @@ void main() {
       expect(tester.takeException(), isNull, reason: "scale $scale");
       expect(find.bySemanticsLabel("정렬, 품목 많은 순"), findsOneWidget);
     }
+  });
+
+  testWidgets("Invoices filter buttons use the same 14px text", (tester) async {
+    await _pump(
+      tester,
+      LdsFilterButton(
+        label: "품목",
+        options: const [],
+        selected: const {},
+        onChanged: (_) {},
+      ),
+    );
+    final text = tester
+        .renderObject<RenderParagraph>(find.text("품목"))
+        .text
+        .style!;
+    expect(text.fontSize, LdsText.control);
+    expect(tester.getSize(find.byType(LdsFilterButton)).height, 36);
   });
 }

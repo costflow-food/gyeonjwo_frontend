@@ -17,7 +17,7 @@ class LdsSortChoice<T> {
 /// 목록 위 오른쪽 정렬 선택 '최신순 ▾' (Invoices·Suppliers 공용).
 ///
 /// 필터 단추([LdsFilterButton])와 같은 모양: 흰 바탕 · 테두리 `#D1D6DC`
-/// (열려 있으면 `#333D4B`) · 높이 36 · 글자 15 `#191F28` · 오른쪽 ▾.
+/// (열려 있으면 `#333D4B`) · 높이 36 · 글자 14([LdsText.control]) `#191F28` · 오른쪽 ▾.
 /// 누르면 선택지 창(줄 44)이 열리고, 지금 정렬은 굵게 + 주황 체크입니다.
 class LdsSortButton<T> extends StatefulWidget {
   const LdsSortButton({
@@ -100,7 +100,7 @@ class _LdsSortButtonState<T> extends State<LdsSortButton<T>> {
                   Text(
                     label,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: LdsText.control,
                       height: 1.2,
                       letterSpacing: -.3,
                       color: LdsColors.ink,
