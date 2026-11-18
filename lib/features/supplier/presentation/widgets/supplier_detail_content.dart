@@ -120,7 +120,10 @@ class SupplierDetailContent extends StatelessWidget {
             );
           },
         ),
-        const SizedBox(height: 32),
+        // 업체 정보와 취급 품목 사이 구분선(시안 divider16).
+        const SizedBox(height: 16),
+        const Divider(height: 16, thickness: 1, color: LdsColors.line),
+        const SizedBox(height: 16),
         _Title("취급 품목 ${supplier.items.length}"),
         const SizedBox(height: 12),
         if (supplier.items.isEmpty)
@@ -185,14 +188,22 @@ class _Missing extends StatelessWidget {
 
 /// 기준자료 줄의 값: 문서명만(7.11). 원문 메일이 있으면 누르면 원문을 열고,
 /// 확인 시각·메모는 마우스를 올리면 보입니다. 없으면 '등록된 기준자료 없음'.
-class _SourceDocument extends StatelessWidget {
+/// 밑줄은 연회색 `#B1B8C0`, 마우스를 올리면 글자색으로 진해집니다.
+class _SourceDocument extends StatefulWidget {
   const _SourceDocument({required this.evidence});
 
   final SourceEvidence? evidence;
 
   @override
+  State<_SourceDocument> createState() => _SourceDocumentState();
+}
+
+class _SourceDocumentState extends State<_SourceDocument> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    final value = evidence;
+    final value = widget.evidence;
     if (value == null) return const _Missing("등록된 기준자료 없음");
     final detail = [
       if (value.checkedAt != null)
@@ -207,12 +218,14 @@ class _SourceDocument extends StatelessWidget {
             radius: 4,
             child: InkWell(
               onTap: () => showSourceDocument(context, requestId: mailId),
+              onHover: (hover) => setState(() => _hover = hover),
+              hoverColor: Colors.transparent,
               borderRadius: BorderRadius.circular(4),
               child: Text(
                 value.label,
                 style: style.copyWith(
                   decoration: TextDecoration.underline,
-                  decorationColor: LdsColors.ink,
+                  decorationColor: _hover ? LdsColors.ink : LdsColors.disabled,
                 ),
               ),
             ),

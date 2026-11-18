@@ -8,8 +8,9 @@ import "price_change_text.dart";
 
 /// 확정 거래 한 줄(두 줄 행).
 ///
-/// 1줄 = 품목(15/700) + 거래처(13 `#6B7583`) + 오른쪽 단가 '5,400원/kg'(보통
-/// 굵기). 2줄 = '2026.10.18 · 1,000kg'(13 `#6B7583`) + 오른쪽 직전 대비.
+/// 왼쪽 = 1줄 품목(15/700) + 거래처(13 `#6B7583`), 2줄 '2026.10.18 · 1,000kg'.
+/// 오른쪽 = 단가 '5,400원/kg'(보통 굵기) 아래 직전 대비, 오른쪽 맞춤. 두 묶음은
+/// 줄 높이의 세로 가운데에 맞춥니다.
 class TransactionListRow extends StatelessWidget {
   const TransactionListRow({
     super.key,
@@ -43,35 +44,55 @@ class TransactionListRow extends StatelessWidget {
         changeText(record, row.change),
         ?tooltip,
       ].join(", "),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Flexible(
-                flex: 3,
-                child: Text(
-                  record.itemName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: LdsColors.ink,
-                  ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      flex: 3,
+                      child: Text(
+                        record.itemName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: LdsColors.ink,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        record.supplierName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _muted,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  record.supplierName,
+                const SizedBox(height: 3),
+                Text(
+                  "${dateText(record)} · ${quantityText(record)}",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: _muted,
                 ),
-              ),
-              const SizedBox(width: 8),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
               // 단가는 보통 굵기(9.2 예외, 7.12).
               Text(
                 unitPriceText(record),
@@ -82,20 +103,7 @@ class TransactionListRow extends StatelessWidget {
                   fontFeatures: [FontFeature.tabularFigures()],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  "${dateText(record)} · ${quantityText(record)}",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: _muted,
-                ),
-              ),
-              const SizedBox(width: 8),
+              const SizedBox(height: 3),
               PriceChangeText(record, row.change),
             ],
           ),

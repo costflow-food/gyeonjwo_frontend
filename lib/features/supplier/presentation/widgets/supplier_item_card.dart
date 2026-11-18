@@ -78,10 +78,10 @@ class _SupplierItemCardState extends State<SupplierItemCard> {
                             child: const Icon(
                               Icons.expand_more,
                               size: 20,
-                              color: LdsColors.title,
+                              color: LdsColors.muted,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,8 +89,10 @@ class _SupplierItemCardState extends State<SupplierItemCard> {
                                 Text(
                                   item.itemName,
                                   style: const TextStyle(
-                                    fontSize: 17,
+                                    fontSize: 19,
                                     fontWeight: FontWeight.w700,
+                                    height: 1.3,
+                                    letterSpacing: -.3,
                                     color: LdsColors.ink,
                                   ),
                                 ),
@@ -222,8 +224,9 @@ class _Body extends StatelessWidget {
                         Text(
                           label,
                           style: const TextStyle(
-                            fontSize: 13,
-                            color: LdsColors.mutedStrong,
+                            fontSize: 12,
+                            height: 1.6,
+                            color: LdsColors.muted,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -266,16 +269,20 @@ class _Body extends StatelessWidget {
             TextSpan(
               children: [
                 const TextSpan(
-                  text: "비고  ",
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  text: "비고",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: LdsColors.ink,
+                  ),
                 ),
+                const WidgetSpan(child: SizedBox(width: 8)),
                 TextSpan(text: item.notes),
               ],
             ),
             style: const TextStyle(
               fontSize: 13,
-              height: 1.5,
-              color: LdsColors.ink,
+              height: 1.6,
+              color: LdsColors.label,
             ),
           ),
         ],
@@ -284,7 +291,8 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// 요약 칸(표 아님): 이름 + 출처 꼬리표, 가격 19/700, 날짜.
+/// 요약 칸(표 아님): 이름 + 출처 꼬리표(12), 가격 19/700(없으면 '미확인'
+/// 15 `#8A95A0`), 날짜 12.
 /// [onTap]이 있으면 칸 전체가 단추이고 아래 '거래내역 보기 ›'(13px `#C24A00`).
 class _Summary extends StatelessWidget {
   const _Summary({
@@ -323,7 +331,7 @@ class _Summary extends StatelessWidget {
   }
 
   Widget _box() => Container(
-    padding: const EdgeInsets.all(14),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     decoration: BoxDecoration(
       color: LdsColors.canvas,
       borderRadius: BorderRadius.circular(LdsRadius.table),
@@ -339,38 +347,52 @@ class _Summary extends StatelessWidget {
               label,
               style: const TextStyle(
                 fontSize: 13,
-                color: LdsColors.mutedStrong,
+                height: 1.6,
+                color: LdsColors.label,
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
                 color: LdsColors.line,
                 borderRadius: BorderRadius.circular(LdsRadius.button),
               ),
               child: Text(
                 source,
-                style: const TextStyle(fontSize: 13, color: LdsColors.label),
+                style: const TextStyle(fontSize: 12, color: LdsColors.label),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          value ?? "미확인",
-          style: TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.w700,
-            color: value == null ? LdsColors.mutedStrong : LdsColors.ink,
+        const SizedBox(height: 2),
+        if (value == null)
+          const Text(
+            "미확인",
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.6,
+              color: LdsColors.outline,
+            ),
+          )
+        else
+          Text(
+            value!,
+            style: const TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              height: 1.3,
+              color: LdsColors.ink,
+            ),
           ),
-        ),
-        if (caption != null) ...[
-          const SizedBox(height: 2),
+        if (caption != null)
           Text(
             caption!,
-            style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.6,
+              color: LdsColors.muted,
+            ),
           ),
-        ],
         if (onTap != null) ...[
           const SizedBox(height: 2),
           const Text(

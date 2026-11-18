@@ -922,7 +922,8 @@ class _DetailHeader extends StatelessWidget {
             runSpacing: 6,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              LdsTag(label.text, tone: taskLabelTone(label)),
+              // 상태 라벨: Tasks 업무 행과 같은 채운 색.
+              TaskStatusLabel(label),
               // 거래처: 앞에 가게 아이콘(사이드바 Suppliers와 같은 선 아이콘).
               Row(
                 mainAxisSize: MainAxisSize.min,
