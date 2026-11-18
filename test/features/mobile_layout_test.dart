@@ -231,7 +231,7 @@ void main() {
       // Every plan is on the page at once, in the server's order, and
       // nothing on it scrolls sideways.
       final totals = [
-        for (final total in ["1,724,000 원", "1,850,000 원", "1,690,000 원"])
+        for (final total in ["1,724,000원", "1,850,000원", "1,690,000원"])
           tester.getRect(find.text(total, findRichText: true)),
       ];
       expect(totals[0].top, lessThan(totals[1].top));
@@ -248,9 +248,9 @@ void main() {
       );
       // One card per row (SSOT 7.16): both plans that can be confirmed
       // have a button; the conditional one says why it cannot.
-      expect(find.text("이 안 선택"), findsNWidgets(2));
+      expect(find.text("선택"), findsNWidgets(2));
       expect(find.text("수용"), findsNothing);
-      expect(find.text("선택 불가 · 조건부 안은 아직 확정할 수 없습니다."), findsOneWidget);
+      expect(find.text("선택 불가 · 역제안 회신 후 선택할 수 있어요"), findsOneWidget);
       // Scroll through the rest of the card.
       await tester.ensureVisible(find.text("견적과 근거"));
       await tester.pumpAndSettle();

@@ -35,6 +35,9 @@ class SupplierColors {
 
   final Map<String, Color> _colors;
 
+  /// 색을 정하지 않은 빈 표(문장만 만들 때).
+  static final none = SupplierColors._(const {});
+
   /// 구매안에 들지 않은 업체는 회색.
   Color of(String supplierId) => _colors[supplierId] ?? LdsColors.disabled;
 }
@@ -42,9 +45,10 @@ class SupplierColors {
 /// 구매안 카드 한 장 (`docs/design-ssot.md` 7.16).
 ///
 /// 세 카드에서 같은 줄에 오도록 칸이 늘 있습니다: 안 이름(17) · 상태 라벨 ·
-/// 총액(28/800, '원' 15) · 최저 대비 차액 · 설명 · 메모(없어도 빈 줄) ·
-/// 업체별 배분(카드 아래쪽에 붙음). 카드 안쪽 좌우 20.
-class PlanCard extends StatelessWidget {
+/// 총액(28/800, '원' 17 붙여 씀) · 최저 대비 차액 · 설명 · 메모(없어도 빈 줄) ·
+/// 업체별 배분(카드 아래쪽에 붙음) · '총액 내역 보기'. 카드 안쪽 좌우 20.
+/// 바탕은 늘 흰색이고, 최저 총액 안만 주황 1px 테두리입니다.
+class PlanCard extends StatefulWidget {
   const PlanCard({
     super.key,
     required this.plan,
@@ -68,20 +72,34 @@ class PlanCard extends StatelessWidget {
 
   static const padding = 20.0;
 
-  /// 확정할 수 없는 안: 연회색 바탕.
+  @override
+  State<PlanCard> createState() => _PlanCardState();
+}
+
+class _PlanCardState extends State<PlanCard> {
+  bool _breakdown = false;
+
+  ResponsePlan get plan => widget.plan;
+  bool get lowest => widget.lowest;
+  String? get difference => widget.difference;
+  SupplierColors get colors => widget.colors;
+  int get allocationRows => widget.allocationRows;
+
+  /// 확정할 수 없는 안: 메모를 주의 색으로.
   bool get _unavailable => !plan.valid;
 
   @override
   Widget build(BuildContext context) {
     final memo = [...plan.conditions, ...plan.adjustments];
+    const padding = PlanCard.padding;
     return Container(
-      padding: const EdgeInsets.fromLTRB(padding, padding, padding, padding),
+      padding: const EdgeInsets.fromLTRB(padding, padding, padding, 12),
       decoration: BoxDecoration(
-        color: _unavailable ? LdsColors.canvas : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(LdsRadius.panel),
-        border: lowest
-            ? Border.all(color: LdsColors.primary, width: 2)
-            : Border.all(color: LdsColors.line),
+        border: Border.all(
+          color: lowest ? LdsColors.primary : LdsColors.line,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -132,7 +150,7 @@ class PlanCard extends StatelessWidget {
                   ),
                 ),
                 if (plan.totalAmount != null)
-                  const TextSpan(text: " 원", style: TextStyle(fontSize: 15)),
+                  const TextSpan(text: "원", style: TextStyle(fontSize: 17)),
               ],
             ),
             style: const TextStyle(color: LdsColors.ink),
@@ -149,7 +167,7 @@ class PlanCard extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w700,
               height: 1.5,
-              color: lowest ? LdsColors.successText : LdsColors.mutedStrong,
+              color: lowest ? LdsColors.ink : LdsColors.title,
             ),
           ),
           const SizedBox(height: 16),
@@ -202,6 +220,119 @@ class PlanCard extends StatelessWidget {
             const SizedBox(height: 16),
             PlanAllocations(plan: plan, colors: colors, rows: allocationRows),
           ],
+          const SizedBox(height: 8),
+          _BreakdownToggle(
+            open: _breakdown,
+            onTap: () => setState(() => _breakdown = !_breakdown),
+          ),
+          if (_breakdown) _Breakdown(plan: plan),
+        ],
+      ),
+    );
+  }
+}
+
+/// '총액 내역 보기' 단추: 아래 꺾쇠 + 13/700.
+class _BreakdownToggle extends StatelessWidget {
+  const _BreakdownToggle({required this.open, required this.onTap});
+
+  final bool open;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: Semantics(
+      button: true,
+      expanded: open,
+      child: LdsFocusRing(
+        radius: 4,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  open ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  size: 16,
+                  color: LdsColors.title,
+                ),
+                const SizedBox(width: 2),
+                Flexible(
+                  child: Text(
+                    open ? "총액 내역 접기" : "총액 내역 보기",
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: LdsColors.title,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// 총액 내역: 업체별 배정량 × 단가, 그리고 서버가 계산한 총액.
+class _Breakdown extends StatelessWidget {
+  const _Breakdown({required this.plan});
+
+  final ResponsePlan plan;
+
+  @override
+  Widget build(BuildContext context) {
+    const style = TextStyle(fontSize: 13, height: 1.5, color: LdsColors.title);
+    String? subtotal(PlanAllocation allocation) {
+      final quantity = num.tryParse(allocation.quantity);
+      final price = num.tryParse(allocation.unitPrice ?? "");
+      if (quantity == null || price == null) return null;
+      return won((quantity * price).toString());
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final allocation in plan.allocations)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      "${allocation.supplierName} "
+                      "${decimal(allocation.quantity)}${allocation.unit ?? ""}"
+                      " × ${perUnitTight(allocation.unitPrice, allocation.unit)}",
+                      style: style,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(subtotal(allocation) ?? "미확인", style: style),
+                ],
+              ),
+            ),
+          const Divider(height: 12, color: LdsColors.line),
+          Row(
+            children: [
+              const Expanded(child: Text("총액 (서버 계산)", style: style)),
+              Text(
+                won(plan.totalAmount),
+                style: style.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: LdsColors.ink,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -318,7 +449,7 @@ class PlanAllocations extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(left: 12, top: 8),
                       child: Text(
-                        perUnit(allocation.unitPrice, allocation.unit),
+                        perUnitTight(allocation.unitPrice, allocation.unit),
                         textAlign: TextAlign.right,
                         style: cell,
                       ),

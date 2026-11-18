@@ -1,10 +1,9 @@
-import "dart:ui" show PathMetric;
-
 import "package:flutter/material.dart";
 
 import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/purchase_review.dart";
+import "dashed_border.dart";
 import "plan_card.dart";
 import "review_format.dart";
 
@@ -57,6 +56,10 @@ class PlanBoard extends StatelessWidget {
       card: card,
       busy: busy,
       lowest: _isLowest(plan, lowestTotal),
+      // 따로 고른 안이 있으면 그 안만, 없으면 최저 안을 채운 단추로 둡니다.
+      emphasized: selectedPlanId == null
+          ? _isLowest(plan, lowestTotal)
+          : selectedPlanId == plan.planId,
       locallySelected: selectedPlanId == plan.planId && plan.planId != null,
       showReason: stacked,
       onSelect: () => onSelect(plan),
@@ -133,8 +136,9 @@ class PlanBoard extends StatelessWidget {
   }
 }
 
-/// 구매안 선택 단추: 칸 폭 전체, 높이 44. 최저 안 = 채운 단추, 나머지 = 테두리
-/// 단추. 확정할 수 없는 안은 단추 대신 점선 상자에 이유를 적습니다(7.16).
+/// 구매안 선택 단추: 칸 폭 전체, 높이 44. 최저 안(또는 고른 안) = 주황 채운
+/// 단추, 나머지 = 연회색 바탕 주황 글자 테두리 단추. 확정할 수 없는 안은 단추
+/// 대신 점선 상자에 이유를 적습니다(7.16).
 class PlanSelect extends StatelessWidget {
   const PlanSelect({
     super.key,
@@ -143,9 +147,12 @@ class PlanSelect extends StatelessWidget {
     required this.busy,
     required this.lowest,
     required this.onSelect,
+    this.emphasized = false,
     this.showReason = false,
     this.locallySelected = false,
   });
+
+  /// 채운 단추로 둘지: 최저 안, 또는 따로 고른 안.
 
   static const height = 44.0;
 
@@ -153,6 +160,7 @@ class PlanSelect extends StatelessWidget {
   final ReviewCard card;
   final bool busy, lowest;
   final bool locallySelected;
+  final bool emphasized;
 
   /// 한 줄에 한 장일 때: 고를 수 없는 이유를 단추 아래에 적습니다(툴팁은
   /// 휴대폰에서 길게 눌러야 보입니다).
@@ -175,7 +183,7 @@ class PlanSelect extends StatelessWidget {
           borderRadius: BorderRadius.circular(LdsRadius.button),
         ),
         child: const Text(
-          "선택한 구매안",
+          "✓ 선택됨",
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -185,7 +193,7 @@ class PlanSelect extends StatelessWidget {
       );
     }
     if (!plan.valid) {
-      return _Unavailable("선택 불가 · ${plan.validationLabel} 안은 아직 확정할 수 없습니다.");
+      return _Unavailable(unavailableReason(plan, card));
     }
     final canSelect = card.can(ReviewAction.selectPlan) && plan.selectable;
     final reason = plan.planId == null
@@ -201,7 +209,7 @@ class PlanSelect extends StatelessWidget {
       fontSize: 15,
       fontWeight: FontWeight.w700,
     );
-    final button = locallySelected
+    final button = emphasized || locallySelected
         ? FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: LdsColors.primary,
@@ -214,11 +222,12 @@ class PlanSelect extends StatelessWidget {
               elevation: 0,
             ),
             onPressed: onPressed,
-            child: Text(locallySelected ? "✓ 선택됨" : "이 안 선택"),
+            child: Text(locallySelected ? "✓ 선택됨" : "선택"),
           )
         : OutlinedButton(
             style: OutlinedButton.styleFrom(
-              foregroundColor: LdsColors.title,
+              foregroundColor: LdsColors.primary,
+              backgroundColor: LdsColors.canvas,
               disabledForegroundColor: LdsColors.disabled,
               side: BorderSide(
                 color: onPressed == null
@@ -230,7 +239,7 @@ class PlanSelect extends StatelessWidget {
               textStyle: text,
             ),
             onPressed: onPressed,
-            child: Text(locallySelected ? "✓ 선택됨" : "이 안 선택"),
+            child: Text(locallySelected ? "✓ 선택됨" : "선택"),
           );
     if (showReason && !canSelect && reason != null) {
       return Column(
@@ -251,6 +260,21 @@ class PlanSelect extends StatelessWidget {
         ? Tooltip(message: reason, child: button)
         : button;
   }
+
+  /// 고를 수 없는 이유. 역제안 상대가 든 안은 회신을 기다립니다.
+  static String unavailableReason(ResponsePlan plan, ReviewCard card) {
+    final offer = card.counterOffer;
+    final waitsForReply =
+        offer != null &&
+        !offer.onHold &&
+        offer.target != null &&
+        plan.allocations.any(
+          (allocation) => allocation.supplierId == offer.target!.supplierId,
+        );
+    return waitsForReply
+        ? "선택 불가 · 역제안 회신 후 선택할 수 있어요"
+        : "선택 불가 · ${plan.validationLabel} 안은 아직 확정할 수 없어요.";
+  }
 }
 
 /// 고를 수 없는 안: 점선 상자 안에 이유.
@@ -261,7 +285,10 @@ class _Unavailable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => CustomPaint(
-    foregroundPainter: const _DashedBorder(),
+    foregroundPainter: const DashedBorderPainter(
+      color: LdsColors.disabled,
+      radius: LdsRadius.button,
+    ),
     child: Container(
       constraints: const BoxConstraints(minHeight: PlanSelect.height),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -290,31 +317,4 @@ class _Unavailable extends StatelessWidget {
       ),
     ),
   );
-}
-
-class _DashedBorder extends CustomPainter {
-  const _DashedBorder();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          (Offset.zero & size).deflate(.5),
-          const Radius.circular(LdsRadius.button),
-        ),
-      );
-    final paint = Paint()
-      ..color = LdsColors.disabled
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    for (final PathMetric metric in path.computeMetrics()) {
-      for (var d = 0.0; d < metric.length; d += 7) {
-        canvas.drawPath(metric.extractPath(d, d + 4), paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorder oldDelegate) => false;
 }

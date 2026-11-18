@@ -146,7 +146,7 @@ void main() {
     }
     // The totals sit on the same line in every card.
     final totals = [
-      for (final total in ["5,800,000 원", "5,400,000 원", "5,560,000 원"])
+      for (final total in ["5,800,000원", "5,400,000원", "5,560,000원"])
         tester.getRect(find.text(total, findRichText: true)).top,
     ];
     expect(totals[1], closeTo(totals[0], 1));
@@ -164,7 +164,7 @@ void main() {
     expect(barTops[2], closeTo(barTops[0], 1));
   });
 
-  testWidgets("the lowest plan: orange 2px, '최저 총액', a filled button", (
+  testWidgets("the lowest plan: orange 1px, '최저 총액', a filled button", (
     tester,
   ) async {
     await _pump(tester);
@@ -175,7 +175,7 @@ void main() {
     );
     final border = (lowest.decoration! as BoxDecoration).border! as Border;
     expect(border.top.color, LdsColors.primary);
-    expect(border.top.width, 2);
+    expect(border.top.width, 1);
     expect(
       find.descendant(of: _plan("전량 전환"), matching: find.text("최저 총액")),
       findsOneWidget,
@@ -184,17 +184,16 @@ void main() {
     expect(find.text("+160,000원"), findsOneWidget);
     // One filled button (the lowest), one outlined, the conditional one
     // has a dashed box with the reason.
-    expect(find.widgetWithText(FilledButton, "이 안 선택"), findsNothing);
-    expect(find.widgetWithText(OutlinedButton, "이 안 선택"), findsNWidgets(2));
-    expect(find.text("선택 불가 · 조건부 안은 아직 확정할 수 없습니다."), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, "선택"), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, "선택"), findsOneWidget);
+    expect(find.text("선택 불가 · 조건부 안은 아직 확정할 수 없어요."), findsOneWidget);
     expect(
       tester
-          .getSize(find.widgetWithText(OutlinedButton, "이 안 선택").first)
+          .getSize(find.widgetWithText(OutlinedButton, "선택").first)
           .height,
       44,
     );
-    // No dark cards any more: white, or light grey when it cannot be
-    // confirmed.
+    // Every card is white; only the memo says it cannot be confirmed.
     Color? fill(String type) =>
         (tester
                     .widget<Container>(
@@ -210,7 +209,7 @@ void main() {
             .color;
     expect(fill("전량 전환"), Colors.white);
     expect(fill("분산 구매"), Colors.white);
-    expect(fill("기존 업체 유지"), LdsColors.canvas);
+    expect(fill("기존 업체 유지"), Colors.white);
   });
 
   testWidgets("one supplier keeps one colour across the cards and the table", (
@@ -287,18 +286,21 @@ void main() {
     (tester) async {
       await _pump(tester);
       expect(find.text('✓ 선택됨'), findsNothing);
-      final choice = find.widgetWithText(OutlinedButton, '이 안 선택').first;
+      final choice = find.widgetWithText(OutlinedButton, '선택').first;
       await tester.ensureVisible(choice);
       await tester.tap(choice);
       await tester.pumpAndSettle();
+      // Only the chosen plan is filled now; the lowest goes back to outlined.
       expect(find.widgetWithText(FilledButton, '✓ 선택됨'), findsOneWidget);
-      expect(find.text('전량 전환 · 5,400,000원 선택됨'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, '선택'), findsNothing);
+      expect(find.text('분산 구매 · 5,560,000원 선택됨'), findsOneWidget);
       expect(find.text('이 안으로 확정'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.tap(find.widgetWithText(FilledButton, '✓ 선택됨'));
       await tester.pumpAndSettle();
       expect(find.text('✓ 선택됨'), findsNothing);
-      expect(find.text('전량 전환 · 5,400,000원 선택됨'), findsNothing);
+      expect(find.text('분산 구매 · 5,560,000원 선택됨'), findsNothing);
+      expect(find.widgetWithText(FilledButton, '선택'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

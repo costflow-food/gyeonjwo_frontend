@@ -168,9 +168,12 @@ class _TotalBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 세 건수가 모두 올 때까지는 빈 막대입니다. 먼저 온 건수(완료)만으로
+    // 그리면 잠깐 막대 전체가 초록이 됐다가 돌아옵니다.
     final parts = [
-      for (final MapEntry(key: group, value: count) in byGroup.entries)
-        if ((count ?? 0) > 0) (group, count!),
+      if (total != null)
+        for (final MapEntry(key: group, value: count) in byGroup.entries)
+          if ((count ?? 0) > 0) (group, count!),
     ];
     return Semantics(
       container: true,
