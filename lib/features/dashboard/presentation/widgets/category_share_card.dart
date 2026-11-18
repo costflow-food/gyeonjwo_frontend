@@ -6,14 +6,9 @@ import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/dashboard_insights.dart";
 import "dashboard_card.dart";
 
-/// 품목별 비중 색: 순위 비중이라 주황 진하기 3단계(시안 그대로).
-const _shareColors = [
-  LdsColors.primary,
-  LdsColors.chartShare2,
-  LdsColors.chartShare3,
-];
-
-Color _shareColor(int rank) => _shareColors[rank.clamp(0, 2)];
+/// 품목별 비중 색: 비율 막대 색 차례(3). 한 색의 진하기로 나누지 않습니다.
+Color _shareColor(int rank) =>
+    ldsRatioColors[rank.clamp(0, ldsRatioColors.length - 1)];
 
 /// 품목별 구매 비중 카드 (`docs/design-ssot.md` 7.9.2): 위쪽 기간을 따릅니다.
 ///

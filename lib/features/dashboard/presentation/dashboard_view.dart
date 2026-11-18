@@ -16,6 +16,7 @@ import "../../work_queue/presentation/completed_tasks_view_model.dart";
 import "../../work_queue/presentation/widgets/gmail_read_notice.dart";
 import "../../work_queue/presentation/work_queue_view_model.dart";
 import "../domain/dashboard_insights.dart";
+import "dashboard_period.dart";
 import "widgets/category_share_card.dart";
 import "widgets/monthly_trend_card.dart";
 
@@ -75,6 +76,10 @@ class DashboardView extends ConsumerWidget {
       ),
     ];
     return WorkspaceShell(
+      topAction: LdsDateRangeButton(
+        value: ref.watch(dashboardPeriodProvider),
+        onChanged: ref.read(dashboardPeriodProvider.notifier).select,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -158,8 +163,8 @@ class DashboardView extends ConsumerWidget {
 class _TotalBar extends StatelessWidget {
   const _TotalBar({required this.total, required this.byGroup});
 
-  /// 비율 막대 두께.
-  static const barHeight = 10.0;
+  /// 비율 막대 두께(3. 비율 막대).
+  static const barHeight = 12.0;
 
   final int? total;
   final Map<TaskGroup, int?> byGroup;
@@ -207,7 +212,7 @@ class _TotalBar extends StatelessWidget {
                     ? const DecoratedBox(
                         decoration: BoxDecoration(
                           color: LdsColors.lineSoft,
-                          borderRadius: BorderRadius.all(Radius.circular(5)),
+                          borderRadius: BorderRadius.all(Radius.circular(6)),
                         ),
                       )
                     : Row(
@@ -222,7 +227,7 @@ class _TotalBar extends StatelessWidget {
                                 key: ValueKey("bar-${group.code}"),
                                 decoration: BoxDecoration(
                                   color: taskGroupColor(group),
-                                  borderRadius: BorderRadius.circular(5),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                               ),
                             ),
@@ -239,7 +244,7 @@ class _TotalBar extends StatelessWidget {
 }
 
 /// 상태 카드: 흰 바탕 + 1px `#E5E7EA`, 모서리 12, 최소 높이 112. 상태 이름
-/// 15/700 + 앞 색 점 8, 숫자 32/800 + '건' 13/700, 오른쪽 아래 '보기 ›' 13
+/// 15/700 + 앞 색 점 8, 숫자 32/700 + '건' 13/700, 오른쪽 아래 '보기 ›' 13
 /// `#4E5968`. 설명 문장은 넣지 않습니다.
 class _StatusCard extends StatelessWidget {
   const _StatusCard({
@@ -251,11 +256,11 @@ class _StatusCard extends StatelessWidget {
     required this.onTap,
   }) : unsorted = false;
 
-  /// 미분류 메일(7.9.1): 흰 바탕 + 점선 테두리 `#B1B8C0`, 회색 점.
-  /// 상태 색을 쓰지 않습니다.
+  /// 미분류(7.9.1, 7.9.3): 회색 바탕 `#F3F4F6` + 점선 테두리 `#B1B8C0`,
+  /// 회색 라벨 `#4E5968`. 상태 색을 쓰지 않습니다.
   const _StatusCard.unsorted({required this.count, required this.onTap})
-    : name = "미분류 메일",
-      dot = LdsColors.outline,
+    : name = "미분류",
+      dot = null,
       emphasized = false,
       link = "확인 ›",
       unsorted = true;
@@ -273,7 +278,11 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(LdsRadius.panel);
-    final background = emphasized ? LdsColors.primaryRow : Colors.white;
+    final background = unsorted
+        ? LdsColors.lineSoft
+        : emphasized
+        ? LdsColors.primaryRow
+        : Colors.white;
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Column(
@@ -294,10 +303,10 @@ class _StatusCard extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: LdsColors.ink,
+                    color: unsorted ? LdsColors.label : LdsColors.ink,
                   ),
                 ),
               ),
@@ -308,7 +317,11 @@ class _StatusCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          _CountText(count: count, numberSize: 32),
+          _CountText(
+            count: count,
+            numberSize: 32,
+            color: unsorted ? LdsColors.label : LdsColors.ink,
+          ),
           const SizedBox(height: 4),
           // 카드 높이가 같은 줄에서 맞춰져도 '보기 ›'는 오른쪽 아래에 둡니다.
           const Spacer(),
@@ -360,12 +373,17 @@ class _StatusCard extends StatelessWidget {
   }
 }
 
-/// 숫자(800) + ' 건'(13/700 `#333D4B`). 불러오는 중이면 숫자 없이 둡니다.
+/// 숫자(700) + ' 건'(13/700). 불러오는 중이면 숫자 없이 둡니다.
 class _CountText extends StatelessWidget {
-  const _CountText({required this.count, required this.numberSize});
+  const _CountText({
+    required this.count,
+    required this.numberSize,
+    this.color = LdsColors.ink,
+  });
 
   final int? count;
   final double numberSize;
+  final Color color;
 
   @override
   Widget build(BuildContext context) => Text.rich(
@@ -375,19 +393,19 @@ class _CountText extends StatelessWidget {
           text: count == null ? "" : "$count",
           style: TextStyle(
             fontSize: numberSize,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             height: 1.1,
-            color: LdsColors.ink,
+            color: color,
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
-        const TextSpan(
+        TextSpan(
           text: " 건",
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
             height: 1.1,
-            color: LdsColors.title,
+            color: color == LdsColors.ink ? LdsColors.title : color,
           ),
         ),
       ],

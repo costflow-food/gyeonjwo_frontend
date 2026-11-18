@@ -1,0 +1,718 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../lds_colors.dart';
+import 'lds_button.dart';
+import 'lds_focus_ring.dart';
+import 'lds_metrics.dart';
+import 'lds_tab_bar.dart';
+
+/// 날짜만(시각 0시).
+DateTime ldsDateOnly(DateTime date) =>
+    DateTime(date.year, date.month, date.day);
+
+/// `yyyy. M. d - yyyy. M. d`(하루면 날짜 하나).
+String formatLdsDateRange(DateTimeRange range) {
+  String day(DateTime d) => '${d.year}. ${d.month}. ${d.day}';
+  return DateUtils.isSameDay(range.start, range.end)
+      ? day(range.start)
+      : '${day(range.start)} - ${day(range.end)}';
+}
+
+/// 빠른 선택(오늘 / 이번 주 / 이번 달). 이번 주 = 일~토.
+enum LdsQuickRange {
+  today('오늘'),
+  thisWeek('이번 주'),
+  thisMonth('이번 달');
+
+  const LdsQuickRange(this.label);
+
+  final String label;
+
+  DateTimeRange rangeFor(DateTime today) {
+    final t = ldsDateOnly(today);
+    return switch (this) {
+      LdsQuickRange.today => DateTimeRange(start: t, end: t),
+      LdsQuickRange.thisWeek => DateTimeRange(
+        start: t.subtract(Duration(days: t.weekday % 7)),
+        end: t.add(Duration(days: 6 - t.weekday % 7)),
+      ),
+      LdsQuickRange.thisMonth => DateTimeRange(
+        start: DateTime(t.year, t.month),
+        end: DateTime(t.year, t.month + 1, 0),
+      ),
+    };
+  }
+}
+
+/// 기간 선택 단추 — LIKELION DateInput(range) (`docs/design-ssot.md` 7.9.2).
+///
+/// 달력 아이콘 + `yyyy. M. d - yyyy. M. d`. 높이 36, 모서리 4, 테두리
+/// `#D1D6DC`, hover `#333D4B`. 누르면 단추 오른쪽 끝에 맞춘 팝오버(달력 2개),
+/// 744px 미만은 아래에서 올라오는 시트(달력 1개). 확정은 '적용'.
+class LdsDateRangeButton extends StatefulWidget {
+  const LdsDateRangeButton({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.today,
+  });
+
+  final DateTimeRange value;
+  final ValueChanged<DateTimeRange> onChanged;
+
+  /// 없으면 지금 날짜.
+  final DateTime? today;
+
+  /// 이 폭 미만은 시트(달력 1개).
+  static const sheetWidth = 744.0;
+
+  @override
+  State<LdsDateRangeButton> createState() => _LdsDateRangeButtonState();
+}
+
+class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
+  final _focus = FocusNode(debugLabel: 'date range button');
+  bool _hover = false;
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _open() async {
+    final today = ldsDateOnly(widget.today ?? DateTime.now());
+    final sheet =
+        MediaQuery.sizeOf(context).width < LdsDateRangeButton.sheetWidth;
+    DateTimeRange? picked;
+    if (sheet) {
+      picked = await showModalBottomSheet<DateTimeRange>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(LdsRadius.dialog),
+          ),
+        ),
+        builder: (context) => SafeArea(
+          child: Center(
+            heightFactor: 1,
+            child: LdsDateRangePanel(
+              initial: widget.value,
+              today: today,
+              months: 1,
+            ),
+          ),
+        ),
+      );
+    } else {
+      final box = context.findRenderObject()! as RenderBox;
+      final anchor = box.localToGlobal(Offset.zero) & box.size;
+      picked = await Navigator.of(context).push(
+        _PopoverRoute<DateTimeRange>(
+          anchor: anchor,
+          child: LdsDateRangePanel(
+            initial: widget.value,
+            today: today,
+            months: 2,
+          ),
+        ),
+      );
+    }
+    if (!mounted) return;
+    // 닫히면 초점을 단추로 돌려줍니다.
+    _focus.requestFocus();
+    if (picked != null) widget.onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(LdsRadius.button);
+    final label = formatLdsDateRange(widget.value);
+    return Semantics(
+      button: true,
+      label: '기간 선택, $label',
+      excludeSemantics: true,
+      onTap: _open,
+      child: LdsFocusRing(
+        radius: LdsRadius.button,
+        child: Material(
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(
+              color: _hover ? LdsColors.title : LdsColors.borderStrong,
+            ),
+          ),
+          child: InkWell(
+            focusNode: _focus,
+            onTap: _open,
+            onHover: (hover) => setState(() => _hover = hover),
+            borderRadius: radius,
+            hoverColor: Colors.transparent,
+            child: Container(
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 18,
+                    color: LdsColors.title,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.2,
+                      letterSpacing: -.3,
+                      color: LdsColors.ink,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 단추 아래, 단추 오른쪽 끝에 맞춘 팝오버. 바깥을 누르거나 Esc로 닫습니다.
+class _PopoverRoute<T> extends PopupRoute<T> {
+  _PopoverRoute({required this.anchor, required this.child});
+
+  final Rect anchor;
+  final Widget child;
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  bool get barrierDismissible => true;
+
+  @override
+  String? get barrierLabel => '기간 선택 닫기';
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 120);
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) => CustomSingleChildLayout(
+    delegate: _PopoverLayout(anchor),
+    child: Material(
+      color: Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(LdsRadius.panel),
+        side: const BorderSide(color: LdsColors.line),
+      ),
+      child: child,
+    ),
+  );
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => FadeTransition(opacity: animation, child: child);
+}
+
+class _PopoverLayout extends SingleChildLayoutDelegate {
+  const _PopoverLayout(this.anchor);
+
+  final Rect anchor;
+
+  static const _margin = 8.0;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints.loose(constraints.biggest)
+          .deflate(const EdgeInsets.all(_margin));
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final x = (anchor.right - childSize.width).clamp(
+      _margin,
+      size.width - childSize.width - _margin,
+    );
+    final below = anchor.bottom + _margin;
+    final y = below + childSize.height <= size.height - _margin
+        ? below
+        : (size.height - childSize.height - _margin).clamp(_margin, below);
+    return Offset(x.toDouble(), y.toDouble());
+  }
+
+  @override
+  bool shouldRelayout(_PopoverLayout oldDelegate) =>
+      oldDelegate.anchor != anchor;
+}
+
+/// 기간 고르기 창 내용 (7.9.2): 빠른 선택 → 달력 [months]개 → 고른 기간 +
+/// 취소·적용. '적용'하면 고른 기간으로 창을 닫습니다(pop).
+class LdsDateRangePanel extends StatefulWidget {
+  const LdsDateRangePanel({
+    super.key,
+    required this.initial,
+    required this.today,
+    this.months = 2,
+  });
+
+  final DateTimeRange initial;
+  final DateTime today;
+
+  /// 1(시트) 또는 2(팝오버: 이번 달·다음 달).
+  final int months;
+
+  /// 달력 하나 폭, 달력 사이.
+  static const monthWidth = 272.0;
+  static const monthGap = 24.0;
+
+  @override
+  State<LdsDateRangePanel> createState() => _LdsDateRangePanelState();
+}
+
+class _LdsDateRangePanelState extends State<LdsDateRangePanel> {
+  late DateTime? _start = ldsDateOnly(widget.initial.start);
+  late DateTime? _end = ldsDateOnly(widget.initial.end);
+  late DateTime _month = DateTime(
+    widget.initial.start.year,
+    widget.initial.start.month,
+  );
+  LdsQuickRange? _quick;
+
+  @override
+  void initState() {
+    super.initState();
+    _quick = _quickOf();
+  }
+
+  LdsQuickRange? _quickOf() {
+    for (final quick in LdsQuickRange.values) {
+      final range = quick.rangeFor(widget.today);
+      if (range.start == _start && range.end == _end) return quick;
+    }
+    return null;
+  }
+
+  void _pickQuick(LdsQuickRange? quick) {
+    if (quick == null) return;
+    final range = quick.rangeFor(widget.today);
+    setState(() {
+      _quick = quick;
+      _start = range.start;
+      _end = range.end;
+      _month = DateTime(range.start.year, range.start.month);
+    });
+  }
+
+  /// 처음 누르면 시작, 다음에 누르면 끝(시작보다 앞이면 시작을 다시).
+  void _pickDay(DateTime day) => setState(() {
+    final start = _start;
+    if (start == null || _end != null || day.isBefore(start)) {
+      _start = day;
+      _end = null;
+    } else {
+      _end = day;
+    }
+    _quick = _quickOf();
+  });
+
+  void _shiftMonth(int delta) =>
+      setState(() => _month = DateTime(_month.year, _month.month + delta));
+
+  void _apply() =>
+      Navigator.of(context).pop(DateTimeRange(start: _start!, end: _end!));
+
+  @override
+  Widget build(BuildContext context) {
+    final start = _start;
+    final end = _end;
+    final summary = start == null
+        ? '시작 날짜를 고르세요'
+        : end == null
+        ? '${formatLdsDateRange(DateTimeRange(start: start, end: start))} - 끝 날짜를 고르세요'
+        : formatLdsDateRange(DateTimeRange(start: start, end: end));
+    final calendars = [
+      for (var i = 0; i < widget.months; i++)
+        _MonthCalendar(
+          month: DateTime(_month.year, _month.month + i),
+          start: start,
+          end: end,
+          today: ldsDateOnly(widget.today),
+          onPick: _pickDay,
+          onPrevious: i == 0 ? () => _shiftMonth(-1) : null,
+          onNext: i == widget.months - 1 ? () => _shiftMonth(1) : null,
+        ),
+    ];
+    // 내용 폭 = 달력 폭(구분선이 화면 끝까지 늘지 않게).
+    final width =
+        LdsDateRangePanel.monthWidth * widget.months +
+        LdsDateRangePanel.monthGap * (widget.months - 1);
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.of(context).maybePop(),
+      },
+      child: FocusScope(
+        autofocus: true,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: SizedBox(
+            width: width,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LdsRoundTabs<LdsQuickRange?>(
+                  tabs: [
+                    for (final quick in LdsQuickRange.values)
+                      LdsTabItem(value: quick, label: quick.label),
+                  ],
+                  selected: _quick,
+                  onSelected: _pickQuick,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final (index, calendar) in calendars.indexed) ...[
+                      if (index > 0)
+                        const SizedBox(width: LdsDateRangePanel.monthGap),
+                      calendar,
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Divider(height: 1, color: LdsColors.line),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: width,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    runSpacing: 12,
+                    children: [
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          summary,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            letterSpacing: -.3,
+                            color: LdsColors.title,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          LdsButton(
+                            label: '취소',
+                            size: LdsButtonSize.large,
+                            variant: LdsButtonVariant.outlinedNeutral,
+                            onPressed: () => Navigator.of(context).maybePop(),
+                          ),
+                          const SizedBox(width: 8),
+                          LdsButton(
+                            label: '적용',
+                            size: LdsButtonSize.large,
+                            onPressed: start != null && end != null
+                                ? _apply
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 달력 한 달: 머리 `2026. 11` 17/700 + 이전/다음 24, 요일 일~토 13
+/// `#8A95A0`, 날짜 15 · 36 원. 오늘 = 연한 원 + 아래 주황 점 4, 시작·끝 =
+/// 주황 원·흰 글자, 사이 = `#FFEFE5` 띠.
+class _MonthCalendar extends StatelessWidget {
+  const _MonthCalendar({
+    required this.month,
+    required this.start,
+    required this.end,
+    required this.today,
+    required this.onPick,
+    this.onPrevious,
+    this.onNext,
+  });
+
+  final DateTime month;
+  final DateTime? start;
+  final DateTime? end;
+  final DateTime today;
+  final ValueChanged<DateTime> onPick;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
+
+  static const _weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+  @override
+  Widget build(BuildContext context) {
+    final days = DateUtils.getDaysInMonth(month.year, month.month);
+    final lead = DateTime(month.year, month.month).weekday % 7;
+    final weeks = ((lead + days) / 7).ceil();
+    return SizedBox(
+      width: LdsDateRangePanel.monthWidth,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 32,
+            child: Row(
+              children: [
+                _NavButton(
+                  icon: Icons.chevron_left,
+                  tooltip: '이전 달',
+                  onPressed: onPrevious,
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${month.year}. ${month.month}',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.3,
+                        color: LdsColors.ink,
+                      ),
+                    ),
+                  ),
+                ),
+                _NavButton(
+                  icon: Icons.chevron_right,
+                  tooltip: '다음 달',
+                  onPressed: onNext,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (final weekday in _weekdays)
+                Expanded(
+                  child: SizedBox(
+                    height: 32,
+                    child: Center(
+                      child: ExcludeSemantics(
+                        child: Text(
+                          weekday,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: LdsColors.outline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          for (var week = 0; week < weeks; week++)
+            Row(
+              children: [
+                for (var col = 0; col < 7; col++)
+                  Expanded(child: _cell(week * 7 + col - lead + 1, days)),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cell(int dayNumber, int days) {
+    if (dayNumber < 1 || dayNumber > days) {
+      return const SizedBox(height: _DayCell.height);
+    }
+    final day = DateTime(month.year, month.month, dayNumber);
+    final start = this.start;
+    final end = this.end;
+    final isStart = start != null && DateUtils.isSameDay(day, start);
+    final isEnd = end != null && DateUtils.isSameDay(day, end);
+    final inside =
+        start != null && end != null && day.isAfter(start) && day.isBefore(end);
+    final ranged = start != null && end != null && start != end;
+    return _DayCell(
+      day: day,
+      edge: isStart || isEnd,
+      bandLeft: inside || (ranged && isEnd),
+      bandRight: inside || (ranged && isStart),
+      today: DateUtils.isSameDay(day, today),
+      onTap: () => onPick(day),
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  const _NavButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (onPressed == null) return const SizedBox(width: 24);
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        label: tooltip,
+        excludeSemantics: true,
+        onTap: onPressed,
+        child: LdsFocusRing(
+          radius: LdsRadius.button,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(LdsRadius.button),
+            child: SizedBox.square(
+              dimension: 24,
+              child: Icon(icon, size: 20, color: LdsColors.title),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayCell extends StatelessWidget {
+  const _DayCell({
+    required this.day,
+    required this.edge,
+    required this.bandLeft,
+    required this.bandRight,
+    required this.today,
+    required this.onTap,
+  });
+
+  static const height = 40.0;
+  static const circle = 36.0;
+
+  final DateTime day;
+
+  /// 시작·끝.
+  final bool edge;
+  final bool bandLeft;
+  final bool bandRight;
+  final bool today;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: edge || (bandLeft && bandRight),
+    label:
+        '${day.year}년 ${day.month}월 ${day.day}일'
+        '${today ? ', 오늘' : ''}',
+    excludeSemantics: true,
+    onTap: onTap,
+    child: SizedBox(
+      height: height,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 사이 띠: 칸 폭 전체, 시작·끝은 안쪽 절반만.
+          Positioned.fill(
+            top: (height - circle) / 2,
+            bottom: (height - circle) / 2,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ColoredBox(
+                    color: bandLeft
+                        ? LdsColors.primarySoft
+                        : Colors.transparent,
+                  ),
+                ),
+                Expanded(
+                  child: ColoredBox(
+                    color: bandRight
+                        ? LdsColors.primarySoft
+                        : Colors.transparent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          LdsFocusRing(
+            radius: circle / 2,
+            child: Material(
+              color: edge
+                  ? LdsColors.primary
+                  : today
+                  ? LdsColors.canvas
+                  : Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: onTap,
+                customBorder: const CircleBorder(),
+                child: SizedBox.square(
+                  dimension: circle,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text(
+                        '${day.day}',
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1,
+                          fontWeight: edge ? FontWeight.w700 : FontWeight.w400,
+                          color: edge ? Colors.white : LdsColors.ink,
+                        ),
+                      ),
+                      if (today)
+                        Positioned(
+                          bottom: 4,
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: edge ? Colors.white : LdsColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}

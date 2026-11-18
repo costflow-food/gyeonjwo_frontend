@@ -38,9 +38,4 @@ abstract final class LdsColors {
   static const priceUp = Color(0xFFE42939);
   static const priceDown = Color(0xFF1B64DA);
   static const overlay = Color(0x73191F28); // rgba(25,31,40,.45)
-  static const cardShadow = Color(
-    0x0A191F28,
-  ); // Dashboard 카드 그림자 rgba(25,31,40,.04)
-  static const chartShare2 = Color(0xFFFFA066); // 품목별 비중 2위
-  static const chartShare3 = Color(0xFFFFDFCC); // 품목별 비중 3위 이하
 }

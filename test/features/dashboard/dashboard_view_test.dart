@@ -135,16 +135,16 @@ void main() {
     expect(_number(tester, "확인 필요"), "2 건");
     expect(_number(tester, "진행 중"), "1 건");
     expect(_number(tester, "완료"), "3 건");
-    expect(_number(tester, "미분류 메일"), "4 건");
+    expect(_number(tester, "미분류"), "4 건");
     // 2 + 1 + 3: 미분류 is not a case yet.
     expect(find.text("6 건"), findsOneWidget);
-    // Bar 10 tall, parts by count (2 : 1 : 3) with 4 between.
+    // Bar 12 tall, parts by count (2 : 1 : 3) with 4 between.
     final widths = [
       for (final code in ["confirm", "running", "complete"])
         tester.getSize(find.byKey(ValueKey("bar-$code"))),
     ];
     for (final size in widths) {
-      expect(size.height, 10);
+      expect(size.height, 12);
     }
     expect(widths[0].width, closeTo(widths[1].width * 2, 1));
     expect(widths[2].width, closeTo(widths[1].width * 3, 1));
@@ -168,8 +168,8 @@ void main() {
       findsOneWidget,
     );
     expect(material("진행 중").color, Colors.white);
-    // 미분류 메일: white with a dashed border, not a status color.
-    expect(material("미분류 메일").color, Colors.white);
+    // 미분류: gray with a dashed border, not a status color.
+    expect(material("미분류").color, LdsColors.lineSoft);
     expect(find.text("지금 할 일"), findsOneWidget);
   });
 
@@ -182,7 +182,7 @@ void main() {
 
   testWidgets("미분류 opens the intake dialog", (tester) async {
     await _pump(tester);
-    await tester.tap(_card("미분류 메일"));
+    await tester.tap(_card("미분류"));
     await tester.pumpAndSettle();
     expect(find.byType(MailIntakeDialog), findsOneWidget);
   });
@@ -190,7 +190,7 @@ void main() {
   testWidgets("one row when wide, 2×2 under 1100", (tester) async {
     await _pump(tester);
     expect(
-      tester.getTopLeft(_card("미분류 메일")).dy,
+      tester.getTopLeft(_card("미분류")).dy,
       tester.getTopLeft(_card("확인 필요")).dy,
     );
     await _pump(tester, width: 1099);
@@ -239,5 +239,13 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     }
+  });
+
+  testWidgets("the top bar has the period button (this week)", (tester) async {
+    await _pump(tester);
+    final button = tester.widget<LdsDateRangeButton>(
+      find.byType(LdsDateRangeButton),
+    );
+    expect(button.value, LdsQuickRange.thisWeek.rangeFor(DateTime.now()));
   });
 }

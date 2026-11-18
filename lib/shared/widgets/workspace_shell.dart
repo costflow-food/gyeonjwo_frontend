@@ -66,6 +66,7 @@ class WorkspaceShell extends ConsumerStatefulWidget {
     super.key,
     required this.child,
     this.scrollable = true,
+    this.topAction,
   });
 
   /// 이 폭 이하에서는 사이드바가 덮개로 열립니다(7.8.1, 7.8.5).
@@ -78,6 +79,9 @@ class WorkspaceShell extends ConsumerStatefulWidget {
 
   /// false면 [child]가 스크롤과 여백을 직접 둡니다(Tasks 목록·상세).
   final bool scrollable;
+
+  /// 상단 바 오른쪽, 검색 왼쪽(예: Dashboard 기간 선택, 7.9.2).
+  final Widget? topAction;
 
   @override
   ConsumerState<WorkspaceShell> createState() => _WorkspaceShellState();
@@ -134,6 +138,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                     _TopBar(
                       title: section.title,
                       onMenu: overlayMode ? () => _setOverlay(true) : null,
+                      action: widget.topAction,
                     ),
                     Expanded(child: body),
                   ],
@@ -191,11 +196,12 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
 }
 
 /// 상단 바: 높이 64, 흰 바탕, 아래 1px `#E5E7EA`, 좌우 24. 화면 제목 24/700,
-/// 오른쪽 검색·알림 (3-2). 기간 선택은 5단계에서 검색 왼쪽에 들어옵니다.
+/// 오른쪽 [action](기간 선택 등) · 검색 · 알림 (3-2, 7.9.2).
 class _TopBar extends ConsumerWidget {
-  const _TopBar({required this.title, this.onMenu});
+  const _TopBar({required this.title, this.onMenu, this.action});
 
   final String title;
+  final Widget? action;
 
   /// 900px 이하: 제목 왼쪽 메뉴 열기 버튼.
   final VoidCallback? onMenu;
@@ -229,6 +235,11 @@ class _TopBar extends ConsumerWidget {
             ),
           ),
         ),
+        if (action case final action?) ...[
+          const SizedBox(width: 12),
+          action,
+          const SizedBox(width: 8),
+        ],
         LdsIconButton(
           icon: Icons.search,
           tooltip: '업무 검색',

@@ -2,6 +2,7 @@
 library;
 
 export 'lds_button.dart';
+export 'lds_date_range_picker.dart';
 export 'lds_dialog.dart';
 export 'lds_focus_ring.dart';
 export 'lds_metrics.dart';
