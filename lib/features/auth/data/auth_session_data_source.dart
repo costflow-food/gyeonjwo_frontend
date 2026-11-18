@@ -5,7 +5,9 @@ import "package:flutter/foundation.dart";
 import "package:riverpod_annotation/riverpod_annotation.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 
+import "../../../app/app_config.dart";
 import "../../../shared/navigation/page_navigation.dart";
+import "dev_no_login_session_data_source.dart";
 
 part "auth_session_data_source.g.dart";
 
@@ -61,8 +63,9 @@ abstract final class OAuthRedirectGrant {
 }
 
 @Riverpod(keepAlive: true)
-AuthSessionDataSource authSessionDataSource(Ref ref) =>
-    SupabaseAuthSessionDataSource(Supabase.instance.client.auth);
+AuthSessionDataSource authSessionDataSource(Ref ref) => AppConfig.loginDisabled
+    ? const DevNoLoginSessionDataSource()
+    : SupabaseAuthSessionDataSource(Supabase.instance.client.auth);
 
 /// Session values as a JSON-like map, mirroring the other DataSources.
 ///
