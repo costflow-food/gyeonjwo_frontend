@@ -178,9 +178,7 @@ Iterable<String> _rows(WidgetTester tester) => tester
     .map((row) => row.workCase.id);
 
 void main() {
-  testWidgets("four tabs with counts; 확인 필요 orange until chosen", (
-    tester,
-  ) async {
+  testWidgets("four tabs use neutral counts unless selected", (tester) async {
     final router = await _pump(tester);
     final bar = find.byType(LdsTabBar<TaskGroup?>);
     final tabs = find.descendant(of: bar, matching: find.byType(InkWell));
@@ -192,7 +190,7 @@ void main() {
       );
     }
     expect(_badge(tester, "전체"), LdsBadgeTone.dark);
-    expect(_badge(tester, "확인 필요"), LdsBadgeTone.primary);
+    expect(_badge(tester, "확인 필요"), LdsBadgeTone.neutral);
     expect(_badge(tester, "진행 중"), LdsBadgeTone.neutral);
     expect(_badge(tester, "완료"), LdsBadgeTone.neutral);
     // Row labels (결정 b): only the case not started yet waits.
@@ -210,6 +208,7 @@ void main() {
     await tester.tap(find.text("진행 중").first);
     await tester.pumpAndSettle();
     expect(router.state.uri.queryParameters["tab"], "running");
+    expect(_badge(tester, "확인 필요"), LdsBadgeTone.neutral);
     expect(_rows(tester), ["r1"]);
 
     await tester.tap(find.text("완료").first);
