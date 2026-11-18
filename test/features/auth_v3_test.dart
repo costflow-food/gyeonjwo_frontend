@@ -25,7 +25,7 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
 }
 
 void main() {
-  testWidgets("auth button is LDS large: 48 tall, corners 6, arrow after", (
+  testWidgets("auth button is LDS large: 48 tall, corners 8, arrow after", (
     tester,
   ) async {
     await _pump(tester, AuthButton(label: "Google로 계속하기", onPressed: () {}));
@@ -34,6 +34,10 @@ void main() {
     expect(button.trailingIcon, Icons.arrow_forward);
     expect(tester.getSize(find.byType(LdsButton)).height, 48);
     expect(tester.getSize(find.byType(LdsButton)).width, 480);
+    expect(
+      tester.widget<ClipRRect>(find.byType(ClipRRect)).borderRadius,
+      BorderRadius.circular(8),
+    );
     // The arrow follows the label.
     expect(
       tester.getCenter(find.byIcon(Icons.arrow_forward)).dx,
@@ -41,13 +45,13 @@ void main() {
     );
   });
 
-  testWidgets("Google button keeps its brand look at 48 tall, corners 6", (
+  testWidgets("Google button keeps its brand look at 48 tall, corners 4", (
     tester,
   ) async {
     await _pump(tester, GoogleSignInButton(onPressed: () {}));
     final button = tester.widget<OutlinedButton>(find.byType(OutlinedButton));
     final shape = button.style!.shape!.resolve({})! as RoundedRectangleBorder;
-    expect(shape.borderRadius, BorderRadius.circular(6));
+    expect(shape.borderRadius, BorderRadius.circular(4));
     expect(button.style!.backgroundColor!.resolve({}), Colors.white);
     expect(tester.getSize(find.byType(OutlinedButton)).height, 48);
   });
@@ -77,7 +81,7 @@ void main() {
     expect(decoration.boxShadow, isNull);
     expect(decoration.border, Border.all(color: LdsColors.line));
     final step = tester.widget<Text>(find.text("01 / 시작하기"));
-    expect(step.style!.color, LdsColors.primaryHover);
+    expect(step.style!.color, LdsColors.primary);
     expect(step.style!.fontWeight, FontWeight.w700);
   });
 }

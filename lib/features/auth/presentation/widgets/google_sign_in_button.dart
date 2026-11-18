@@ -12,12 +12,12 @@ class GoogleSignInButton extends StatelessWidget {
     onPressed: onPressed,
     style: ButtonStyle(
       backgroundColor: const WidgetStatePropertyAll(Colors.white),
-      foregroundColor: const WidgetStatePropertyAll(Color(0xFF1F1F1F)),
+      foregroundColor: const WidgetStatePropertyAll(Color(0xFF191F28)),
       surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-      side: const WidgetStatePropertyAll(BorderSide(color: Color(0xFF4F6862))),
+      side: const WidgetStatePropertyAll(BorderSide(color: Color(0xFF6B7583))),
       shape: WidgetStatePropertyAll(
-        // Google allows a rectangular shape; 6 matches LDS large (7.4).
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        // Google allows a rectangular shape; the design uses corners 4.
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
       minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
       padding: const WidgetStatePropertyAll(

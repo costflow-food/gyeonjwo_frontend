@@ -54,8 +54,8 @@ class AuthLayout extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: narrow ? 16 : 40,
-                    vertical: narrow ? 20 : 40,
+                    horizontal: narrow ? 16 : 24,
+                    vertical: narrow ? 20 : 24,
                   ),
                   child: Center(
                     child: ConstrainedBox(
@@ -67,7 +67,9 @@ class AuthLayout extends StatelessWidget {
                             alignment: Alignment.centerLeft,
                             child: SizedBox(width: 132, child: BrandLogo()),
                           ),
-                          SizedBox(height: compact ? 16 : 40),
+                          // 시안: 로그인은 로고 아래 32 + 본문 위 여백 32,
+                          // 안내·연결은 로고 아래 12에 '이전으로', 그 아래 16.
+                          SizedBox(height: compact ? 12 : 64),
                           if (backPath != null) ...[
                             Align(
                               alignment: Alignment.centerLeft,
@@ -76,21 +78,25 @@ class AuthLayout extends StatelessWidget {
                                 icon: const Icon(Icons.arrow_back, size: 16),
                                 label: const Text('이전으로'),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: LdsColors.mutedStrong,
+                                  foregroundColor: LdsColors.muted,
+                                  textStyle: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 16),
                           ],
                           child,
-                          SizedBox(height: compact ? 24 : 40),
+                          const SizedBox(height: 32),
                           const Divider(height: 1, color: LdsColors.line),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           const Text(
-                            '견줘 · 근거를 모아, 더 선명한 구매 검토.',
+                            'Thoner · 근거를 모아, 더 선명한 구매 검토.',
                             style: TextStyle(
                               fontSize: 13,
-                              color: LdsColors.mutedStrong,
+                              color: LdsColors.muted,
                             ),
                           ),
                         ],
@@ -127,7 +133,10 @@ class AuthCard extends StatelessWidget {
   );
 }
 
-/// 단계 표시(주황 글자 14/700) · 제목 28/700 · 설명.
+/// 연결됨 표시 글자·아이콘(시안 `--success-deep`).
+const authSuccessDeep = Color(0xFF2D660A);
+
+/// 단계 표시(주황 글자 13/700, 자간 1) · 제목 28/800 · 설명.
 class AuthStep extends StatelessWidget {
   const AuthStep(this.text, {super.key});
   final String text;
@@ -136,10 +145,10 @@ class AuthStep extends StatelessWidget {
   Widget build(BuildContext context) => Text(
     text,
     style: const TextStyle(
-      // 흰 바탕 위 작은 주황 글자는 진한 주황(4.5:1)으로.
-      color: LdsColors.primaryHover,
-      fontSize: 14,
+      color: LdsColors.primary,
+      fontSize: 13,
       fontWeight: FontWeight.w700,
+      letterSpacing: 1,
     ),
   );
 }
@@ -160,14 +169,14 @@ class AuthHeading extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       AuthStep(step),
-      const SizedBox(height: 12),
+      const SizedBox(height: 16),
       Text(
         title,
         style: const TextStyle(
           fontSize: 28,
-          fontWeight: FontWeight.w700,
-          height: 1.3,
-          letterSpacing: -.5,
+          fontWeight: FontWeight.w800,
+          height: 1.35,
+          letterSpacing: -1,
           color: LdsColors.ink,
         ),
       ),
@@ -176,7 +185,7 @@ class AuthHeading extends StatelessWidget {
         description,
         style: const TextStyle(
           fontSize: 15,
-          color: LdsColors.mutedStrong,
+          color: LdsColors.muted,
           height: 1.8,
         ),
       ),
@@ -185,7 +194,7 @@ class AuthHeading extends StatelessWidget {
   );
 }
 
-/// 아이콘 칸 40(모서리 8, 연한 주황) + 제목 15/700 + 설명 14.
+/// 아이콘 칸 40(모서리 10, 연한 주황) + 제목 15/700 + 설명 14.
 class AuthInfoTile extends StatelessWidget {
   const AuthInfoTile({
     super.key,
@@ -210,7 +219,7 @@ class AuthInfoTile extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AuthIconBox(icon: icon, enabled: enabled),
+        AuthIconBox(icon: icon, enabled: enabled, radius: 10),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -221,7 +230,7 @@ class AuthInfoTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: enabled ? LdsColors.ink : LdsColors.mutedStrong,
+                  color: enabled ? LdsColors.ink : LdsColors.muted,
                 ),
               ),
               const SizedBox(height: 6),
@@ -229,7 +238,7 @@ class AuthInfoTile extends StatelessWidget {
                 description,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: LdsColors.mutedStrong,
+                  color: LdsColors.muted,
                   height: 1.7,
                 ),
               ),
@@ -244,7 +253,7 @@ class AuthInfoTile extends StatelessWidget {
                         statusColor ??
                         (enabled
                             ? LdsColors.successText
-                            : LdsColors.mutedStrong),
+                            : LdsColors.muted),
                   ),
                 ),
               ],
@@ -256,13 +265,15 @@ class AuthInfoTile extends StatelessWidget {
   );
 }
 
-/// 아이콘 칸: 40×40, 모서리 8. 켜짐 = 연한 주황 바탕 + 주황 아이콘.
+/// 아이콘 칸: 40×40, 모서리 8(기본). 켜짐 = 연한 주황 바탕 + 주황 아이콘.
 class AuthIconBox extends StatelessWidget {
   const AuthIconBox({
     super.key,
     required this.icon,
     this.enabled = true,
     this.size = 40,
+    this.iconSize,
+    this.radius = 8,
     this.color,
     this.background,
   });
@@ -270,6 +281,10 @@ class AuthIconBox extends StatelessWidget {
   final IconData icon;
   final bool enabled;
   final double size;
+
+  /// 기본은 칸의 절반.
+  final double? iconSize;
+  final double radius;
   final Color? color, background;
 
   @override
@@ -278,17 +293,17 @@ class AuthIconBox extends StatelessWidget {
     height: size,
     decoration: BoxDecoration(
       color: background ?? (enabled ? LdsColors.primarySoft : LdsColors.canvas),
-      borderRadius: BorderRadius.circular(LdsRadius.table),
+      borderRadius: BorderRadius.circular(radius),
     ),
     child: Icon(
       icon,
-      size: size / 2,
-      color: color ?? (enabled ? LdsColors.primary : LdsColors.mutedStrong),
+      size: iconSize ?? size / 2,
+      color: color ?? (enabled ? LdsColors.primary : LdsColors.muted),
     ),
   );
 }
 
-/// 안내 상자: 연회색 바탕, 1px 선, 모서리 8.
+/// 안내 상자: 연회색 바탕, 1px 선, 모서리 10.
 class AuthNotice extends StatelessWidget {
   const AuthNotice({super.key, required this.text});
   final String text;
@@ -300,20 +315,21 @@ class AuthNotice extends StatelessWidget {
     decoration: BoxDecoration(
       color: LdsColors.canvas,
       border: Border.all(color: LdsColors.line),
-      borderRadius: BorderRadius.circular(LdsRadius.table),
+      borderRadius: BorderRadius.circular(10),
     ),
     child: Text(
       text,
       style: const TextStyle(
         fontSize: 14,
-        color: LdsColors.mutedStrong,
-        height: 1.7,
+        color: LdsColors.muted,
+        height: 1.8,
       ),
     ),
   );
 }
 
-/// 큰 버튼(7.4 large: 높이 48, 모서리 6), 폭 전체, 글자 뒤 화살표.
+/// 큰 버튼(7.4 large: 높이 48), 폭 전체, 글자 뒤 화살표.
+/// 시안의 인증 화면 버튼은 모서리 8이라 LDS 버튼(6)을 8로 깎아 씁니다.
 class AuthButton extends StatelessWidget {
   const AuthButton({
     super.key,
@@ -328,11 +344,14 @@ class AuthButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
     width: double.infinity,
-    child: LdsButton(
-      label: label,
-      size: LdsButtonSize.large,
-      trailingIcon: icon,
-      onPressed: onPressed,
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: LdsButton(
+        label: label,
+        size: LdsButtonSize.large,
+        trailingIcon: icon,
+        onPressed: onPressed,
+      ),
     ),
   );
 }

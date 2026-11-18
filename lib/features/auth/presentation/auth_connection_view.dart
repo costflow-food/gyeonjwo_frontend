@@ -34,27 +34,27 @@ extension GmailConnectionPhaseCopy on GmailConnectionPhase {
   };
 
   String get title => switch (this) {
-    GmailConnectionPhase.connecting => '계정 연결을 확인하고 있습니다',
-    GmailConnectionPhase.connected => 'Gmail 연결이 준비됐습니다',
-    GmailConnectionPhase.readDenied => '메일 읽기 권한이 필요합니다',
-    GmailConnectionPhase.sendDenied => '메일 수신부터 시작할 수 있습니다',
+    GmailConnectionPhase.connecting => '계정 연결을 확인하고 있어요',
+    GmailConnectionPhase.connected => 'Gmail 연결이 준비됐어요',
+    GmailConnectionPhase.readDenied => '메일 읽기 권한이 필요해요',
+    GmailConnectionPhase.sendDenied => '메일 수신부터 시작할 수 있어요',
     GmailConnectionPhase.bothDenied => 'Gmail 권한을 확인해 주세요',
-    GmailConnectionPhase.failed => '계정을 연결하지 못했습니다',
+    GmailConnectionPhase.failed => '계정을 연결하지 못했어요',
     GmailConnectionPhase.reconnect => 'Google 계정을 다시 연결해 주세요',
   };
 
   String get description => switch (this) {
-    GmailConnectionPhase.connecting => 'Google 인증 후 견줘 서버의 연결 결과를 기다리고 있습니다.',
-    GmailConnectionPhase.connected => '연결이 완료되면 수신 메일을 업무 큐에서 확인할 수 있습니다.',
+    GmailConnectionPhase.connecting => 'Google 인증 후 Thoner 서버의 연결 결과를 기다리고 있어요.',
+    GmailConnectionPhase.connected => '연결이 완료되면 수신 메일을 Tasks에서 확인할 수 있어요.',
     GmailConnectionPhase.readDenied =>
-      '로그인은 완료됐지만 Gmail 읽기 권한이 없어 자동 수신을 시작할 수 없습니다.',
+      '로그인은 완료됐지만 Gmail 읽기 권한이 없어 자동 수신을 시작할 수 없어요.',
     GmailConnectionPhase.sendDenied =>
-      'Gmail 읽기는 허용됐습니다. 발송 권한이 없어 메일 발송만 사용할 수 없습니다.',
+      'Gmail 읽기는 허용됐어요. 발송 권한이 없어 메일 발송만 사용할 수 없어요.',
     GmailConnectionPhase.bothDenied =>
-      '로그인은 완료됐지만 읽기와 발송 권한이 없어 메일 기능을 사용할 수 없습니다.',
-    GmailConnectionPhase.failed => '견줘 서버의 연결을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      '로그인은 완료됐지만 읽기와 발송 권한이 없어 메일 기능을 사용할 수 없어요.',
+    GmailConnectionPhase.failed => 'Thoner 서버의 연결을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.',
     GmailConnectionPhase.reconnect =>
-      '계정 연결이 만료되었거나 권한이 변경되었습니다. 다시 연결하면 메일 기능을 사용할 수 있습니다.',
+      '계정 연결이 만료되었거나 권한이 변경되었어요. 다시 연결하면 메일 기능을 사용할 수 있어요.',
   };
 
   bool get hasConnection => switch (this) {
@@ -141,10 +141,11 @@ class _ConnectionCard extends StatelessWidget {
               AuthIconBox(
                 icon: preview.icon,
                 size: 48,
+                radius: 12,
                 background: connected
                     ? LdsColors.successBg
                     : LdsColors.primarySoft,
-                color: connected ? LdsColors.successText : LdsColors.primary,
+                color: connected ? authSuccessDeep : LdsColors.primary,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -156,10 +157,10 @@ class _ConnectionCard extends StatelessWidget {
                     Text(
                       preview.title,
                       style: const TextStyle(
-                        fontSize: AppFontSizes.pageTitle,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
                         height: 1.3,
-                        letterSpacing: -.5,
+                        letterSpacing: -1,
                       ),
                     ),
                   ],
@@ -172,7 +173,7 @@ class _ConnectionCard extends StatelessWidget {
             description,
             style: TextStyle(
               fontSize: AppFontSizes.bodyLarge,
-              color: LdsColors.mutedStrong,
+              color: LdsColors.muted,
               height: 1.8,
             ),
           ),
@@ -185,17 +186,17 @@ class _ConnectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             AuthNotice(
-              text: '견줘 서버가 Google 권한을 확인하고 메일 자동 수신을 준비하고 있습니다. 결과가 나올 때까지 이 창을 닫지 말아 주세요.',
+              text: 'Thoner 서버가 Google 권한을 확인하고 메일 자동 수신을 준비하고 있어요. 결과가 나올 때까지 이 창을 닫지 말아 주세요.',
             ),
           ] else ...[
             _ConnectionPermissionRow(
               icon: Icons.person_outline,
-              title: '견줘 로그인',
+              title: 'Thoner 로그인',
               description: !loggedIn
-                  ? '계정 연결 상태를 다시 확인해야 합니다.'
+                  ? '계정 연결 상태를 다시 확인해야 해요.'
                   : email == null
-                  ? 'Google 계정 인증을 마쳤습니다.'
-                  : '$email 계정으로 로그인했습니다.',
+                  ? 'Google 계정 인증을 마쳤어요.'
+                  : '$email 계정으로 로그인했어요.',
               enabled: loggedIn,
               status: loggedIn ? '로그인 완료' : '확인 필요',
             ),
@@ -204,8 +205,8 @@ class _ConnectionCard extends StatelessWidget {
               icon: Icons.inbox_outlined,
               title: 'Gmail 자동 수신',
               description: preview.canRead
-                  ? '받은 메일을 업무 큐로 가져올 수 있습니다.'
-                  : '읽기 권한과 계정 연결이 필요합니다.',
+                  ? '받은 메일을 Tasks로 가져올 수 있어요.'
+                  : '읽기 권한과 계정 연결이 필요해요.',
               enabled: preview.canRead,
               status: preview.canRead ? '사용 가능' : '사용 불가',
             ),
@@ -215,7 +216,7 @@ class _ConnectionCard extends StatelessWidget {
               title: 'Gmail 발송',
               description: preview.canSend
                   ? '실제 발송 승인 설정은 별도로 확인해 주세요.'
-                  : '발송 권한과 계정 연결이 필요합니다.',
+                  : '발송 권한과 계정 연결이 필요해요.',
               enabled: preview.canSend,
               status: preview.canSend ? '권한 허용 · 발송 승인은 별도' : '사용 불가',
             ),
@@ -280,15 +281,20 @@ class _ConnectionPermissionRow extends StatelessWidget {
           textAlign: inline ? TextAlign.right : TextAlign.left,
           style: TextStyle(
             fontSize: AppFontSizes.secondary,
-            fontWeight: FontWeight.w700,
-            color: enabled ? LdsColors.successText : LdsColors.mutedStrong,
+            fontWeight: FontWeight.w600,
+            color: enabled ? authSuccessDeep : LdsColors.muted,
             height: 1.5,
           ),
         );
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            AuthIconBox(icon: icon, enabled: enabled, size: 36),
+            AuthIconBox(
+              icon: icon,
+              enabled: enabled,
+              size: 34,
+              iconSize: 18,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -299,15 +305,15 @@ class _ConnectionPermissionRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: AppFontSizes.bodyLarge,
                       fontWeight: FontWeight.w700,
-                      color: enabled ? LdsColors.ink : LdsColors.mutedStrong,
+                      color: enabled ? LdsColors.ink : LdsColors.muted,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
                     style: TextStyle(
-                      fontSize: AppFontSizes.body,
-                      color: LdsColors.mutedStrong,
+                      fontSize: 14,
+                      color: LdsColors.muted,
                       height: 1.5,
                     ),
                   ),

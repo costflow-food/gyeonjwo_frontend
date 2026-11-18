@@ -22,33 +22,43 @@ class LoginView extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
+                'PURCHASING WORKSPACE',
+                style: TextStyle(
+                  fontSize: AppFontSizes.secondary,
+                  fontWeight: FontWeight.w700,
+                  color: LdsColors.primary,
+                  letterSpacing: 1.6,
+                ),
+              ),
+              SizedBox(height: 24),
+              Text(
                 '흩어진 구매 요청,\n검토의 시작을 한곳에서.',
                 style: TextStyle(
                   fontSize: AppFontSizes.brand,
-                  height: 1.4,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -.5,
+                  height: 1.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.2,
                 ),
               ),
               SizedBox(height: 20),
               Text(
-                '메일로 받은 요청부터 구매 판단에 필요한 근거까지.\n견줘와 함께 차근차근 확인하십시오.',
+                '메일로 받은 요청부터 구매 판단에 필요한 근거까지.\nThoner와 함께 차근차근 확인하세요.',
                 style: TextStyle(
                   fontSize: AppFontSizes.bodyLarge,
-                  color: LdsColors.mutedStrong,
+                  color: LdsColors.muted,
                   height: 1.9,
                 ),
               ),
               SizedBox(height: 28),
               AuthInfoTile(
                 icon: Icons.inbox_outlined,
-                title: '메일에서 업무 큐로',
-                description: 'Gmail로 들어온 요청을 모아 확인합니다.',
+                title: '메일에서 Tasks로',
+                description: 'Gmail로 들어온 요청을 모아 확인해요.',
               ),
               AuthInfoTile(
-                icon: Icons.fact_check_outlined,
+                icon: Icons.task_outlined,
                 title: '구매 판단을 위한 근거 정리',
-                description: '요청 내용과 거래처 정보를 함께 검토합니다.',
+                description: '요청 내용과 거래처 정보를 함께 검토해요.',
               ),
             ],
           );
@@ -59,9 +69,9 @@ class LoginView extends ConsumerWidget {
               children: [
                 const AuthHeading(
                   step: '01 / 시작하기',
-                  title: '견줘에 오신 것을 환영합니다',
+                  title: 'Thoner에 오신 것을 환영해요',
                   description:
-                      'Google 계정 하나로 가입하고 로그인하십시오.\n처음 오셨다면 계정이 함께 만들어집니다.',
+                      'Google 계정 하나로 가입하고 로그인하세요.\n처음 오셨다면 계정이 함께 만들어집니다.',
                 ),
                 if (redirectFailure != null) ...[
                   AuthNotice(text: redirectFailure.message),
@@ -72,7 +82,7 @@ class LoginView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 const AuthNotice(
-                  text: '다음 화면에서 Gmail 읽기·발송 권한과 데이터 처리 목적을 먼저 안내해 드립니다. 권한 선택은 Google 동의 화면에서 직접 진행합니다.',
+                  text: '다음 화면에서 Gmail 읽기·발송 권한과 데이터 처리 목적을 먼저 안내해 드려요. 권한 선택은 Google 동의 화면에서 직접 진행합니다.',
                 ),
               ],
             ),
