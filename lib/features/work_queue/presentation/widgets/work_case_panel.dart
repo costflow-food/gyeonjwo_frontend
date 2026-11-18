@@ -7,6 +7,7 @@ import "../../../../shared/file_save/file_save.dart";
 import "../../../../shared/formatters.dart";
 import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/app_icons.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../../../shared/widgets/workspace_button_styles.dart";
 import "../../../../shared/workspace_colors.dart";
@@ -887,7 +888,7 @@ class _MailError extends StatelessWidget {
 }
 
 /// Tasks 상세 머리 (Tasks 시안): 메일 제목(21/600) 아래
-/// `[상태 라벨] · 거래처명 · 접수 yyyy.MM.dd HH:mm`(13 `#6B7583`).
+/// `[상태 라벨]  [가게 아이콘] 거래처명  접수 yyyy.MM.dd HH:mm`(13 `#6B7583`).
 /// 품목 줄과 오른쪽 버튼은 두지 않습니다(메일 초안은 '지금 할 일' 상자,
 /// 원문은 '받은 메일' 카드).
 class _DetailHeader extends StatelessWidget {
@@ -922,18 +923,20 @@ class _DetailHeader extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               LdsTag(label.text, tone: taskLabelTone(label)),
-              for (final text in [
-                caseSupplierName(workCase),
-                "접수 ${formatSeoulDateTime(workCase.receivedAt)}",
-              ])
-                Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    letterSpacing: -.3,
+              // 거래처: 앞에 가게 아이콘(사이드바 Suppliers와 같은 선 아이콘).
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppIconView(
+                    AppIcon.suppliers,
+                    size: 16,
                     color: LdsColors.muted,
                   ),
-                ),
+                  const SizedBox(width: 4),
+                  Flexible(child: _metaText(caseSupplierName(workCase))),
+                ],
+              ),
+              _metaText("접수 ${formatSeoulDateTime(workCase.receivedAt)}"),
             ],
           ),
         ],
@@ -941,6 +944,17 @@ class _DetailHeader extends StatelessWidget {
     );
   }
 }
+
+Widget _metaText(String text) => Text(
+  text,
+  maxLines: 1,
+  overflow: TextOverflow.ellipsis,
+  style: const TextStyle(
+    fontSize: 13,
+    letterSpacing: -.3,
+    color: LdsColors.muted,
+  ),
+);
 
 /// 사람이 읽는 거래처 이름: 등록 거래처(목록 title)가 먼저, 없으면 보낸
 /// 사람 이름·주소.

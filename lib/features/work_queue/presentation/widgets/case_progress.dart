@@ -467,7 +467,7 @@ class TodoTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(minHeight: 132),
+    // 높이는 줄 수만큼(줄 44). 줄이 적어도 빈칸을 두지 않습니다.
     decoration: BoxDecoration(
       color: Colors.white,
       border: Border.all(color: LdsColors.line),
