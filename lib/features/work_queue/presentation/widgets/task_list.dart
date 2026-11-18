@@ -236,6 +236,7 @@ class _TaskListState extends ConsumerState<TaskList> {
               ),
               const SizedBox(height: 16),
               LdsTabBar<TaskGroup?>(
+                expand: true,
                 selected: widget.status,
                 onSelected: widget.onTab,
                 tabs: [
