@@ -16,7 +16,7 @@ import "transactions_view_model.dart";
 import "widgets/transaction_detail_panel.dart";
 import "widgets/transaction_filter_bar.dart";
 import "widgets/transaction_list_row.dart";
-import "widgets/transaction_table.dart";
+
 import "widgets/transaction_sort_button.dart";
 
 /// Transactions (`/transactions`, `docs/design-ssot.md` 7.12): 확정된 거래를
@@ -56,35 +56,14 @@ class _TransactionsViewState extends ConsumerState<TransactionsView> {
         });
       }
     }
-    final dateButton = LdsDateRangeButton(
-      value: period,
-      today: ref.watch(transactionsTodayProvider),
-      onChanged: (range) {
-        ref.read(transactionsPeriodProvider.notifier).select(range);
-        ref.read(transactionsViewModelProvider.notifier).clearSelection();
-      },
-    );
     Widget content() => AsyncContent<List<PurchaseRecord>>(
       value: records,
       onRetry: () => ref.invalidate(transactionRecordsProvider),
       builder: (loaded) => _Content(records: loaded, period: period),
     );
-    if (isCompactLayout(context)) {
-      // 휴대폰: 기간 → 목록(또는 고른 거래)을 한 줄로 스크롤합니다.
-      return WorkspaceShell(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Align(alignment: Alignment.centerLeft, child: dateButton),
-            const SizedBox(height: 16),
-            content(),
-          ],
-        ),
-      );
-    }
     return WorkspaceShell(
-      scrollable: false,
-      topAction: dateButton,
+      scrollable: isCompactLayout(context),
+      topAction: const LdsDateViewButton(),
       child: content(),
     );
   }
@@ -147,6 +126,15 @@ class _ContentState extends ConsumerState<_Content> {
     );
     final selected = listing.selected;
     final selectedId = selected?.record.id;
+    final dateButton = LdsDateRangeButton(
+      value: widget.period,
+      invoice: true,
+      today: ref.watch(transactionsTodayProvider),
+      onChanged: (range) {
+        ref.read(transactionsPeriodProvider.notifier).select(range);
+        viewModel.clearSelection();
+      },
+    );
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -159,14 +147,20 @@ class _ContentState extends ConsumerState<_Content> {
           filter: filter,
           onItems: viewModel.setItems,
           onSuppliers: viewModel.setSuppliers,
+          onMethods: viewModel.setMethods,
           onClearAll: viewModel.clearFilters,
-          trailing: TransactionSortButton(
-            filter: filter,
-            onChanged: viewModel.setSort,
-          ),
+          trailing: dateButton,
         ),
         const SizedBox(height: 12),
-        if (!isCompactLayout(context)) _Summary(listing: listing),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _Summary(listing: listing),
+            TransactionSortButton(filter: filter, onChanged: viewModel.setSort),
+          ],
+        ),
       ],
     );
     final rows = listing.rows.isEmpty
@@ -216,23 +210,12 @@ class _ContentState extends ConsumerState<_Content> {
       }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          header,
-          const SizedBox(height: 12),
-          TransactionTable(
-            listing: listing,
-            filter: filter,
-            onSort: (sort) => viewModel.setSort(
-              sort,
-              descending: filter.sort == sort ? !filter.descending : true,
-            ),
-            onSelect: viewModel.select,
-          ),
-        ],
+        children: [header, const SizedBox(height: 12), rows],
       );
     }
     if (!ListDetailLayout.isSinglePane(context)) _autoSelect(listing);
     return ListDetailLayout(
+      detailPadding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       detailAlone: selected != null,
       onBack: viewModel.clearSelection,
       list: (padding, wide) =>

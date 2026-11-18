@@ -305,10 +305,10 @@ void main() {
     expect(find.text("왼쪽 목록에서 업무를 고르면 내용이 여기에 보입니다."), findsNothing);
     expect(
       tester.getSize(find.byType(LdsTabBar<TaskGroup?>)).width,
-      WorkQueueView.listWidth(1440),
+      WorkQueueView.listWidth(1440) - 33,
     );
     expect(WorkQueueView.listWidth(1000), 400);
-    expect(WorkQueueView.listWidth(2000), 480);
+    expect(WorkQueueView.listWidth(2000), 400);
     // Tasks starts with the icon menu.
     expect(tester.getSize(find.byType(AppSidebar)).width, AppSidebar.iconWidth);
     // The list pane is #F3F4F6 with a line on its right; the detail #F9FAFB.

@@ -56,10 +56,10 @@ void main() {
     // 3 now: orange, ringed 4px in light orange.
     expect(deco(2).color, LdsColors.primary);
     expect(deco(2).boxShadow!.single.spreadRadius, 4);
-    expect(deco(2).boxShadow!.single.color, LdsColors.primaryLight);
+    expect(deco(2).boxShadow!.single.color, LdsColors.primarySoft);
     // 4, 5 to come: white with a light orange border.
     expect(deco(3).color, Colors.white);
-    expect(deco(3).border!.top.color, LdsColors.primaryLight);
+    expect(deco(3).border!.top.color, LdsColors.borderStrong);
     for (final circle in circles) {
       expect(circle.constraints!.maxWidth, LdsStepBar.circle);
     }

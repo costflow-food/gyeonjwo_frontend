@@ -9,7 +9,7 @@ abstract final class LdsColors {
   static const primaryLight = Color(0xFFFFBF99); // 진행 단계 남은 구간·테두리
   static const primaryRow = Color(0xFFFFF7F2); // 최신·추천 줄
   static const primaryText = Color(0xFF993A00); // 연주황 바탕 위 글자
-  static const selectedRow = Color(0xFFFFF4EC); // 고른 업무 행
+  static const selectedRow = Color(0xFFE8EBEF); // 고른 목록 행
   static const ink = Color(0xFF191F28);
   static const title = Color(0xFF333D4B);
   static const label = Color(0xFF4E5968); // 표 이름표·머리

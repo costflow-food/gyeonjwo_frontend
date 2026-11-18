@@ -60,8 +60,15 @@ class TransactionsViewModel extends Notifier<TransactionsFilter> {
     fromSuppliers: false,
   );
 
+  void setMethods(Set<String> methods) => state = state.copyWith(
+    methods: methods,
+    selectedId: () => null,
+    fromSuppliers: false,
+  );
+
   void clearFilters() => state = state.copyWith(
     items: const {},
+    methods: const {},
     suppliers: const {},
     selectedId: () => null,
     fromSuppliers: false,

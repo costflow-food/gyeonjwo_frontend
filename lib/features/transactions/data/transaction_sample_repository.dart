@@ -20,6 +20,10 @@ class TransactionSampleRepository implements TransactionRepository {
   static const records = <PurchaseRecord>[
     PurchaseRecord(
       id: "sample-purchase-1",
+      confirmationMethod: "검토 카드",
+      confirmationDescription: "검토 카드 구매안 확정 · 전량 전환",
+      evidenceName: "거래명세서_바른채소_1018.pdf",
+      relatedTaskTitle: "[검토 완료] 냉동 딸기 단가 조정 안내",
       supplierItemId: "sample-item-strawberry-barun",
       supplierId: "sample-supplier-barun",
       itemName: "냉동 딸기",
@@ -34,6 +38,9 @@ class TransactionSampleRepository implements TransactionRepository {
     ),
     PurchaseRecord(
       id: "sample-purchase-2",
+      confirmationMethod: "기존 계약",
+      confirmationDescription: "기존 계약 발주",
+      evidenceName: "거래명세서_한라푸드_1010.pdf",
       supplierItemId: "sample-item-strawberry-halla",
       supplierId: "sample-supplier-halla",
       itemName: "냉동 딸기",
@@ -48,6 +55,10 @@ class TransactionSampleRepository implements TransactionRepository {
     ),
     PurchaseRecord(
       id: "sample-purchase-3",
+      confirmationMethod: "역제안",
+      confirmationDescription: "역제안 수락 후 확정",
+      evidenceName: "거래명세서_남도청과_0925.pdf",
+      relatedTaskTitle: "[단가인상] 제주감귤 남도청과 단가 인상 안내",
       supplierItemId: "sample-item-tangerine-namdo",
       supplierId: "sample-supplier-namdo",
       itemName: "한라감귤",
@@ -62,6 +73,9 @@ class TransactionSampleRepository implements TransactionRepository {
     ),
     PurchaseRecord(
       id: "sample-purchase-4",
+      confirmationMethod: "기존 계약",
+      confirmationDescription: "기존 계약 발주",
+      evidenceName: "거래명세서_한라푸드_0905.pdf",
       supplierItemId: "sample-item-strawberry-halla",
       supplierId: "sample-supplier-halla",
       itemName: "냉동 딸기",
@@ -76,6 +90,9 @@ class TransactionSampleRepository implements TransactionRepository {
     ),
     PurchaseRecord(
       id: "sample-purchase-5",
+      confirmationMethod: "기존 계약",
+      confirmationDescription: "기존 계약 발주",
+      evidenceName: "거래명세서_남도청과_0828.pdf",
       supplierItemId: "sample-item-tangerine-namdo",
       supplierId: "sample-supplier-namdo",
       itemName: "한라감귤",

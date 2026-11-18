@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/workflow_step_icon.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/case_stage.dart";
 import "../../domain/work_case.dart";
@@ -90,6 +91,7 @@ class CaseStepBar extends StatelessWidget {
                         ? (error ? _StepState.error : _StepState.now)
                         : _StepState.todo,
                     icon: caseStepIcons[i],
+                    stepIndex: i,
                   ),
                   if (allLabels || i == 0 || i == count - 1 || i == current)
                     _positionedLabel(
@@ -114,6 +116,7 @@ class CaseStepBar extends StatelessWidget {
     required double center,
     required _StepState state,
     required IconData icon,
+    required int stepIndex,
   }) {
     final big = state == _StepState.now || state == _StepState.error;
     final size = big ? _bigDot : _dot;
@@ -153,15 +156,13 @@ class CaseStepBar extends StatelessWidget {
               : [BoxShadow(color: ring, spreadRadius: 4)],
         ),
         alignment: Alignment.center,
-        child: Icon(
-          switch (state) {
-            _StepState.done => Icons.check,
-            _StepState.error => Icons.error_outline,
-            _ => icon,
-          },
-          size: 16,
-          color: iconColor,
-        ),
+        child: state == _StepState.done || state == _StepState.error
+            ? Icon(
+                state == _StepState.done ? Icons.check : Icons.error_outline,
+                size: 16,
+                color: iconColor,
+              )
+            : WorkflowStepIcon(stepIndex, color: iconColor),
       ),
     );
   }

@@ -18,6 +18,7 @@ class ListDetailLayout extends StatelessWidget {
     required this.detail,
     required this.detailAlone,
     required this.onBack,
+    this.detailPadding = const EdgeInsets.all(24),
   });
 
   /// 이 폭 이하에서는 목록과 상세를 한 화면씩 보여 줍니다(7.18).
@@ -26,9 +27,8 @@ class ListDetailLayout extends StatelessWidget {
   /// 상세 내용 최대 폭(7.18).
   static const detailMaxWidth = 1040.0;
 
-  /// 목록 칸 = 화면 폭의 30%, 최소 400 · 최대 480 (7.18).
-  static double listWidth(double screenWidth) =>
-      (screenWidth * .3).clamp(400.0, 480.0);
+  /// 목록 영역 전체 = 400px, 안쪽 좌우 16px (2026-11-18 최종 HTML).
+  static double listWidth(double screenWidth) => 400.0;
 
   /// 목록 칸 오른쪽 안쪽 여백(시안 16).
   static const listRightPadding = 16.0;
@@ -48,6 +48,7 @@ class ListDetailLayout extends StatelessWidget {
 
   /// 한 화면씩 보는 상세의 '목록으로'.
   final VoidCallback onBack;
+  final EdgeInsets detailPadding;
 
   static const _gutter = WorkspaceShell.gutter;
 
@@ -61,6 +62,7 @@ class ListDetailLayout extends StatelessWidget {
         return ColoredBox(
           color: LdsColors.canvas,
           child: _DetailScroll(
+            padding: detailPadding,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -81,25 +83,23 @@ class ListDetailLayout extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            width: listWidth(screen) + _gutter + listRightPadding + 1,
+            width: listWidth(screen),
             decoration: const BoxDecoration(
               color: LdsColors.lineSoft,
               border: Border(right: BorderSide(color: LdsColors.line)),
             ),
             child: list(
-              const EdgeInsets.fromLTRB(
-                _gutter,
-                _gutter,
-                listRightPadding,
-                _gutter,
-              ),
+              const EdgeInsets.fromLTRB(16, _gutter, listRightPadding, _gutter),
               true,
             ),
           ),
           Expanded(
             child: ColoredBox(
               color: LdsColors.canvas,
-              child: _DetailScroll(child: detail(context)),
+              child: _DetailScroll(
+                padding: detailPadding,
+                child: detail(context),
+              ),
             ),
           ),
         ],
@@ -111,13 +111,15 @@ class ListDetailLayout extends StatelessWidget {
 /// 상세 칸: 위 24에서 시작, 최대 1040을 목록 쪽에 붙이고 오른쪽 여백 24.
 /// 남는 폭은 상세 오른쪽 끝에만 둡니다(7.18).
 class _DetailScroll extends StatelessWidget {
-  const _DetailScroll({required this.child});
+  const _DetailScroll({required this.child, required this.padding});
+
+  final EdgeInsets padding;
 
   final Widget child;
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-    padding: const EdgeInsets.all(WorkspaceShell.gutter),
+    padding: padding,
     child: Align(
       alignment: Alignment.topLeft,
       child: ConstrainedBox(
@@ -253,11 +255,11 @@ class ListGroupBox extends StatelessWidget {
     decoration: BoxDecoration(
       color: Colors.white,
       border: Border.all(color: LdsColors.line),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
     ),
     // 테두리 안쪽(11)으로 깎아 고른 줄 바탕이 모서리를 넘지 않게 합니다.
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(11),
+      borderRadius: BorderRadius.circular(7),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -271,7 +273,7 @@ class ListGroupBox extends StatelessWidget {
   );
 }
 
-/// 목록 한 줄의 틀: 흰 바탕(고르면 `#FFF4EC` + 왼쪽 주황 3px), 안쪽 14·12.
+/// 목록 한 줄의 틀: 흰 바탕(고르면 `#E8EBEF` + 왼쪽 먹색 3px), 좌우 16·12.
 class ListSelectableRow extends StatelessWidget {
   const ListSelectableRow({
     super.key,
@@ -306,10 +308,10 @@ class ListSelectableRow extends StatelessWidget {
                 top: 0,
                 bottom: 0,
                 width: 3,
-                child: ColoredBox(color: LdsColors.primary),
+                child: ColoredBox(color: LdsColors.title),
               ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.only(left: 16, right: 12),
               child: child,
             ),
           ],

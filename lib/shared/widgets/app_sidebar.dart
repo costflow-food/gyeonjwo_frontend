@@ -110,6 +110,7 @@ class AppSidebar extends StatelessWidget {
                       size: 20,
                     ),
                     tooltip: '메뉴 접기',
+                    borderless: true,
                     onPressed: onToggle,
                   ),
             const SizedBox(width: 14),
@@ -140,15 +141,7 @@ class AppSidebar extends StatelessWidget {
     children: [
       SizedBox(
         height: headerHeight,
-        child: Center(
-          child: _Symbol(onTap: () => _go(context, AppPaths.dashboard)),
-        ),
-      ),
-      const SizedBox(height: 16),
-      LdsIconButton(
-        iconWidget: const AppIconView(AppIcon.sidebarExpand, size: 20),
-        tooltip: '메뉴 펼치기',
-        onPressed: onToggle,
+        child: Center(child: _RailToggle(onToggle: onToggle)),
       ),
       const SizedBox(height: 24),
       for (final menu in AppMenu.values) ...[
@@ -642,6 +635,41 @@ class _MenuRow extends StatelessWidget {
               style: const TextStyle(fontSize: 15, color: LdsColors.ink),
             ),
           ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// 로고 자리에서만 펼치기: 포인터 hover 또는 키보드 포커스일 때 아이콘 전환.
+class _RailToggle extends StatefulWidget {
+  const _RailToggle({required this.onToggle});
+  final VoidCallback onToggle;
+  @override
+  State<_RailToggle> createState() => _RailToggleState();
+}
+
+class _RailToggleState extends State<_RailToggle> {
+  bool _hover = false, _focus = false;
+  @override
+  Widget build(BuildContext context) => FocusableActionDetector(
+    onShowFocusHighlight: (v) => setState(() => _focus = v),
+    onShowHoverHighlight: (v) => setState(() => _hover = v),
+    child: Tooltip(
+      message: '메뉴 펼치기',
+      child: LdsFocusRing(
+        radius: 8,
+        child: InkWell(
+          onTap: widget.onToggle,
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox.square(
+            dimension: 36,
+            child: Center(
+              child: _hover || _focus
+                  ? const AppIconView(AppIcon.sidebarExpand, size: 20)
+                  : IgnorePointer(child: _Symbol(onTap: widget.onToggle)),
+            ),
+          ),
         ),
       ),
     ),

@@ -90,6 +90,7 @@ class LdsButton extends StatelessWidget {
       ),
       textStyle: WidgetStatePropertyAll(
         TextStyle(
+          fontFamily: 'NanumGothic',
           fontSize: size.fontSize,
           fontWeight: FontWeight.w700,
           height: 1.2,
@@ -179,12 +180,14 @@ class LdsIconButton extends StatelessWidget {
   const LdsIconButton({
     super.key,
     this.icon,
+    this.borderless = false,
     this.iconWidget,
     required this.tooltip,
     required this.onPressed,
   }) : assert((icon == null) != (iconWidget == null), 'icon이나 iconWidget 하나만');
 
   final IconData? icon;
+  final bool borderless;
 
   /// [icon] 대신 직접 그린 아이콘(20×20).
   final Widget? iconWidget;
@@ -221,7 +224,9 @@ class LdsIconButton extends StatelessWidget {
         ),
         side: WidgetStateProperty.resolveWith(
           (states) => BorderSide(
-            color: states.contains(WidgetState.disabled)
+            color: borderless
+                ? Colors.transparent
+                : states.contains(WidgetState.disabled)
                 ? LdsColors.line
                 : LdsColors.borderStrong,
           ),

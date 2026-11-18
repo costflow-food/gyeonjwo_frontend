@@ -77,6 +77,7 @@ class DashboardView extends ConsumerWidget {
     ];
     return WorkspaceShell(
       topAction: LdsDateRangeButton(
+        iconOnly: true,
         value: ref.watch(dashboardPeriodProvider),
         onChanged: ref.read(dashboardPeriodProvider.notifier).select,
       ),

@@ -14,6 +14,7 @@ class TransactionFilterBar extends StatelessWidget {
     required this.filter,
     required this.onItems,
     required this.onSuppliers,
+    required this.onMethods,
     required this.onClearAll,
     this.trailing,
   });
@@ -22,6 +23,7 @@ class TransactionFilterBar extends StatelessWidget {
   final TransactionsFilter filter;
   final ValueChanged<Set<String>> onItems;
   final ValueChanged<Set<String>> onSuppliers;
+  final ValueChanged<Set<String>> onMethods;
   final VoidCallback onClearAll;
 
   /// 필터 줄 오른쪽 끝(정렬 선택).
@@ -37,42 +39,32 @@ class TransactionFilterBar extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Semantics(
-                container: true,
-                label: "거래 거르기",
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    LdsFilterButton(
-                      label: "품목",
-                      caption: _caption,
-                      options: _options(listing.itemChoices),
-                      selected: filter.items,
-                      onChanged: onItems,
-                    ),
-                    LdsFilterButton(
-                      label: "거래처",
-                      caption: _caption,
-                      options: _options(listing.supplierChoices),
-                      selected: filter.suppliers,
-                      onChanged: onSuppliers,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          LdsFilterButton(
+            label: "품목",
+            caption: _caption,
+            options: _options(listing.itemChoices),
+            selected: filter.items,
+            onChanged: onItems,
           ),
-          if (trailing case final trailing?) ...[
-            const SizedBox(width: 8),
-            trailing,
-          ],
+          LdsFilterButton(
+            label: "거래처",
+            caption: _caption,
+            options: _options(listing.supplierChoices),
+            selected: filter.suppliers,
+            onChanged: onSuppliers,
+          ),
+          LdsFilterButton(
+            label: "확정 방식",
+            caption: _caption,
+            options: _options(listing.methodChoices),
+            selected: filter.methods,
+            onChanged: onMethods,
+          ),
+          ?trailing,
         ],
       ),
       if (filter.hasFilters) ...[
@@ -86,6 +78,11 @@ class TransactionFilterBar extends StatelessWidget {
               LdsRemovableTag(
                 item,
                 onRemove: () => onItems({...filter.items}..remove(item)),
+              ),
+            for (final method in filter.methods)
+              LdsRemovableTag(
+                method,
+                onRemove: () => onMethods({...filter.methods}..remove(method)),
               ),
             for (final supplier in filter.suppliers)
               LdsRemovableTag(

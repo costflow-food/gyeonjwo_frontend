@@ -20,12 +20,14 @@ class PlanBoard extends StatelessWidget {
     required this.busy,
     required this.onSelect,
     required this.colors,
+    this.selectedPlanId,
   });
 
   final ReviewCard card;
   final bool busy;
   final ValueChanged<ResponsePlan> onSelect;
   final SupplierColors colors;
+  final String? selectedPlanId;
 
   static const gap = 16.0;
   static const _minCardWidth = 260.0;
@@ -55,6 +57,7 @@ class PlanBoard extends StatelessWidget {
       card: card,
       busy: busy,
       lowest: _isLowest(plan, lowestTotal),
+      locallySelected: selectedPlanId == plan.planId && plan.planId != null,
       showReason: stacked,
       onSelect: () => onSelect(plan),
     );
@@ -141,6 +144,7 @@ class PlanSelect extends StatelessWidget {
     required this.lowest,
     required this.onSelect,
     this.showReason = false,
+    this.locallySelected = false,
   });
 
   static const height = 44.0;
@@ -148,6 +152,7 @@ class PlanSelect extends StatelessWidget {
   final ResponsePlan plan;
   final ReviewCard card;
   final bool busy, lowest;
+  final bool locallySelected;
 
   /// 한 줄에 한 장일 때: 고를 수 없는 이유를 단추 아래에 적습니다(툴팁은
   /// 휴대폰에서 길게 눌러야 보입니다).
@@ -191,8 +196,12 @@ class PlanSelect extends StatelessWidget {
       borderRadius: BorderRadius.circular(LdsRadius.button),
     );
     const size = Size.fromHeight(height);
-    const text = TextStyle(fontSize: 15, fontWeight: FontWeight.w700);
-    final button = lowest
+    const text = TextStyle(
+      fontFamily: 'NanumGothic',
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+    );
+    final button = locallySelected
         ? FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: LdsColors.primary,
@@ -205,7 +214,7 @@ class PlanSelect extends StatelessWidget {
               elevation: 0,
             ),
             onPressed: onPressed,
-            child: const Text("선택"),
+            child: Text(locallySelected ? "✓ 선택됨" : "이 안 선택"),
           )
         : OutlinedButton(
             style: OutlinedButton.styleFrom(
@@ -221,7 +230,7 @@ class PlanSelect extends StatelessWidget {
               textStyle: text,
             ),
             onPressed: onPressed,
-            child: const Text("선택"),
+            child: Text(locallySelected ? "✓ 선택됨" : "이 안 선택"),
           );
     if (showReason && !canSelect && reason != null) {
       return Column(

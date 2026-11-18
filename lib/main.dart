@@ -2,7 +2,6 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:google_fonts/google_fonts.dart";
 import "package:shared_preferences/shared_preferences.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 
@@ -28,6 +27,7 @@ ThemeData buildAppTheme(WorkspacePalette p) {
     borderRadius: BorderRadius.all(Radius.circular(4)),
   );
   const buttonLabel = TextStyle(
+    fontFamily: 'NanumGothic',
     fontSize: AppFontSizes.button,
     fontWeight: FontWeight.w700,
   );
@@ -49,12 +49,10 @@ ThemeData buildAppTheme(WorkspacePalette p) {
     ),
     scaffoldBackgroundColor: p.canvas,
     useMaterial3: true,
-    fontFamily: GoogleFonts.nanumGothic().fontFamily,
+    fontFamily: 'NanumGothic',
   );
   return base.copyWith(
-    textTheme: GoogleFonts.nanumGothicTextTheme(
-      base.textTheme,
-    ).apply(bodyColor: p.ink, displayColor: p.ink),
+    textTheme: base.textTheme.apply(bodyColor: p.ink, displayColor: p.ink),
     dividerColor: p.line,
     dividerTheme: DividerThemeData(color: p.line, space: 1),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: p.accent),
@@ -135,54 +133,56 @@ ThemeData buildAppTheme(WorkspacePalette p) {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        foregroundColor: p.onAccent,
-        disabledForegroundColor: LdsColors.disabled,
-        elevation: 0,
-        // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
-        visualDensity: VisualDensity.standard,
-        minimumSize: buttonSize,
-        padding: buttonPadding,
-        shape: buttonShape,
-        textStyle: buttonLabel,
-      ).copyWith(
-        // hover는 겹침 색 대신 바탕을 #CC4D00으로 바꿉니다.
-        backgroundColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.disabled)
-              ? LdsColors.lineSoft
-              : states.contains(WidgetState.hovered)
-              ? LdsColors.primaryHover
-              : p.accent,
-        ),
-      ),
+      style:
+          FilledButton.styleFrom(
+            foregroundColor: p.onAccent,
+            disabledForegroundColor: LdsColors.disabled,
+            elevation: 0,
+            // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
+            visualDensity: VisualDensity.standard,
+            minimumSize: buttonSize,
+            padding: buttonPadding,
+            shape: buttonShape,
+            textStyle: buttonLabel,
+          ).copyWith(
+            // hover는 겹침 색 대신 바탕을 #CC4D00으로 바꿉니다.
+            backgroundColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.disabled)
+                  ? LdsColors.lineSoft
+                  : states.contains(WidgetState.hovered)
+                  ? LdsColors.primaryHover
+                  : p.accent,
+            ),
+          ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: p.accentText,
-        disabledForegroundColor: LdsColors.disabled,
-        elevation: 0,
-        // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
-        visualDensity: VisualDensity.standard,
-        minimumSize: buttonSize,
-        padding: buttonPadding,
-        shape: buttonShape,
-        textStyle: buttonLabel,
-      ).copyWith(
-        side: WidgetStateProperty.resolveWith(
-          (states) => BorderSide(
-            color: states.contains(WidgetState.disabled)
-                ? LdsColors.line
-                : LdsColors.borderStrong,
+      style:
+          OutlinedButton.styleFrom(
+            foregroundColor: p.accentText,
+            disabledForegroundColor: LdsColors.disabled,
+            elevation: 0,
+            // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 36을 고정합니다.
+            visualDensity: VisualDensity.standard,
+            minimumSize: buttonSize,
+            padding: buttonPadding,
+            shape: buttonShape,
+            textStyle: buttonLabel,
+          ).copyWith(
+            side: WidgetStateProperty.resolveWith(
+              (states) => BorderSide(
+                color: states.contains(WidgetState.disabled)
+                    ? LdsColors.line
+                    : LdsColors.borderStrong,
+              ),
+            ),
+            backgroundColor: WidgetStateProperty.resolveWith(
+              (states) =>
+                  states.contains(WidgetState.hovered) &&
+                      !states.contains(WidgetState.disabled)
+                  ? LdsColors.canvas
+                  : null,
+            ),
           ),
-        ),
-        backgroundColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.hovered) &&
-                  !states.contains(WidgetState.disabled)
-              ? LdsColors.canvas
-              : null,
-        ),
-      ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(

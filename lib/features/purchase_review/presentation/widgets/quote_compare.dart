@@ -30,7 +30,10 @@ class _Line {
 class _Value {
   const _Value(this.text, {this.caption}) : missing = false;
 
-  const _Value.missing([this.text = "미확인"]) : caption = null, missing = true;
+  const _Value.missing([String ignored = ""])
+    : text = "",
+      caption = null,
+      missing = true;
 
   final String text;
   final String? caption;
@@ -150,12 +153,48 @@ class QuoteCompare extends StatelessWidget {
         ),
       );
     }
+    const order = [
+      '단가',
+      '운송비',
+      '물류비',
+      '포장비',
+      '취급비',
+      '기타 비용',
+      '부가세',
+      '공급 가능량',
+      '최소 주문',
+      '적용일',
+      '원산지',
+      '인증',
+      '품목 비고',
+    ];
+    lines.sort((a, b) {
+      int rank(String label) {
+        final i = order.indexOf(label);
+        return i < 0 ? order.length : i;
+      }
+
+      return rank(a.label).compareTo(rank(b.label));
+    });
     return lines;
   }
 
   @override
   Widget build(BuildContext context) {
-    final lines = _lines();
+    final allLines = _lines();
+    // Repeated specification/quality values are stated once above the table.
+    final common = allLines
+        .where(
+          (line) =>
+              line.fields.contains('specification') &&
+              quotes.every(
+                (q) =>
+                    !line.value(q).missing &&
+                    line.value(q).text == line.value(quotes.first).text,
+              ),
+        )
+        .toList();
+    final lines = allLines.where((line) => !common.contains(line)).toList();
     final used = {for (final line in lines) ...line.fields};
     // 표의 어느 줄에도 붙지 않는 근거는 마지막 줄에 모읍니다.
     final leftover = quotes.any(
@@ -194,9 +233,14 @@ class QuoteCompare extends StatelessWidget {
             ],
             rows: [
               for (final line in lines)
-                LdsCompareRow(line.label, [
-                  for (final quote in quotes) cell(line, quote),
-                ]),
+                LdsCompareRow(
+                  line.label,
+                  [for (final quote in quotes) cell(line, quote)],
+                  sectionStart:
+                      line.label == '원산지' ||
+                      (line.label == '인증' &&
+                          !lines.any((l) => l.label == '원산지')),
+                ),
               if (leftover)
                 LdsCompareRow("그 밖의 근거", [
                   for (final quote in quotes) otherEvidence(quote),
@@ -228,6 +272,17 @@ class QuoteCompare extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        for (final line in common)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              '${line.label} · ${line.value(quotes.first).text}',
+              style: const TextStyle(
+                fontSize: 13,
+                color: LdsColors.mutedStrong,
+              ),
+            ),
+          ),
         LayoutBuilder(
           builder: (context, constraints) => constraints.maxWidth >= minWidth
               ? table
@@ -265,7 +320,7 @@ class QuoteCompare extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         const Text(
-          "근거 단추를 누르면 원문 메일을 엽니다. 미확인 값은 0원이나 빈칸으로 채우지 않습니다.",
+          "근거 단추를 누르면 원문 메일을 엽니다.",
           style: TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
         ),
       ],

@@ -459,8 +459,12 @@ void main() {
       );
       expect(find.byIcon(Icons.pause_circle_outline), findsNothing);
       expect(_inPanel(find.text("역제안 제안")), findsOneWidget);
+      expect(_inPanel(find.text("제안 가능 범위")), findsNothing);
+      await tester.ensureVisible(_inPanel(find.text("자세히 보기")));
+      await tester.tap(_inPanel(find.text("자세히 보기")));
+      await tester.pumpAndSettle();
       expect(_inPanel(find.text("제안 가능 범위")), findsOneWidget);
-      expect(_inPanel(find.text("메일 초안")), findsOneWidget);
+      expect(_inPanel(find.text("메일 초안")), findsWidgets);
       expect(_inPanel(find.text("대안 총액이 인상안보다 낮습니다.")), findsOneWidget);
     });
 
@@ -478,7 +482,7 @@ void main() {
           stale: true,
         ),
       );
-      expect(_inPanel(find.text("메일 초안")), findsOneWidget);
+      expect(_inPanel(find.text("메일 초안")), findsWidgets);
       expect(_inPanel(find.text("제안 가능 범위")), findsNothing);
       // An outdated card cannot be chosen from, so it does not say it can.
       expect(
@@ -504,6 +508,10 @@ void main() {
           ),
           size: const Size(1280, 900),
         );
+        expect(_inPanel(find.text("대안 총액")), findsNothing);
+        await tester.ensureVisible(_inPanel(find.text("자세히 보기")));
+        await tester.tap(_inPanel(find.text("자세히 보기")));
+        await tester.pumpAndSettle();
         expect(_inPanel(find.text("대안 총액")), findsOneWidget);
         expect(_inPanel(find.text("2,502,000원")), findsOneWidget);
         expect(_inPanel(find.text("제안 가능 범위")), findsNothing);
@@ -627,7 +635,7 @@ void main() {
       expect(find.text("최저 총액"), findsOneWidget);
       // The chosen plan says so; the lowest can still be chosen.
       expect(find.text("선택한 구매안"), findsOneWidget);
-      expect(find.text("선택"), findsOneWidget);
+      expect(find.text("이 안 선택"), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -641,7 +649,7 @@ void main() {
           plan("KEEP", "2559000"),
         ]),
       );
-      expect(find.text("선택"), findsOneWidget);
+      expect(find.text("이 안 선택"), findsOneWidget);
       expect(find.text("수용"), findsNothing);
       expect(find.text("선택 불가 · 조건부 안은 아직 확정할 수 없습니다."), findsOneWidget);
     });
@@ -679,7 +687,7 @@ void main() {
 
     testWidgets("a single plan is simply open", (tester) async {
       await _pump(tester, card([plan("KEEP", "2559000")]));
-      expect(find.text("선택"), findsOneWidget);
+      expect(find.text("이 안 선택"), findsOneWidget);
       expect(find.byIcon(Icons.expand_less), findsNothing);
       expect(find.byIcon(Icons.expand_more), findsNothing);
     });

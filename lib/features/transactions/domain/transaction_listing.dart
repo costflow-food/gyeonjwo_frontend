@@ -34,6 +34,7 @@ class TransactionsFilter {
   const TransactionsFilter({
     this.items = const {},
     this.suppliers = const {},
+    this.methods = const {},
     this.selectedId,
     this.fromSuppliers = false,
     this.sort = TransactionSort.date,
@@ -42,6 +43,7 @@ class TransactionsFilter {
 
   final Set<String> items;
   final Set<String> suppliers;
+  final Set<String> methods;
   final String? selectedId;
 
   /// Suppliers에서 넘어와 그 조건으로 걸러 보는 중. 필터를 바꾸면 꺼집니다.
@@ -49,11 +51,13 @@ class TransactionsFilter {
   final TransactionSort sort;
   final bool descending;
 
-  bool get hasFilters => items.isNotEmpty || suppliers.isNotEmpty;
+  bool get hasFilters =>
+      items.isNotEmpty || suppliers.isNotEmpty || methods.isNotEmpty;
 
   TransactionsFilter copyWith({
     Set<String>? items,
     Set<String>? suppliers,
+    Set<String>? methods,
     String? Function()? selectedId,
     bool? fromSuppliers,
     TransactionSort? sort,
@@ -61,6 +65,7 @@ class TransactionsFilter {
   }) => TransactionsFilter(
     items: items ?? this.items,
     suppliers: suppliers ?? this.suppliers,
+    methods: methods ?? this.methods,
     selectedId: selectedId == null ? this.selectedId : selectedId(),
     fromSuppliers: fromSuppliers ?? this.fromSuppliers,
     sort: sort ?? this.sort,
@@ -100,6 +105,7 @@ class TransactionListing {
     required this.totalAmount,
     required this.itemChoices,
     required this.supplierChoices,
+    this.methodChoices = const [],
     required this.selected,
     required this.flow,
   });
@@ -108,6 +114,7 @@ class TransactionListing {
   final num totalAmount;
   final List<FilterChoice> itemChoices;
   final List<FilterChoice> supplierChoices;
+  final List<FilterChoice> methodChoices;
 
   /// 고른 거래가 지금 목록에 있을 때만.
   final TransactionRow? selected;
@@ -141,7 +148,9 @@ class TransactionListing {
 
     final rows = [
       for (final record in records)
-        if ((filter.items.isEmpty || filter.items.contains(record.itemName)) &&
+        if ((filter.methods.isEmpty ||
+                filter.methods.contains(record.confirmationMethod)) &&
+            (filter.items.isEmpty || filter.items.contains(record.itemName)) &&
             (filter.suppliers.isEmpty ||
                 filter.suppliers.contains(record.supplierName)) &&
             !record.date.isBefore(from) &&
@@ -185,6 +194,9 @@ class TransactionListing {
       ),
       itemChoices: choices((record) => record.itemName),
       supplierChoices: choices((record) => record.supplierName),
+      methodChoices: choices((record) => record.confirmationMethod ?? "")
+          .where((c) => c.value.isNotEmpty)
+          .toList(),
       selected: selected,
       flow: selected == null
           ? const []
