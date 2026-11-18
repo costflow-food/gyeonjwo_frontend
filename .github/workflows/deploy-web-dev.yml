@@ -9,6 +9,7 @@
 #               API_BASE_URL              https://gyeonjwo-api-dev.rkrbhm0ryexya.ap-northeast-2.cs.amazonlightsail.com
 #               VERCEL_PROJECT            (선택, 기본 thoner-frontend-dev)
 # 환경 값은 같은 이름의 저장소 값보다 우선한다. PRD 값과 섞이지 않는다.
+# DEV 웹은 AUTH_DISABLED=true로 빌드해 로그인 없이 바로 메인을 연다(DEV 서버 DEV_NO_AUTH_USER_ID와 짝).
 name: Deploy web to Vercel (DEV)
 
 on:
@@ -93,6 +94,7 @@ jobs:
           --dart-define=SUPABASE_URL="$SUPABASE_URL"
           --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
           --dart-define=API_BASE_URL="$API_BASE_URL"
+          --dart-define=AUTH_DISABLED=true
           --dart-define=BUILD_REVISION="${{ steps.rev.outputs.sha }}-dev"
 
       # Git 정보가 없는 임시 폴더에서 올려 Vercel이 저장소를 자동 연결하지 않게 한다.
