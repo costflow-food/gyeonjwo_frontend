@@ -230,18 +230,6 @@ class _Legend extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(text: "12월 ", style: sub),
-              TextSpan(
-                text: "${series.latest}건",
-                style: dashText(13, FontWeight.w700, LdsColors.primary),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }

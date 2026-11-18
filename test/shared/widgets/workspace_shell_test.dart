@@ -67,7 +67,9 @@ double _sidebarWidth(WidgetTester tester) =>
 
 void main() {
   group("sidebar (SSOT 7.8, 7.17)", () {
-    testWidgets("Dashboard starts wide, Tasks with icons", (tester) async {
+    testWidgets("Menu stays wide across navigation before the first toggle", (
+      tester,
+    ) async {
       final router = await _pump(tester, at: "/");
       expect(_sidebarWidth(tester), AppSidebar.wideWidth);
       for (final menu in AppMenu.values) {
@@ -78,8 +80,24 @@ void main() {
 
       router.go("/tasks");
       await tester.pumpAndSettle();
-      expect(_sidebarWidth(tester), AppSidebar.iconWidth);
+      expect(_sidebarWidth(tester), AppSidebar.wideWidth);
       expect(find.text("page /tasks"), findsOneWidget);
+      for (final path in [
+        "/transactions",
+        "/suppliers",
+        "/logs",
+        "/account",
+        "/",
+      ]) {
+        router.go(path);
+        await tester.pumpAndSettle();
+        expect(_sidebarWidth(tester), AppSidebar.wideWidth);
+      }
+    });
+
+    testWidgets("a direct Tasks entry also starts wide", (tester) async {
+      await _pump(tester, at: "/tasks");
+      expect(_sidebarWidth(tester), AppSidebar.wideWidth);
     });
 
     testWidgets("the user's fold holds across screens", (tester) async {
@@ -88,9 +106,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(_sidebarWidth(tester), AppSidebar.iconWidth);
 
-      router.go("/account");
-      await tester.pumpAndSettle();
-      expect(_sidebarWidth(tester), AppSidebar.iconWidth);
+      for (final path in [
+        "/tasks",
+        "/transactions",
+        "/suppliers",
+        "/account",
+        "/",
+      ]) {
+        router.go(path);
+        await tester.pumpAndSettle();
+        expect(_sidebarWidth(tester), AppSidebar.iconWidth);
+      }
 
       await tester.tap(find.byTooltip("메뉴 펼치기"));
       await tester.pumpAndSettle();
@@ -103,10 +129,7 @@ void main() {
       tester,
     ) async {
       await _pump(tester, at: "/suppliers");
-      // Suppliers is a work screen: icon menu.
-      expect(_sidebarWidth(tester), AppSidebar.iconWidth);
-      await tester.tap(find.byTooltip("메뉴 펼치기"));
-      await tester.pumpAndSettle();
+      expect(_sidebarWidth(tester), AppSidebar.wideWidth);
       Material menu(String label) => tester.widget<Material>(
         find
             .ancestor(

@@ -179,6 +179,21 @@ class SupplierDetailContent extends StatelessWidget {
               ),
             ),
           ],
+        const SizedBox(height: 24),
+        const Divider(height: 1, color: LdsColors.line),
+        const SizedBox(height: 16),
+        const Align(
+          alignment: Alignment.centerRight,
+          child: Tooltip(
+            message: "거래처 삭제 기능은 준비 중입니다.",
+            child: LdsButton(
+              label: "거래처 삭제",
+              icon: Icons.delete_outline,
+              variant: LdsButtonVariant.outlinedNeutral,
+              onPressed: null,
+            ),
+          ),
+        ),
       ],
     );
   }

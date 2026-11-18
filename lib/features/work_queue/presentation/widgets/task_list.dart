@@ -236,6 +236,7 @@ class _TaskListState extends ConsumerState<TaskList> {
               ),
               const SizedBox(height: 16),
               LdsTabBar<TaskGroup?>(
+                expand: true,
                 selected: widget.status,
                 onSelected: widget.onTab,
                 tabs: [
@@ -244,7 +245,6 @@ class _TaskListState extends ConsumerState<TaskList> {
                     value: TaskGroup.confirm,
                     label: TaskGroup.confirm.label,
                     count: counts?.confirm,
-                    urgent: true,
                   ),
                   LdsTabItem(
                     value: TaskGroup.running,

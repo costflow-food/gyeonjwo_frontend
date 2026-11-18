@@ -65,7 +65,6 @@ class DashboardView extends ConsumerWidget {
           name: group.label,
           count: byGroup[group],
           dot: taskGroupColor(group),
-          emphasized: group == TaskGroup.confirm,
           link: "보기 ›",
           onTap: () => context.go(AppPaths.tasksAt(tab: group.code)),
         ),
@@ -251,7 +250,6 @@ class _StatusCard extends StatelessWidget {
     required this.name,
     required this.count,
     required this.dot,
-    required this.emphasized,
     required this.link,
     required this.onTap,
   }) : unsorted = false;
@@ -261,7 +259,6 @@ class _StatusCard extends StatelessWidget {
   const _StatusCard.unsorted({required this.count, required this.onTap})
     : name = "미분류",
       dot = null,
-      emphasized = false,
       link = "확인 ›",
       unsorted = true;
 
@@ -269,8 +266,6 @@ class _StatusCard extends StatelessWidget {
   final int? count;
   final Color? dot;
 
-  /// 확인 필요: 테두리 1.5px `#FF6000` + 바탕 `#FFF7F2`(라벨 없음).
-  final bool emphasized;
   final String link;
   final VoidCallback onTap;
   final bool unsorted;
@@ -278,11 +273,7 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(LdsRadius.panel);
-    final background = unsorted
-        ? LdsColors.lineSoft
-        : emphasized
-        ? LdsColors.primaryRow
-        : Colors.white;
+    final background = unsorted ? LdsColors.lineSoft : Colors.white;
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Column(
@@ -337,9 +328,7 @@ class _StatusCard extends StatelessWidget {
           ? RoundedRectangleBorder(borderRadius: radius)
           : RoundedRectangleBorder(
               borderRadius: radius,
-              side: emphasized
-                  ? const BorderSide(color: LdsColors.primary, width: 1.5)
-                  : const BorderSide(color: LdsColors.line),
+              side: const BorderSide(color: LdsColors.line),
             ),
       child: InkWell(
         onTap: onTap,

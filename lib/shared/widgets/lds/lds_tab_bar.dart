@@ -32,45 +32,93 @@ class LdsTabBar<T> extends StatelessWidget {
     required this.tabs,
     required this.selected,
     required this.onSelected,
+    this.expand = false,
   });
 
   final List<LdsTabItem<T>> tabs;
   final T selected;
   final ValueChanged<T> onSelected;
 
+  /// 각 탭을 같은 폭으로 나눠 가용 너비 전체를 채웁니다.
+  final bool expand;
+
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: const BoxDecoration(
       border: Border(bottom: BorderSide(color: LdsColors.line)),
     ),
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final (index, tab) in tabs.indexed) ...[
-            if (index > 0) const SizedBox(width: 20),
-            _Tab(
-              tab: tab,
-              selected: tab.value == selected,
-              onTap: () => onSelected(tab.value),
+    child: expand
+        ? Row(
+            children: [
+              for (final tab in tabs)
+                Expanded(
+                  child: _Tab(
+                    tab: tab,
+                    selected: tab.value == selected,
+                    onTap: () => onSelected(tab.value),
+                    fitLabel: true,
+                  ),
+                ),
+            ],
+          )
+        : SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final (index, tab) in tabs.indexed) ...[
+                  if (index > 0) const SizedBox(width: 20),
+                  _Tab(
+                    tab: tab,
+                    selected: tab.value == selected,
+                    onTap: () => onSelected(tab.value),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ],
-      ),
-    ),
+          ),
   );
 }
 
 class _Tab<T> extends StatelessWidget {
-  const _Tab({required this.tab, required this.selected, required this.onTap});
+  const _Tab({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+    this.fitLabel = false,
+  });
 
   final LdsTabItem<T> tab;
   final bool selected;
   final VoidCallback onTap;
+  final bool fitLabel;
 
   @override
   Widget build(BuildContext context) {
     final count = tab.count;
+    final label = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          tab.label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+            color: selected ? LdsColors.ink : LdsColors.label,
+          ),
+        ),
+        if (count != null) ...[
+          const SizedBox(width: 6),
+          LdsBadge(
+            count,
+            tone: selected
+                ? LdsBadgeTone.dark
+                : tab.urgent
+                ? LdsBadgeTone.primary
+                : LdsBadgeTone.neutral,
+          ),
+        ],
+      ],
+    );
     return Semantics(
       selected: selected,
       button: true,
@@ -87,6 +135,7 @@ class _Tab<T> extends StatelessWidget {
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
           child: Container(
+            width: fitLabel ? double.infinity : null,
             height: 44,
             decoration: BoxDecoration(
               border: Border(
@@ -96,30 +145,9 @@ class _Tab<T> extends StatelessWidget {
                 ),
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  tab.label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                    color: selected ? LdsColors.ink : LdsColors.label,
-                  ),
-                ),
-                if (count != null) ...[
-                  const SizedBox(width: 6),
-                  LdsBadge(
-                    count,
-                    tone: selected
-                        ? LdsBadgeTone.dark
-                        : tab.urgent
-                        ? LdsBadgeTone.primary
-                        : LdsBadgeTone.neutral,
-                  ),
-                ],
-              ],
-            ),
+            child: fitLabel
+                ? FittedBox(fit: BoxFit.scaleDown, child: label)
+                : label,
           ),
         ),
       ),
