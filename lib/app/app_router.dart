@@ -19,6 +19,7 @@ import "../features/transactions/presentation/transactions_view.dart";
 import "../features/work_queue/domain/task_group.dart";
 import "../features/workflow_log/presentation/workflow_log_view.dart";
 import "../features/work_queue/presentation/work_queue_view.dart";
+import "app_config.dart";
 import "app_paths.dart";
 import "dev/widget_preview_view.dart";
 import "not_found_view.dart";
@@ -53,6 +54,8 @@ final appRouter = GoRouter(
     final session = container.read(authSessionViewModelProvider).asData?.value;
     final path = state.uri.path;
     if (kDebugMode && path == devWidgetsPath) return null;
+    // DEV 존은 로그인 없이 고정 DEV 사용자로 바로 엽니다.
+    if (AppConfig.loginDisabled) return noLoginRedirect(path);
     // Read the Gmail connection only on the connection screen, where it is
     // being established anyway.
     final gmailReady =
