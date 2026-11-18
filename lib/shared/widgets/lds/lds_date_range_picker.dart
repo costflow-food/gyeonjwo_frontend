@@ -5,6 +5,7 @@ import '../../lds_colors.dart';
 import 'lds_button.dart';
 import 'lds_focus_ring.dart';
 import 'lds_metrics.dart';
+import 'lds_popover.dart';
 import 'lds_tab_bar.dart';
 
 /// 날짜만(시각 0시).
@@ -19,7 +20,8 @@ String formatLdsDateRange(DateTimeRange range) {
       : '${day(range.start)} - ${day(range.end)}';
 }
 
-/// 빠른 선택(오늘 / 이번 주 / 이번 달). 이번 주 = 일~토.
+/// 빠른 선택(오늘 / 이번 주 / 이번 달). 영업일 기준: 이번 주 = 월~금
+/// (주말에 고르면 그 주의 월~금), 이번 달 = 첫 평일~마지막 평일.
 enum LdsQuickRange {
   today('오늘'),
   thisWeek('이번 주'),
@@ -34,14 +36,23 @@ enum LdsQuickRange {
     return switch (this) {
       LdsQuickRange.today => DateTimeRange(start: t, end: t),
       LdsQuickRange.thisWeek => DateTimeRange(
-        start: t.subtract(Duration(days: t.weekday % 7)),
-        end: t.add(Duration(days: 6 - t.weekday % 7)),
+        start: DateTime(t.year, t.month, t.day - (t.weekday - 1)),
+        end: DateTime(t.year, t.month, t.day - (t.weekday - 1) + 4),
       ),
       LdsQuickRange.thisMonth => DateTimeRange(
-        start: DateTime(t.year, t.month),
-        end: DateTime(t.year, t.month + 1, 0),
+        start: _businessDayFrom(DateTime(t.year, t.month), 1),
+        end: _businessDayFrom(DateTime(t.year, t.month + 1, 0), -1),
       ),
     };
+  }
+
+  /// [day]가 주말이면 [step](1: 다음, -1: 이전) 쪽 가장 가까운 평일.
+  static DateTime _businessDayFrom(DateTime day, int step) {
+    var d = day;
+    while (d.weekday > DateTime.friday) {
+      d = DateTime(d.year, d.month, d.day + step);
+    }
+    return d;
   }
 }
 
@@ -108,11 +119,10 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
         ),
       );
     } else {
-      final box = context.findRenderObject()! as RenderBox;
-      final anchor = box.localToGlobal(Offset.zero) & box.size;
       picked = await Navigator.of(context).push(
-        _PopoverRoute<DateTimeRange>(
-          anchor: anchor,
+        LdsPopoverRoute<DateTimeRange>(
+          anchor: LdsPopoverRoute.anchorOf(context),
+          label: '기간 선택 닫기',
           child: LdsDateRangePanel(
             initial: widget.value,
             today: today,
@@ -183,82 +193,6 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
       ),
     );
   }
-}
-
-/// 단추 아래, 단추 오른쪽 끝에 맞춘 팝오버. 바깥을 누르거나 Esc로 닫습니다.
-class _PopoverRoute<T> extends PopupRoute<T> {
-  _PopoverRoute({required this.anchor, required this.child});
-
-  final Rect anchor;
-  final Widget child;
-
-  @override
-  Color? get barrierColor => null;
-
-  @override
-  bool get barrierDismissible => true;
-
-  @override
-  String? get barrierLabel => '기간 선택 닫기';
-
-  @override
-  Duration get transitionDuration => const Duration(milliseconds: 120);
-
-  @override
-  Widget buildPage(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-  ) => CustomSingleChildLayout(
-    delegate: _PopoverLayout(anchor),
-    child: Material(
-      color: Colors.white,
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(LdsRadius.panel),
-        side: const BorderSide(color: LdsColors.line),
-      ),
-      child: child,
-    ),
-  );
-
-  @override
-  Widget buildTransitions(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) => FadeTransition(opacity: animation, child: child);
-}
-
-class _PopoverLayout extends SingleChildLayoutDelegate {
-  const _PopoverLayout(this.anchor);
-
-  final Rect anchor;
-
-  static const _margin = 8.0;
-
-  @override
-  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
-      BoxConstraints.loose(constraints.biggest)
-          .deflate(const EdgeInsets.all(_margin));
-
-  @override
-  Offset getPositionForChild(Size size, Size childSize) {
-    final x = (anchor.right - childSize.width).clamp(
-      _margin,
-      size.width - childSize.width - _margin,
-    );
-    final below = anchor.bottom + _margin;
-    final y = below + childSize.height <= size.height - _margin
-        ? below
-        : (size.height - childSize.height - _margin).clamp(_margin, below);
-    return Offset(x.toDouble(), y.toDouble());
-  }
-
-  @override
-  bool shouldRelayout(_PopoverLayout oldDelegate) =>
-      oldDelegate.anchor != anchor;
 }
 
 /// 기간 고르기 창 내용 (7.9.2): 빠른 선택 → 달력 [months]개 → 고른 기간 +

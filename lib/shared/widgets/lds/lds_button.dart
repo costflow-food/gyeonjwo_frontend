@@ -12,6 +12,9 @@ enum LdsButtonVariant {
 
   /// 1px `#D1D6DC` 테두리, 중립 글자 `#333D4B`.
   outlinedNeutral,
+
+  /// 테두리·바탕 없이 중립 글자 `#333D4B`, hover 때만 옅은 바탕.
+  ghostNeutral,
 }
 
 enum LdsButtonSize {
@@ -65,10 +68,12 @@ class LdsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final filled = variant == LdsButtonVariant.filled;
+    final ghost = variant == LdsButtonVariant.ghostNeutral;
     final foreground = switch (variant) {
       LdsButtonVariant.filled => Colors.white,
       LdsButtonVariant.outlined => LdsColors.primary,
-      LdsButtonVariant.outlinedNeutral => LdsColors.title,
+      LdsButtonVariant.outlinedNeutral ||
+      LdsButtonVariant.ghostNeutral => LdsColors.title,
     };
     final style = ButtonStyle(
       // 데스크톱 기본 밀도(compact)는 높이를 8 줄이므로 표준으로 고정합니다.
@@ -102,10 +107,13 @@ class LdsButton extends StatelessWidget {
           if (disabled) return LdsColors.lineSoft;
           return hovered ? LdsColors.primaryHover : LdsColors.primary;
         }
-        return hovered && !disabled ? LdsColors.canvas : Colors.white;
+        if (hovered && !disabled) return LdsColors.canvas;
+        return ghost ? Colors.transparent : Colors.white;
       }),
       side: filled
           ? null
+          : ghost
+          ? const WidgetStatePropertyAll(BorderSide.none)
           : WidgetStateProperty.resolveWith(
               (states) => BorderSide(
                 color: states.contains(WidgetState.disabled)

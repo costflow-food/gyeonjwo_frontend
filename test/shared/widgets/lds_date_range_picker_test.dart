@@ -50,12 +50,16 @@ LdsButton _button(WidgetTester tester, String label) =>
     tester.widget<LdsButton>(find.widgetWithText(LdsButton, label));
 
 void main() {
-  test("quick ranges: this week is Sunday to Saturday", () {
+  test("quick ranges: this week is Monday to Friday (business days)", () {
     final week = LdsQuickRange.thisWeek.rangeFor(_today);
-    expect(week.start, DateTime(2026, 11, 15));
-    expect(week.end, DateTime(2026, 11, 21));
+    expect(week.start, DateTime(2026, 11, 16));
+    expect(week.end, DateTime(2026, 11, 20));
+    // 주말(일요일)에 골라도 그 주 월~금.
+    final weekend = LdsQuickRange.thisWeek.rangeFor(DateTime(2026, 11, 22));
+    expect(weekend.start, DateTime(2026, 11, 16));
+    expect(weekend.end, DateTime(2026, 11, 20));
     final month = LdsQuickRange.thisMonth.rangeFor(_today);
-    expect(month.start, DateTime(2026, 11, 1));
+    expect(month.start, DateTime(2026, 11, 2)); // 11/1은 일요일
     expect(month.end, DateTime(2026, 11, 30));
     expect(
       formatLdsDateRange(LdsQuickRange.today.rangeFor(_today)),
@@ -65,7 +69,7 @@ void main() {
 
   testWidgets("the button shows the range, 36 tall", (tester) async {
     await _pump(tester);
-    expect(find.text("2026. 11. 15 - 2026. 11. 21"), findsOneWidget);
+    expect(find.text("2026. 11. 16 - 2026. 11. 20"), findsOneWidget);
     expect(tester.getSize(find.byType(LdsDateRangeButton)).height, 36);
   });
 
@@ -83,15 +87,15 @@ void main() {
     );
     await tester.tap(find.text("이번 달"));
     await tester.pumpAndSettle();
-    expect(find.text("2026. 11. 1 - 2026. 11. 30"), findsOneWidget);
+    expect(find.text("2026. 11. 2 - 2026. 11. 30"), findsOneWidget);
     // The range only fills the calendar; '적용' confirms.
     expect(picked, isEmpty);
     await tester.tap(find.widgetWithText(LdsButton, "적용"));
     await tester.pumpAndSettle();
     expect(panel, findsNothing);
-    expect(picked.single.start, DateTime(2026, 11, 1));
+    expect(picked.single.start, DateTime(2026, 11, 2));
     expect(picked.single.end, DateTime(2026, 11, 30));
-    expect(find.text("2026. 11. 1 - 2026. 11. 30"), findsOneWidget);
+    expect(find.text("2026. 11. 2 - 2026. 11. 30"), findsOneWidget);
   });
 
   testWidgets("picking days: apply waits for the end; Esc closes unchanged", (
@@ -111,7 +115,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LdsDateRangePanel), findsNothing);
     expect(picked, isEmpty);
-    expect(find.text("2026. 11. 15 - 2026. 11. 21"), findsOneWidget);
+    expect(find.text("2026. 11. 16 - 2026. 11. 20"), findsOneWidget);
   });
 
   testWidgets("under 744: a bottom sheet with one month", (tester) async {
