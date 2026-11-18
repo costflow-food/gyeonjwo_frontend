@@ -54,6 +54,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
 
+      # PRD 빌드에는 DEV 전용 로그인 생략 코드가 절대 들어가면 안 된다
+      - name: Guard - no DEV login bypass in PRD
+        run: |
+          if git grep -nE "AUTH_DISABLED|loginDisabled|DevNoLoginSession|noLoginRedirect" -- lib test; then
+            echo "::error::DEV 전용 로그인 생략 코드가 소스에 있습니다. PRD에 배포하지 않습니다."
+            exit 1
+          fi
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
