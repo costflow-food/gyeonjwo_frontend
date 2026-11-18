@@ -183,7 +183,7 @@ class PlanSelect extends StatelessWidget {
           borderRadius: BorderRadius.circular(LdsRadius.button),
         ),
         child: const Text(
-          "선택한 구매안",
+          "✓ 선택됨",
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -222,7 +222,7 @@ class PlanSelect extends StatelessWidget {
               elevation: 0,
             ),
             onPressed: onPressed,
-            child: Text(locallySelected ? "✓ 선택됨" : "이 안 선택"),
+            child: Text(locallySelected ? "✓ 선택됨" : "선택"),
           )
         : OutlinedButton(
             style: OutlinedButton.styleFrom(
@@ -239,7 +239,7 @@ class PlanSelect extends StatelessWidget {
               textStyle: text,
             ),
             onPressed: onPressed,
-            child: Text(locallySelected ? "✓ 선택됨" : "이 안 선택"),
+            child: Text(locallySelected ? "✓ 선택됨" : "선택"),
           );
     if (showReason && !canSelect && reason != null) {
       return Column(
