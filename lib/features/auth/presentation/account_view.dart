@@ -22,14 +22,56 @@ import 'widgets/auth_failure_message.dart';
 import 'widgets/sign_out_action.dart';
 import '../../../app/app_paths.dart';
 
-class AccountView extends StatefulWidget {
+/// 휴대폰 아래 탭의 '계정 설정' 화면(`/account`). 웹에서는 계정 메뉴가
+/// [showAccountSettingsDialog]로 같은 내용을 팝업으로 엽니다.
+class AccountView extends StatelessWidget {
   const AccountView({super.key});
 
   @override
-  State<AccountView> createState() => _AccountViewState();
+  Widget build(BuildContext context) => WorkspaceShell(
+    child: Align(
+      alignment: Alignment.topLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: const AccountSettings(),
+      ),
+    ),
+  );
 }
 
-class _AccountViewState extends State<AccountView>
+/// 계정 설정 내용: 권한 / 메일 발송 설정 탭과 빌드 번호.
+///
+/// [inDialog]면 팝업 안에 넣는 모양(카드 틀 없음, 휴대폰 전용 버튼 없음)이고,
+/// [requestClose]로 팝업을 닫은 뒤 다른 화면으로 갑니다.
+class AccountSettings extends StatefulWidget {
+  const AccountSettings({
+    super.key,
+    this.inDialog = false,
+    this.returnTo = AppPaths.account,
+    this.requestClose,
+    this.onDirtyChanged,
+    this.onSavingChanged,
+  });
+
+  final bool inDialog;
+
+  /// 권한 화면에서 휴대폰 뒤로 가기가 돌아올 곳.
+  final String returnTo;
+
+  /// 팝업을 닫습니다(저장 안 한 설정이 있으면 먼저 묻고). 닫혔으면 true.
+  final Future<bool> Function()? requestClose;
+
+  /// 메일 발송 설정 탭에 저장하지 않은 변경이 있는지.
+  final ValueChanged<bool>? onDirtyChanged;
+
+  /// 메일 발송 설정을 저장하는 중인지.
+  final ValueChanged<bool>? onSavingChanged;
+
+  @override
+  State<AccountSettings> createState() => _AccountSettingsState();
+}
+
+class _AccountSettingsState extends State<AccountSettings>
     with SingleTickerProviderStateMixin {
   static const _pages = ['권한', '메일 발송 설정'];
 
@@ -60,84 +102,82 @@ class _AccountViewState extends State<AccountView>
 
   @override
   Widget build(BuildContext context) {
-    return WorkspaceShell(
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 화면 제목 '설정'은 상단 바(웹)·앱 바(휴대폰)에 있습니다.
-              // Tab text(6.1): 누르면 아래 내용이 바뀝니다.
-              LdsTabBar<int>(
-                tabs: [
-                  for (final (index, page) in _pages.indexed)
-                    LdsTabItem(value: index, label: page),
-                ],
-                selected: _index,
-                onSelected: _tabs.animateTo,
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onHorizontalDragEnd: _swipe,
-                child: ClipRect(
-                  child: Stack(
-                    children: [
-                      // Both pages keep their state (e.g. unsaved settings)
-                      // while the other one is shown.
-                      for (final (index, page) in const [
-                        _PermissionsPage(),
-                        _SendSettingsPage(),
-                      ].indexed)
-                        Visibility(
-                          visible: index == _index,
-                          maintainState: true,
-                          child: AnimatedSlide(
-                            offset: Offset(
-                              index == _index
-                                  ? 0
-                                  : (index < _index ? -1.0 : 1.0),
-                              0,
-                            ),
-                            duration: const Duration(milliseconds: 260),
-                            curve: Curves.easeOutCubic,
-                            child: page,
-                          ),
-                        ),
-                    ],
+    final inDialog = widget.inDialog;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 화면 제목 '설정'은 상단 바(웹)·앱 바(휴대폰)에, 팝업이면 팝업 머리에 있습니다.
+        // Tab text(6.1): 누르면 아래 내용이 바뀝니다.
+        LdsTabBar<int>(
+          tabs: [
+            for (final (index, page) in _pages.indexed)
+              LdsTabItem(value: index, label: page),
+          ],
+          selected: _index,
+          onSelected: _tabs.animateTo,
+        ),
+        const SizedBox(height: 24),
+        GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onHorizontalDragEnd: _swipe,
+          child: ClipRect(
+            child: Stack(
+              children: [
+                // Both pages keep their state (e.g. unsaved settings)
+                // while the other one is shown.
+                for (final (index, page) in [
+                  _PermissionsPage(
+                    inDialog: inDialog,
+                    returnTo: widget.returnTo,
+                    requestClose: widget.requestClose,
                   ),
-                ),
-              ),
-              // 휴대폰 아래 탭에는 실행 로그가 없어 여기서 들어갑니다.
-              if (isCompactLayout(context)) ...[
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: LdsButton(
-                    label: '처리 이력',
-                    icon: Icons.history,
-                    variant: LdsButtonVariant.outlinedNeutral,
-                    onPressed: () => context.go(AppPaths.logs),
+                  _SendSettingsPage(
+                    inDialog: inDialog,
+                    onDirtyChanged: widget.onDirtyChanged,
+                    onSavingChanged: widget.onSavingChanged,
                   ),
-                ),
+                ].indexed)
+                  Visibility(
+                    visible: index == _index,
+                    maintainState: true,
+                    child: AnimatedSlide(
+                      offset: Offset(
+                        index == _index ? 0 : (index < _index ? -1.0 : 1.0),
+                        0,
+                      ),
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                      child: page,
+                    ),
+                  ),
               ],
-              if (AppConfig.buildRevision.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                SelectableText(
-                  '빌드 ${AppConfig.buildRevision}',
-                  textAlign: TextAlign.end,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: LdsColors.mutedStrong,
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
-      ),
+        // 휴대폰 아래 탭에는 처리 이력이 없어 여기서 들어갑니다.
+        if (!inDialog && isCompactLayout(context)) ...[
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: LdsButton(
+              label: '처리 이력',
+              icon: Icons.history,
+              variant: LdsButtonVariant.outlinedNeutral,
+              onPressed: () => context.go(AppPaths.logs),
+            ),
+          ),
+        ],
+        // 팝업에서는 빌드 번호를 팝업 아래 줄에 둡니다.
+        if (!inDialog && AppConfig.buildRevision.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          SelectableText(
+            '빌드 ${AppConfig.buildRevision}',
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontSize: 13, color: LdsColors.mutedStrong),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -145,7 +185,23 @@ class _AccountViewState extends State<AccountView>
 /// 권한 탭: 사용자 → 연결·권한 상태 이름표-값 표(값 = 설명, 오른쪽 상태 라벨)
 /// → 큰 버튼.
 class _PermissionsPage extends ConsumerWidget {
-  const _PermissionsPage();
+  const _PermissionsPage({
+    required this.inDialog,
+    required this.returnTo,
+    this.requestClose,
+  });
+
+  final bool inDialog;
+  final String returnTo;
+  final Future<bool> Function()? requestClose;
+
+  Future<void> _reconnect(BuildContext context) async {
+    final router = GoRouter.of(context);
+    final close = requestClose;
+    if (close != null && !await close()) return;
+    // extra: where phone back returns from the permissions screen.
+    router.go('/login/permissions', extra: returnTo);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -153,116 +209,114 @@ class _PermissionsPage extends ConsumerWidget {
     final connection = ref.watch(gmailConnectionViewModelProvider);
     final phase = connection.connectionPhase;
     final hasConnection = phase.hasConnection;
-    return LdsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const AuthIconBox(icon: Icons.person_outline),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '구매담당자',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: LdsColors.ink,
-                      ),
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const AuthIconBox(icon: Icons.person_outline),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '구매담당자',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: LdsColors.ink,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      session?.email ?? 'Google 계정 정보는 로그인 후 표시됩니다.',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: LdsColors.mutedStrong,
-                      ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    session?.email ?? 'Google 계정 정보는 로그인 후 표시됩니다.',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: LdsColors.mutedStrong,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          LdsKeyValueTable(
-            labelWidth: 136,
-            rows: [
-              _statusRow(
-                context,
-                'Google 연결',
-                connection.authFailure?.message ?? phase.description,
-                phase.label,
-                hasConnection ? _Status.ok : _Status.off,
-              ),
-              _statusRow(
-                context,
-                'Gmail 읽기',
-                '수신 메일을 업무 큐로 가져오는 데 사용합니다.',
-                !hasConnection
-                    ? '연결 전'
-                    : phase.canRead
-                    ? '허용'
-                    : '거부됨',
-                !hasConnection
-                    ? _Status.off
-                    : phase.canRead
-                    ? _Status.ok
-                    : _Status.bad,
-              ),
-              _statusRow(
-                context,
-                'Gmail 발송',
-                '메일 발송 권한과 실제 발송 승인 설정은 별개입니다.',
-                !hasConnection
-                    ? '연결 전'
-                    : phase.canSend
-                    ? '허용 · 발송 승인은 별도'
-                    : '거부됨',
-                !hasConnection
-                    ? _Status.off
-                    : phase.canSend
-                    ? _Status.ok
-                    : _Status.bad,
-              ),
-              if (hasConnection && phase.canRead) _mailboxSyncRow(context, ref),
-              ?_serverLimitsRow(context, ref),
-            ],
-          ),
-          const SizedBox(height: 24),
-          AuthButton(
-            label: phase == GmailConnectionPhase.connected
-                ? '권한 다시 선택하기'
-                : '다시 연결하기',
-            // extra: where phone back returns from the permissions screen.
-            onPressed: () =>
-                context.go('/login/permissions', extra: '/account'),
-          ),
-          // On a phone there is no account menu; sign out lives here.
-          if (isCompactLayout(context)) ...[
-            const SizedBox(height: 10),
-            OutlinedButton(
-              onPressed: () => signOutAndLeave(context, ref),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: LdsColors.errorText,
-                side: const BorderSide(color: LdsColors.borderStrong),
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(LdsRadius.buttonLarge),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              child: const Text('로그아웃'),
             ),
           ],
+        ),
+        const SizedBox(height: 20),
+        LdsKeyValueTable(
+          labelWidth: 136,
+          rows: [
+            _statusRow(
+              context,
+              'Google 연결',
+              connection.authFailure?.message ?? phase.description,
+              phase.label,
+              hasConnection ? _Status.ok : _Status.off,
+            ),
+            _statusRow(
+              context,
+              'Gmail 읽기',
+              '수신 메일을 업무 큐로 가져오는 데 사용합니다.',
+              !hasConnection
+                  ? '연결 전'
+                  : phase.canRead
+                  ? '허용'
+                  : '거부됨',
+              !hasConnection
+                  ? _Status.off
+                  : phase.canRead
+                  ? _Status.ok
+                  : _Status.bad,
+            ),
+            _statusRow(
+              context,
+              'Gmail 발송',
+              '메일 발송 권한과 실제 발송 승인 설정은 별개입니다.',
+              !hasConnection
+                  ? '연결 전'
+                  : phase.canSend
+                  ? '허용 · 발송 승인은 별도'
+                  : '거부됨',
+              !hasConnection
+                  ? _Status.off
+                  : phase.canSend
+                  ? _Status.ok
+                  : _Status.bad,
+            ),
+            if (hasConnection && phase.canRead) _mailboxSyncRow(context, ref),
+            ?_serverLimitsRow(context, ref),
+          ],
+        ),
+        const SizedBox(height: 24),
+        AuthButton(
+          label: phase == GmailConnectionPhase.connected
+              ? '권한 다시 선택하기'
+              : '다시 연결하기',
+          onPressed: () => _reconnect(context),
+        ),
+        // On a phone there is no account menu; sign out lives here.
+        if (!inDialog && isCompactLayout(context)) ...[
+          const SizedBox(height: 10),
+          OutlinedButton(
+            onPressed: () => signOutAndLeave(context, ref),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: LdsColors.errorText,
+              side: const BorderSide(color: LdsColors.borderStrong),
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(LdsRadius.buttonLarge),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            child: const Text('로그아웃'),
+          ),
         ],
-      ),
+      ],
     );
+    // 팝업 안에서는 카드 틀 없이 바로 그립니다.
+    return inDialog ? content : LdsPanel(child: content);
   }
 }
 
@@ -374,11 +428,34 @@ LdsKeyValueRow? _serverLimitsRow(BuildContext context, WidgetRef ref) {
 }
 
 class _SendSettingsPage extends StatelessWidget {
-  const _SendSettingsPage();
+  const _SendSettingsPage({
+    required this.inDialog,
+    this.onDirtyChanged,
+    this.onSavingChanged,
+  });
+
+  final bool inDialog;
+  final ValueChanged<bool>? onDirtyChanged;
+  final ValueChanged<bool>? onSavingChanged;
 
   @override
-  Widget build(BuildContext context) => const LdsPanel(
-    padding: EdgeInsets.only(top: 24),
-    child: SendSettingsDialog(embedded: true),
-  );
+  Widget build(BuildContext context) {
+    if (inDialog) {
+      return SendSettingsDialog(
+        embedded: true,
+        embeddedPadding: EdgeInsets.zero,
+        embeddedDivider: false,
+        onDirtyChanged: onDirtyChanged,
+        onSavingChanged: onSavingChanged,
+      );
+    }
+    return LdsPanel(
+      padding: const EdgeInsets.only(top: 24),
+      child: SendSettingsDialog(
+        embedded: true,
+        onDirtyChanged: onDirtyChanged,
+        onSavingChanged: onSavingChanged,
+      ),
+    );
+  }
 }
