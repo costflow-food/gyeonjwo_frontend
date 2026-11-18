@@ -6,9 +6,16 @@ import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/dashboard_insights.dart";
 import "dashboard_card.dart";
 
-/// 품목별 비중 색: 비율 막대 색 차례(3). 한 색의 진하기로 나누지 않습니다.
+/// 품목별 비중 색: 주황의 진하기 세 단계(100% · 60% · 20%). 사용자 요청으로
+/// 비율 막대 기본 색 차례(3)와 달리 이 카드만 주황 계열을 씁니다.
+const _shareColors = [
+  LdsColors.primary,
+  Color(0xFFFFA066),
+  Color(0xFFFFDFCC),
+];
+
 Color _shareColor(int rank) =>
-    ldsRatioColors[rank.clamp(0, ldsRatioColors.length - 1)];
+    _shareColors[rank.clamp(0, _shareColors.length - 1)];
 
 /// 품목별 구매 비중 카드 (`docs/design-ssot.md` 7.9.2): 위쪽 기간을 따릅니다.
 ///

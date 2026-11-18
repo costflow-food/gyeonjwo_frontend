@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -333,12 +334,44 @@ class _MenuIcon extends StatelessWidget {
 enum _AccountAction { settings, sendSettings, logs, signOut }
 
 /// 아래 계정 카드: 아바타·이름·이메일 + 톱니바퀴 (7.17). 아이콘 메뉴에서는
-/// 아바타만. 누르면 계정 메뉴(계정 설정 · 메일 발송 설정 · 실행 로그 · 로그아웃).
+/// 아바타만. 누르면 계정 메뉴(맨 위 '구매담당자'·이메일, 계정 설정 · 메일 발송
+/// 설정 · 실행 로그 · 로그아웃). 넓은 메뉴는 카드 바로 위에 카드와 같은 폭으로,
+/// 아이콘 메뉴는 아바타 오른쪽 옆에 아래를 맞춰 띄웁니다.
 class _AccountCard extends ConsumerWidget {
   const _AccountCard({required this.compact, this.onNavigate});
 
   final bool compact;
   final VoidCallback? onNavigate;
+
+  /// 아이콘 메뉴에서 옆에 띄우는 창 폭.
+  static const _besideWidth = 240.0;
+
+  Future<void> _open(BuildContext context, WidgetRef ref, String email) async {
+    final box = context.findRenderObject()! as RenderBox;
+    final anchor = box.localToGlobal(Offset.zero) & box.size;
+    final action = await Navigator.of(context).push(
+      _AccountMenuRoute(
+        anchor: anchor,
+        beside: compact,
+        child: _AccountMenu(
+          email: email,
+          width: compact ? _besideWidth : anchor.width,
+        ),
+      ),
+    );
+    if (action == null || !context.mounted) return;
+    onNavigate?.call();
+    switch (action) {
+      case _AccountAction.settings:
+        context.go(AppPaths.account);
+      case _AccountAction.sendSettings:
+        showSendSettingsDialog(context);
+      case _AccountAction.logs:
+        context.go(AppPaths.logs);
+      case _AccountAction.signOut:
+        signOutAndLeave(context, ref);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -362,120 +395,255 @@ class _AccountCard extends ConsumerWidget {
         ),
       ),
     );
+    final radius = BorderRadius.circular(compact ? 18 : 8);
     return Semantics(
       button: true,
       label: '계정 메뉴, $email',
       excludeSemantics: true,
       child: LdsFocusRing(
         radius: compact ? 18 : 8,
-        child: PopupMenuButton<_AccountAction>(
-          tooltip: '계정 메뉴',
-          position: PopupMenuPosition.over,
-          offset: const Offset(0, -8),
-          borderRadius: BorderRadius.circular(compact ? 18 : 8),
-          color: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: LdsColors.line),
+        child: Tooltip(
+          message: '계정 메뉴',
+          child: Builder(
+            builder: (context) => InkWell(
+              onTap: () => _open(context, ref, email),
+              borderRadius: radius,
+              child: compact
+                  ? avatar
+                  : Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: LdsColors.line),
+                        borderRadius: radius,
+                      ),
+                      child: Row(
+                        children: [
+                          avatar,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: LdsColors.ink,
+                                  ),
+                                ),
+                                Text(
+                                  email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: LdsColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.settings_outlined,
+                            size: 20,
+                            color: LdsColors.label,
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
           ),
-          onSelected: (action) {
-            onNavigate?.call();
-            switch (action) {
-              case _AccountAction.settings:
-                context.go(AppPaths.account);
-              case _AccountAction.sendSettings:
-                showSendSettingsDialog(context);
-              case _AccountAction.logs:
-                context.go(AppPaths.logs);
-              case _AccountAction.signOut:
-                signOutAndLeave(context, ref);
-            }
-          },
-          itemBuilder: (context) => const [
-            PopupMenuItem(
-              value: _AccountAction.settings,
-              child: _MenuRow(Icons.manage_accounts_outlined, '계정 설정'),
-            ),
-            PopupMenuItem(
-              value: _AccountAction.sendSettings,
-              child: _MenuRow(Icons.outgoing_mail, '메일 발송 설정'),
-            ),
-            PopupMenuItem(
-              value: _AccountAction.logs,
-              child: _MenuRow(Icons.history, '실행 로그'),
-            ),
-            PopupMenuDivider(),
-            PopupMenuItem(
-              value: _AccountAction.signOut,
-              child: _MenuRow(Icons.logout, '로그아웃'),
-            ),
-          ],
-          child: compact
-              ? avatar
-              : Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: LdsColors.line),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      avatar,
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: LdsColors.ink,
-                              ),
-                            ),
-                            Text(
-                              email,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: LdsColors.muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.settings_outlined,
-                        size: 20,
-                        color: LdsColors.label,
-                      ),
-                    ],
-                  ),
-                ),
         ),
       ),
     );
   }
 }
 
-class _MenuRow extends StatelessWidget {
-  const _MenuRow(this.icon, this.label);
+/// 계정 메뉴 창: 흰 바탕, 모서리 12, 1px `#E5E7EA`. 바깥·Esc로 닫습니다.
+class _AccountMenuRoute extends PopupRoute<_AccountAction> {
+  _AccountMenuRoute({
+    required this.anchor,
+    required this.beside,
+    required this.child,
+  });
 
+  final Rect anchor;
+
+  /// true면 아바타 오른쪽 옆, false면 카드 바로 위.
+  final bool beside;
+  final Widget child;
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  bool get barrierDismissible => true;
+
+  @override
+  String? get barrierLabel => '계정 메뉴 닫기';
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 120);
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) => CustomSingleChildLayout(
+    delegate: _AccountMenuLayout(anchor, beside: beside),
+    child: Material(
+      color: Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: LdsColors.line),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    ),
+  );
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => FadeTransition(opacity: animation, child: child);
+}
+
+class _AccountMenuLayout extends SingleChildLayoutDelegate {
+  const _AccountMenuLayout(this.anchor, {required this.beside});
+
+  final Rect anchor;
+  final bool beside;
+
+  static const _gap = 8.0;
+  static const _margin = 8.0;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints.loose(constraints.biggest)
+          .deflate(const EdgeInsets.all(_margin));
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final x = beside ? anchor.right + _gap : anchor.left;
+    final y = beside
+        ? anchor.bottom - childSize.height
+        : anchor.top - _gap - childSize.height;
+    return Offset(
+      x.clamp(_margin, size.width - childSize.width - _margin).toDouble(),
+      y.clamp(_margin, size.height - childSize.height - _margin).toDouble(),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_AccountMenuLayout oldDelegate) =>
+      oldDelegate.anchor != anchor || oldDelegate.beside != beside;
+}
+
+class _AccountMenu extends StatelessWidget {
+  const _AccountMenu({required this.email, required this.width});
+
+  final String email;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) => CallbackShortcuts(
+    bindings: {
+      const SingleActivator(LogicalKeyboardKey.escape): () =>
+          Navigator.of(context).maybePop(),
+    },
+    child: FocusScope(
+      autofocus: true,
+      child: SizedBox(
+        width: width,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '구매담당자',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: LdsColors.ink,
+                    ),
+                  ),
+                  Text(
+                    email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: LdsColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: LdsColors.line),
+            const SizedBox(height: 4),
+            const _MenuRow(
+              _AccountAction.settings,
+              Icons.manage_accounts_outlined,
+              '계정 설정',
+            ),
+            const _MenuRow(
+              _AccountAction.sendSettings,
+              Icons.mail_outline,
+              '메일 발송 설정',
+            ),
+            const _MenuRow(_AccountAction.logs, Icons.history, '실행 로그'),
+            const SizedBox(height: 4),
+            const Divider(height: 1, color: LdsColors.line),
+            const SizedBox(height: 4),
+            const _MenuRow(_AccountAction.signOut, Icons.logout, '로그아웃'),
+            const SizedBox(height: 4),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _MenuRow extends StatelessWidget {
+  const _MenuRow(this.action, this.icon, this.label);
+
+  final _AccountAction action;
   final IconData icon;
   final String label;
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Icon(icon, size: 18, color: LdsColors.label),
-      const SizedBox(width: 10),
-      Text(label, style: const TextStyle(fontSize: 15, color: LdsColors.ink)),
-    ],
+  Widget build(BuildContext context) => InkWell(
+    onTap: () => Navigator.of(context).pop(action),
+    hoverColor: LdsColors.canvas,
+    child: SizedBox(
+      height: 40,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: LdsColors.label),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 15, color: LdsColors.ink),
+            ),
+          ],
+        ),
+      ),
+    ),
   );
 }
