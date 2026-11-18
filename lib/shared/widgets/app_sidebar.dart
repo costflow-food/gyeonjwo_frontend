@@ -9,6 +9,7 @@ import '../../app/app_paths.dart';
 import '../../features/auth/presentation/account_settings_dialog.dart';
 import '../../features/auth/presentation/auth_session_view_model.dart';
 import '../../features/auth/presentation/widgets/sign_out_action.dart';
+import '../../features/workflow_log/presentation/workflow_log_dialog.dart';
 import '../lds_colors.dart';
 import 'app_icons.dart';
 import 'brand_logo.dart';
@@ -472,12 +473,32 @@ class _AccountCard extends ConsumerWidget {
       ),
     );
     if (action == null || !context.mounted) return;
+    final location = GoRouterState.of(context).uri.toString();
+    final navigator = Navigator.of(context);
+    final closingOverlay = onNavigate != null;
     onNavigate?.call();
+
+    /// 팝업 열기. 덮개 메뉴(900px 이하)에서 고르면 덮개가 사라진 다음 프레임에
+    /// 열어야 키보드 포커스가 팝업에 들어갑니다(같은 프레임이면 덮개의 포커스
+    /// 범위가 치워지며 포커스가 뒤 화면으로 돌아가 Esc·Tab이 팝업에 닿지 않음).
+    /// 그때는 이 카드도 사라지므로 Navigator의 context로 엽니다.
+    void openPopup(void Function(BuildContext context) show) {
+      if (!closingOverlay) {
+        show(context);
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigator.mounted) show(navigator.context);
+      });
+    }
+
     switch (action) {
       case _AccountAction.settings:
-        showAccountSettingsDialog(context);
+        openPopup(
+          (context) => showAccountSettingsDialog(context, returnTo: location),
+        );
       case _AccountAction.logs:
-        context.go(AppPaths.logs);
+        openPopup(showWorkflowLogDialog);
       case _AccountAction.signOut:
         signOutAndLeave(context, ref);
     }

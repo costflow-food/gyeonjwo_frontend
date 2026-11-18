@@ -17,6 +17,7 @@ class WorkflowLogDetail extends StatelessWidget {
     required this.entry,
     required this.caseFiltered,
     required this.onFilterCase,
+    this.onLeave,
   });
 
   final WorkflowLogEntry? entry;
@@ -24,6 +25,9 @@ class WorkflowLogDetail extends StatelessWidget {
   /// The list already shows only one case's logs.
   final bool caseFiltered;
   final void Function(String caseId, {String? caseTitle}) onFilterCase;
+
+  /// '업무 보기'로 다른 화면에 가기 직전(예: 처리 이력 팝업 닫기).
+  final VoidCallback? onLeave;
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +136,11 @@ class WorkflowLogDetail extends StatelessWidget {
                     label: "업무 보기",
                     icon: Icons.open_in_new,
                     variant: LdsButtonVariant.outlinedNeutral,
-                    onPressed: () => context.go(AppPaths.task(caseId)),
+                    onPressed: () {
+                      final router = GoRouter.of(context);
+                      onLeave?.call();
+                      router.go(AppPaths.task(caseId));
+                    },
                   ),
                 if (mailId != null)
                   LdsButton(
