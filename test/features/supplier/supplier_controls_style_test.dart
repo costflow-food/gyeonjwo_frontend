@@ -8,6 +8,7 @@ import "package:gyeonjwo_frontend/features/supplier/presentation/widgets/supplie
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/lds/lds.dart";
+import "package:gyeonjwo_frontend/shared/widgets/page_lead_text.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
 
 import "../../helpers/platform_override.dart";
@@ -63,6 +64,11 @@ void main() {
         reason: label,
       );
     }
+    // The lead line is the shared one Invoices uses too.
+    expect(
+      find.widgetWithText(PageLeadText, SupplierHeader.lead),
+      findsOneWidget,
+    );
     // '+' is grey like the sort/filter arrows.
     final plus = tester.widget<Icon>(find.byIcon(Icons.add));
     final plusColor =
@@ -146,5 +152,28 @@ void main() {
         .style!;
     expect(text.fontSize, LdsText.control);
     expect(tester.getSize(find.byType(LdsFilterButton)).height, 36);
+  });
+
+  testWidgets("'총 N곳' is one plain line like Invoices' '확정 거래 N건'", (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      SizedBox(
+        width: 400,
+        child: SupplierListStatus(
+          data: const SupplierListState(query: "", suppliers: [], total: 2),
+          onRetry: () {},
+          onSort: (_) {},
+        ),
+      ),
+    );
+    final paragraph = tester.renderObject<RenderParagraph>(find.text("총 2곳"));
+    final span = paragraph.text as TextSpan;
+    // No bold or dark part for the number.
+    expect(span.children, isNull);
+    expect(span.style!.fontSize, 13);
+    expect(span.style!.color, LdsColors.label);
+    expect(span.style!.fontWeight ?? FontWeight.w400, FontWeight.w400);
   });
 }
