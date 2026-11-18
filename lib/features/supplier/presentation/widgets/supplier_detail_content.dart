@@ -64,12 +64,15 @@ class SupplierDetailContent extends StatelessWidget {
               ),
             ),
             SupplierSourceBadge(supplier.sourceType),
-            LdsIconButton(
-              icon: Icons.edit_outlined,
-              tooltip: "거래처 수정",
-              onPressed: () =>
-                  showSupplierRegisterDialog(context, initial: supplier),
-            ),
+            // The server edits only suppliers registered by hand
+            // (SUPPLIER_NOT_EDITABLE for web-verified ones).
+            if (supplier.sourceType == SupplierSourceType.registered)
+              LdsIconButton(
+                icon: Icons.edit_outlined,
+                tooltip: "거래처 수정",
+                onPressed: () =>
+                    showSupplierRegisterDialog(context, initial: supplier),
+              ),
           ],
         ),
         const SizedBox(height: 24),

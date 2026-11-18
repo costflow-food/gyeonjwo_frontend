@@ -186,6 +186,7 @@ class SupplierDetail {
 class SupplierItemDraft {
   const SupplierItemDraft({
     required this.itemName,
+    this.supplierItemId,
     this.specification,
     this.unit,
     this.unitsPerBox,
@@ -196,6 +197,9 @@ class SupplierItemDraft {
   });
 
   final String itemName;
+
+  /// The saved item this edits; null for a new item.
+  final String? supplierItemId;
   final String? specification;
   final String? unit;
   final String? unitsPerBox;

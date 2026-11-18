@@ -16,6 +16,7 @@ class SupplierBasicFields {
     fields.contactName.text = supplier.contact.name ?? "";
     fields.phone.text = supplier.contact.phone ?? "";
     fields.location.text = supplier.location ?? "";
+    fields.evidenceMemo.text = supplier.evidence?.memo ?? "";
     return fields;
   }
 
@@ -62,10 +63,18 @@ class SupplierBasicFields {
 }
 
 class SupplierItemFields {
-  SupplierItemFields();
+  SupplierItemFields() : id = null;
+
+  SupplierItemFields._saved(String this.id);
+
+  /// The saved item these fields edit; null for an item added in the form.
+  /// Saved items cannot be deleted (the server keeps them).
+  final String? id;
+
+  bool get saved => id != null;
 
   factory SupplierItemFields.of(SupplierItem item) {
-    final fields = SupplierItemFields();
+    final fields = SupplierItemFields._saved(item.id);
     fields.name.text = item.itemName;
     fields.specification.text = item.specification ?? "";
     fields.unit.text = item.unit ?? "";
@@ -101,6 +110,7 @@ class SupplierItemFields {
 
   SupplierItemDraft toDraft() => SupplierItemDraft(
     itemName: SupplierFormRules.optional(name.text)!,
+    supplierItemId: id,
     specification: SupplierFormRules.optional(specification.text),
     unit: SupplierFormRules.optional(unit.text),
     unitsPerBox: SupplierFormRules.optional(unitsPerBox.text),

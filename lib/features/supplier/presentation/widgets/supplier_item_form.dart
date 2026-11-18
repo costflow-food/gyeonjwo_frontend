@@ -46,11 +46,14 @@ class SupplierItemForm extends StatelessWidget {
                   ),
                 ),
               ),
-              LdsIconButton(
-                icon: Icons.delete_outline,
-                tooltip: "품목 ${index + 1} 삭제",
-                onPressed: onRemove,
-              ),
+              // Saved items are tied to quotes and price history; the server
+              // keeps them, so only items added in this form can be removed.
+              if (!fields.saved)
+                LdsIconButton(
+                  icon: Icons.delete_outline,
+                  tooltip: "품목 ${index + 1} 삭제",
+                  onPressed: onRemove,
+                ),
             ],
           ),
           const SizedBox(height: 6),
@@ -67,6 +70,7 @@ class SupplierItemForm extends StatelessWidget {
                       hint: "예: 냉동 딸기",
                       controller: fields.name,
                       validator: SupplierFormRules.validateItemName,
+                      helper: fields.saved ? "저장된 품목명은 띄어쓰기만 고칠 수 있습니다." : null,
                     ),
                     if (editing)
                       SupplierFormField(

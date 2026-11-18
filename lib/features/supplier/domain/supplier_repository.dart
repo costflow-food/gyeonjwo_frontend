@@ -14,4 +14,11 @@ abstract interface class SupplierRepository {
   /// 08에 등록 API가 없어 실제 서버로는 보내지 않고
   /// `SUPPLIER_REGISTRATION_UNSUPPORTED`로 실패합니다.
   Future<SupplierDetail> registerSupplier(SupplierDraft draft);
+
+  /// KAN-288 `PATCH /suppliers/{supplier_id}` with a body from
+  /// `SupplierUpdate.body`. Returns the updated detail.
+  Future<SupplierDetail> updateSupplier(
+    String supplierId,
+    Map<String, Object?> body,
+  );
 }

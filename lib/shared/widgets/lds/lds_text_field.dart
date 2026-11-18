@@ -150,6 +150,7 @@ class LdsTextFormField extends FormField<String> {
     int maxLines = 1,
     bool autofocus = false,
     ValueChanged<String>? onChanged,
+    super.enabled,
     super.autovalidateMode = AutovalidateMode.onUserInteraction,
   }) : super(
          initialValue: controller.text,
@@ -166,6 +167,7 @@ class LdsTextFormField extends FormField<String> {
            keyboardType: keyboardType,
            maxLines: maxLines,
            autofocus: autofocus,
+           enabled: state.widget.enabled,
            onChanged: (value) {
              state.didChange(value);
              onChanged?.call(value);
