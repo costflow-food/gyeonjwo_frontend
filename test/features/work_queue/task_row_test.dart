@@ -5,7 +5,6 @@ import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_row_text.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_row.dart";
-import "package:gyeonjwo_frontend/features/dashboard/presentation/dashboard_view.dart";
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
 import "package:gyeonjwo_frontend/shared/widgets/app_icons.dart";
@@ -133,9 +132,9 @@ void main() {
       LdsColors.primary,
       Colors.white,
     ));
-    // 완료 = Dashboard '완료'와 같은 초록, 먹색 글자.
+    // 완료 = 밝은 살구(#FFEBE5), 먹색 글자.
     expect(taskRowLabelColors(TaskLabel.done), (
-      taskGroupColor(TaskGroup.complete),
+      const Color(0xFFFFEBE5),
       LdsColors.ink,
     ));
     // Sender and time are kept for the screen reader.
