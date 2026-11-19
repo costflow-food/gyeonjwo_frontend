@@ -14,8 +14,10 @@ class WorkflowLogContent extends StatefulWidget {
     required this.viewModel,
     this.onOpenDetail,
     this.onLeave,
+    this.compactSummary = false,
   });
 
+  final bool compactSummary;
   final WorkflowLogState data;
   final WorkflowLogViewModel viewModel;
 
@@ -65,8 +67,10 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                           const TextSpan(text: "총 "),
                           TextSpan(
                             text: "${data.total}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
+                            style: TextStyle(
+                              fontWeight: widget.compactSummary
+                                  ? FontWeight.w400
+                                  : FontWeight.w700,
                               color: LdsColors.ink,
                             ),
                           ),
@@ -129,7 +133,8 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
               filter: data.filter,
               onClearCase: () => viewModel.filterCase(null),
             ),
-            const SizedBox(height: 16),
+            if (!widget.compactSummary || data.filter.caseId != null)
+              const SizedBox(height: 16),
             if (widget.onOpenDetail != null)
               list
             else

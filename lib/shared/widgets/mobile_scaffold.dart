@@ -165,9 +165,9 @@ class MobileNavigationBar extends ConsumerWidget {
               label: 'Suppliers',
             ),
             NavigationDestination(
-              icon: Icon(Icons.manage_accounts_outlined),
-              selectedIcon: Icon(Icons.manage_accounts),
-              label: '계정 설정',
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings),
+              label: '설정',
             ),
           ],
         ),

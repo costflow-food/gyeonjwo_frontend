@@ -12,12 +12,33 @@ import "widgets/workflow_log_header.dart";
 import "workflow_log_view_model.dart";
 
 class WorkflowLogView extends ConsumerWidget {
-  const WorkflowLogView({super.key});
+  const WorkflowLogView({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(workflowLogViewModelProvider);
     final viewModel = ref.read(workflowLogViewModelProvider.notifier);
+    if (embedded) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AsyncContent<WorkflowLogState>(
+            value: value,
+            onRetry: viewModel.refresh,
+            builder: (data) => WorkflowLogContent(
+              compactSummary: true,
+              data: data,
+              viewModel: viewModel,
+              onOpenDetail: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const _LogDetailPage()),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     if (isCompactLayout(context)) {
       return MobileTabScaffold(
         title: "처리 이력",
