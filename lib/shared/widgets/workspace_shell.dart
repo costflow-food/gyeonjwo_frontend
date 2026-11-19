@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_paths.dart';
 import '../../features/notifications/presentation/notification_bell.dart';
+import '../../features/quick_tools/presentation/calculator_button.dart';
+import '../../features/quick_tools/presentation/memo_button.dart';
 import '../../features/work_queue/presentation/task_search_dialog.dart';
 import '../lds_colors.dart';
 import 'app_sidebar.dart';
@@ -194,9 +196,12 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
 }
 
 /// 상단 바: 높이 64, 흰 바탕, 아래 1px `#E5E7EA`, 좌우 24. 화면 제목 24/700,
-/// 오른쪽 [action](기간 선택 등) · 검색 · 알림 (3-2, 7.9.2).
+/// 오른쪽 [action](기간 선택 등) · 계산기 · 메모 · 검색 · 알림 (3-2, 7.9.2).
 class _TopBar extends ConsumerWidget {
   const _TopBar({required this.title, this.onMenu, this.action});
+
+  /// 창 폭이 이보다 좁으면 계산기·메모 단추를 숨깁니다.
+  static const toolsMinWidth = 480.0;
 
   final String title;
   final Widget? action;
@@ -236,6 +241,13 @@ class _TopBar extends ConsumerWidget {
         if (action case final action?) ...[
           const SizedBox(width: 12),
           action,
+          const SizedBox(width: 8),
+        ],
+        // 좁은 창(휴대폰 브라우저)은 제목 자리가 모자라 계산기·메모를 뺍니다.
+        if (MediaQuery.sizeOf(context).width >= _TopBar.toolsMinWidth) ...[
+          const CalculatorButton(),
+          const SizedBox(width: 8),
+          const MemoButton(),
           const SizedBox(width: 8),
         ],
         LdsIconButton(
