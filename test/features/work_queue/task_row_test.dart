@@ -124,10 +124,13 @@ void main() {
     final party = tester.widget<Text>(find.text("한라푸드"));
     expect(party.style!.fontSize, 15);
     expect(party.style!.fontWeight, FontWeight.w400);
-    // 진행 중 = light orange fill, ink text.
+    // 진행 중 = 연한 노랑 + 진한 노랑 글자(Dashboard 진행 중 노랑과 맞춤).
     final label = tester.widget<Text>(find.text("진행 중"));
-    expect(label.style!.color, LdsColors.ink);
-    expect(taskRowLabelColors(TaskLabel.running).$1, const Color(0xFFFFA066));
+    expect(label.style!.color, LdsColors.warningText);
+    expect(taskRowLabelColors(TaskLabel.running), (
+      LdsColors.warningBg,
+      LdsColors.warningText,
+    ));
     expect(taskRowLabelColors(TaskLabel.hold), (
       LdsColors.primary,
       Colors.white,
