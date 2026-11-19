@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/hitl/presentation/hitl_view.dart';
-
 import '../features/auth/domain/auth_route_policy.dart';
 import '../features/auth/domain/gmail_connection.dart';
 import '../features/auth/presentation/auth_session_view_model.dart';
@@ -102,11 +100,6 @@ final appRouter = GoRouter(
       path: '${AppPaths.tasks}/:caseId/review',
       builder: (context, state) =>
           PurchaseReviewView(caseId: state.pathParameters['caseId']!),
-    ),
-    GoRoute(
-      path: AppPaths.hitl,
-      builder: (context, state) =>
-          HitlView(requestId: state.uri.queryParameters['request']),
     ),
     GoRoute(
       path: AppPaths.transactions,

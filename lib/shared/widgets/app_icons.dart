@@ -11,9 +11,6 @@ enum AppIcon {
   /// 체크 두 개 + 줄 두 개.
   tasks,
 
-  /// 담당자 검토: 사람과 확인 표시.
-  hitl,
-
   /// 줄이 있는 문서 + 오른쪽 아래 말린 끝.
   transactions,
 
@@ -88,16 +85,6 @@ class _AppIconPainter extends CustomPainter {
         line(13, 9, 20, 9);
         poly(const [Offset(4, 14.5), Offset(6, 16.5), Offset(9, 13.5)]);
         line(13, 15.5, 20, 15.5);
-      case AppIcon.hitl:
-        canvas.drawCircle(const Offset(9, 7), 3, stroke);
-        canvas.drawArc(
-          const Rect.fromLTWH(3, 13, 12, 10),
-          3.14,
-          3.14,
-          false,
-          stroke,
-        );
-        poly(const [Offset(15, 12), Offset(18, 15), Offset(22, 10)]);
       case AppIcon.transactions:
         canvas.drawPath(
           Path()
