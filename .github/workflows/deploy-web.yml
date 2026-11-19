@@ -93,7 +93,11 @@ jobs:
           site="$RUNNER_TEMP/site"
           mkdir -p "$site/.vercel/output"
           cp -R build/web "$site/.vercel/output/static"
-          # 보안 헤더를 붙이는 Build Output 설정
+          # Build Output 설정(config.json): 보안 헤더 + '#' 없는 경로를 해시 주소로 넘김(KAN-290)
+          #   1) 모든 응답에 보안 헤더(continue)
+          #   2) handle: filesystem — 실제 파일(확장자 없는 assets/NOTICES 포함)을 먼저 응답
+          #   3) 파일이 없고 마지막 경로 조각에 '.'이 없으면 302 → /#/<경로>, 있으면 404 그대로
+          #   순서를 바꾸면 정적 파일까지 넘겨지므로 test/deploy/vercel_config_test.dart가 막는다.
           cp .github/vercel/config.json "$site/.vercel/output/config.json"
           cd "$site"
           vercel="npx --yes vercel@65.14.0"
