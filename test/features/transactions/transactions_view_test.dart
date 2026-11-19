@@ -147,13 +147,30 @@ void main() {
     await _pump(tester);
     final lead = find.widgetWithText(PageLeadText, TransactionsView.lead);
     expect(lead, findsOneWidget);
-    // 필터 단추 위, 같은 왼쪽 선.
-    final filter = find.widgetWithText(LdsFilterButton, "품목");
-    expect(
-      tester.getBottomLeft(lead).dy,
-      lessThan(tester.getTopLeft(filter).dy),
-    );
-    expect(tester.getTopLeft(lead).dx, tester.getTopLeft(filter).dx);
+    // 필터 줄 위, 같은 왼쪽 선(줄 맨 앞은 기간 상자).
+    final date = find.byType(LdsDateRangeButton);
+    expect(tester.getBottomLeft(lead).dy, lessThan(tester.getTopLeft(date).dy));
+    expect(tester.getTopLeft(lead).dx, tester.getTopLeft(date).dx);
+  });
+
+  testWidgets("필터 줄 순서: 기간 → 품목 → 거래처 → 확정 방식", (tester) async {
+    await _pump(tester);
+    final boxes = [
+      find.byType(LdsDateRangeButton),
+      for (final label in ["품목", "거래처", "확정 방식"])
+        find.widgetWithText(LdsFilterButton, label),
+    ];
+    // 읽는 순서(위→아래, 왼→오른)대로 놓여 있습니다.
+    for (var i = 1; i < boxes.length; i++) {
+      final before = tester.getTopLeft(boxes[i - 1]);
+      final after = tester.getTopLeft(boxes[i]);
+      final sameRow = (before.dy - after.dy).abs() < 1;
+      expect(
+        sameRow ? after.dx > before.dx : after.dy > before.dy,
+        isTrue,
+        reason: "$i",
+      );
+    }
   });
 
   testWidgets("기본 기간은 최근 3개월, 목록 위는 건수·총액", (tester) async {
@@ -164,6 +181,14 @@ void main() {
     expect(button.value.start, DateTime(2026, 8, 19));
     expect(button.value.end, DateTime(2026, 11, 18));
     expect(find.text("2026. 8. 19 - 2026. 11. 18"), findsOneWidget);
+    // 기간 상자에는 달력 아이콘 없이 글자만.
+    expect(
+      find.descendant(
+        of: find.byType(LdsDateRangeButton),
+        matching: find.byIcon(Icons.calendar_today_outlined),
+      ),
+      findsNothing,
+    );
     // 기간 선택은 상단 바(높이 64) 안.
     expect(
       tester.getCenter(find.byType(LdsDateRangeButton)).dy,
@@ -221,6 +246,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text("확정 거래 5건 · 총 18,000,000원"), findsOneWidget);
     expect(find.text("모두 지우기"), findsNothing);
+  });
+
+  testWidgets("정렬 단추는 Suppliers처럼 요약 줄 오른쪽 끝(목록 상자 오른쪽 선)", (tester) async {
+    await _pump(tester);
+    final sort = find.bySemanticsLabel("정렬, 최신순");
+    final summary = find.text("확정 거래 5건 · 총 18,000,000원");
+    final box = find.byType(ListGroupBox);
+    expect(tester.getRect(sort).right, tester.getRect(box).right);
+    // 요약과 같은 줄.
+    expect(tester.getCenter(sort).dy, closeTo(tester.getCenter(summary).dy, 1));
   });
 
   testWidgets("정렬 선택: 기본 최신순, 선택지 8개, 고르면 그 순서로", (tester) async {
@@ -582,7 +617,7 @@ void main() {
         for (final destination in bar.destinations)
           (destination as NavigationDestination).label,
       ],
-      ["Dashboard", "Tasks", "Invoices", "Suppliers", "계정 설정"],
+      ["Dashboard", "Tasks", "Invoices", "Suppliers", "설정"],
     );
     expect(bar.selectedIndex, 2);
     expect(tester.takeException(), isNull);

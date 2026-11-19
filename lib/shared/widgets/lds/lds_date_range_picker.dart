@@ -58,7 +58,7 @@ enum LdsQuickRange {
 
 /// 기간 선택 단추 — LIKELION DateInput(range) (`docs/design-ssot.md` 7.9.2).
 ///
-/// 달력 아이콘 + `yyyy. M. d - yyyy. M. d`. 높이 36, 모서리 4, 테두리
+/// `yyyy. M. d - yyyy. M. d` 글자만(달력 아이콘 없음). 높이 36, 모서리 4, 테두리
 /// `#D1D6DC`, hover `#333D4B`. 누르면 단추 오른쪽 끝에 맞춘 팝오버(달력 2개),
 /// 744px 미만은 아래에서 올라오는 시트(달력 1개). 확정은 '적용'.
 class LdsDateRangeButton extends StatefulWidget {
@@ -178,15 +178,10 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
             child: Container(
               height: 36,
               padding: const EdgeInsets.symmetric(horizontal: 12),
+              // 달력 아이콘 없이 기간 글자만(필터·정렬 단추와 같은 글자 상자).
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.calendar_today_outlined,
-                    size: 18,
-                    color: LdsColors.title,
-                  ),
-                  const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       label,

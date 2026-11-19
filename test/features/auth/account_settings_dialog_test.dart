@@ -158,6 +158,8 @@ void main() {
         reason: text,
       );
     }
+    expect(find.text("앱 정보"), findsNothing);
+    expect(find.byTooltip("새로고침"), findsNothing);
     // Inside the popup there is no card frame and no phone-only buttons.
     expect(
       find.descendant(of: dialog, matching: find.byType(LdsPanel)),
@@ -178,6 +180,7 @@ void main() {
     await tester.tap(find.text("메일 발송 설정"));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(LdsButton, "설정 저장"), findsOneWidget);
+    expect(find.widgetWithText(TextButton, "취소"), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

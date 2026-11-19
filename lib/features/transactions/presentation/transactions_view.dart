@@ -158,15 +158,14 @@ class _ContentState extends ConsumerState<_Content> {
           onSuppliers: viewModel.setSuppliers,
           onMethods: viewModel.setMethods,
           onClearAll: viewModel.clearFilters,
-          trailing: dateButton,
+          leading: dateButton,
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        // Suppliers '총 N곳 … 이름순 ▾'와 같은 줄: 왼쪽 요약, 정렬은 오른쪽 끝.
+        Row(
           children: [
-            _Summary(listing: listing),
+            Expanded(child: _Summary(listing: listing)),
+            const SizedBox(width: 8),
             TransactionSortButton(filter: filter, onChanged: viewModel.setSort),
           ],
         ),
