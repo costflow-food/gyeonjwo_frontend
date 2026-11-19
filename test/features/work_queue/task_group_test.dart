@@ -45,7 +45,7 @@ void main() {
   // SSOT 7.14 'whose turn is it', by server status and step. The label shows
   // why a case is in its group; n is the slice of five on the row.
   group("status × step → group, label, progress", () {
-    // 결정 (b): 검토 시작 전만 '대기', 보류·오류·완료가 아니면 '진행 중'.
+    // 라벨은 묶음과 맞춤: 확인 필요는 보류·오류가 아니면 '대기', 진행 중 묶음만 '진행 중'.
     // 결정 (a): n은 접수 · 정보 추출 · 후보 찾기 · 견적 요청·회신 · 검토 카드.
     final table = <String, (WorkCase, TaskGroup, TaskLabel, int?)>{
       "not started": (
@@ -85,7 +85,7 @@ void main() {
           allowed: [WorkCaseAction.selectCandidates],
         ),
         TaskGroup.confirm,
-        TaskLabel.running,
+        TaskLabel.waiting,
         3,
       ),
       "candidates not ready yet": (
@@ -105,7 +105,7 @@ void main() {
           blockedCandidates: "INVALID_CANDIDATE_SELECTION",
         ),
         TaskGroup.confirm,
-        TaskLabel.running,
+        TaskLabel.waiting,
         3,
       ),
       "server drafting the quote requests": (
@@ -129,13 +129,13 @@ void main() {
       "draft waits for approval": (
         _case("Pending", "WAITING_APPROVAL"),
         TaskGroup.confirm,
-        TaskLabel.running,
+        TaskLabel.waiting,
         4,
       ),
       "draft waits for approval (old code)": (
         _case("Pending", "AWAITING_APPROVAL"),
         TaskGroup.confirm,
-        TaskLabel.running,
+        TaskLabel.waiting,
         4,
       ),
       "needs info, item not read": (
@@ -204,7 +204,7 @@ void main() {
       "review card ready": (
         _case("Complete", "REVIEW_READY"),
         TaskGroup.confirm,
-        TaskLabel.running,
+        TaskLabel.waiting,
         5,
       ),
       "plan confirmed (archived)": (
@@ -216,7 +216,7 @@ void main() {
       "unknown status": (
         _case("Mystery", "SOMETHING"),
         TaskGroup.confirm,
-        TaskLabel.running,
+        TaskLabel.waiting,
         null,
       ),
     };
@@ -228,6 +228,27 @@ void main() {
         expect(taskProgressOf(workCase), n, reason: "n/5");
       });
     }
+
+    test("확인 필요 탭에는 대기·보류·오류만, 진행 중은 진행 중 묶음에만", () {
+      const confirmLabels = {
+        TaskLabel.waiting,
+        TaskLabel.hold,
+        TaskLabel.error,
+      };
+      for (final MapEntry(key: name, value: (workCase, _, _, _))
+          in table.entries) {
+        final group = taskGroupOf(workCase);
+        final label = taskLabelOf(workCase);
+        switch (group) {
+          case TaskGroup.confirm:
+            expect(confirmLabels, contains(label), reason: name);
+          case TaskGroup.running:
+            expect(label, TaskLabel.running, reason: name);
+          case TaskGroup.complete:
+            expect(label, TaskLabel.done, reason: name);
+        }
+      }
+    });
   });
 
   test("no quote request went out: a raised revision is not a reply", () {
