@@ -19,10 +19,10 @@ import "../domain/dashboard_insights.dart";
 import "widgets/category_share_card.dart";
 import "widgets/monthly_trend_card.dart";
 
-/// 상태 색 (`docs/design-ssot.md` 4.1): 확인 필요 주황, 진행 중 파랑, 완료 초록.
+/// 상태 색 (`docs/design-ssot.md` 4.1): 확인 필요 주황, 진행 중 노랑, 완료 초록.
 Color taskGroupColor(TaskGroup group) => switch (group) {
   TaskGroup.confirm => LdsColors.primary,
-  TaskGroup.running => LdsColors.info,
+  TaskGroup.running => LdsColors.warning,
   TaskGroup.complete => LdsColors.success,
 };
 

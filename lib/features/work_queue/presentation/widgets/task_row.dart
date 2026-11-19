@@ -19,12 +19,14 @@ LdsTagTone taskLabelTone(TaskLabel label) => switch (label) {
   TaskLabel.done => LdsTagTone.success,
 };
 
-/// 업무 행의 상태 라벨(채운 색): 진행 중 연주황 + 먹색 글자 · 보류 주황 +
+/// 업무 행의 상태 라벨(채운 색): 진행 중 연한 노랑([LdsColors.warningBg]) +
+/// 진한 노랑 글자([LdsColors.warningText]) · 보류 주황 +
 /// 흰 글자 · 오류 빨강 + 흰 글자 · 완료 연한 초록([LdsColors.successBg]) +
 /// 초록 글자([LdsColors.successText]) · 대기 주황 + 흰 글자.
 /// 업무 행과 상세 머리가 같이 씁니다([TaskStatusLabel]).
 (Color, Color) taskRowLabelColors(TaskLabel label) => switch (label) {
-  TaskLabel.running => (const Color(0xFFFFA066), LdsColors.ink),
+  // Dashboard '진행 중' 노랑과 맞춘 LDS 노랑 조합(대비 약 6.6:1).
+  TaskLabel.running => (LdsColors.warningBg, LdsColors.warningText),
   TaskLabel.hold => (LdsColors.primary, Colors.white),
   TaskLabel.error => (const Color(0xFFE12337), Colors.white),
   // LDS 성공 안내·태그와 같은 연한 초록 + 초록 글자(대비 약 4.8:1).
