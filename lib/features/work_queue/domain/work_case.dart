@@ -282,8 +282,6 @@ class WorkCaseGroup {
   final List<WorkCase> cases;
 
   String get label => itemName == null ? "품목 미확인" : "$itemName 품목";
-
-  int get waitingCount => cases.where((workCase) => workCase.notStarted).length;
 }
 
 /// 상태 탭 건수 (`task_group.dart`의 [TaskGroup] 기준, 보관 전 업무만).
