@@ -132,10 +132,10 @@ void main() {
       LdsColors.primary,
       Colors.white,
     ));
-    // 완료 = 밝은 살구(#FFEBE5), 먹색 글자.
+    // 완료 = 연한 초록 + 초록 글자(LDS 성공 색).
     expect(taskRowLabelColors(TaskLabel.done), (
-      const Color(0xFFFFEBE5),
-      LdsColors.ink,
+      LdsColors.successBg,
+      LdsColors.successText,
     ));
     // Sender and time are kept for the screen reader.
     expect(
