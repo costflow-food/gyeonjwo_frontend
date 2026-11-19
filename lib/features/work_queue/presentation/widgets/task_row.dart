@@ -8,6 +8,7 @@ import "../../domain/case_stage.dart";
 import "../../domain/task_group.dart";
 import "../../domain/task_row_text.dart";
 import "../../domain/work_case.dart";
+import "../task_status_colors.dart";
 
 /// 상태 라벨 색 (4.1 weak): 대기 주황 · 진행 중 파랑 · 보류 노랑 · 오류 빨강 ·
 /// 완료 초록.
@@ -19,20 +20,10 @@ LdsTagTone taskLabelTone(TaskLabel label) => switch (label) {
   TaskLabel.done => LdsTagTone.success,
 };
 
-/// 업무 행의 상태 라벨(채운 색): 진행 중 연한 노랑([LdsColors.warningBg]) +
-/// 진한 노랑 글자([LdsColors.warningText]) · 보류 주황 +
-/// 흰 글자 · 오류 빨강 + 흰 글자 · 완료 연한 초록([LdsColors.successBg]) +
-/// 초록 글자([LdsColors.successText]) · 대기 주황 + 흰 글자.
+/// 업무 행의 상태 라벨(채운 색). 색은 Dashboard와 같은 [TaskStatusColors]입니다.
 /// 업무 행과 상세 머리가 같이 씁니다([TaskStatusLabel]).
-(Color, Color) taskRowLabelColors(TaskLabel label) => switch (label) {
-  // Dashboard '진행 중' 노랑과 맞춘 LDS 노랑 조합(대비 약 6.6:1).
-  TaskLabel.running => (LdsColors.warningBg, LdsColors.warningText),
-  TaskLabel.hold => (LdsColors.primary, Colors.white),
-  TaskLabel.error => (const Color(0xFFE12337), Colors.white),
-  // LDS 성공 안내·태그와 같은 연한 초록 + 초록 글자(대비 약 4.8:1).
-  TaskLabel.done => (LdsColors.successBg, LdsColors.successText),
-  TaskLabel.waiting => (LdsColors.primary, Colors.white),
-};
+(Color, Color) taskRowLabelColors(TaskLabel label) =>
+    TaskStatusColors.ofLabel(label);
 
 /// 업무 상태 라벨(채운 색, [taskRowLabelColors]): 높이 24, 최소 폭 56, 좌우 8,
 /// 모서리 4, 13px/700. Tasks 업무 행과 상세 머리가 같이 씁니다.

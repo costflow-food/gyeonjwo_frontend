@@ -12,6 +12,7 @@ import "../../auth/presentation/gmail_connection_view_model.dart";
 import "../../mail_intake/presentation/mail_intake_dialog.dart";
 import "../../mail_intake/presentation/mail_intake_view_model.dart";
 import "../../work_queue/domain/task_group.dart";
+import "../../work_queue/presentation/task_status_colors.dart";
 import "../../work_queue/presentation/completed_tasks_view_model.dart";
 import "../../work_queue/presentation/widgets/gmail_read_notice.dart";
 import "../../work_queue/presentation/work_queue_view_model.dart";
@@ -19,12 +20,9 @@ import "../domain/dashboard_insights.dart";
 import "widgets/category_share_card.dart";
 import "widgets/monthly_trend_card.dart";
 
-/// 상태 색 (`docs/design-ssot.md` 4.1): 확인 필요 주황, 진행 중 노랑, 완료 초록.
-Color taskGroupColor(TaskGroup group) => switch (group) {
-  TaskGroup.confirm => LdsColors.primary,
-  TaskGroup.running => LdsColors.warning,
-  TaskGroup.complete => LdsColors.success,
-};
+/// 상태 색: Tasks 상태 라벨과 같은 [TaskStatusColors](확인 필요 주황 ·
+/// 진행 중 노랑 · 완료 #161716).
+Color taskGroupColor(TaskGroup group) => TaskStatusColors.ofGroup(group);
 
 /// Dashboard (`docs/design-ssot.md` 7.9, 7.9.1, 7.9.2, 7.9.3).
 ///
