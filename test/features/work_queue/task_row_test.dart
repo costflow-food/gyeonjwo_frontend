@@ -4,6 +4,7 @@ import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_row_text.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
+import "package:gyeonjwo_frontend/features/work_queue/presentation/task_status_colors.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_row.dart";
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
@@ -124,22 +125,35 @@ void main() {
     final party = tester.widget<Text>(find.text("한라푸드"));
     expect(party.style!.fontSize, 15);
     expect(party.style!.fontWeight, FontWeight.w400);
-    // 진행 중 = 연한 노랑 + 진한 노랑 글자(Dashboard 진행 중 노랑과 맞춤).
+    // 진행 중 = Dashboard와 같은 노랑 + 먹색 글자.
     final label = tester.widget<Text>(find.text("진행 중"));
-    expect(label.style!.color, LdsColors.warningText);
+    expect(label.style!.color, LdsColors.ink);
     expect(taskRowLabelColors(TaskLabel.running), (
-      LdsColors.warningBg,
-      LdsColors.warningText,
+      LdsColors.warning,
+      LdsColors.ink,
     ));
     expect(taskRowLabelColors(TaskLabel.hold), (
       LdsColors.primary,
       Colors.white,
     ));
-    // 완료 = 연한 초록 + 초록 글자(LDS 성공 색).
+    // 완료 = #161716 + 흰 글자.
     expect(taskRowLabelColors(TaskLabel.done), (
-      LdsColors.successBg,
-      LdsColors.successText,
+      const Color(0xFF161716),
+      Colors.white,
     ));
+    // 라벨 바탕은 Dashboard 상태 색과 같습니다.
+    expect(
+      taskRowLabelColors(TaskLabel.running).$1,
+      TaskStatusColors.ofGroup(TaskGroup.running),
+    );
+    expect(
+      taskRowLabelColors(TaskLabel.done).$1,
+      TaskStatusColors.ofGroup(TaskGroup.complete),
+    );
+    expect(
+      taskRowLabelColors(TaskLabel.waiting).$1,
+      TaskStatusColors.ofGroup(TaskGroup.confirm),
+    );
     // Sender and time are kept for the screen reader.
     expect(
       tester.getSemantics(find.byType(TaskRow)).label,
