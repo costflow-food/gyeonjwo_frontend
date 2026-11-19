@@ -223,6 +223,16 @@ void main() {
     expect(find.text("모두 지우기"), findsNothing);
   });
 
+  testWidgets("정렬 단추는 Suppliers처럼 요약 줄 오른쪽 끝(목록 상자 오른쪽 선)", (tester) async {
+    await _pump(tester);
+    final sort = find.bySemanticsLabel("정렬, 최신순");
+    final summary = find.text("확정 거래 5건 · 총 18,000,000원");
+    final box = find.byType(ListGroupBox);
+    expect(tester.getRect(sort).right, tester.getRect(box).right);
+    // 요약과 같은 줄.
+    expect(tester.getCenter(sort).dy, closeTo(tester.getCenter(summary).dy, 1));
+  });
+
   testWidgets("정렬 선택: 기본 최신순, 선택지 8개, 고르면 그 순서로", (tester) async {
     await _pump(tester);
     expect(_dates(tester), [
