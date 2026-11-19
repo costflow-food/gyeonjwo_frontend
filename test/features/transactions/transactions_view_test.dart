@@ -164,6 +164,14 @@ void main() {
     expect(button.value.start, DateTime(2026, 8, 19));
     expect(button.value.end, DateTime(2026, 11, 18));
     expect(find.text("2026. 8. 19 - 2026. 11. 18"), findsOneWidget);
+    // 기간 상자에는 달력 아이콘 없이 글자만.
+    expect(
+      find.descendant(
+        of: find.byType(LdsDateRangeButton),
+        matching: find.byIcon(Icons.calendar_today_outlined),
+      ),
+      findsNothing,
+    );
     // 기간 선택은 상단 바(높이 64) 안.
     expect(
       tester.getCenter(find.byType(LdsDateRangeButton)).dy,
