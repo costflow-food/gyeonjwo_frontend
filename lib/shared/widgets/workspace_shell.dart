@@ -31,6 +31,9 @@ class AppSection {
         AppMenu.tasks,
       );
     }
+    if (under(AppPaths.hitl)) {
+      return const AppSection('HITL', AppMenu.hitl);
+    }
     if (under(AppPaths.transactions)) {
       return const AppSection('Invoices', AppMenu.transactions);
     }
@@ -90,6 +93,13 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     if (isCompactLayout(context)) {
       return MobileTabScaffold(
         title: section.menu == AppMenu.dashboard ? null : section.title,
+        actions: [
+          IconButton(
+            tooltip: 'HITL 검토 요청',
+            onPressed: () => context.go(AppPaths.hitl),
+            icon: const Icon(Icons.fact_check_outlined),
+          ),
+        ],
         body: widget.scrollable
             ? SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
