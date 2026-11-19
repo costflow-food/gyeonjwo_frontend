@@ -132,10 +132,13 @@ void main() {
       LdsColors.warning,
       LdsColors.ink,
     ));
-    expect(taskRowLabelColors(TaskLabel.hold), (
-      LdsColors.primary,
-      Colors.white,
-    ));
+    // 보류 = 연한 살구색 #FAE0CE. 대기는 주황 그대로.
+    expect(taskRowLabelColors(TaskLabel.hold).$1, const Color(0xFFFAE0CE));
+    expect(taskRowLabelColors(TaskLabel.waiting).$1, LdsColors.primary);
+    // 상태 글자는 모두 먹색.
+    for (final label in TaskLabel.values) {
+      expect(taskRowLabelColors(label).$2, LdsColors.ink, reason: label.text);
+    }
     // 완료 = 그린에디션 초록 #3BB553 + 먹색 글자.
     expect(taskRowLabelColors(TaskLabel.done), (
       const Color(0xFF3BB553),
