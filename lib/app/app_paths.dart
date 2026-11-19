@@ -3,7 +3,6 @@ abstract final class AppPaths {
   /// 로그인 후 첫 화면.
   static const dashboard = "/";
   static const tasks = "/tasks";
-  static const hitl = "/hitl";
   static const transactions = "/transactions";
   static const suppliers = "/suppliers";
   static const logs = "/logs";
