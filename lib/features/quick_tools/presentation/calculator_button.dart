@@ -1,12 +1,18 @@
+import "dart:convert";
+
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:shared_preferences/shared_preferences.dart";
 
 import "../../../shared/lds_colors.dart";
+import "../../../shared/preferences.dart";
 import "../../../shared/widgets/lds/lds.dart";
+import "../../auth/presentation/auth_session_view_model.dart";
 import "../domain/calculator.dart";
 
-/// 계산기 값. 창을 닫았다 열어도 적던 계산이 남습니다(새로고침하면 지워짐).
+/// 계산기 값. 창을 닫았다 열어도 적던 계산이 남습니다(새로고침하면 지워지고,
+/// 이력만 남습니다).
 final calculatorProvider = NotifierProvider<CalculatorNotifier, Calculator>(
   CalculatorNotifier.new,
 );
@@ -15,7 +21,85 @@ class CalculatorNotifier extends Notifier<Calculator> {
   @override
   Calculator build() => const Calculator();
 
-  void apply(Calculator Function(Calculator) change) => state = change(state);
+  void apply(Calculator Function(Calculator) change) {
+    final next = change(state);
+    // '='으로 결과가 나왔을 때만 이력에 남깁니다.
+    if (!identical(next, state) &&
+        next.evaluated &&
+        next.error == null &&
+        next.history.isNotEmpty) {
+      ref
+          .read(calculatorHistoryProvider.notifier)
+          .add(CalcRecord(expression: next.history, result: next.input));
+    }
+    state = next;
+  }
+}
+
+/// 계산 이력(최근 것이 앞). 브라우저 저장소에 계정별로 남겨 새로고침해도
+/// 유지합니다.
+final calculatorHistoryProvider =
+    NotifierProvider<CalculatorHistory, List<CalcRecord>>(
+      CalculatorHistory.new,
+    );
+
+class CalculatorHistory extends Notifier<List<CalcRecord>> {
+  /// 남겨 두는 건수.
+  static const limit = 30;
+
+  static String keyFor(String? email) => email == null || email.isEmpty
+      ? "calculator_history"
+      : "calculator_history:$email";
+
+  late String _key;
+
+  SharedPreferences? get _preferences {
+    try {
+      return ref.read(sharedPreferencesProvider);
+    } on Object {
+      // 저장소를 못 쓰는 환경(테스트 등)은 메모리에만 둡니다.
+      return null;
+    }
+  }
+
+  @override
+  List<CalcRecord> build() {
+    _key = keyFor(
+      ref.watch(
+        authSessionViewModelProvider.select((s) => s.asData?.value.email),
+      ),
+    );
+    final saved = _preferences?.getStringList(_key) ?? const [];
+    return [for (final line in saved) ?_decode(line)];
+  }
+
+  static CalcRecord? _decode(String line) {
+    try {
+      return CalcRecord.fromJson(jsonDecode(line));
+    } on FormatException {
+      return null;
+    }
+  }
+
+  void _save() {
+    if (state.isEmpty) {
+      _preferences?.remove(_key);
+    } else {
+      _preferences?.setStringList(_key, [
+        for (final record in state) jsonEncode(record.toJson()),
+      ]);
+    }
+  }
+
+  void add(CalcRecord record) {
+    state = [record, ...state].take(limit).toList(growable: false);
+    _save();
+  }
+
+  void clear() {
+    state = const [];
+    _save();
+  }
 }
 
 /// 상단 바 계산기 단추: 누르면 단추 오른쪽 끝에 맞춘 팝오버(폭 280)에
@@ -52,6 +136,20 @@ class CalculatorPanel extends ConsumerStatefulWidget {
 class _CalculatorPanelState extends ConsumerState<CalculatorPanel> {
   final _focus = FocusNode(debugLabel: "calculator");
   bool _copied = false;
+
+  /// 숫자판 자리에 계산 이력을 보여 주는 중.
+  bool _showHistory = false;
+
+  void _toggleHistory() {
+    setState(() => _showHistory = !_showHistory);
+    _focus.requestFocus();
+  }
+
+  /// 이력에서 고른 결과를 지금 숫자로 넣고 숫자판으로 돌아갑니다.
+  void _recall(CalcRecord record) {
+    setState(() => _showHistory = false);
+    _apply((c) => c.recall(record.result));
+  }
 
   @override
   void dispose() {
@@ -203,6 +301,12 @@ class _CalculatorPanelState extends ConsumerState<CalculatorPanel> {
                       ),
                     ),
                     LdsButton(
+                      label: _showHistory ? "숫자판" : "이력",
+                      size: LdsButtonSize.small,
+                      variant: LdsButtonVariant.ghostNeutral,
+                      onPressed: _toggleHistory,
+                    ),
+                    LdsButton(
                       label: _copied ? "복사했어요" : "결과 복사",
                       size: LdsButtonSize.small,
                       variant: LdsButtonVariant.ghostNeutral,
@@ -254,19 +358,144 @@ class _CalculatorPanelState extends ConsumerState<CalculatorPanel> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                for (final (index, row) in rows.indexed) ...[
-                  if (index > 0) const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      for (final (at, key) in row.indexed) ...[
-                        if (at > 0) const SizedBox(width: 8),
-                        Expanded(child: key),
+                if (_showHistory)
+                  _HistoryList(
+                    records: ref.watch(calculatorHistoryProvider),
+                    onPick: _recall,
+                    onClear: () {
+                      ref.read(calculatorHistoryProvider.notifier).clear();
+                      _focus.requestFocus();
+                    },
+                  )
+                else
+                  for (final (index, row) in rows.indexed) ...[
+                    if (index > 0) const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        for (final (at, key) in row.indexed) ...[
+                          if (at > 0) const SizedBox(width: 8),
+                          Expanded(child: key),
+                        ],
                       ],
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 숫자판 자리(높이 252)에 보여 주는 계산 이력. 줄을 누르면 그 결과를
+/// 계산기에 넣습니다.
+class _HistoryList extends StatelessWidget {
+  const _HistoryList({
+    required this.records,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final List<CalcRecord> records;
+  final ValueChanged<CalcRecord> onPick;
+  final VoidCallback onClear;
+
+  /// 숫자판과 같은 높이(44 × 5 + 8 × 4).
+  static const height = 252.0;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: height,
+    child: records.isEmpty
+        ? const Center(
+            child: Text(
+              "아직 계산 이력이 없어요",
+              style: TextStyle(fontSize: 13, color: LdsColors.muted),
+            ),
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Semantics(
+                  container: true,
+                  label: "계산 이력",
+                  child: ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: records.length,
+                    separatorBuilder: (_, _) =>
+                        const Divider(height: 1, color: LdsColors.line),
+                    itemBuilder: (context, index) => _HistoryRow(
+                      record: records[index],
+                      onTap: () => onPick(records[index]),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "누르면 결과를 가져와요",
+                      style: TextStyle(fontSize: 12, color: LdsColors.muted),
+                    ),
+                  ),
+                  LdsButton(
+                    label: "이력 지우기",
+                    size: LdsButtonSize.small,
+                    variant: LdsButtonVariant.ghostNeutral,
+                    onPressed: onClear,
+                  ),
+                ],
+              ),
+            ],
+          ),
+  );
+}
+
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({required this.record, required this.onTap});
+
+  final CalcRecord record;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final result = Calculator.formatNumber(record.result);
+    return Semantics(
+      button: true,
+      label: "${record.expression} $result, 결과 가져오기",
+      excludeSemantics: true,
+      onTap: onTap,
+      child: InkWell(
+        onTap: onTap,
+        canRequestFocus: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                record.expression,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: LdsColors.muted),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                result,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: LdsColors.ink,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
           ),
         ),
       ),
