@@ -12,7 +12,6 @@ import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_repository
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_repository.dart";
-import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_list.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_row.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
@@ -241,7 +240,7 @@ void main() {
     expect(router.state.uri.toString(), "/tasks/c1?tab=confirm");
   });
 
-  testWidgets("groups in 가나다 order with a count and a waiting badge", (
+  testWidgets("groups in 가나다 order with a count, no waiting badge", (
     tester,
   ) async {
     await _pump(tester);
@@ -257,16 +256,10 @@ void main() {
       find.descendant(of: header.first, matching: find.text("2")),
       findsOneWidget,
     );
-    final badge = find.descendant(
-      of: header.first,
-      matching: find.byType(GroupWaitingBadge),
-    );
-    expect(tester.widget<GroupWaitingBadge>(badge).count, 1);
-    expect(find.byType(GroupWaitingBadge), findsOneWidget);
-    // The badge sits at the header's right edge (12 in), not after the count.
+    // 접수 대기 수(예전 주황 원 '1')는 보이지 않습니다.
     expect(
-      tester.getTopRight(badge).dx,
-      closeTo(tester.getTopRight(header.first).dx - 12, 1),
+      find.descendant(of: header.first, matching: find.text("1")),
+      findsNothing,
     );
 
     // Folding: the chevron turns -90°.

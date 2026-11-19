@@ -32,6 +32,7 @@ class AccountView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => WorkspaceShell(
+    scrollable: !isCompactLayout(context),
     child: Align(
       alignment: Alignment.topLeft,
       child: ConstrainedBox(
@@ -110,7 +111,7 @@ class _AccountSettingsState extends State<AccountSettings>
     final inDialog = widget.inDialog;
     final pages = _showAppTabs ? _pages : _pages.take(2).toList();
     final selectedIndex = _index < pages.length ? _index : 0;
-    return Column(
+    final content = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -128,19 +129,6 @@ class _AccountSettingsState extends State<AccountSettings>
                 onSelected: _tabs.animateTo,
               ),
             ),
-            if (_showAppTabs && selectedIndex == 2)
-              Transform.translate(
-                offset: const Offset(0, -6),
-                child: Consumer(
-                  builder: (context, ref, child) => IconButton(
-                    tooltip: '새로고침',
-                    onPressed: () => ref
-                        .read(workflowLogViewModelProvider.notifier)
-                        .refresh(),
-                    icon: const Icon(Icons.refresh),
-                  ),
-                ),
-              ),
           ],
         ),
         SizedBox(height: _showAppTabs && selectedIndex == 2 ? 8 : 24),
@@ -216,6 +204,27 @@ class _AccountSettingsState extends State<AccountSettings>
           ),
         ],
       ],
+    );
+    if (!_showAppTabs) return content;
+    return Consumer(
+      builder: (context, ref, child) => RefreshIndicator(
+        color: LdsColors.primary,
+        notificationPredicate: (notification) =>
+            selectedIndex == 2 && notification.depth == 0,
+        onRefresh: () async {
+          try {
+            await ref.read(workflowLogViewModelProvider.notifier).refresh();
+            await ref.read(workflowLogViewModelProvider.future);
+          } catch (_) {
+            // The history list shows the error and its retry action.
+          }
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          child: content,
+        ),
+      ),
     );
   }
 }

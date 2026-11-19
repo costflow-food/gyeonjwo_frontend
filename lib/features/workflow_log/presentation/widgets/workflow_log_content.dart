@@ -83,12 +83,12 @@ class _WorkflowLogContentState extends State<WorkflowLogContent> {
                       ),
                     ),
                   ),
-                  if (data.isSearching)
+                  if (data.isSearching && !widget.compactSummary)
                     const SizedBox.square(
                       dimension: 14,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  else if (data.loadFailed)
+                  else if (!data.isSearching && data.loadFailed)
                     TextButton.icon(
                       onPressed: viewModel.refresh,
                       icon: const Icon(

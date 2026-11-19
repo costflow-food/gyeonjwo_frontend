@@ -25,6 +25,7 @@ class WorkflowLogView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AsyncContent<WorkflowLogState>(
+            showLoadingIndicator: false,
             value: value,
             onRetry: viewModel.refresh,
             builder: (data) => WorkflowLogContent(

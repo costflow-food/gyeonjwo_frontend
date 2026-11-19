@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
+import "../../../shared/lds_colors.dart";
 import "../../../shared/widgets/async_content.dart";
 import "../../../shared/widgets/lds/lds.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
@@ -84,50 +85,58 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
         onPressed: () => showSupplierRegisterDialog(context),
         icon: const Icon(Icons.add_business_outlined),
       ),
-      IconButton(
-        tooltip: "새로고침",
-        onPressed: viewModel.refresh,
-        icon: const Icon(Icons.refresh),
-      ),
     ],
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      children: [
-        SupplierSearchField(controller: _search, onChanged: viewModel.search),
-        const SizedBox(height: 10),
-        AsyncContent<SupplierListState>(
-          value: value,
-          onRetry: viewModel.refresh,
-          builder: (data) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SupplierListStatus(
-                data: data,
-                onRetry: viewModel.refresh,
-                onSort: viewModel.sortBy,
-              ),
-              const SizedBox(height: 8),
-              SupplierListPanel(
-                data: data,
-                showSelection: false,
-                onSelect: (id) {
-                  viewModel.select(id);
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => _SupplierDetailPage(supplierId: id),
-                    ),
-                  );
-                },
-                onLoadMore: viewModel.loadMore,
-              ),
-            ],
+    body: RefreshIndicator(
+      color: LdsColors.primary,
+      onRefresh: () async {
+        try {
+          await viewModel.refresh();
+          await ref.read(supplierListViewModelProvider.future);
+        } catch (_) {
+          // The list shows the error and its retry action.
+        }
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        children: [
+          SupplierSearchField(controller: _search, onChanged: viewModel.search),
+          const SizedBox(height: 10),
+          AsyncContent<SupplierListState>(
+            showLoadingIndicator: false,
+            value: value,
+            onRetry: viewModel.refresh,
+            builder: (data) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SupplierListStatus(
+                  data: data,
+                  onRetry: viewModel.refresh,
+                  onSort: viewModel.sortBy,
+                ),
+                const SizedBox(height: 8),
+                SupplierListPanel(
+                  data: data,
+                  showSelection: false,
+                  onSelect: (id) {
+                    viewModel.select(id);
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => _SupplierDetailPage(supplierId: id),
+                      ),
+                    );
+                  },
+                  onLoadMore: viewModel.loadMore,
+                ),
+              ],
+            ),
           ),
-        ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(4, 16, 4, 0),
-          child: NoteLine(supplierPriceNote),
-        ),
-      ],
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 16, 4, 0),
+            child: NoteLine(supplierPriceNote),
+          ),
+        ],
+      ),
     ),
   );
 }

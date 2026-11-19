@@ -534,16 +534,13 @@ class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
   ) {
     final name = group.itemName ?? "품목 미확인";
     final count = group.cases.length;
-    final waiting = group.waitingCount;
     final radius = collapsed
         ? BorderRadius.circular(LdsRadius.table)
         : const BorderRadius.vertical(top: Radius.circular(LdsRadius.table));
     return Semantics(
       button: true,
       expanded: !collapsed,
-      label:
-          "$name $count건${waiting > 0 ? ", 대기 $waiting건" : ""}, "
-          "${collapsed ? "펼치기" : "접기"}",
+      label: "$name $count건, ${collapsed ? "펼치기" : "접기"}",
       excludeSemantics: true,
       child: Material(
         color: LdsColors.canvas,
@@ -573,8 +570,7 @@ class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
                 ),
                 // 간격 6 + 여백 4: 품목 이름이 행 시작선(40)에 맞습니다.
                 const SizedBox(width: 10),
-                // 이름 + 건수가 남는 폭을 다 써서, 주황 원은 머리 오른쪽 끝에
-                // 붙습니다(이름이 길면 이름만 말줄임).
+                // 이름 + 건수(이름이 길면 이름만 말줄임).
                 Expanded(
                   child: Row(
                     children: [
@@ -603,11 +599,6 @@ class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
                     ],
                   ),
                 ),
-                // 검토를 시작하지 않은 업무 수: 오른쪽 주황 원.
-                if (waiting > 0) ...[
-                  const SizedBox(width: 8),
-                  GroupWaitingBadge(waiting),
-                ],
                 const SizedBox(width: 12),
               ],
             ),
@@ -616,35 +607,6 @@ class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
       ),
     );
   }
-}
-
-/// 묶음 머리 오른쪽의 접수 대기 건수(지름 20, 13/500 흰 글자).
-class GroupWaitingBadge extends StatelessWidget {
-  const GroupWaitingBadge(this.count, {super.key});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(minWidth: 20),
-    height: 20,
-    padding: const EdgeInsets.symmetric(horizontal: 6.5),
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: LdsColors.primary,
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Text(
-      "$count",
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
-        height: 1,
-        color: Colors.white,
-        fontFeatures: [FontFeature.tabularFigures()],
-      ),
-    ),
-  );
 }
 
 class _LoadMore extends StatelessWidget {
