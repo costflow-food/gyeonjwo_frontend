@@ -13,6 +13,37 @@ enum CalcOp {
   final String label;
 }
 
+/// 계산 이력 한 줄: '='으로 끝난 식과 결과.
+class CalcRecord {
+  const CalcRecord({required this.expression, required this.result});
+
+  /// 저장한 글자에서 되살립니다. 모양이 다르면 null.
+  static CalcRecord? fromJson(Object? json) {
+    if (json case {"e": final String e, "r": final String r}
+        when double.tryParse(r) != null) {
+      return CalcRecord(expression: e, result: r);
+    }
+    return null;
+  }
+
+  /// 보여 줄 식(예: `1,200 × 3 =`).
+  final String expression;
+
+  /// 결과(쉼표 없는 숫자).
+  final String result;
+
+  Map<String, String> toJson() => {"e": expression, "r": result};
+
+  @override
+  bool operator ==(Object other) =>
+      other is CalcRecord &&
+      other.expression == expression &&
+      other.result == result;
+
+  @override
+  int get hashCode => Object.hash(expression, result);
+}
+
 /// 상단 바 계산기의 상태. 단추를 누를 때마다 새 상태를 돌려줍니다.
 ///
 /// 식을 끝까지 적고 '='을 누르면 곱셈·나눗셈을 먼저 계산합니다
@@ -199,6 +230,21 @@ class Calculator {
       input: flipped,
       evaluated: true,
       value: value == null ? null : -value!,
+    );
+  }
+
+  /// 이력에서 고른 값([raw], 쉼표 없는 숫자)을 지금 숫자 자리에 넣습니다.
+  /// 적던 식(`5 +`)은 남습니다. 숫자가 아니면 그대로 둡니다.
+  Calculator recall(String raw) {
+    final value = double.tryParse(raw);
+    if (value == null || !value.isFinite) return this;
+    final base = error != null ? const Calculator() : this;
+    return Calculator(
+      terms: base.terms,
+      ops: base.ops,
+      input: _raw(value),
+      evaluated: true,
+      value: value,
     );
   }
 

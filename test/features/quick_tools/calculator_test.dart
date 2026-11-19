@@ -115,6 +115,23 @@ void main() {
     expect(huge.display, "9");
   });
 
+  test("이력에서 가져온 값은 적던 식에 이어 씁니다", () {
+    expect(const Calculator().recall("3600").display, "3,600");
+    expect(_press("=", _press("5+").recall("3600")).display, "3,605");
+    // 가져온 값 뒤 숫자는 새 숫자.
+    expect(_press("7", const Calculator().recall("3600")).display, "7");
+    // 오류 상태에서 가져오면 새로 시작, 숫자가 아니면 그대로.
+    expect(_press("5/0=").recall("12").display, "12");
+    expect(_press("5").recall("abc").display, "5");
+  });
+
+  test("이력 한 줄은 저장한 글자에서 되살립니다", () {
+    const record = CalcRecord(expression: "1,200 × 3 =", result: "3600");
+    expect(CalcRecord.fromJson(record.toJson()), record);
+    expect(CalcRecord.fromJson({"e": "1 + 1 =", "r": "둘"}), isNull);
+    expect(CalcRecord.fromJson("1 + 1 = 2"), isNull);
+  });
+
   test("자릿수 제한과 복사할 값", () {
     expect(_press("12345678901234567890").display, "123,456,789,012,345");
     expect(_press("1234.5").copyText, "1234.5");

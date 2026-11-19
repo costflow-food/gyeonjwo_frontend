@@ -213,6 +213,78 @@ void main() {
     expect(copied, "23");
   });
 
+  testWidgets("계산 이력: '='마다 남기고, 누르면 결과를 가져옵니다", (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final key = CalculatorHistory.keyFor("buyer@example.invalid");
+    await _pump(tester, preferences: preferences);
+    await tester.tap(find.byTooltip("계산기"));
+    await tester.pumpAndSettle();
+
+    // 처음엔 비어 있습니다.
+    await tester.tap(find.text("이력"));
+    await tester.pump();
+    expect(find.text("아직 계산 이력이 없어요"), findsOneWidget);
+    await tester.tap(find.text("숫자판"));
+    await tester.pump();
+
+    await _tapKeys(tester, ["1", "2", "0", "0", "곱하기", "3", "계산"]);
+    // '='을 다시 눌러도, 0으로 나눠도 이력은 늘지 않습니다.
+    await _tapKeys(tester, ["계산", "모두 지우기", "5", "나누기", "0", "계산"]);
+    await _tapKeys(tester, ["모두 지우기", "2", "더하기", "3", "계산"]);
+    expect(preferences.getStringList(key), hasLength(2));
+    await _tapKeys(tester, ["모두 지우기"]);
+
+    await tester.tap(find.text("이력"));
+    await tester.pump();
+    // 최근 것이 위.
+    final first = find.bySemanticsLabel("2 + 3 = 5, 결과 가져오기");
+    final second = find.bySemanticsLabel("1,200 × 3 = 3,600, 결과 가져오기");
+    expect(first, findsOneWidget);
+    expect(tester.getTopLeft(first).dy, lessThan(tester.getTopLeft(second).dy));
+
+    // 줄을 누르면 그 결과를 넣고 숫자판으로 돌아옵니다.
+    await tester.tap(second);
+    await tester.pump();
+    expect(_display(tester), "3,600");
+    expect(find.text("이력"), findsOneWidget);
+    await _tapKeys(tester, ["더하기", "1", "계산"]);
+    expect(_display(tester), "3,601");
+    expect(preferences.getStringList(key), hasLength(3));
+
+    // 지우면 저장소에서도 지웁니다.
+    await tester.tap(find.text("이력"));
+    await tester.pump();
+    await tester.tap(find.text("이력 지우기"));
+    await tester.pump();
+    expect(find.text("아직 계산 이력이 없어요"), findsOneWidget);
+    expect(preferences.getStringList(key), isNull);
+  });
+
+  testWidgets("계산 이력: 저장소에 있던 이력을 보여 주고, 깨진 줄은 건너뜁니다", (tester) async {
+    SharedPreferences.setMockInitialValues({
+      CalculatorHistory.keyFor("buyer@example.invalid"): [
+        '{"e":"10 ÷ 4 =","r":"2.5"}',
+        "깨진 줄",
+        '{"e":"1 + 1 =","r":"2"}',
+      ],
+      CalculatorHistory.keyFor("other@example.invalid"): [
+        '{"e":"9 × 9 =","r":"81"}',
+      ],
+    });
+    final preferences = await SharedPreferences.getInstance();
+    await _pump(tester, preferences: preferences);
+    await tester.tap(find.byTooltip("계산기"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("이력"));
+    await tester.pump();
+    expect(find.text("10 ÷ 4 ="), findsOneWidget);
+    expect(find.text("2.5"), findsOneWidget);
+    expect(find.text("1 + 1 ="), findsOneWidget);
+    // 다른 계정의 이력은 보이지 않습니다.
+    expect(find.text("9 × 9 ="), findsNothing);
+  });
+
   testWidgets("메모: 적는 대로 저장하고, 다시 열면 그대로 보입니다", (tester) async {
     SharedPreferences.setMockInitialValues({});
     final preferences = await SharedPreferences.getInstance();
