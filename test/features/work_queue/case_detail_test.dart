@@ -281,7 +281,8 @@ void main() {
       onNext: () => next++,
     );
     expect(_bar(tester).stage!.index, 5);
-    expect(find.widgetWithText(TaskStatusLabel, "진행 중"), findsOneWidget);
+    // 구매안 선택은 사용자 차례(확인 필요)라 '대기'입니다.
+    expect(find.widgetWithText(TaskStatusLabel, "대기"), findsOneWidget);
     expect(_inTodo(find.text("구매안을 골라 주세요")), findsOneWidget);
     expect(_inTodo(find.text("구매안 2개")), findsOneWidget);
     expect(_inTodo(find.textContaining("「전량 전환」")), findsOneWidget);
