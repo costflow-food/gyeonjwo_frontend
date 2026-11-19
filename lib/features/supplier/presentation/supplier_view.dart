@@ -80,10 +80,13 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
   ) => MobileTabScaffold(
     title: "Suppliers",
     actions: [
-      IconButton(
-        tooltip: "거래처 등록",
-        onPressed: () => showSupplierRegisterDialog(context),
-        icon: const Icon(Icons.add_business_outlined),
+      Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: LdsButton(
+          label: "거래처 등록",
+          variant: LdsButtonVariant.outlinedPlain,
+          onPressed: () => showSupplierRegisterDialog(context),
+        ),
       ),
     ],
     body: RefreshIndicator(
