@@ -19,7 +19,6 @@ import 'lds/lds.dart';
 enum AppMenu {
   dashboard('Dashboard', AppIcon.dashboard, AppPaths.dashboard),
   tasks('Tasks', AppIcon.tasks, AppPaths.tasks),
-  hitl('HITL', AppIcon.hitl, AppPaths.hitl),
   transactions('Invoices', AppIcon.transactions, AppPaths.transactions),
   suppliers('Suppliers', AppIcon.suppliers, AppPaths.suppliers);
 
