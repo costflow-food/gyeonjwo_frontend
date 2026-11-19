@@ -68,9 +68,10 @@ TaskGroup taskGroupOf(WorkCase workCase) {
   return TaskGroup.confirm;
 }
 
-/// 행·상세의 상태 라벨 (Tasks 시안): 묶음(누구 차례인가)과 따로, 업무가 지금
-/// 어떤 상태인지 보여 줍니다. 검토를 시작하기 전만 '대기'이고, 보류·오류·
-/// 완료가 아니면 모두 '진행 중'입니다.
+/// 행·상세의 상태 라벨 (Tasks 시안). 묶음([taskGroupOf])과 맞춥니다:
+/// 완료 묶음은 '완료', 진행 중 묶음은 '진행 중', 확인 필요 묶음은 보류·오류가
+/// 아니면 '대기'(사용자 차례: 검토 시작 전, 업체·구매안 선택, 발송 승인).
+/// 그래서 '진행 중'은 진행 중 탭과 전체 탭에만 보입니다.
 enum TaskLabel {
   waiting("대기"),
   hold("보류"),
@@ -87,8 +88,10 @@ TaskLabel taskLabelOf(WorkCase workCase) {
   return switch (workCase.processingStep) {
     ProcessingStep.onHold || ProcessingStep.needsInfo => TaskLabel.hold,
     "FAILED" || "SEND_UNKNOWN" => TaskLabel.error,
-    "PENDING_START" || "ACKNOWLEDGED" => TaskLabel.waiting,
-    _ => workCase.notStarted ? TaskLabel.waiting : TaskLabel.running,
+    _ =>
+      taskGroupOf(workCase) == TaskGroup.running
+          ? TaskLabel.running
+          : TaskLabel.waiting,
   };
 }
 
