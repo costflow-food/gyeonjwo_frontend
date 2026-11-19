@@ -62,6 +62,12 @@ class LdsDialog extends StatelessWidget {
 
   static const _padding = 24.0;
 
+  /// 팝업 뒤 어둡게 까는 색(검정 30%). 예전에는 뒤 화면 전체를 흐리게(blur)도
+  /// 했지만, 웹(CanvasKit)에서 흐림은 열리는 애니메이션의 매 프레임마다 화면 전체를
+  /// 다시 읽어 GPU로 흐리게 하므로(고해상도·외부 모니터·가속 꺼짐이면 무거움)
+  /// 어둡게만 합니다.
+  static final barrierColor = Colors.black.withValues(alpha: .30);
+
   @override
   Widget build(BuildContext context) {
     final body = Column(
