@@ -4,9 +4,8 @@ import "../../../../shared/lds_colors.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/transaction_listing.dart";
 
-/// 필터 바 `[품목 ▾] [거래처 ▾]` + 오른쪽 [trailing](정렬 선택) + 고른 값
-/// 태그 줄 + '모두 지우기' (`docs/design-ssot.md` 7.12). 확정 방식은 DB에
-/// 없어 두지 않습니다.
+/// 필터 바 `[leading(기간)] [품목 ▾] [거래처 ▾] [확정 방식 ▾]` + 고른 값
+/// 태그 줄 + '모두 지우기' (`docs/design-ssot.md` 7.12).
 class TransactionFilterBar extends StatelessWidget {
   const TransactionFilterBar({
     super.key,
@@ -16,7 +15,7 @@ class TransactionFilterBar extends StatelessWidget {
     required this.onSuppliers,
     required this.onMethods,
     required this.onClearAll,
-    this.trailing,
+    this.leading,
   });
 
   final TransactionListing listing;
@@ -26,8 +25,8 @@ class TransactionFilterBar extends StatelessWidget {
   final ValueChanged<Set<String>> onMethods;
   final VoidCallback onClearAll;
 
-  /// 필터 줄 오른쪽 끝(정렬 선택).
-  final Widget? trailing;
+  /// 필터 줄 맨 앞(기간 선택).
+  final Widget? leading;
 
   static const _caption = "최근 거래순";
 
@@ -43,6 +42,7 @@ class TransactionFilterBar extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: [
+          ?leading,
           LdsFilterButton(
             label: "품목",
             caption: _caption,
@@ -64,7 +64,6 @@ class TransactionFilterBar extends StatelessWidget {
             selected: filter.methods,
             onChanged: onMethods,
           ),
-          ?trailing,
         ],
       ),
       if (filter.hasFilters) ...[

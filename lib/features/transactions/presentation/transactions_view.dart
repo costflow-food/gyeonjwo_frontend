@@ -158,7 +158,7 @@ class _ContentState extends ConsumerState<_Content> {
           onSuppliers: viewModel.setSuppliers,
           onMethods: viewModel.setMethods,
           onClearAll: viewModel.clearFilters,
-          trailing: dateButton,
+          leading: dateButton,
         ),
         const SizedBox(height: 12),
         // Suppliers '총 N곳 … 이름순 ▾'와 같은 줄: 왼쪽 요약, 정렬은 오른쪽 끝.
