@@ -130,6 +130,10 @@ void main() {
     expect(CalcRecord.fromJson(record.toJson()), record);
     expect(CalcRecord.fromJson({"e": "1 + 1 =", "r": "둘"}), isNull);
     expect(CalcRecord.fromJson("1 + 1 = 2"), isNull);
+    for (final bad in ["NaN", "Infinity", " 1e3 ", "1,000", ""]) {
+      expect(CalcRecord.fromJson({"e": "x =", "r": bad}), isNull, reason: bad);
+    }
+    expect(CalcRecord.fromJson({"e": "1 − 3 =", "r": "-2.5"}), isNotNull);
   });
 
   test("자릿수 제한과 복사할 값", () {

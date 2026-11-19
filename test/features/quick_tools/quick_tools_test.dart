@@ -229,8 +229,9 @@ void main() {
     await tester.pump();
 
     await _tapKeys(tester, ["1", "2", "0", "0", "곱하기", "3", "계산"]);
-    // '='을 다시 눌러도, 0으로 나눠도 이력은 늘지 않습니다.
+    // '='을 다시 눌러도, 0으로 나눠도, 계산 없이 '='만 눌러도 이력은 늘지 않습니다.
     await _tapKeys(tester, ["계산", "모두 지우기", "5", "나누기", "0", "계산"]);
+    await _tapKeys(tester, ["모두 지우기", "8", "더하기", "계산"]);
     await _tapKeys(tester, ["모두 지우기", "2", "더하기", "3", "계산"]);
     expect(preferences.getStringList(key), hasLength(2));
     await _tapKeys(tester, ["모두 지우기"]);
@@ -243,16 +244,47 @@ void main() {
     expect(first, findsOneWidget);
     expect(tester.getTopLeft(first).dy, lessThan(tester.getTopLeft(second).dy));
 
-    // 줄을 누르면 그 결과를 넣고 숫자판으로 돌아옵니다.
+    // 줄을 누르면 그 결과를 위 값 칸에 넣습니다. 이력 화면은 그대로라
+    // 두 번 눌러도 숫자판 단추가 눌리지 않습니다.
+    await tester.tap(second);
+    await tester.pump(const Duration(milliseconds: 80));
     await tester.tap(second);
     await tester.pump();
     expect(_display(tester), "3,600");
-    expect(find.text("이력"), findsOneWidget);
+    expect(find.text("이력 지우기"), findsOneWidget);
+    await tester.tap(find.text("숫자판"));
+    await tester.pump();
     await _tapKeys(tester, ["더하기", "1", "계산"]);
     expect(_display(tester), "3,601");
     expect(preferences.getStringList(key), hasLength(3));
 
-    // 지우면 저장소에서도 지웁니다.
+    // Tab으로 '이력 지우기'에 가서 Enter를 누르면 계산이 아니라 그 단추가 눌립니다.
+    await _tapKeys(tester, ["모두 지우기", "2", "더하기", "2"]);
+    await tester.tap(find.text("이력"));
+    await tester.pump();
+    // 초점 순서: 창 → 숫자판 → 결과 복사 → 이력 지우기.
+    for (var i = 0; i < 3; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(find.text("아직 계산 이력이 없어요"), findsOneWidget);
+    expect(preferences.getStringList(key), isNull);
+    expect(_display(tester), "2");
+  });
+
+  testWidgets("계산 이력: 지우면 저장소에서도 지웁니다", (tester) async {
+    SharedPreferences.setMockInitialValues({
+      CalculatorHistory.keyFor("buyer@example.invalid"): [
+        '{"e":"1 + 1 =","r":"2"}',
+      ],
+    });
+    final preferences = await SharedPreferences.getInstance();
+    final key = CalculatorHistory.keyFor("buyer@example.invalid");
+    await _pump(tester, preferences: preferences);
+    await tester.tap(find.byTooltip("계산기"));
+    await tester.pumpAndSettle();
     await tester.tap(find.text("이력"));
     await tester.pump();
     await tester.tap(find.text("이력 지우기"));

@@ -18,16 +18,19 @@ final calculatorProvider = NotifierProvider<CalculatorNotifier, Calculator>(
 );
 
 class CalculatorNotifier extends Notifier<Calculator> {
+  /// 숫자 사이에 사칙연산 기호가 있는 식.
+  static final _calculated = RegExp(r" [+−×÷] ");
+
   @override
   Calculator build() => const Calculator();
 
   void apply(Calculator Function(Calculator) change) {
     final next = change(state);
-    // '='으로 결과가 나왔을 때만 이력에 남깁니다.
+    // '='으로 계산한 결과만 이력에 남깁니다(`8 + =`처럼 계산이 없으면 제외).
     if (!identical(next, state) &&
         next.evaluated &&
         next.error == null &&
-        next.history.isNotEmpty) {
+        _calculated.hasMatch(next.history)) {
       ref
           .read(calculatorHistoryProvider.notifier)
           .add(CalcRecord(expression: next.history, result: next.input));
@@ -145,11 +148,10 @@ class _CalculatorPanelState extends ConsumerState<CalculatorPanel> {
     _focus.requestFocus();
   }
 
-  /// 이력에서 고른 결과를 지금 숫자로 넣고 숫자판으로 돌아갑니다.
-  void _recall(CalcRecord record) {
-    setState(() => _showHistory = false);
-    _apply((c) => c.recall(record.result));
-  }
+  /// 이력에서 고른 결과를 지금 숫자로 넣습니다(위 값 칸에 바로 보임).
+  /// 이력 화면에 그대로 둡니다: 바로 숫자판으로 바꾸면 줄을 두 번 누를 때
+  /// 같은 자리의 숫자판 단추가 눌립니다.
+  void _recall(CalcRecord record) => _apply((c) => c.recall(record.result));
 
   @override
   void dispose() {
@@ -175,6 +177,13 @@ class _CalculatorPanelState extends ConsumerState<CalculatorPanel> {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
     final keys = HardwareKeyboard.instance;
     final key = event.logicalKey;
+    // Tab으로 단추(이력·복사·지우기)에 가 있으면 Enter·Space는 그 단추의 것.
+    if (!node.hasPrimaryFocus &&
+        (key == LogicalKeyboardKey.enter ||
+            key == LogicalKeyboardKey.numpadEnter ||
+            key == LogicalKeyboardKey.space)) {
+      return KeyEventResult.ignored;
+    }
     if (keys.isControlPressed || keys.isMetaPressed || keys.isAltPressed) {
       // Ctrl/⌘+C는 결과 복사.
       if (!keys.isAltPressed && key == LogicalKeyboardKey.keyC) {
@@ -438,7 +447,7 @@ class _HistoryList extends StatelessWidget {
                 children: [
                   const Expanded(
                     child: Text(
-                      "누르면 결과를 가져와요",
+                      "누르면 위 값으로 가져와요",
                       style: TextStyle(fontSize: 12, color: LdsColors.muted),
                     ),
                   ),
