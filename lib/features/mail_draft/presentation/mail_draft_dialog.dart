@@ -1,5 +1,3 @@
-import "dart:ui";
-
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
@@ -31,15 +29,12 @@ Future<void> showMailDraftDialog(
     // LdsDialog's own SafeArea keeps the content clear of them.
     useSafeArea: !isCompactLayout(context),
     barrierDismissible: false,
-    barrierColor: Colors.black.withValues(alpha: .30),
-    builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: MailDraftDialog(
-        caseId: caseId,
-        initialDraftId: draftId,
-        dispatchStates: dispatchStates,
-        router: router,
-      ),
+    barrierColor: LdsDialog.barrierColor,
+    builder: (context) => MailDraftDialog(
+      caseId: caseId,
+      initialDraftId: draftId,
+      dispatchStates: dispatchStates,
+      router: router,
     ),
   );
 }

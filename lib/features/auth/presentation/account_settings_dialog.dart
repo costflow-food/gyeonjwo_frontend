@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,11 +22,8 @@ Future<void> showAccountSettingsDialog(
     // Full screen on a phone: the dialog paints behind the system bars and
     // LdsDialog's own SafeArea keeps the content clear of them.
     useSafeArea: !isCompactLayout(context),
-    barrierColor: Colors.black.withValues(alpha: .30),
-    builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: AccountSettingsDialog(returnTo: returnTo!),
-    ),
+    barrierColor: LdsDialog.barrierColor,
+    builder: (context) => AccountSettingsDialog(returnTo: returnTo!),
   );
 }
 

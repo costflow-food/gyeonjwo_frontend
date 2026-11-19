@@ -1,5 +1,3 @@
-import "dart:ui";
-
 import "package:flutter/material.dart";
 import "package:flutter/scheduler.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
@@ -28,11 +26,8 @@ Future<bool?> showSendSettingsDialog(BuildContext context, {String? caseId}) {
     // LdsDialog's own SafeArea keeps the content clear of them.
     useSafeArea: !isCompactLayout(context),
     barrierDismissible: false,
-    barrierColor: Colors.black.withValues(alpha: .30),
-    builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: SendSettingsDialog(caseId: caseId),
-    ),
+    barrierColor: LdsDialog.barrierColor,
+    builder: (context) => SendSettingsDialog(caseId: caseId),
   );
 }
 

@@ -1,10 +1,9 @@
-import "dart:ui";
-
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../shared/widgets/close_on_case_leave.dart";
+import "../../../shared/widgets/lds/lds.dart";
 import "../../../shared/widgets/mobile_scaffold.dart";
 import "../domain/review_progress_repository.dart";
 import "review_progress_view_model.dart";
@@ -39,18 +38,15 @@ Future<void> showReviewProgressDialog(
   }
   return showDialog<void>(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: .30),
-    builder: (dialogContext) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: ReviewProgressView(
-        caseId: caseId,
-        title: title,
-        router: router,
-        onViewCase: () {
-          Navigator.of(dialogContext).pop();
-          router.go(AppPaths.task(caseId));
-        },
-      ),
+    barrierColor: LdsDialog.barrierColor,
+    builder: (dialogContext) => ReviewProgressView(
+      caseId: caseId,
+      title: title,
+      router: router,
+      onViewCase: () {
+        Navigator.of(dialogContext).pop();
+        router.go(AppPaths.task(caseId));
+      },
     ),
   );
 }
