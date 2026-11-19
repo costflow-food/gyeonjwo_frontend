@@ -147,13 +147,30 @@ void main() {
     await _pump(tester);
     final lead = find.widgetWithText(PageLeadText, TransactionsView.lead);
     expect(lead, findsOneWidget);
-    // 필터 단추 위, 같은 왼쪽 선.
-    final filter = find.widgetWithText(LdsFilterButton, "품목");
-    expect(
-      tester.getBottomLeft(lead).dy,
-      lessThan(tester.getTopLeft(filter).dy),
-    );
-    expect(tester.getTopLeft(lead).dx, tester.getTopLeft(filter).dx);
+    // 필터 줄 위, 같은 왼쪽 선(줄 맨 앞은 기간 상자).
+    final date = find.byType(LdsDateRangeButton);
+    expect(tester.getBottomLeft(lead).dy, lessThan(tester.getTopLeft(date).dy));
+    expect(tester.getTopLeft(lead).dx, tester.getTopLeft(date).dx);
+  });
+
+  testWidgets("필터 줄 순서: 기간 → 품목 → 거래처 → 확정 방식", (tester) async {
+    await _pump(tester);
+    final boxes = [
+      find.byType(LdsDateRangeButton),
+      for (final label in ["품목", "거래처", "확정 방식"])
+        find.widgetWithText(LdsFilterButton, label),
+    ];
+    // 읽는 순서(위→아래, 왼→오른)대로 놓여 있습니다.
+    for (var i = 1; i < boxes.length; i++) {
+      final before = tester.getTopLeft(boxes[i - 1]);
+      final after = tester.getTopLeft(boxes[i]);
+      final sameRow = (before.dy - after.dy).abs() < 1;
+      expect(
+        sameRow ? after.dx > before.dx : after.dy > before.dy,
+        isTrue,
+        reason: "$i",
+      );
+    }
   });
 
   testWidgets("기본 기간은 최근 3개월, 목록 위는 건수·총액", (tester) async {
