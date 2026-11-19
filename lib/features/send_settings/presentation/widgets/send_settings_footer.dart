@@ -11,8 +11,10 @@ class SendSettingsFooter extends StatelessWidget {
     required this.saving,
     required this.onCancel,
     required this.onSave,
+    this.showCancel = true,
   });
 
+  final bool showCancel;
   final String? error;
   final bool saving;
   final VoidCallback onCancel;
@@ -51,11 +53,13 @@ class SendSettingsFooter extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            TextButton(
-              onPressed: saving ? null : onCancel,
-              child: const Text("취소"),
-            ),
-            const SizedBox(width: 8),
+            if (showCancel) ...[
+              TextButton(
+                onPressed: saving ? null : onCancel,
+                child: const Text("취소"),
+              ),
+              const SizedBox(width: 8),
+            ],
             LdsButton(
               label: saving ? "저장 중" : "설정 저장",
               onPressed: saving ? null : onSave,

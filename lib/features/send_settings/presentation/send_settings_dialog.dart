@@ -282,6 +282,7 @@ class _SendSettingsDialogState extends ConsumerState<SendSettingsDialog> {
                 AbsorbPointer(absorbing: _saving, child: _body(settings)),
           );
     final footer = SendSettingsFooter(
+      showCancel: !widget.embedded || !isCompactLayout(context),
       error: _error,
       saving: _saving,
       onCancel: widget.embedded ? _discard : _close,

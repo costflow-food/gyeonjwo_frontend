@@ -7,8 +7,11 @@ import '../../../shared/formatters.dart';
 import '../../../shared/lds_colors.dart';
 import '../../../shared/widgets/lds/lds.dart';
 import '../../../shared/widgets/mobile_scaffold.dart';
+import '../../../shared/widgets/brand_logo.dart';
 import '../../../shared/widgets/workspace_shell.dart';
 import '../../mailbox_sync/domain/mailbox_sync_status.dart';
+import '../../workflow_log/presentation/workflow_log_view.dart';
+import '../../workflow_log/presentation/workflow_log_view_model.dart';
 import '../../mailbox_sync/presentation/mailbox_sync_view_model.dart';
 import '../../send_settings/presentation/send_settings_dialog.dart';
 import '../../server_status/domain/server_status.dart';
@@ -39,7 +42,7 @@ class AccountView extends StatelessWidget {
   );
 }
 
-/// 계정 설정 내용: 권한 / 메일 발송 설정 탭과 빌드 번호.
+/// 계정 설정 내용. 앱에서는 처리 이력과 앱 정보 탭도 제공합니다.
 ///
 /// [inDialog]면 팝업 안에 넣는 모양(카드 틀 없음, 휴대폰 전용 버튼 없음)이고,
 /// [requestClose]로 팝업을 닫은 뒤 다른 화면으로 갑니다.
@@ -73,7 +76,9 @@ class AccountSettings extends StatefulWidget {
 
 class _AccountSettingsState extends State<AccountSettings>
     with SingleTickerProviderStateMixin {
-  static const _pages = ['권한', '메일 발송 설정'];
+  static const _pages = ['권한', '메일 발송 설정', '처리 이력', '앱 정보'];
+
+  bool get _showAppTabs => !widget.inDialog && isCompactLayout(context);
 
   late final TabController _tabs = TabController(
     length: _pages.length,
@@ -87,7 +92,7 @@ class _AccountSettingsState extends State<AccountSettings>
 
   void _swipe(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? 0;
-    if (velocity < -300 && _index < _pages.length - 1) {
+    if (velocity < -300 && _index < (_showAppTabs ? _pages.length - 1 : 1)) {
       _tabs.animateTo(_index + 1);
     } else if (velocity > 300 && _index > 0) {
       _tabs.animateTo(_index - 1);
@@ -103,29 +108,49 @@ class _AccountSettingsState extends State<AccountSettings>
   @override
   Widget build(BuildContext context) {
     final inDialog = widget.inDialog;
+    final pages = _showAppTabs ? _pages : _pages.take(2).toList();
+    final selectedIndex = _index < pages.length ? _index : 0;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // 화면 제목 '설정'은 상단 바(웹)·앱 바(휴대폰)에, 팝업이면 팝업 머리에 있습니다.
         // Tab text(6.1): 누르면 아래 내용이 바뀝니다.
-        LdsTabBar<int>(
-          tabs: [
-            for (final (index, page) in _pages.indexed)
-              LdsTabItem(value: index, label: page),
+        Row(
+          children: [
+            Expanded(
+              child: LdsTabBar<int>(
+                tabs: [
+                  for (final (index, page) in pages.indexed)
+                    LdsTabItem(value: index, label: page),
+                ],
+                selected: selectedIndex,
+                onSelected: _tabs.animateTo,
+              ),
+            ),
+            if (_showAppTabs && selectedIndex == 2)
+              Transform.translate(
+                offset: const Offset(0, -6),
+                child: Consumer(
+                  builder: (context, ref, child) => IconButton(
+                    tooltip: '새로고침',
+                    onPressed: () => ref
+                        .read(workflowLogViewModelProvider.notifier)
+                        .refresh(),
+                    icon: const Icon(Icons.refresh),
+                  ),
+                ),
+              ),
           ],
-          selected: _index,
-          onSelected: _tabs.animateTo,
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: _showAppTabs && selectedIndex == 2 ? 8 : 24),
         GestureDetector(
           behavior: HitTestBehavior.translucent,
           onHorizontalDragEnd: _swipe,
           child: ClipRect(
             child: Stack(
               children: [
-                // Both pages keep their state (e.g. unsaved settings)
-                // while the other one is shown.
+                // Keep each page state while another tab is shown.
                 for (final (index, page) in [
                   _PermissionsPage(
                     inDialog: inDialog,
@@ -137,13 +162,37 @@ class _AccountSettingsState extends State<AccountSettings>
                     onDirtyChanged: widget.onDirtyChanged,
                     onSavingChanged: widget.onSavingChanged,
                   ),
+                  if (_showAppTabs) ...[
+                    const WorkflowLogView(embedded: true),
+                    SizedBox(
+                      width: double.infinity,
+                      height: MediaQuery.sizeOf(context).height * 0.55,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const BrandLogo(height: 64),
+                          const SizedBox(height: 24),
+                          SelectableText(
+                            '빌드 ${AppConfig.buildRevision}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: LdsColors.mutedStrong,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ].indexed)
                   Visibility(
-                    visible: index == _index,
+                    visible: index == selectedIndex,
                     maintainState: true,
                     child: AnimatedSlide(
                       offset: Offset(
-                        index == _index ? 0 : (index < _index ? -1.0 : 1.0),
+                        index == selectedIndex
+                            ? 0
+                            : (index < selectedIndex ? -1.0 : 1.0),
                         0,
                       ),
                       duration: const Duration(milliseconds: 260),
@@ -155,21 +204,10 @@ class _AccountSettingsState extends State<AccountSettings>
             ),
           ),
         ),
-        // 휴대폰 아래 탭에는 처리 이력이 없어 여기서 들어갑니다.
-        if (!inDialog && isCompactLayout(context)) ...[
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: LdsButton(
-              label: '처리 이력',
-              icon: Icons.history,
-              variant: LdsButtonVariant.outlinedNeutral,
-              onPressed: () => context.go(AppPaths.logs),
-            ),
-          ),
-        ],
-        // 팝업에서는 빌드 번호를 팝업 아래 줄에 둡니다.
-        if (!inDialog && AppConfig.buildRevision.isNotEmpty) ...[
+        // 앱의 빌드 정보는 앱 정보 탭에서 표시합니다.
+        if (!inDialog &&
+            !_showAppTabs &&
+            AppConfig.buildRevision.isNotEmpty) ...[
           const SizedBox(height: 16),
           SelectableText(
             '빌드 ${AppConfig.buildRevision}',
