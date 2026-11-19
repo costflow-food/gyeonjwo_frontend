@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -44,8 +46,15 @@ final transactionsViewModelProvider =
     );
 
 class TransactionsViewModel extends Notifier<TransactionsFilter> {
+  static const searchDelay = Duration(milliseconds: 300);
+
+  Timer? _searchTimer;
+
   @override
-  TransactionsFilter build() => const TransactionsFilter();
+  TransactionsFilter build() {
+    ref.onDispose(() => _searchTimer?.cancel());
+    return const TransactionsFilter();
+  }
 
   /// 필터를 바꾸면 선택과 'Suppliers에서 넘어왔어요' 안내가 풀립니다.
   void setItems(Set<String> items) => state = state.copyWith(
@@ -73,6 +82,17 @@ class TransactionsViewModel extends Notifier<TransactionsFilter> {
     selectedId: () => null,
     fromSuppliers: false,
   );
+
+  /// 검색칸. Suppliers처럼 입력이 잠깐 멈추면 거릅니다(한글을 조합하는
+  /// 중간 글자마다 목록이 비었다 채워지지 않게). 고른 거래는 그대로 두고,
+  /// 결과에서 빠지면 넓은 화면이 첫 거래를 다시 고릅니다.
+  void search(String query) {
+    _searchTimer?.cancel();
+    _searchTimer = Timer(searchDelay, () {
+      final trimmed = query.trim();
+      if (trimmed != state.query) state = state.copyWith(query: trimmed);
+    });
+  }
 
   /// 목록 위 정렬 선택('최신순 ▾'). 같은 값은 날짜 최신순(목록 규칙).
   void setSort(TransactionSort sort, {required bool descending}) =>

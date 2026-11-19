@@ -32,6 +32,9 @@ class TransactionsView extends ConsumerStatefulWidget {
   /// 목록 칸 맨 위 화면 설명(Suppliers와 같은 자리·모양).
   static const lead = "확정된 거래의 품목·거래처·단가·수량·총액을 확인합니다.";
 
+  /// 검색칸 안내 글자. 품목(규격 포함)·거래처 이름에서 찾습니다.
+  static const searchHint = "품목, 거래처 검색";
+
   final TransactionsEntry entry;
 
   @override
@@ -85,6 +88,17 @@ class _Content extends ConsumerStatefulWidget {
 
 class _ContentState extends ConsumerState<_Content> {
   final _selectedRow = GlobalKey(debugLabel: "고른 거래 줄");
+
+  /// 목록을 다시 불러와 이 화면이 새로 만들어져도 적어 둔 검색어를 이어 씁니다.
+  late final _search = TextEditingController(
+    text: ref.read(transactionsViewModelProvider).query,
+  );
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   /// 넓은 화면에서 고른 거래가 없으면 보이는 첫 거래를 고릅니다(Tasks와
   /// 같게). 필터·기간을 바꿔 선택이 풀려도 다시 첫 거래를 고릅니다.
@@ -151,6 +165,13 @@ class _ContentState extends ConsumerState<_Content> {
           _FromSuppliersNote(filter: filter),
           const SizedBox(height: 12),
         ],
+        // Suppliers와 같은 자리(설명 아래, 필터 위)의 검색칸.
+        LdsSearchField(
+          controller: _search,
+          onChanged: viewModel.search,
+          hintText: TransactionsView.searchHint,
+        ),
+        const SizedBox(height: 12),
         TransactionFilterBar(
           listing: listing,
           filter: filter,
@@ -172,7 +193,7 @@ class _ContentState extends ConsumerState<_Content> {
       ],
     );
     final rows = listing.rows.isEmpty
-        ? const _Empty()
+        ? _Empty(query: filter.query)
         : ListArrowKeys(
             onStep: (step) => _step(listing, step),
             selectedKey: _selectedRow,
@@ -255,15 +276,20 @@ class _Summary extends StatelessWidget {
 
 /// 결과가 없을 때 목록 칸 문구. 상세 칸은 비웁니다.
 class _Empty extends StatelessWidget {
-  const _Empty();
+  const _Empty({required this.query});
+
+  /// 검색 중이면 검색어를 넣어 알려 줍니다.
+  final String query;
 
   @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
     child: Text(
-      "이 기간·조건에 확정된 거래가 없어요. 기간을 넓히거나 필터를 지워 보세요.",
+      query.isEmpty
+          ? "이 기간·조건에 확정된 거래가 없어요. 기간을 넓히거나 필터를 지워 보세요."
+          : "'$query' 검색 결과가 없어요. 검색어를 바꾸거나 기간·필터를 넓혀 보세요.",
       textAlign: TextAlign.center,
-      style: TextStyle(fontSize: 15, color: LdsColors.muted),
+      style: const TextStyle(fontSize: 15, color: LdsColors.muted),
     ),
   );
 }
