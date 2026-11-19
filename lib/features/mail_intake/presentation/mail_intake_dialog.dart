@@ -1,5 +1,3 @@
-import "dart:ui";
-
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -21,11 +19,8 @@ Future<void> showMailIntakeDialog(BuildContext context, {String? mailId}) {
     // Full screen on a phone: the dialog paints behind the system bars and
     // LdsDialog's own SafeArea keeps the content clear of them.
     useSafeArea: !isCompactLayout(context),
-    barrierColor: Colors.black.withValues(alpha: .30),
-    builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: MailIntakeDialog(initialMailId: mailId),
-    ),
+    barrierColor: LdsDialog.barrierColor,
+    builder: (context) => MailIntakeDialog(initialMailId: mailId),
   );
 }
 
