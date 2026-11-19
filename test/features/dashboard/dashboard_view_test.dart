@@ -18,6 +18,7 @@ import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_repository
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_repository.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
+import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/main.dart";
 import "package:gyeonjwo_frontend/shared/app_visibility.dart";
 import "package:gyeonjwo_frontend/shared/lds_colors.dart";
@@ -131,6 +132,12 @@ String _number(WidgetTester tester, String name) => tester
     .firstWhere((text) => text.endsWith(" 건"));
 
 void main() {
+  test("status colors: 확인 필요 주황, 진행 중 노랑, 완료 #161716", () {
+    expect(taskGroupColor(TaskGroup.confirm), LdsColors.primary);
+    expect(taskGroupColor(TaskGroup.running), LdsColors.warning);
+    expect(taskGroupColor(TaskGroup.complete), const Color(0xFF161716));
+  });
+
   testWidgets("four cards and the whole count without 미분류", (tester) async {
     await _pump(tester);
     expect(_number(tester, "확인 필요"), "2 건");
