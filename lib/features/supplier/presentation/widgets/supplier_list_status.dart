@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../../../../shared/lds_colors.dart";
+import "../../../../shared/widgets/mobile_scaffold.dart";
 import "../../../../shared/widgets/lds/lds.dart";
 import "../../domain/supplier_list_state.dart";
 
@@ -30,7 +31,7 @@ class SupplierListStatus extends StatelessWidget {
             style: const TextStyle(fontSize: 13, color: LdsColors.label),
           ),
         ),
-        if (data.isSearching)
+        if (data.isSearching && !isCompactLayout(context))
           const Padding(
             padding: EdgeInsets.only(right: 8),
             child: SizedBox.square(
@@ -38,7 +39,7 @@ class SupplierListStatus extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           )
-        else if (data.loadFailed)
+        else if (!data.isSearching && data.loadFailed)
           // 좁은 폭에서는 글자를 줄여 정렬 단추와 한 줄에 둡니다.
           Flexible(
             child: TextButton.icon(
