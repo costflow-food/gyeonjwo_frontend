@@ -411,6 +411,10 @@ void main() {
       ProviderScope(
         overrides: [
           workQueueRepositoryProvider.overrideWithValue(queue),
+          // 묶음은 접힌 채로 시작하므로 '품목 미확인' 묶음을 펼쳐 두고 봅니다.
+          taskListMemoryProvider.overrideWithValue(
+            TaskListMemory()..expanded.add(null),
+          ),
           workCaseChangesProvider.overrideWith((ref) => changes.stream),
           appVisibleProvider.overrideWith(_Visible.new),
         ],

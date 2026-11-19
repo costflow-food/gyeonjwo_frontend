@@ -19,8 +19,19 @@ class TaskListMemory {
   /// 탭별 스크롤 위치. null 키는 전체 탭입니다.
   final scrollOffsets = <TaskGroup?, double>{};
 
-  /// 접은 품목 묶음. null은 '품목 미확인'입니다.
-  final collapsed = <String?>{};
+  /// 펼친 품목 묶음. null은 '품목 미확인'입니다. 묶음은 접힌 채로 시작하고,
+  /// 여기 든 것만 펼쳐 보입니다(새로고침하면 다시 모두 접힙니다).
+  final expanded = <String?>{};
+
+  /// 묶음을 펼쳐서 보여 준 고른 업무. 같은 업무로는 다시 펼치지 않아, 그
+  /// 묶음을 사용자가 접을 수 있습니다.
+  String? revealedId;
+
+  /// [groups] 가운데 접혀 있는 묶음.
+  Set<String?> collapsedIn(List<WorkCaseGroup> groups) => {
+    for (final group in groups)
+      if (!expanded.contains(group.itemName)) group.itemName,
+  };
 
   /// ↑/↓로 다른 업무를 열었습니다. 업무를 열면 목록이 새로 만들어지므로 새
   /// 목록이 초점을 이어받습니다.
@@ -42,10 +53,13 @@ List<WorkCaseGroup> taskListGroups(WidgetRef ref, TaskGroup? status) {
 }
 
 /// [status] 탭 목록에 보이는 차례대로 편 업무(접힌 묶음 제외).
-List<WorkCase> taskListOrder(WidgetRef ref, TaskGroup? status) => orderedCases(
-  taskListGroups(ref, status),
-  collapsed: ref.read(taskListMemoryProvider).collapsed,
-);
+List<WorkCase> taskListOrder(WidgetRef ref, TaskGroup? status) {
+  final groups = taskListGroups(ref, status);
+  return orderedCases(
+    groups,
+    collapsed: ref.read(taskListMemoryProvider).collapsedIn(groups),
+  );
+}
 
 /// Tasks 목록 (`docs/design-ssot.md` 7.13, 7.14): 검색칸 · 상태 탭 4개 ·
 /// 품목 묶음 상자. 탭은 주소(`?tab=`)가 기준이라 [onTab]으로 주소를 바꿉니다.
@@ -174,7 +188,8 @@ class _TaskListState extends ConsumerState<TaskList> {
   }
 
   /// 고른 업무가 없으면 보이는 첫 행을 고릅니다. 탭에 필요한 목록을 다 읽은
-  /// 뒤 한 번만 합니다.
+  /// 뒤 한 번만 합니다. 묶음이 모두 접혀 있으면(처음 상태) 보이는 행이 없어
+  /// 고르지 않습니다.
   void _autoSelect({required bool ready}) {
     final onAutoSelect = widget.onAutoSelect;
     if (_autoSelected ||
@@ -331,6 +346,17 @@ class _TaskListState extends ConsumerState<TaskList> {
             : "조건에 맞는 업무가 없습니다.",
       );
     }
+    // 고른 업무(주소·검색·Dashboard로 연 것)가 든 묶음은 한 번 펼쳐 보입니다.
+    final selectedId = widget.selectedId;
+    if (selectedId != null && _memory.revealedId != selectedId) {
+      for (final group in groups) {
+        if (group.cases.any((item) => item.id == selectedId)) {
+          _memory.expanded.add(group.itemName);
+          _memory.revealedId = selectedId;
+          break;
+        }
+      }
+    }
     final padding = widget.padding;
     final list = CustomScrollView(
       controller: _scroll,
@@ -341,13 +367,13 @@ class _TaskListState extends ConsumerState<TaskList> {
             padding: EdgeInsets.fromLTRB(padding.left, 0, padding.right, 8),
             sliver: _GroupBox(
               group: group,
-              collapsed: _memory.collapsed.contains(group.itemName),
+              collapsed: !_memory.expanded.contains(group.itemName),
               selectedId: widget.selectedId,
               selectedKey: _selectedRow,
               onOpen: widget.onOpen,
               onToggle: () => setState(() {
-                if (!_memory.collapsed.remove(group.itemName)) {
-                  _memory.collapsed.add(group.itemName);
+                if (!_memory.expanded.remove(group.itemName)) {
+                  _memory.expanded.add(group.itemName);
                 }
               }),
             ),
