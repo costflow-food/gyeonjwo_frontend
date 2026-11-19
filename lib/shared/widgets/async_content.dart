@@ -7,8 +7,10 @@ class AsyncContent<T> extends StatelessWidget {
     required this.value,
     required this.onRetry,
     required this.builder,
+    this.showLoadingIndicator = true,
   });
 
+  final bool showLoadingIndicator;
   final AsyncValue<T> value;
   final VoidCallback onRetry;
   final Widget Function(T data) builder;
@@ -18,10 +20,12 @@ class AsyncContent<T> extends StatelessWidget {
     return value.when(
       skipLoadingOnRefresh: false,
       data: builder,
-      loading: () => const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () => showLoadingIndicator
+          ? const Padding(
+              padding: EdgeInsets.all(32),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : const SizedBox.shrink(),
       error: (error, stackTrace) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

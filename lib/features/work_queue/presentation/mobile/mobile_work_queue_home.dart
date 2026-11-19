@@ -30,13 +30,6 @@ class MobileWorkQueueHome extends ConsumerWidget {
     final readDenied = ref.watch(gmailCapabilitiesProvider).readDenied;
     return MobileTabScaffold(
       title: "Tasks",
-      actions: [
-        IconButton(
-          tooltip: "목록 새로고침",
-          onPressed: () => _refresh(ref),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
