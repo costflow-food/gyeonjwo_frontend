@@ -16,6 +16,7 @@ import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_reposito
 import "package:gyeonjwo_frontend/features/work_queue/presentation/mobile/mobile_work_queue_home.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/work_case_panel.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
+import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_list.dart";
 import "package:gyeonjwo_frontend/shared/app_visibility.dart";
 import "package:gyeonjwo_frontend/shared/workspace_colors.dart";
 
@@ -129,6 +130,10 @@ void main() {
       ProviderScope(
         overrides: [
           workQueueRepositoryProvider.overrideWithValue(_Queue()),
+          // 묶음은 접힌 채로 시작하므로 이 테스트는 펼쳐 두고 봅니다.
+          taskListMemoryProvider.overrideWithValue(
+            TaskListMemory()..expanded.addAll(["깐양파", "대파"]),
+          ),
           mailIntakeRepositoryProvider.overrideWithValue(_Intake()),
           workCaseChangesProvider.overrideWith((ref) => const Stream.empty()),
           appVisibleProvider.overrideWith(_Visible.new),

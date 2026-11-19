@@ -12,6 +12,7 @@ import "package:gyeonjwo_frontend/features/work_queue/data/work_queue_repository
 import "package:gyeonjwo_frontend/features/work_queue/domain/task_group.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_case.dart";
 import "package:gyeonjwo_frontend/features/work_queue/domain/work_queue_repository.dart";
+import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_list.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/widgets/task_row.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view.dart";
 import "package:gyeonjwo_frontend/features/work_queue/presentation/work_queue_view_model.dart";
@@ -118,6 +119,7 @@ Future<GoRouter> _pump(
   String at = "/tasks",
   double width = 1100,
   bool longGroup = false,
+  bool expanded = true,
 }) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
   tester.view.physicalSize = Size(width, 900);
@@ -148,6 +150,11 @@ Future<GoRouter> _pump(
         workQueueRepositoryProvider.overrideWithValue(
           _Queue(longGroup: longGroup),
         ),
+        // 묶음은 접힌 채로 시작합니다. 다른 것을 보는 테스트는 펼쳐 둡니다.
+        if (expanded)
+          taskListMemoryProvider.overrideWithValue(
+            TaskListMemory()..expanded.addAll(["냉동 딸기", "깐마늘", "피망", "제주감귤"]),
+          ),
         workCaseChangesProvider.overrideWith((ref) => const Stream.empty()),
         appVisibleProvider.overrideWith(_Visible.new),
         authSessionViewModelProvider.overrideWith(_SignedIn.new),
@@ -359,6 +366,50 @@ void main() {
     // Nothing above the first row.
     await press(LogicalKeyboardKey.arrowUp);
     expect(router.state.uri.toString(), "/tasks/r1");
+  });
+
+  testWidgets("처음에는 품목 묶음이 모두 접혀 있고, 머리를 누르면 펼칩니다", (tester) async {
+    final router = await _pump(tester, width: 1440, expanded: false);
+    // 묶음 머리만 보이고 업무 행은 없습니다.
+    expect(find.byType(TaskRow), findsNothing);
+    for (final name in ["깐마늘", "냉동 딸기", "피망"]) {
+      expect(find.text(name), findsOneWidget);
+    }
+    expect(find.bySemanticsLabel("냉동 딸기 2건, 펼치기"), findsOneWidget);
+    // 넓은 화면도 첫 업무를 저절로 열지 않습니다.
+    expect(router.state.uri.toString(), "/tasks");
+    expect(find.text("왼쪽 목록에서 업무를 고르면 내용이 여기에 보입니다."), findsOneWidget);
+
+    await tester.tap(find.text("냉동 딸기"));
+    await tester.pumpAndSettle();
+    expect(_rows(tester), unorderedEquals(["c1", "c2"]));
+    expect(find.bySemanticsLabel("냉동 딸기 2건, 접기"), findsOneWidget);
+    // 펼쳐도 업무를 저절로 열지는 않습니다.
+    expect(router.state.uri.toString(), "/tasks");
+
+    // 업무를 열어 목록이 다시 만들어져도 펼친 묶음은 그대로, 나머지는 접힌 채.
+    await tester.tap(find.text("업체 c1"));
+    await tester.pumpAndSettle();
+    expect(router.state.uri.toString(), "/tasks/c1");
+    expect(_rows(tester), unorderedEquals(["c1", "c2"]));
+
+    await tester.tap(find.text("냉동 딸기"));
+    await tester.pumpAndSettle();
+    expect(find.byType(TaskRow), findsNothing);
+  });
+
+  testWidgets("주소로 연 업무가 든 묶음만 펼쳐 보이고, 다시 접을 수 있습니다", (tester) async {
+    await _pump(tester, width: 1440, at: "/tasks/r1", expanded: false);
+    expect(_rows(tester), ["r1"]);
+    expect(find.bySemanticsLabel("냉동 딸기 2건, 펼치기"), findsOneWidget);
+
+    await tester.tap(find.text("깐마늘"));
+    await tester.pumpAndSettle();
+    expect(find.byType(TaskRow), findsNothing);
+    // 같은 업무가 열려 있는 동안 다시 펼쳐지지 않습니다.
+    await tester.tap(find.text("전체"));
+    await tester.pumpAndSettle();
+    expect(find.byType(TaskRow), findsNothing);
   });
 
   testWidgets("1100 and narrower: the list alone, nothing auto-opened", (
