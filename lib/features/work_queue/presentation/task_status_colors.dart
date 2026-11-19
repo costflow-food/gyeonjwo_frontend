@@ -12,8 +12,8 @@ abstract final class TaskStatusColors {
   /// 진행 중: 노랑.
   static const running = LdsColors.warning;
 
-  /// 완료.
-  static const complete = Color(0xFF161716);
+  /// 완료: 현대카드 the Green Edition4 '에센셜 그린'(공식 카드 이미지 면의 색).
+  static const complete = Color(0xFF3BB553);
 
   /// 오류: 빨강(확인 필요 묶음 안의 따로 알리는 상태).
   static const error = Color(0xFFE12337);
@@ -26,11 +26,11 @@ abstract final class TaskStatusColors {
   };
 
   /// 상태 라벨의 (바탕, 글자). 바탕은 [ofGroup]과 같은 색이고, 글자는 읽기
-  /// 좋은 쪽(노랑 위는 먹색 약 9.5:1, 완료 위는 흰색 약 18:1).
+  /// 좋은 쪽(노랑 위 먹색 약 9.5:1, 초록 위 먹색 약 6.3:1 — 흰색은 2.7:1).
   static (Color, Color) ofLabel(TaskLabel label) => switch (label) {
     TaskLabel.waiting || TaskLabel.hold => (confirm, Colors.white),
     TaskLabel.error => (error, Colors.white),
     TaskLabel.running => (running, LdsColors.ink),
-    TaskLabel.done => (complete, Colors.white),
+    TaskLabel.done => (complete, LdsColors.ink),
   };
 }
