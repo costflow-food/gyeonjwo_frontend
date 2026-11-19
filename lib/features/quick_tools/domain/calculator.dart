@@ -17,10 +17,13 @@ enum CalcOp {
 class CalcRecord {
   const CalcRecord({required this.expression, required this.result});
 
+  /// 계산기가 내는 결과 모양(쉼표·지수 표기 없는 숫자).
+  static final _number = RegExp(r"^-?\d+(\.\d+)?$");
+
   /// 저장한 글자에서 되살립니다. 모양이 다르면 null.
   static CalcRecord? fromJson(Object? json) {
     if (json case {"e": final String e, "r": final String r}
-        when double.tryParse(r) != null) {
+        when _number.hasMatch(r)) {
       return CalcRecord(expression: e, result: r);
     }
     return null;
