@@ -20,6 +20,15 @@ String formatLdsDateRange(DateTimeRange range) {
       : '${day(range.start)} - ${day(range.end)}';
 }
 
+/// `yy.M.d~yy.M.d`(하루면 날짜 하나). 좁은 필터 줄의 기간 단추용.
+String formatLdsDateRangeShort(DateTimeRange range) {
+  String day(DateTime d) =>
+      '${(d.year % 100).toString().padLeft(2, '0')}.${d.month}.${d.day}';
+  return DateUtils.isSameDay(range.start, range.end)
+      ? day(range.start)
+      : '${day(range.start)}~${day(range.end)}';
+}
+
 /// 빠른 선택(오늘 / 이번 주 / 이번 달). 영업일 기준: 이번 주 = 월~금
 /// (주말에 고르면 그 주의 월~금), 이번 달 = 첫 평일~마지막 평일.
 enum LdsQuickRange {
@@ -58,7 +67,8 @@ enum LdsQuickRange {
 
 /// 기간 선택 단추 — LIKELION DateInput(range) (`docs/design-ssot.md` 7.9.2).
 ///
-/// `yyyy. M. d - yyyy. M. d` 글자만(달력 아이콘 없음). 높이 36, 모서리 4, 테두리
+/// `yyyy. M. d - yyyy. M. d` 글자만(달력 아이콘 없음, [invoice]면 짧게
+/// `yy.M.d~yy.M.d`). 높이 36, 모서리 4, 테두리
 /// `#D1D6DC`, hover `#333D4B`. 누르면 단추 오른쪽 끝에 맞춘 팝오버(달력 2개),
 /// 744px 미만은 아래에서 올라오는 시트(달력 1개). 확정은 '적용'.
 class LdsDateRangeButton extends StatefulWidget {
@@ -153,10 +163,13 @@ class _LdsDateRangeButtonState extends State<LdsDateRangeButton> {
       );
     }
     final radius = BorderRadius.circular(LdsRadius.button);
-    final label = formatLdsDateRange(widget.value);
+    // 읽어 주는 이름은 연도 네 자리 그대로, 보이는 글자만 줄입니다.
+    final label = widget.invoice
+        ? formatLdsDateRangeShort(widget.value)
+        : formatLdsDateRange(widget.value);
     return Semantics(
       button: true,
-      label: '기간 선택, $label',
+      label: '기간 선택, ${formatLdsDateRange(widget.value)}',
       excludeSemantics: true,
       onTap: _open,
       child: LdsFocusRing(
@@ -288,6 +301,7 @@ class _LdsDateRangePanelState extends State<LdsDateRangePanel> {
   Widget build(BuildContext context) {
     final start = _start;
     final end = _end;
+    // 창 안 요약은 연도 네 자리 그대로(해를 넘겨 고를 때 헷갈리지 않게).
     final summary = start == null
         ? '시작 날짜를 고르세요'
         : end == null

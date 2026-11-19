@@ -35,6 +35,7 @@ class TransactionsFilter {
     this.items = const {},
     this.suppliers = const {},
     this.methods = const {},
+    this.query = "",
     this.selectedId,
     this.fromSuppliers = false,
     this.sort = TransactionSort.date,
@@ -44,6 +45,9 @@ class TransactionsFilter {
   final Set<String> items;
   final Set<String> suppliers;
   final Set<String> methods;
+
+  /// 검색칸에 적은 말(앞뒤 공백 없음). 품목·규격·거래처 이름에서 찾습니다.
+  final String query;
   final String? selectedId;
 
   /// Suppliers에서 넘어와 그 조건으로 걸러 보는 중. 필터를 바꾸면 꺼집니다.
@@ -58,6 +62,7 @@ class TransactionsFilter {
     Set<String>? items,
     Set<String>? suppliers,
     Set<String>? methods,
+    String? query,
     String? Function()? selectedId,
     bool? fromSuppliers,
     TransactionSort? sort,
@@ -66,6 +71,7 @@ class TransactionsFilter {
     items: items ?? this.items,
     suppliers: suppliers ?? this.suppliers,
     methods: methods ?? this.methods,
+    query: query ?? this.query,
     selectedId: selectedId == null ? this.selectedId : selectedId(),
     fromSuppliers: fromSuppliers ?? this.fromSuppliers,
     sort: sort ?? this.sort,
@@ -146,9 +152,22 @@ class TransactionListing {
       return PriceChange(previous, difference, percent);
     }
 
+    // 검색어는 띄어쓴 낱말이 모두 들어 있어야 맞습니다(대소문자 무시).
+    final words = filter.query.toLowerCase().split(RegExp(r"\s+"))
+      ..removeWhere((word) => word.isEmpty);
+    bool matches(PurchaseRecord record) {
+      if (words.isEmpty) return true;
+      final text =
+          "${record.itemName} ${record.specification ?? ""} "
+                  "${record.supplierName}"
+              .toLowerCase();
+      return words.every(text.contains);
+    }
+
     final rows = [
       for (final record in records)
-        if ((filter.methods.isEmpty ||
+        if (matches(record) &&
+            (filter.methods.isEmpty ||
                 filter.methods.contains(record.confirmationMethod)) &&
             (filter.items.isEmpty || filter.items.contains(record.itemName)) &&
             (filter.suppliers.isEmpty ||

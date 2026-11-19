@@ -130,6 +130,13 @@ Future<void> _sort(WidgetTester tester, String label) async {
   await tester.pumpAndSettle();
 }
 
+/// 검색칸에 적고, 입력이 멈춘 뒤 거를 때까지 기다립니다.
+Future<void> _search(WidgetTester tester, String text) async {
+  await tester.enterText(find.byType(TextField), text);
+  await tester.pump(TransactionsViewModel.searchDelay);
+  await tester.pumpAndSettle();
+}
+
 Finder get _listPane => find.byWidgetPredicate(
   (widget) =>
       widget is Container &&
@@ -180,7 +187,7 @@ void main() {
     );
     expect(button.value.start, DateTime(2026, 8, 19));
     expect(button.value.end, DateTime(2026, 11, 18));
-    expect(find.text("2026. 8. 19 - 2026. 11. 18"), findsOneWidget);
+    expect(find.text("26.8.19~26.11.18"), findsOneWidget);
     // 기간 상자에는 달력 아이콘 없이 글자만.
     expect(
       find.descendant(
@@ -217,8 +224,9 @@ void main() {
     await tester.tap(find.bySemanticsLabel("품목 필터"));
     await tester.pumpAndSettle();
     expect(find.text("최근 거래순"), findsOneWidget);
-    // 선택지 5개 이하: 검색칸 없음.
-    expect(find.byType(TextField), findsNothing);
+    // 선택지 5개 이하: 필터 창에는 검색칸 없음(목록 위 검색칸 하나뿐).
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.widgetWithText(TextField, "품목 검색"), findsNothing);
     expect(find.bySemanticsLabel("냉동 딸기, 3건"), findsOneWidget);
     await tester.tap(find.bySemanticsLabel("한라감귤, 2건"));
     await tester.pumpAndSettle();
@@ -417,6 +425,157 @@ void main() {
     expect(tester.widget<Text>(empty).style!.color, LdsColors.muted);
     expect(find.descendant(of: _listPane, matching: empty), findsOneWidget);
     expect(find.byType(TransactionDetailPanel), findsNothing);
+  });
+
+  testWidgets("검색칸: 설명 아래·필터 위, 품목·거래처 이름으로 거릅니다", (tester) async {
+    await _pump(
+      tester,
+      records: [
+        _record("A", "2026-11-10", 100),
+        _record("B", "2026-11-11", 200),
+        _record("C", "2026-11-12", 300),
+      ],
+    );
+    final search = find.widgetWithText(
+      LdsSearchField,
+      TransactionsView.searchHint,
+    );
+    expect(search, findsOneWidget);
+    final lead = find.widgetWithText(PageLeadText, TransactionsView.lead);
+    final date = find.byType(LdsDateRangeButton);
+    expect(
+      tester.getBottomLeft(lead).dy,
+      lessThan(tester.getTopLeft(search).dy),
+    );
+    expect(
+      tester.getBottomLeft(search).dy,
+      lessThan(tester.getTopLeft(date).dy),
+    );
+    expect(find.byType(TransactionListRow), findsNWidgets(3));
+
+    // 거래처 이름으로 찾으면 그 거래만 남고, 첫 줄을 다시 골라 엽니다.
+    await _search(tester, "업체B");
+    expect(find.byType(TransactionListRow), findsOneWidget);
+    expect(_row(tester, 0).row.record.id, "B");
+    expect(_row(tester, 0).selected, isTrue);
+    expect(find.textContaining("확정 거래 1건"), findsOneWidget);
+
+    // 띄어 쓴 낱말은 모두 들어 있어야 맞습니다(품목 + 거래처, 대소문자 무시).
+    await _search(tester, "망고 업체c");
+    expect(_row(tester, 0).row.record.id, "C");
+    expect(find.byType(TransactionListRow), findsOneWidget);
+
+    // 없는 말이면 검색어를 넣은 빈 상태 문구.
+    await _search(tester, "없는말");
+    expect(find.byType(TransactionListRow), findsNothing);
+    expect(find.textContaining("'없는말' 검색 결과가 없어요"), findsOneWidget);
+
+    // '검색 지우기'로 전체 목록으로 돌아옵니다.
+    await tester.tap(find.byTooltip("검색 지우기"));
+    await tester.pump(TransactionsViewModel.searchDelay);
+    await tester.pumpAndSettle();
+    expect(find.byType(TransactionListRow), findsNWidgets(3));
+    expect(find.byTooltip("검색 지우기"), findsNothing);
+  });
+
+  testWidgets("검색: 고른 거래가 결과에 남아 있으면 선택을 유지합니다", (tester) async {
+    await _pump(
+      tester,
+      records: [
+        _record("A", "2026-11-10", 100),
+        _record("B", "2026-11-11", 200),
+        _record("C", "2026-11-12", 300),
+      ],
+    );
+    await tester.tap(find.byType(TransactionListRow).last);
+    await tester.pumpAndSettle();
+    expect(_row(tester, 2).row.record.id, "A");
+    expect(_row(tester, 2).selected, isTrue);
+
+    // 입력 중(멈추기 전)에는 아직 거르지 않습니다.
+    await tester.enterText(find.byType(TextField), "망고");
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(TransactionListRow), findsNWidgets(3));
+    await tester.pump(TransactionsViewModel.searchDelay);
+    await tester.pumpAndSettle();
+    expect(_row(tester, 2).selected, isTrue);
+
+    // 결과에서 빠지면 첫 거래를 다시 고릅니다.
+    await _search(tester, "업체B");
+    expect(_row(tester, 0).row.record.id, "B");
+    expect(_row(tester, 0).selected, isTrue);
+  });
+
+  testWidgets("검색칸은 휴대폰 폭에서도 목록 위에 있습니다", (tester) async {
+    await _pump(
+      tester,
+      width: 390,
+      platform: TargetPlatform.android,
+      records: [
+        _record("A", "2026-11-10", 100),
+        _record("B", "2026-11-11", 200),
+      ],
+    );
+    expect(find.byType(LdsSearchField), findsOneWidget);
+    await _search(tester, "업체A");
+    expect(find.byType(TransactionListRow), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  test("검색은 품목·규격·거래처 이름에서 찾습니다", () {
+    PurchaseRecord record(
+      String id,
+      String item,
+      String spec,
+      String supplier,
+    ) => PurchaseRecord(
+      id: id,
+      supplierItemId: "item-$id",
+      supplierId: "supplier-$id",
+      itemName: item,
+      specification: spec,
+      supplierName: supplier,
+      transactionDate: "2026-11-10",
+      quantity: 1,
+      unit: "kg",
+      unitPrice: 1,
+      totalAmount: 1,
+      currency: "KRW",
+    );
+    final records = [
+      record("1", "냉동 망고", "다이스 / 1kg", "Halla Food"),
+      record("2", "한라감귤", "3번과 / 10kg", "제주청과"),
+    ];
+    List<String> ids(String query) => [
+      for (final row in TransactionListing.build(
+        records,
+        TransactionsFilter(query: query),
+        from: DateTime(2026),
+        to: DateTime(2027),
+      ).rows)
+        row.record.id,
+    ];
+    expect(ids(""), ["1", "2"]);
+    expect(ids("감귤"), ["2"]);
+    expect(ids("다이스"), ["1"]);
+    expect(ids("halla"), ["1"]);
+    expect(ids("감귤 제주"), ["2"]);
+    expect(ids("감귤 halla"), isEmpty);
+  });
+
+  testWidgets("기간 단추 글자는 yy.M.d~yy.M.d, 읽어 주는 이름은 연도 네 자리", (tester) async {
+    await _pump(tester);
+    expect(find.text("26.8.19~26.11.18"), findsOneWidget);
+    expect(
+      find.bySemanticsLabel("기간 선택, 2026. 8. 19 - 2026. 11. 18"),
+      findsOneWidget,
+    );
+    expect(
+      formatLdsDateRangeShort(
+        DateTimeRange(start: DateTime(2009, 1, 5), end: DateTime(2009, 1, 5)),
+      ),
+      "09.1.5",
+    );
   });
 
   testWidgets("기간 밖 거래는 빠집니다", (tester) async {
