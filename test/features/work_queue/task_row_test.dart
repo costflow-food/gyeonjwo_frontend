@@ -136,10 +136,10 @@ void main() {
       LdsColors.primary,
       Colors.white,
     ));
-    // 완료 = #161716 + 흰 글자.
+    // 완료 = 그린에디션 초록 #3BB553 + 먹색 글자.
     expect(taskRowLabelColors(TaskLabel.done), (
-      const Color(0xFF161716),
-      Colors.white,
+      const Color(0xFF3BB553),
+      LdsColors.ink,
     ));
     // 라벨 바탕은 Dashboard 상태 색과 같습니다.
     expect(

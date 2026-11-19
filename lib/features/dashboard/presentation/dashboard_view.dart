@@ -21,7 +21,7 @@ import "widgets/category_share_card.dart";
 import "widgets/monthly_trend_card.dart";
 
 /// 상태 색: Tasks 상태 라벨과 같은 [TaskStatusColors](확인 필요 주황 ·
-/// 진행 중 노랑 · 완료 #161716).
+/// 진행 중 노랑 · 완료 초록 #3BB553).
 Color taskGroupColor(TaskGroup group) => TaskStatusColors.ofGroup(group);
 
 /// Dashboard (`docs/design-ssot.md` 7.9, 7.9.1, 7.9.2, 7.9.3).
