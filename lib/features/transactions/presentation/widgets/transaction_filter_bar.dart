@@ -66,13 +66,13 @@ class TransactionFilterBar extends StatelessWidget {
               onChanged: onMethods,
             ),
           ];
-          // 기본 목록 너비에서는 기간 칸이 남은 폭을 사용해 필터를 한 줄에 둡니다.
+          // 기간 버튼은 필요한 폭만 사용하고, 공간이 부족할 때만 줄입니다.
           // 좁은 화면이나 선택 개수 배지가 있으면 자연스럽게 줄을 바꿉니다.
           if (constraints.maxWidth >= 340 && !filter.hasFilters) {
             return Row(
               children: [
                 if (leading != null) ...[
-                  Expanded(child: leading!),
+                  Flexible(child: leading!),
                   const SizedBox(width: 4),
                 ],
                 for (var i = 0; i < buttons.length; i++) ...[
