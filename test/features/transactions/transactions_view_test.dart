@@ -167,16 +167,12 @@ void main() {
       for (final label in ["품목", "거래처", "확정 방식"])
         find.widgetWithText(LdsFilterButton, label),
     ];
-    // 읽는 순서(위→아래, 왼→오른)대로 놓여 있습니다.
+    // 기본 목록 너비에서 네 버튼이 한 줄로 이어집니다.
     for (var i = 1; i < boxes.length; i++) {
       final before = tester.getTopLeft(boxes[i - 1]);
       final after = tester.getTopLeft(boxes[i]);
-      final sameRow = (before.dy - after.dy).abs() < 1;
-      expect(
-        sameRow ? after.dx > before.dx : after.dy > before.dy,
-        isTrue,
-        reason: "$i",
-      );
+      expect(after.dy, closeTo(before.dy, 1), reason: "$i");
+      expect(after.dx, greaterThan(before.dx), reason: "$i");
     }
   });
 

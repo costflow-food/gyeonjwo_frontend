@@ -38,33 +38,56 @@ class TransactionFilterBar extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          ?leading,
-          LdsFilterButton(
-            label: "품목",
-            caption: _caption,
-            options: _options(listing.itemChoices),
-            selected: filter.items,
-            onChanged: onItems,
-          ),
-          LdsFilterButton(
-            label: "거래처",
-            caption: _caption,
-            options: _options(listing.supplierChoices),
-            selected: filter.suppliers,
-            onChanged: onSuppliers,
-          ),
-          LdsFilterButton(
-            label: "확정 방식",
-            caption: _caption,
-            options: _options(listing.methodChoices),
-            selected: filter.methods,
-            onChanged: onMethods,
-          ),
-        ],
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final buttons = <Widget>[
+            LdsFilterButton(
+              padding: const EdgeInsets.only(left: 8, right: 4),
+              label: "품목",
+              caption: _caption,
+              options: _options(listing.itemChoices),
+              selected: filter.items,
+              onChanged: onItems,
+            ),
+            LdsFilterButton(
+              padding: const EdgeInsets.only(left: 8, right: 4),
+              label: "거래처",
+              caption: _caption,
+              options: _options(listing.supplierChoices),
+              selected: filter.suppliers,
+              onChanged: onSuppliers,
+            ),
+            LdsFilterButton(
+              padding: const EdgeInsets.only(left: 8, right: 4),
+              label: "확정 방식",
+              caption: _caption,
+              options: _options(listing.methodChoices),
+              selected: filter.methods,
+              onChanged: onMethods,
+            ),
+          ];
+          // 기본 목록 너비에서는 기간 칸이 남은 폭을 사용해 필터를 한 줄에 둡니다.
+          // 좁은 화면이나 선택 개수 배지가 있으면 자연스럽게 줄을 바꿉니다.
+          if (constraints.maxWidth >= 340 && !filter.hasFilters) {
+            return Row(
+              children: [
+                if (leading != null) ...[
+                  Expanded(child: leading!),
+                  const SizedBox(width: 4),
+                ],
+                for (var i = 0; i < buttons.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 4),
+                  buttons[i],
+                ],
+              ],
+            );
+          }
+          return Wrap(
+            spacing: 4,
+            runSpacing: 8,
+            children: [?leading, ...buttons],
+          );
+        },
       ),
       if (filter.hasFilters) ...[
         const SizedBox(height: 12),
