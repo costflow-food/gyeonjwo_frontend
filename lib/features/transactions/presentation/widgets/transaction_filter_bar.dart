@@ -70,6 +70,7 @@ class TransactionFilterBar extends StatelessWidget {
           // 좁은 화면이나 선택 개수 배지가 있으면 자연스럽게 줄을 바꿉니다.
           if (constraints.maxWidth >= 340 && !filter.hasFilters) {
             return Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (leading != null) ...[
                   Flexible(child: leading!),
@@ -83,6 +84,7 @@ class TransactionFilterBar extends StatelessWidget {
             );
           }
           return Wrap(
+            alignment: WrapAlignment.end,
             spacing: 4,
             runSpacing: 8,
             children: [?leading, ...buttons],
