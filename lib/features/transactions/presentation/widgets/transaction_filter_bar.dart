@@ -83,11 +83,14 @@ class TransactionFilterBar extends StatelessWidget {
               ],
             );
           }
-          return Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 4,
-            runSpacing: 8,
-            children: [?leading, ...buttons],
+          return SizedBox(
+            width: constraints.maxWidth,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 4,
+              runSpacing: 8,
+              children: [?leading, ...buttons],
+            ),
           );
         },
       ),
