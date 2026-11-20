@@ -228,6 +228,15 @@ void main() {
   });
 
   testWidgets("필터: 품목·거래처로 거르고, 태그·모두 지우기로 풉니다", (tester) async {
+    void expectRightAligned() {
+      expect(
+        tester.getTopRight(find.widgetWithText(LdsFilterButton, "확정 방식")).dx,
+        closeTo(tester.getTopRight(find.bySemanticsLabel("정렬, 최신순")).dx, .01),
+        reason: "필터 선택 시에도 확정 방식과 최신순의 오른쪽 끝을 맞춥니다",
+      );
+      expect(tester.takeException(), isNull);
+    }
+
     await _pump(tester);
     await tester.tap(find.bySemanticsLabel("품목 필터"));
     await tester.pumpAndSettle();
@@ -244,6 +253,7 @@ void main() {
     expect(find.text("확정 거래 2건 · 총 4,190,000원"), findsOneWidget);
     expect(find.bySemanticsLabel("품목 필터, 1개 선택됨"), findsOneWidget);
     expect(find.text("모두 지우기"), findsOneWidget);
+    expectRightAligned();
 
     await tester.tap(find.bySemanticsLabel("거래처 필터"));
     await tester.pumpAndSettle();
@@ -252,6 +262,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.text("확정 거래 0건 · 총 0원"), findsOneWidget);
+    expectRightAligned();
 
     // 태그 ×로 하나 빼기.
     await tester.tap(find.bySemanticsLabel("한라감귤 빼기"));
