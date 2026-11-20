@@ -38,5 +38,5 @@ abstract final class LdsSpace {
 abstract final class LdsText {
   /// 목록 위 조작 단추(필터·정렬·기간, outlinedPlain)의 글자 크기.
   /// Invoices·Suppliers가 같은 값을 씁니다.
-  static const double control = 14;
+  static const double control = 13;
 }
