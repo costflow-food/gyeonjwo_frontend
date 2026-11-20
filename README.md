@@ -1,6 +1,20 @@
-# 견줘 Flutter 프론트엔드
+# Thoner Flutter 프론트엔드
 
-견줘 서버 API를 쓰는 Flutter Web 앱입니다. Chrome을 기준으로 개발·검증합니다.
+Thoner 서버 API를 쓰는 Flutter Web 앱입니다. Chrome을 기준으로 개발·검증합니다.
+
+## Thoner 전체 구성
+
+Thoner는 구매 담당자가 공급업체의 단가 인상 통보를 받았을 때, 대체 업체 견적 요청부터 회신 비교, 구매안과
+역제안 초안까지 이어 주는 구매 견적 검토 AI 서비스입니다. 메일 발송과 최종 결정은 담당자가 이 화면에서 확인하고 승인합니다.
+
+| 저장소 | 맡은 일 | 기술 | 배포 |
+| --- | --- | --- | --- |
+| gyeonjwo_frontend (이 저장소) | 업무 큐, 원문·첨부 보기, 검토 카드, 메일 초안 확인·발송 승인, 거래처, 실행 로그 화면 | Flutter Web, Riverpod | Vercel |
+| [gyeonjwo_backend](https://github.com/costflow-food/gyeonjwo_backend) | API, Gmail 수신·발송, 원문·첨부 읽기, 에이전트 ①~⑤와 LLM 검증자, 저장 | FastAPI, LangGraph, Supabase | AWS Lightsail |
+
+- 로그인은 Supabase Auth(Google)로 하고, 받은 토큰을 `Authorization: Bearer`로 붙여 백엔드 API를 부릅니다.
+- 이 앱에는 공개해도 되는 값만 들어갑니다. 비밀 키(LLM·Gmail·Supabase 서버 키)는 모두 백엔드 서버에 있습니다.
+- 에이전트 구성, 서버 실행, 에이전트 평가는 [백엔드 README](https://github.com/costflow-food/gyeonjwo_backend#readme)에 있습니다.
 
 ## 실행
 
@@ -10,7 +24,7 @@
 | --- | --- |
 | `SUPABASE_URL` | Supabase 프로젝트 주소 |
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase publishable 키 |
-| `API_BASE_URL` | 견줘 API 서버 주소 |
+| `API_BASE_URL` | Thoner API 서버 주소 |
 
 ```sh
 flutter pub get
