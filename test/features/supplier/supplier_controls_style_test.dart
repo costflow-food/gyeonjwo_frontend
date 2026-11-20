@@ -47,7 +47,7 @@ void main() {
     // The sort button is the Invoices one; the header buttons use its font.
     final sort = style("이름순");
     expect(sort.fontSize, LdsText.control);
-    expect(LdsText.control, 14);
+    expect(LdsText.control, 13);
     for (final label in ["새로고침", "거래처 등록"]) {
       final button = tester.widget<LdsButton>(
         find.widgetWithText(LdsButton, label),
@@ -136,7 +136,7 @@ void main() {
     }
   });
 
-  testWidgets("Invoices filter buttons use the same 14px text", (tester) async {
+  testWidgets("Invoices filter buttons use the same 13px text", (tester) async {
     await _pump(
       tester,
       LdsFilterButton(
