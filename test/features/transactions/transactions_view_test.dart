@@ -154,10 +154,13 @@ void main() {
     await _pump(tester);
     final lead = find.widgetWithText(PageLeadText, TransactionsView.lead);
     expect(lead, findsOneWidget);
-    // 필터 줄 위, 같은 왼쪽 선(줄 맨 앞은 기간 상자).
+    // 안내는 필터 줄 위에 있고, 필터는 목록의 오른쪽 선에 맞춥니다.
     final date = find.byType(LdsDateRangeButton);
     expect(tester.getBottomLeft(lead).dy, lessThan(tester.getTopLeft(date).dy));
-    expect(tester.getTopLeft(lead).dx, tester.getTopLeft(date).dx);
+    expect(
+      tester.getTopLeft(lead).dx,
+      lessThanOrEqualTo(tester.getTopLeft(date).dx),
+    );
   });
 
   testWidgets("필터 줄 순서: 기간 → 품목 → 거래처 → 확정 방식", (tester) async {
@@ -167,6 +170,11 @@ void main() {
       for (final label in ["품목", "거래처", "확정 방식"])
         find.widgetWithText(LdsFilterButton, label),
     ];
+    expect(
+      tester.getTopRight(boxes.last).dx,
+      closeTo(tester.getTopRight(find.bySemanticsLabel("정렬, 최신순")).dx, .01),
+      reason: "확정 방식과 최신순의 오른쪽 끝을 맞춥니다",
+    );
     // 기본 목록 너비에서 네 버튼이 한 줄로 이어집니다.
     for (var i = 1; i < boxes.length; i++) {
       final before = tester.getTopLeft(boxes[i - 1]);
