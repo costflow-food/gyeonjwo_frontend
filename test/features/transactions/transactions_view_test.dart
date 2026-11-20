@@ -172,7 +172,11 @@ void main() {
       final before = tester.getTopLeft(boxes[i - 1]);
       final after = tester.getTopLeft(boxes[i]);
       expect(after.dy, closeTo(before.dy, 1), reason: "$i");
-      expect(after.dx, greaterThan(before.dx), reason: "$i");
+      expect(
+        after.dx - tester.getTopRight(boxes[i - 1]).dx,
+        closeTo(4, .01),
+        reason: "$i: 버튼 간격은 4px",
+      );
     }
   });
 
