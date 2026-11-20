@@ -30,9 +30,13 @@ class LdsFilterButton extends StatefulWidget {
     required this.selected,
     required this.onChanged,
     this.caption,
+    this.padding = const EdgeInsets.only(left: 12, right: 8),
   });
 
   final String label;
+
+  /// 버튼 내부 여백. 좁은 필터 줄에서는 줄여서 사용합니다.
+  final EdgeInsetsGeometry padding;
 
   /// 목록 위 13px `#8A95A0` 안내(예: '최근 거래순').
   final String? caption;
@@ -104,7 +108,7 @@ class _LdsFilterButtonState extends State<LdsFilterButton> {
             hoverColor: LdsColors.canvas,
             child: Container(
               height: 36,
-              padding: const EdgeInsets.only(left: 12, right: 8),
+              padding: widget.padding,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
