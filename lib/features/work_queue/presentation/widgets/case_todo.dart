@@ -343,8 +343,10 @@ class _CaseTodoState extends ConsumerState<CaseTodo> {
       rows: [
         for (final draft in pending ?? const <MailDraft>[])
           TodoRow(
-            draft.supplierName ?? draft.recipient,
-            draft.supplierName == null ? "" : draft.recipient,
+            (draft.supplierName?.trim().isNotEmpty ?? false)
+                ? draft.supplierName!.trim()
+                : "수신인",
+            draft.recipient,
             note: draft.status.label,
           ),
       ],
@@ -479,8 +481,10 @@ class _CaseTodoState extends ConsumerState<CaseTodo> {
       rows: [
         for (final draft in results)
           TodoRow(
-            draft.supplierName ?? draft.recipient,
-            draft.supplierName == null ? "" : draft.recipient,
+            (draft.supplierName?.trim().isNotEmpty ?? false)
+                ? draft.supplierName!.trim()
+                : "수신인",
+            draft.recipient,
             note: draft.status.label,
             warn: draft.status == DraftStatus.failed,
           ),
@@ -507,8 +511,10 @@ class _CaseTodoState extends ConsumerState<CaseTodo> {
       rows: [
         for (final draft in drafts)
           TodoRow(
-            draft.supplierName ?? draft.recipient,
-            draft.supplierName == null ? "" : draft.recipient,
+            (draft.supplierName?.trim().isNotEmpty ?? false)
+                ? draft.supplierName!.trim()
+                : "수신인",
+            draft.recipient,
             note: draft.status.label,
             warn: draft.status == DraftStatus.failed,
           ),
