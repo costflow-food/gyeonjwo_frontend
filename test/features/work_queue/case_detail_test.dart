@@ -1,5 +1,6 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
+import "package:gyeonjwo_frontend/features/mail_draft/domain/mail_draft.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart" hide testWidgets;
 import "package:go_router/go_router.dart";
@@ -105,6 +106,7 @@ Future<void> _pump(
   WorkCase workCase, {
   List<MailAttachment> attachments = const [],
   VoidCallback? onNext,
+  List<MailDraft> drafts = const [],
 }) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.windows;
   tester.view.physicalSize = const Size(1100, 1800);
@@ -130,9 +132,9 @@ Future<void> _pump(
         workQueueRepositoryProvider.overrideWithValue(
           _Mail(attachments: attachments),
         ),
-        // A failed send may have drafts; this case has none.
+        // Supply draft fixtures when testing send results.
         caseHasDraftsProvider("c1").overrideWith((ref) async => false),
-        caseMailDraftsProvider("c1").overrideWith((ref) async => const []),
+        caseMailDraftsProvider("c1").overrideWith((ref) async => drafts),
         caseReviewCardProvider("c1").overrideWith((ref) async => _card()),
         caseProgressProvider("c1").overrideWith(
           (ref) async => const CaseProgress(
@@ -162,6 +164,53 @@ Finder _inTodo(Finder finder) =>
     find.descendant(of: find.byType(TodoBox), matching: finder);
 
 void main() {
+  for (final name in <String?>[null, '', '거래처 A']) {
+    testWidgets('send result email uses the wide value cell: $name', (
+      tester,
+    ) async {
+      const recipient = 'buyer+20261120@example.invalid';
+      await _pump(
+        tester,
+        _case('Pending', 'FAILED'),
+        drafts: [
+          MailDraft(
+            id: 'draft-1',
+            caseId: 'c1',
+            supplierId: 'supplier-1',
+            purpose: DraftPurpose.rfq,
+            recipient: recipient,
+            subject: '견적 요청',
+            body: '견적을 부탁드립니다.',
+            status: DraftStatus.sent,
+            inputRevision: 1,
+            snapshotHash: 'snapshot',
+            settingsConfigured: true,
+            supplierName: name,
+          ),
+        ],
+      );
+      final table = find.byType(TodoTable);
+      final email = find.descendant(of: table, matching: find.text(recipient));
+      final status = find.descendant(of: table, matching: find.text('발송됨'));
+      expect(email, findsOneWidget);
+      expect(
+        find.descendant(
+          of: table,
+          matching: find.text(name == null || name.isEmpty ? '수신인' : name),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.widget<Text>(email).maxLines, 1);
+      expect(tester.getSize(email).width, greaterThan(TodoTable.labelWidth));
+      expect(tester.getSize(email).height, lessThan(30));
+      expect(
+        tester.getTopLeft(status).dx,
+        greaterThan(tester.getTopRight(email).dx),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets("header, progress with 지금 할 일, then the mail card", (
     tester,
   ) async {
