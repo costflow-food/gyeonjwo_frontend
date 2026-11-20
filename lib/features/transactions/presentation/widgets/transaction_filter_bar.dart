@@ -67,8 +67,8 @@ class TransactionFilterBar extends StatelessWidget {
             ),
           ];
           // 기간 버튼은 필요한 폭만 사용하고, 공간이 부족할 때만 줄입니다.
-          // 좁은 화면이나 선택 개수 배지가 있으면 자연스럽게 줄을 바꿉니다.
-          if (constraints.maxWidth >= 340 && !filter.hasFilters) {
+          // 선택 개수 배지가 생겨도 한 줄을 유지하고, 좁은 화면만 줄을 바꿉니다.
+          if (constraints.maxWidth >= 340) {
             return Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
