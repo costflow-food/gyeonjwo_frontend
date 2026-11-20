@@ -1,4 +1,4 @@
-# dev → main PR이 머지됐을 때만 Flutter 웹을 빌드해 Vercel 프로덕션에 올린다.
+# dev → main PR 병합 또는 main에서 수동 실행할 때 프로덕션에 배포한다.
 # Vercel은 GitHub 저장소와 연결하지 않는다. 이 워크플로만 배포를 만든다.
 #
 # 저장소 설정(Settings → Secrets and variables → Actions)에 필요한 값
@@ -8,6 +8,7 @@
 name: Deploy web to Vercel
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [closed]
     branches: [main]
@@ -21,11 +22,13 @@ permissions:
 
 jobs:
   deploy:
-    # 머지된 PR + 출발 브랜치가 이 저장소의 dev 일 때만
+    # 수동 배포는 main만 허용하고, 기존 dev PR 병합 조건은 유지한다.
     if: >-
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.head.ref == 'dev' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true &&
+       github.event.pull_request.head.ref == 'dev' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -52,7 +55,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       # PRD 빌드에는 DEV 전용 로그인 생략 코드가 절대 들어가면 안 된다
       - name: Guard - no DEV login bypass in PRD
@@ -85,7 +88,7 @@ jobs:
           --dart-define=API_BASE_URL="$API_BASE_URL"
           --dart-define=BUILD_REVISION="${MERGE_SHA::7}"
         env:
-          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       # Git 정보가 없는 임시 폴더에서 올려 Vercel이 저장소를 자동 연결하지 않게 한다.
       - name: Deploy to Vercel (production)
