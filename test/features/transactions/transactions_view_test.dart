@@ -229,6 +229,22 @@ void main() {
 
   testWidgets("필터: 품목·거래처로 거르고, 태그·모두 지우기로 풉니다", (tester) async {
     void expectRightAligned() {
+      final buttons = [
+        find.byType(LdsDateRangeButton),
+        for (final label in ["품목", "거래처", "확정 방식"])
+          find.widgetWithText(LdsFilterButton, label),
+      ];
+      for (var i = 1; i < buttons.length; i++) {
+        expect(
+          tester.getTopLeft(buttons[i]).dy,
+          closeTo(tester.getTopLeft(buttons.first).dy, .01),
+        );
+        expect(
+          tester.getTopLeft(buttons[i]).dx -
+              tester.getTopRight(buttons[i - 1]).dx,
+          closeTo(4, .01),
+        );
+      }
       expect(
         tester.getTopRight(find.widgetWithText(LdsFilterButton, "확정 방식")).dx,
         closeTo(tester.getTopRight(find.bySemanticsLabel("정렬, 최신순")).dx, .01),
