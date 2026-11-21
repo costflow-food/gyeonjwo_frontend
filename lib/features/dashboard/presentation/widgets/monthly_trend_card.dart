@@ -486,7 +486,6 @@ class _TrendPainter extends CustomPainter {
       );
     }
 
-    // 축선.
     final axis = Paint()
       ..color = LdsColors.borderStrong
       ..strokeWidth = 1;

@@ -14,7 +14,6 @@ abstract final class AppFontSizes {
   static const double buttonLarge = 15;
   static const double navigation = 15;
 
-  // 제목.
   static const double pageTitle = 24;
   static const double heading = 20;
   static const double sectionTitle = 20;
